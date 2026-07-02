@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-forge-50: #f0f6ff;
+  --color-forge-100: #dbeafe;
+  --color-forge-500: #3b82f6;
+  --color-forge-600: #2563eb;
+  --color-forge-700: #1d4ed8;
+  --color-forge-900: #1e3a5f;
+}
+
+body {
+  @apply bg-slate-950 text-slate-100 antialiased;
+}
+
+.prose-lesson h1 { @apply text-3xl font-bold mt-2 mb-4; }
+.prose-lesson h2 { @apply text-xl font-semibold mt-6 mb-3 text-forge-100; }
+.prose-lesson p { @apply my-3 leading-relaxed text-slate-300; }
+.prose-lesson ul, .prose-lesson ol { @apply my-3 ml-6 list-disc space-y-1 text-slate-300; }
+.prose-lesson code { @apply bg-slate-800 text-emerald-300 rounded px-1.5 py-0.5 text-sm; }
+.prose-lesson pre { @apply bg-slate-900 border border-slate-800 rounded-xl p-4 my-4 overflow-x-auto; }
+.prose-lesson pre code { @apply bg-transparent p-0 text-sm leading-relaxed; }
+.prose-lesson table { @apply w-full my-4 text-sm border-collapse; }
+.prose-lesson th { @apply text-left border-b border-slate-700 py-2 pr-4 text-slate-200; }
+.prose-lesson td { @apply border-b border-slate-800 py-2 pr-4 text-slate-400; }
+.prose-lesson strong { @apply text-slate-100; }

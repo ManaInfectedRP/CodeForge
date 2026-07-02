@@ -1,0 +1,48 @@
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { Navbar } from './components/Navbar';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { RoleRoute } from './components/RoleRoute';
+import { Landing } from './pages/Landing';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { ChoosePaths } from './pages/ChoosePaths';
+import { Dashboard } from './pages/Dashboard';
+import { Courses } from './pages/Courses';
+import { CourseDetail } from './pages/CourseDetail';
+import { Lesson } from './pages/Lesson';
+import { TeachCourses } from './pages/TeachCourses';
+import { TeachCourseEditor } from './pages/TeachCourseEditor';
+import { TeachLessonEditor } from './pages/TeachLessonEditor';
+import { AdminReview } from './pages/AdminReview';
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/paths" element={<ChoosePaths />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="/courses/:id" element={<CourseDetail />} />
+            <Route path="/lessons/:id" element={<Lesson />} />
+          </Route>
+          <Route element={<RoleRoute roles={['INSTRUCTOR', 'ADMIN']} />}>
+            <Route path="/teach" element={<TeachCourses />} />
+            <Route path="/teach/courses/:id" element={<TeachCourseEditor />} />
+            <Route path="/teach/lessons/:id" element={<TeachLessonEditor />} />
+          </Route>
+          <Route element={<RoleRoute roles={['ADMIN']} />}>
+            <Route path="/admin" element={<AdminReview />} />
+          </Route>
+          <Route path="*" element={<main className="p-16 text-center text-slate-400">Page not found</main>} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}

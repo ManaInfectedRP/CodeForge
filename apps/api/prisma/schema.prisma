@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  FILL_BLANK
+}
+
+enum CourseStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+}
+
+model User {
+  id             String           @id @default(cuid())
+  username       String           @unique
+  email          String           @unique
+  passwordHash   String
+  role           Role             @default(STUDENT)
+  avatarUrl      String?
+  bio            String?
+  xp             Int              @default(0)
+  streak         Int              @default(0)
+  lastActiveAt   DateTime?
+  createdAt      DateTime         @default(now())
+  paths          UserPath[]
+  enrollments    Enrollment[]
+  lessonProgress LessonProgress[]
+  quizAttempts   QuizAttempt[]
+  coursesTaught  Course[]         @relation("InstructorCourses")
+}
+
+model LearningPath {
+  id             String     @id @default(cuid())
+  slug           String     @unique
+  name           String
+  icon           String
+  difficulty     Int
+  estimatedHours Int
+  projectCount   Int        @default(0)
+  description    String
+  courses        Course[]
+  users          UserPath[]
+}
+
+model UserPath {
+  userId    String
+  pathId    String
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  path      LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+
+  @@id([userId, pathId])
+}
+
+model Course {
+  id           String       @id @default(cuid())
+  title        String
+  description  String
+  status       CourseStatus @default(DRAFT)
+  reviewNote   String?
+  pathId       String
+  instructorId String
+  createdAt    DateTime     @default(now())
+  path         LearningPath @relation(fields: [pathId], references: [id])
+  instructor   User         @relation("InstructorCourses", fields: [instructorId], references: [id])
+  lessons      Lesson[]
+  enrollments  Enrollment[]
+}
+
+model Lesson {
+  id       String           @id @default(cuid())
+  courseId String
+  title    String
+  order    Int
+  videoUrl String?
+  content  String
+  course   Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  quiz     Quiz?
+  progress LessonProgress[]
+
+  @@unique([courseId, order])
+}
+
+model Quiz {
+  id           String        @id @default(cuid())
+  lessonId     String        @unique
+  title        String
+  passingScore Int           @default(70)
+  lesson       Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions    Question[]
+  attempts     QuizAttempt[]
+}
+
+model Question {
+  id      String       @id @default(cuid())
+  quizId  String
+  type    QuestionType
+  prompt  String
+  options String[]
+  answer  String
+  order   Int
+  quiz    Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, order])
+}
+
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  quizId    String
+  userId    String
+  score     Int
+  passed    Boolean
+  answers   Json
+  createdAt DateTime @default(now())
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Enrollment {
+  userId    String
+  courseId  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([userId, courseId])
+}
+
+model LessonProgress {
+  userId      String
+  lessonId    String
+  completedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@id([userId, lessonId])
+}
