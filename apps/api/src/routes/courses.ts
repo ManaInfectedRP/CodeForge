@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'node:crypto';
 import type { CourseDetailDto, CourseSummaryDto } from '@codeforge/shared';
 import { prisma } from '../lib/prisma.ts';
 import { h } from '../lib/helpers.ts';
@@ -73,7 +74,14 @@ coursesRouter.get(
         })) !== null
       : false;
 
+    const certificate = req.auth
+      ? await prisma.certificate.findUnique({
+          where: { userId_courseId: { userId: req.auth.sub, courseId: course.id } },
+        })
+      : null;
+
     const body: CourseDetailDto = {
+      certificateId: certificate?.id ?? null,
       id: course.id,
       title: course.title,
       description: course.description,
@@ -108,5 +116,56 @@ coursesRouter.post(
       create: { userId: req.auth!.sub, courseId: course.id },
     });
     res.status(201).json({ enrolled: true });
+  })
+);
+
+coursesRouter.post(
+  '/:id/certificate',
+  requireAuth,
+  h(async (req, res) => {
+    const userId = req.auth!.sub;
+    const course = await prisma.course.findUnique({
+      where: { id: req.params.id },
+      include: { lessons: { include: { quiz: { select: { id: true } } } } },
+    });
+    if (!course || course.status !== 'PUBLISHED') throw new HttpError(404, 'Course not found');
+    if (course.lessons.length === 0) throw new HttpError(400, 'This course has no lessons yet');
+
+    const enrolled = await prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId: course.id } },
+    });
+    if (!enrolled) throw new HttpError(403, 'You must be enrolled in this course');
+
+    const completed = await prisma.lessonProgress.count({
+      where: { userId, lesson: { courseId: course.id } },
+    });
+    if (completed < course.lessons.length) {
+      throw new HttpError(400, `Complete all lessons first (${completed}/${course.lessons.length} done)`);
+    }
+
+    const quizIds = course.lessons.filter((l) => l.quiz).map((l) => l.quiz!.id);
+    if (quizIds.length > 0) {
+      const passed = await prisma.quizAttempt.groupBy({
+        by: ['quizId'],
+        where: { userId, quizId: { in: quizIds }, passed: true },
+      });
+      if (passed.length < quizIds.length) {
+        throw new HttpError(400, `Pass every quiz first (${passed.length}/${quizIds.length} passed)`);
+      }
+    }
+
+    const existing = await prisma.certificate.findUnique({
+      where: { userId_courseId: { userId, courseId: course.id } },
+    });
+    if (existing) return res.json({ id: existing.id });
+
+    const cert = await prisma.certificate.create({
+      data: {
+        userId,
+        courseId: course.id,
+        verificationCode: crypto.randomBytes(8).toString('hex'),
+      },
+    });
+    res.status(201).json({ id: cert.id });
   })
 );

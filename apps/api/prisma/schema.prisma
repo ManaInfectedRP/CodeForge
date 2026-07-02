@@ -52,17 +52,21 @@ enum ChallengeStatus {
 }
 
 model User {
-  id             String           @id @default(cuid())
-  username       String           @unique
-  email          String           @unique
-  passwordHash   String
-  role           Role             @default(STUDENT)
-  avatarUrl      String?
-  bio            String?
-  xp             Int              @default(0)
-  streak         Int              @default(0)
-  lastActiveAt   DateTime?
-  createdAt      DateTime         @default(now())
+  id                 String           @id @default(cuid())
+  username           String           @unique
+  email              String           @unique
+  passwordHash       String
+  role               Role             @default(STUDENT)
+  avatarUrl          String?
+  bio                String?
+  xp                 Int              @default(0)
+  streak             Int              @default(0)
+  lastActiveAt       DateTime?
+  createdAt          DateTime         @default(now())
+  emailVerified      Boolean          @default(false)
+  emailVerifyToken   String?          @unique
+  emailVerifyExpires DateTime?
+  certificates       Certificate[]
   paths          UserPath[]
   enrollments    Enrollment[]
   lessonProgress LessonProgress[]
@@ -109,6 +113,19 @@ model Course {
   instructor   User         @relation("InstructorCourses", fields: [instructorId], references: [id])
   lessons      Lesson[]
   enrollments  Enrollment[]
+  certificates Certificate[]
+}
+
+model Certificate {
+  id               String   @id @default(cuid())
+  userId           String
+  courseId         String
+  verificationCode String   @unique
+  issuedAt         DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
 }
 
 model Lesson {

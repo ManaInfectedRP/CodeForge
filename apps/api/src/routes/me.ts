@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { DashboardDto, EnrollmentDto } from '@codeforge/shared';
+import type { CertificateDto, DashboardDto, EnrollmentDto } from '@codeforge/shared';
 import { prisma } from '../lib/prisma.ts';
 import { h, toUserDto } from '../lib/helpers.ts';
 import { requireAuth } from '../middleware/auth.ts';
@@ -27,6 +27,57 @@ meRouter.put(
       prisma.userPath.createMany({ data: paths.map((p) => ({ userId, pathId: p.id })) }),
     ]);
     res.json({ selected: slugs });
+  })
+);
+
+meRouter.get(
+  '/certificates',
+  h(async (req, res) => {
+    const certs = await prisma.certificate.findMany({
+      where: { userId: req.auth!.sub },
+      include: {
+        user: { select: { username: true } },
+        course: { include: { path: true, instructor: { select: { username: true } } } },
+      },
+      orderBy: { issuedAt: 'desc' },
+    });
+    const body: CertificateDto[] = certs.map((c) => ({
+      id: c.id,
+      courseId: c.courseId,
+      courseTitle: c.course.title,
+      pathName: c.course.path.name,
+      studentName: c.user.username,
+      instructorName: c.course.instructor.username,
+      verificationCode: c.verificationCode,
+      issuedAt: c.issuedAt.toISOString(),
+    }));
+    res.json(body);
+  })
+);
+
+meRouter.get(
+  '/certificates/:id',
+  h(async (req, res) => {
+    const c = await prisma.certificate.findUnique({
+      where: { id: req.params.id },
+      include: {
+        user: { select: { username: true } },
+        course: { include: { path: true, instructor: { select: { username: true } } } },
+      },
+    });
+    if (!c || c.userId !== req.auth!.sub) throw new HttpError(404, 'Certificate not found');
+
+    const body: CertificateDto = {
+      id: c.id,
+      courseId: c.courseId,
+      courseTitle: c.course.title,
+      pathName: c.course.path.name,
+      studentName: c.user.username,
+      instructorName: c.course.instructor.username,
+      verificationCode: c.verificationCode,
+      issuedAt: c.issuedAt.toISOString(),
+    };
+    res.json(body);
   })
 );
 

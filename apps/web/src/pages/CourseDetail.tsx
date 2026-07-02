@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { CourseDetailDto } from '@codeforge/shared';
 import { api, errorMessage } from '../lib/api';
 import { ProgressBar } from '../components/ProgressBar';
@@ -9,6 +9,8 @@ export function CourseDetail() {
   const [course, setCourse] = useState<CourseDetailDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const navigate = useNavigate();
 
   const load = useCallback(() => {
     api
@@ -31,7 +33,20 @@ export function CourseDetail() {
     }
   }
 
-  if (error) return <main className="p-12 text-center text-red-400">{error}</main>;
+  async function claimCertificate() {
+    setClaiming(true);
+    setError(null);
+    try {
+      const { data } = await api.post<{ id: string }>(`/courses/${id}/certificate`);
+      navigate(`/certificates/${data.id}`);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setClaiming(false);
+    }
+  }
+
+  if (error && !course) return <main className="p-12 text-center text-red-400">{error}</main>;
   if (!course) return <main className="p-12 text-center text-slate-400">Loading course…</main>;
 
   const percent =
@@ -60,6 +75,25 @@ export function CourseDetail() {
           <div className="mt-3">
             <ProgressBar percent={percent} />
           </div>
+          {course.certificateId ? (
+            <Link
+              to={`/certificates/${course.certificateId}`}
+              className="mt-4 inline-block rounded-xl bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-500"
+            >
+              🎓 View your certificate
+            </Link>
+          ) : (
+            percent === 100 && (
+              <button
+                onClick={claimCertificate}
+                disabled={claiming}
+                className="mt-4 rounded-xl bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
+              >
+                {claiming ? 'Issuing…' : '🎓 Claim your certificate'}
+              </button>
+            )
+          )}
+          {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
         </div>
       ) : (
         <button

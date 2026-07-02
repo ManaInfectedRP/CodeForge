@@ -803,35 +803,38 @@ async function main() {
 
   const instructor = await prisma.user.upsert({
     where: { email: 'instructor@codeforge.dev' },
-    update: {},
+    update: { emailVerified: true },
     create: {
       username: 'ada_instructor',
       email: 'instructor@codeforge.dev',
       passwordHash: instructorPass,
       role: 'INSTRUCTOR',
       bio: 'Senior engineer teaching backend development.',
+      emailVerified: true,
     },
   });
 
   await prisma.user.upsert({
     where: { email: 'admin@codeforge.dev' },
-    update: {},
+    update: { emailVerified: true },
     create: {
       username: 'admin',
       email: 'admin@codeforge.dev',
       passwordHash: adminPass,
       role: 'ADMIN',
+      emailVerified: true,
     },
   });
 
   await prisma.user.upsert({
     where: { email: 'student@codeforge.dev' },
-    update: {},
+    update: { emailVerified: true },
     create: {
       username: 'demo_student',
       email: 'student@codeforge.dev',
       passwordHash: studentPass,
       role: 'STUDENT',
+      emailVerified: true,
     },
   });
 

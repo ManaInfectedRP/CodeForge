@@ -13,6 +13,27 @@ export interface UserDto {
   bio: string | null;
   xp: number;
   streak: number;
+  emailVerified: boolean;
+}
+
+export interface CertificateDto {
+  id: string;
+  courseId: string;
+  courseTitle: string;
+  pathName: string;
+  studentName: string;
+  instructorName: string;
+  verificationCode: string;
+  issuedAt: string;
+}
+
+export interface CertificateVerificationDto {
+  valid: boolean;
+  studentName?: string;
+  courseTitle?: string;
+  pathName?: string;
+  issuedAt?: string;
+  certificateId?: string;
 }
 
 export interface LearningPathDto {
@@ -50,6 +71,8 @@ export interface LessonSummaryDto {
 
 export interface CourseDetailDto extends CourseSummaryDto {
   lessons: LessonSummaryDto[];
+  /** set when the viewer has earned a certificate for this course */
+  certificateId?: string | null;
 }
 
 export interface QuizQuestionDto {
