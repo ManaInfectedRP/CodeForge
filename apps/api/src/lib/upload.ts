@@ -26,7 +26,7 @@ export const videoUpload = multer({
 
 /** Removes a previously uploaded file when a lesson's video is replaced or deleted. */
 export function deleteLocalUpload(videoUrl: string | null) {
-  if (!videoUrl?.startsWith('/uploads/')) return; // external URL — nothing to clean up
+  if (!videoUrl?.startsWith('/uploads/')) return; // external URL, nothing to clean up
   const filename = path.basename(videoUrl);
   const filePath = path.join(UPLOADS_DIR, filename);
   fs.rm(filePath, { force: true }, () => {});

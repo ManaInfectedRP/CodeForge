@@ -229,7 +229,7 @@ export function TeachLessonEditor() {
       <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
         <h2 className="text-lg font-bold">📝 Quiz</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Optional — remove all questions and save to delete the quiz.
+          Optional, remove all questions and save to delete the quiz.
         </p>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">

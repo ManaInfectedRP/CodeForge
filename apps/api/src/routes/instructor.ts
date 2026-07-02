@@ -190,7 +190,7 @@ instructorRouter.post(
         courseId: course.id,
         title,
         order: (last?.order ?? 0) + 1,
-        content: `# ${title}\n\nWrite your lesson content here. Markdown is supported — headings, **bold**, code blocks, and tables.`,
+        content: `# ${title}\n\nWrite your lesson content here. Markdown is supported, headings, **bold**, code blocks, and tables.`,
       },
     });
     res.status(201).json({ id: lesson.id });

@@ -49,7 +49,7 @@ lessonsRouter.get(
             id: lesson.quiz.id,
             title: lesson.quiz.title,
             passingScore: lesson.quiz.passingScore,
-            // answers deliberately excluded — grading happens server-side
+            // answers deliberately excluded, grading happens server-side
             questions: lesson.quiz.questions.map((q) => ({
               id: q.id,
               type: q.type,

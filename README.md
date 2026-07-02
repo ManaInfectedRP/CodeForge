@@ -9,7 +9,7 @@ A modern programming learning platform. Students pick learning paths (C++, Pytho
 | API | Node.js, Express, TypeScript, Prisma, JWT, Zod |
 | Web | React 19, TypeScript, Vite, Tailwind CSS v4, React Router, Axios |
 | Database | PostgreSQL |
-| Shared | `@codeforge/shared` — DTOs and types used by both API and web |
+| Shared | `@codeforge/shared`, DTOs and types used by both API and web |
 
 ## Repo layout
 
@@ -41,7 +41,7 @@ On Windows, run it from Git Bash: `bash fastboot.sh`.
 npm install
 
 # 2. Configure the database connection
-#    Edit apps/api/.env — default is postgres:postgres@localhost:5432/codeforge
+#    Edit apps/api/.env, default is postgres:postgres@localhost:5432/codeforge
 
 # 3. Create the schema and seed demo data
 npm run db:migrate      # runs prisma migrate dev (creates the codeforge DB schema)
@@ -61,18 +61,18 @@ Open http://localhost:5173.
 | Instructor | instructor@codeforge.dev | instructor123 |
 | Admin | admin@codeforge.dev | admin123 |
 
-## What's implemented (v0.1 — core slice)
+## What's implemented (v0.1, core slice)
 
-- **Auth** — register, login, JWT sessions, role model (student / instructor / admin)
-- **Learning paths** — the five language paths with difficulty, lesson counts, and multi-select onboarding
-- **Course catalog** — browse by path, enroll, per-course curriculum view
-- **Lessons** — markdown content, video slot, prev/next navigation, mark-complete
-- **Quizzes** — multiple choice, true/false, and fill-in-the-blank; graded server-side (answers never leave the API); pass/fail against a passing score
-- **Gamification** — XP for lessons (+10) and first quiz pass (+25), daily streak tracking
-- **Dashboard** — XP, streak, enrolled courses with completion %, recent activity, selected paths
-- **Code playground** — every python/js/ts code block in a lesson is an editable editor with Run/Reset and an output panel. Code executes in the student's browser, fully sandboxed: Python via Pyodide (CPython on WebAssembly, lazy-loaded from CDN on first run), JavaScript in a Web Worker with a 5s timeout, TypeScript stripped with Sucrase then run as JS. C++/bash blocks stay static.
-- **Instructor authoring** (`/teach`) — create draft courses, write markdown lessons with live preview, upload lesson videos, build quizzes (all three question types), reorder/delete lessons, submit for review
-- **Admin review** (`/admin`) — approve or send back pending courses with feedback, unpublish live courses; only approved courses appear in the student catalog
+- **Auth**, register, login, JWT sessions, role model (student / instructor / admin)
+- **Learning paths**, the five language paths with difficulty, lesson counts, and multi-select onboarding
+- **Course catalog**, browse by path, enroll, per-course curriculum view
+- **Lessons**, markdown content, video slot, prev/next navigation, mark-complete
+- **Quizzes**, multiple choice, true/false, and fill-in-the-blank; graded server-side (answers never leave the API); pass/fail against a passing score
+- **Gamification**, XP for lessons (+10) and first quiz pass (+25), daily streak tracking
+- **Dashboard**, XP, streak, enrolled courses with completion %, recent activity, selected paths
+- **Code playground**, every python/js/ts code block in a lesson is an editable editor with Run/Reset and an output panel. Code executes in the student's browser, fully sandboxed: Python via Pyodide (CPython on WebAssembly, lazy-loaded from CDN on first run), JavaScript in a Web Worker with a 5s timeout, TypeScript stripped with Sucrase then run as JS. C++/bash blocks stay static.
+- **Instructor authoring** (`/teach`), create draft courses, write markdown lessons with live preview, upload lesson videos, build quizzes (all three question types), reorder/delete lessons, submit for review
+- **Admin review** (`/admin`), approve or send back pending courses with feedback, unpublish live courses; only approved courses appear in the student catalog
 
 ## API overview
 
@@ -108,4 +108,7 @@ POST /api/admin/courses/:id/unpublish       pull a live course
 
 ## Roadmap (from the full spec)
 
-Certificates with QR verification · interactive code playground · coding challenges + leaderboard · video uploads (Cloudinary/S3) · admin user management · discussion forums · Socket.IO live chat · achievements
+Certificates with QR verification ·
+coding challenges + leaderboard · 
+discussion forums · 
+achievements

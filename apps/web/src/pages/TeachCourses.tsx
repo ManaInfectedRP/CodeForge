@@ -104,7 +104,7 @@ export function TeachCourses() {
         <p className="mt-10 text-slate-400">Loading…</p>
       ) : courses.length === 0 ? (
         <p className="mt-10 rounded-2xl border border-dashed border-slate-700 p-10 text-center text-slate-400">
-          No courses yet — create your first draft.
+          No courses yet, create your first draft.
         </p>
       ) : (
         <div className="mt-8 space-y-3">

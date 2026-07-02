@@ -91,7 +91,7 @@ export function QuizPlayer({ quiz }: { quiz: QuizDto }) {
               </div>
             )}
             {result && incorrect.has(q.id) && (
-              <p className="mt-2 text-sm text-red-400">Incorrect — review the lesson and try again.</p>
+              <p className="mt-2 text-sm text-red-400">Incorrect, review the lesson and try again.</p>
             )}
           </li>
         ))}
@@ -107,7 +107,7 @@ export function QuizPlayer({ quiz }: { quiz: QuizDto }) {
                 result.passed ? 'bg-emerald-900/40 text-emerald-300' : 'bg-red-900/40 text-red-300'
               }`}
             >
-              {result.passed ? '✅ Passed' : '❌ Not passed'} — {result.score}% ({result.correctCount}/
+              {result.passed ? '✅ Passed' : '❌ Not passed'}, {result.score}% ({result.correctCount}/
               {result.totalQuestions} correct)
               {result.xpAwarded > 0 && <span className="ml-2 text-amber-400">+{result.xpAwarded} XP</span>}
             </div>

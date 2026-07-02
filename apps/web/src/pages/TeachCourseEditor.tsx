@@ -89,7 +89,7 @@ export function TeachCourseEditor() {
 
       {course.status === 'DRAFT' && (
         <button
-          onClick={() => run(() => api.post(`/instructor/courses/${id}/submit`), 'Submitted for review — an admin will approve or send feedback.')}
+          onClick={() => run(() => api.post(`/instructor/courses/${id}/submit`), 'Submitted for review, an admin will approve or send feedback.')}
           disabled={busy}
           className="mt-5 rounded-xl bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
         >
@@ -157,7 +157,7 @@ export function TeachCourseEditor() {
       <section className="mt-8">
         <h2 className="text-lg font-bold">Lessons</h2>
         {course.lessons.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">No lessons yet — add the first one below.</p>
+          <p className="mt-3 text-sm text-slate-500">No lessons yet, add the first one below.</p>
         ) : (
           <ol className="mt-4 space-y-2">
             {course.lessons.map((l, i) => (

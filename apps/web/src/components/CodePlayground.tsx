@@ -53,7 +53,7 @@ function getPyodide(): Promise<PyodideInterface> {
           .then(resolve)
           .catch(reject);
       };
-      script.onerror = () => reject(new Error('Could not load the Python runtime — check your internet connection.'));
+      script.onerror = () => reject(new Error('Could not load the Python runtime, check your internet connection.'));
       document.head.appendChild(script);
     }).catch((err) => {
       pyodidePromise = null; // allow retry after a network failure

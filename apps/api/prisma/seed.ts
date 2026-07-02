@@ -20,7 +20,7 @@ const paths = [
     difficulty: 2,
     estimatedHours: 55,
     projectCount: 20,
-    description: 'The friendliest way into programming — scripting, automation, data, and AI with Python.',
+    description: 'The friendliest way into programming, scripting, automation, data, and AI with Python.',
   },
   {
     slug: 'javascript',
@@ -38,7 +38,7 @@ const paths = [
     difficulty: 3,
     estimatedHours: 40,
     projectCount: 14,
-    description: 'JavaScript with superpowers — static types, safer refactors, and scalable codebases.',
+    description: 'JavaScript with superpowers, static types, safer refactors, and scalable codebases.',
   },
   {
     slug: 'nodejs',
@@ -47,7 +47,7 @@ const paths = [
     difficulty: 4,
     estimatedHours: 45,
     projectCount: 16,
-    description: 'Server-side JavaScript — REST APIs, real-time apps, and backend engineering with Node.js.',
+    description: 'Server-side JavaScript, REST APIs, real-time apps, and backend engineering with Node.js.',
   },
 ];
 
@@ -74,7 +74,7 @@ const nodeLessons: SeedLesson[] = [
     title: 'Introduction to Node.js',
     content: lessonContent(
       'Introduction to Node.js',
-      `Node.js is a JavaScript runtime built on Chrome's V8 engine. It lets you run JavaScript outside the browser — on servers, in CLIs, and in build tools.\n\n## Why Node.js?\n\n- **Non-blocking I/O** — handles thousands of concurrent connections efficiently.\n- **One language everywhere** — share code and skills between frontend and backend.\n- **npm** — the largest package ecosystem in the world.\n\n## Your first program\n\n\`\`\`js\n// hello.js\nconsole.log('Hello from Node.js!');\n\`\`\`\n\nRun it with:\n\n\`\`\`bash\nnode hello.js\n\`\`\``
+      `Node.js is a JavaScript runtime built on Chrome's V8 engine. It lets you run JavaScript outside the browser, on servers, in CLIs, and in build tools.\n\n## Why Node.js?\n\n- **Non-blocking I/O**, handles thousands of concurrent connections efficiently.\n- **One language everywhere**, share code and skills between frontend and backend.\n- **npm**, the largest package ecosystem in the world.\n\n## Your first program\n\n\`\`\`js\n// hello.js\nconsole.log('Hello from Node.js!');\n\`\`\`\n\nRun it with:\n\n\`\`\`bash\nnode hello.js\n\`\`\``
     ),
     quiz: {
       title: 'Node.js Basics',
@@ -155,7 +155,7 @@ const nodeLessons: SeedLesson[] = [
     title: 'Building an Express Server',
     content: lessonContent(
       'Building an Express Server',
-      `Express is the most popular web framework for Node.js.\n\n\`\`\`\nimport express from 'express';\n\nconst app = express();\napp.use(express.json());\n\napp.get('/api/health', (req, res) => {\n  res.json({ status: 'ok' });\n});\n\napp.listen(4000, () => console.log('Listening on :4000'));\n\`\`\`\n\n*Server code runs in Node.js, not in the browser playground — you'll run this for real in the final project.*\n\n## Key concepts\n\n- **Routes** map an HTTP method + path to a handler.\n- **Middleware** functions run in order before your handler (parsing, auth, logging).\n- **req / res** — the request and response objects.`
+      `Express is the most popular web framework for Node.js.\n\n\`\`\`\nimport express from 'express';\n\nconst app = express();\napp.use(express.json());\n\napp.get('/api/health', (req, res) => {\n  res.json({ status: 'ok' });\n});\n\napp.listen(4000, () => console.log('Listening on :4000'));\n\`\`\`\n\n*Server code runs in Node.js, not in the browser playground, you'll run this for real in the final project.*\n\n## Key concepts\n\n- **Routes** map an HTTP method + path to a handler.\n- **Middleware** functions run in order before your handler (parsing, auth, logging).\n- **req / res**, the request and response objects.`
     ),
     quiz: {
       title: 'Express Quiz',
@@ -186,7 +186,7 @@ const nodeLessons: SeedLesson[] = [
     title: 'REST APIs and Authentication',
     content: lessonContent(
       'REST APIs and Authentication',
-      `## REST conventions\n\n| Method | Path | Meaning |\n|--------|------|---------|\n| GET | /api/courses | list courses |\n| GET | /api/courses/:id | one course |\n| POST | /api/courses | create |\n| PUT | /api/courses/:id | update |\n| DELETE | /api/courses/:id | delete |\n\n## JWT authentication\n\n1. User logs in with credentials.\n2. Server verifies and signs a **JSON Web Token**.\n3. Client sends it back on every request: \`Authorization: Bearer <token>\`.\n4. Middleware verifies the signature and attaches the user to the request.\n\nNever store plain-text passwords — hash them with bcrypt.`
+      `## REST conventions\n\n| Method | Path | Meaning |\n|--------|------|---------|\n| GET | /api/courses | list courses |\n| GET | /api/courses/:id | one course |\n| POST | /api/courses | create |\n| PUT | /api/courses/:id | update |\n| DELETE | /api/courses/:id | delete |\n\n## JWT authentication\n\n1. User logs in with credentials.\n2. Server verifies and signs a **JSON Web Token**.\n3. Client sends it back on every request: \`Authorization: Bearer <token>\`.\n4. Middleware verifies the signature and attaches the user to the request.\n\nNever store plain-text passwords, hash them with bcrypt.`
     ),
     quiz: {
       title: 'REST & Auth Quiz',
@@ -211,7 +211,7 @@ const nodeLessons: SeedLesson[] = [
     title: 'Final Project: URL Shortener',
     content: lessonContent(
       'Final Project: URL Shortener',
-      `Time to put it all together. Build a URL shortener API with:\n\n## Requirements\n\n1. \`POST /api/links\` — accepts a long URL, returns a short code.\n2. \`GET /:code\` — redirects to the original URL.\n3. \`GET /api/links/:code/stats\` — visit count and creation date.\n4. Persist links in PostgreSQL.\n5. Validate URLs and handle unknown codes with a 404.\n\n## Stretch goals\n\n- Rate limiting\n- Custom short codes\n- Expiring links\n\nSubmit your repository link when you are done. Good luck! 🚀`
+      `Time to put it all together. Build a URL shortener API with:\n\n## Requirements\n\n1. \`POST /api/links\`, accepts a long URL, returns a short code.\n2. \`GET /:code\`, redirects to the original URL.\n3. \`GET /api/links/:code/stats\`, visit count and creation date.\n4. Persist links in PostgreSQL.\n5. Validate URLs and handle unknown codes with a 404.\n\n## Stretch goals\n\n- Rate limiting\n- Custom short codes\n- Expiring links\n\nSubmit your repository link when you are done. Good luck! 🚀`
     ),
   },
 ];
@@ -221,7 +221,7 @@ const pythonLessons: SeedLesson[] = [
     title: 'Getting Started with Python',
     content: lessonContent(
       'Getting Started with Python',
-      `Python is famous for its readable syntax and gentle learning curve.\n\n\`\`\`python\nprint("Hello, CodeForge!")\n\nname = "student"\nxp = 0\nxp += 10\nprint(f"{name} has {xp} XP")\n\`\`\`\n\nNo semicolons, no braces — indentation defines structure.`
+      `Python is famous for its readable syntax and gentle learning curve.\n\n\`\`\`python\nprint("Hello, CodeForge!")\n\nname = "student"\nxp = 0\nxp += 10\nprint(f"{name} has {xp} XP")\n\`\`\`\n\nNo semicolons, no braces, indentation defines structure.`
     ),
     quiz: {
       title: 'Python Basics Quiz',
@@ -299,7 +299,7 @@ const jsLessons: SeedLesson[] = [
     title: 'JavaScript in the Browser',
     content: lessonContent(
       'JavaScript in the Browser',
-      `JavaScript brings web pages to life — reacting to clicks, fetching data, and updating the page.\n\n## Your first JavaScript\n\n\`\`\`js\nconst name = 'CodeForge';\nconsole.log('Hello, ' + name + '!');\n\nconst year = new Date().getFullYear();\nconsole.log('It is', year);\n\`\`\`\n\n## The DOM\n\nIn a real page, JavaScript reads and modifies the **DOM** (Document Object Model) — the live tree of elements your code can change:\n\n\`\`\`\nconst button = document.querySelector('#greet');\nbutton.addEventListener('click', () => {\n  document.querySelector('#out').textContent = 'Hello!';\n});\n\`\`\`\n\n*DOM code needs a real web page, so that block is read-only here — every other example in this course is runnable. Try the first one!*`
+      `JavaScript brings web pages to life, reacting to clicks, fetching data, and updating the page.\n\n## Your first JavaScript\n\n\`\`\`js\nconst name = 'CodeForge';\nconsole.log('Hello, ' + name + '!');\n\nconst year = new Date().getFullYear();\nconsole.log('It is', year);\n\`\`\`\n\n## The DOM\n\nIn a real page, JavaScript reads and modifies the **DOM** (Document Object Model), the live tree of elements your code can change:\n\n\`\`\`\nconst button = document.querySelector('#greet');\nbutton.addEventListener('click', () => {\n  document.querySelector('#out').textContent = 'Hello!';\n});\n\`\`\`\n\n*DOM code needs a real web page, so that block is read-only here, every other example in this course is runnable. Try the first one!*`
     ),
     quiz: {
       title: 'DOM Quiz',
@@ -324,7 +324,7 @@ const jsLessons: SeedLesson[] = [
     title: 'Arrays and Higher-Order Functions',
     content: lessonContent(
       'Arrays and Higher-Order Functions',
-      `\`\`\`js\nconst scores = [80, 92, 67, 100];\n\nconst passed = scores.filter(s => s >= 70);   // [80, 92, 100]\nconst doubled = scores.map(s => s * 2);\nconst total = scores.reduce((sum, s) => sum + s, 0);\n\nconsole.log('passed:', passed);\nconsole.log('doubled:', doubled);\nconsole.log('total:', total);\n\`\`\`\n\n\`map\`, \`filter\`, and \`reduce\` transform arrays without mutating them — the backbone of modern JavaScript.`
+      `\`\`\`js\nconst scores = [80, 92, 67, 100];\n\nconst passed = scores.filter(s => s >= 70);   // [80, 92, 100]\nconst doubled = scores.map(s => s * 2);\nconst total = scores.reduce((sum, s) => sum + s, 0);\n\nconsole.log('passed:', passed);\nconsole.log('doubled:', doubled);\nconsole.log('total:', total);\n\`\`\`\n\n\`map\`, \`filter\`, and \`reduce\` transform arrays without mutating them, the backbone of modern JavaScript.`
     ),
     quiz: {
       title: 'Array Methods Quiz',
@@ -377,7 +377,7 @@ const tsLessons: SeedLesson[] = [
     title: 'Why TypeScript?',
     content: lessonContent(
       'Why TypeScript?',
-      `TypeScript adds static types on top of JavaScript. The compiler catches whole categories of bugs before your code ever runs.\n\n\`\`\`ts\nfunction greet(name: string): string {\n  return \`Hello, \${name}\`;\n}\n\nconsole.log(greet('CodeForge'));\n\n// greet(42) ❌ the compiler rejects this before the code ever runs:\n// "Argument of type 'number' is not assignable to parameter of type 'string'"\n\`\`\`\n\nEvery valid JavaScript program is already valid TypeScript — you can adopt it gradually.\n\n*Note: the playground runs TypeScript by stripping the types — full type checking happens in your editor and compiler.*`
+      `TypeScript adds static types on top of JavaScript. The compiler catches whole categories of bugs before your code ever runs.\n\n\`\`\`ts\nfunction greet(name: string): string {\n  return \`Hello, \${name}\`;\n}\n\nconsole.log(greet('CodeForge'));\n\n// greet(42) ❌ the compiler rejects this before the code ever runs:\n// "Argument of type 'number' is not assignable to parameter of type 'string'"\n\`\`\`\n\nEvery valid JavaScript program is already valid TypeScript, you can adopt it gradually.\n\n*Note: the playground runs TypeScript by stripping the types, full type checking happens in your editor and compiler.*`
     ),
     quiz: {
       title: 'TypeScript Intro Quiz',
@@ -455,7 +455,7 @@ const cppLessons: SeedLesson[] = [
     title: 'Variables and Memory',
     content: lessonContent(
       'Variables and Memory',
-      `\`\`\`cpp\nint xp = 100;          // stack variable\nint* ptr = &xp;        // pointer to xp\nint& ref = xp;         // reference to xp\n\nstd::cout << *ptr;     // dereference: prints 100\n\`\`\`\n\nC++ gives you direct control over memory. Pointers hold addresses; references are aliases. With great power comes great responsibility — dangling pointers and leaks are on you.`
+      `\`\`\`cpp\nint xp = 100;          // stack variable\nint* ptr = &xp;        // pointer to xp\nint& ref = xp;         // reference to xp\n\nstd::cout << *ptr;     // dereference: prints 100\n\`\`\`\n\nC++ gives you direct control over memory. Pointers hold addresses; references are aliases. With great power comes great responsibility, dangling pointers and leaks are on you.`
     ),
     quiz: {
       title: 'Memory Quiz',
@@ -481,7 +481,7 @@ const cppLessons: SeedLesson[] = [
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }> = {
   nodejs: {
     title: 'Node.js Backend Fundamentals',
-    description: 'From your first console.log to a deployed REST API with authentication — the complete Node.js foundation.',
+    description: 'From your first console.log to a deployed REST API with authentication, the complete Node.js foundation.',
     lessons: nodeLessons,
   },
   python: {
@@ -491,7 +491,7 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
   },
   javascript: {
     title: 'Modern JavaScript Essentials',
-    description: 'DOM manipulation, array methods, and async programming — everything the modern web is built on.',
+    description: 'DOM manipulation, array methods, and async programming, everything the modern web is built on.',
     lessons: jsLessons,
   },
   typescript: {
@@ -501,7 +501,7 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
   },
   cpp: {
     title: 'C++ Foundations',
-    description: 'Compiled programming, pointers, and memory — the bedrock of systems development.',
+    description: 'Compiled programming, pointers, and memory, the bedrock of systems development.',
     lessons: cppLessons,
   },
 };

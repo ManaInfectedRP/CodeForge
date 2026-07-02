@@ -43,7 +43,7 @@ export function ChoosePaths() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-12">
       <h1 className="text-3xl font-bold">What do you want to learn?</h1>
-      <p className="mt-2 text-slate-400">Pick one or more learning paths — you can change these anytime.</p>
+      <p className="mt-2 text-slate-400">Pick one or more learning paths, you can change these anytime.</p>
 
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {paths.map((p) => (

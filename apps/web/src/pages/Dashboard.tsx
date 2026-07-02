@@ -85,7 +85,7 @@ export function Dashboard() {
                   <Link to={`/lessons/${l.lessonId}`} className="font-medium hover:underline">
                     {l.lessonTitle}
                   </Link>
-                  <span className="text-slate-500"> — {l.courseTitle}</span>
+                  <span className="text-slate-500">, {l.courseTitle}</span>
                 </li>
               ))}
             </ul>
