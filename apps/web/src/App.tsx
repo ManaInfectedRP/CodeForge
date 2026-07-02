@@ -18,7 +18,11 @@ import { Achievements } from './pages/Achievements';
 import { TeachCourses } from './pages/TeachCourses';
 import { TeachCourseEditor } from './pages/TeachCourseEditor';
 import { TeachLessonEditor } from './pages/TeachLessonEditor';
+import { TeachChallenges } from './pages/TeachChallenges';
+import { TeachChallengeEditor } from './pages/TeachChallengeEditor';
+import { TeachGuide } from './pages/TeachGuide';
 import { AdminReview } from './pages/AdminReview';
+import { AdminChallengeReview } from './pages/AdminChallengeReview';
 
 export function App() {
   return (
@@ -44,9 +48,13 @@ export function App() {
             <Route path="/teach" element={<TeachCourses />} />
             <Route path="/teach/courses/:id" element={<TeachCourseEditor />} />
             <Route path="/teach/lessons/:id" element={<TeachLessonEditor />} />
+            <Route path="/teach/challenges" element={<TeachChallenges />} />
+            <Route path="/teach/challenges/:id" element={<TeachChallengeEditor />} />
+            <Route path="/teach/guide" element={<TeachGuide />} />
           </Route>
           <Route element={<RoleRoute roles={['ADMIN']} />}>
             <Route path="/admin" element={<AdminReview />} />
+            <Route path="/admin/challenges" element={<AdminChallengeReview />} />
           </Route>
           <Route path="*" element={<main className="p-16 text-center text-slate-400">Page not found</main>} />
         </Routes>

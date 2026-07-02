@@ -747,7 +747,15 @@ async function seedChallenges() {
     if (existing) {
       await prisma.challenge.update({
         where: { slug: c.slug },
-        data: { title: c.title, difficulty: c.difficulty, languages: c.languages, prompt: c.prompt, order: i },
+        data: {
+          title: c.title,
+          difficulty: c.difficulty,
+          languages: c.languages,
+          prompt: c.prompt,
+          order: i,
+          status: 'PUBLISHED',
+          instructorId: null,
+        },
       });
       continue;
     }
@@ -761,6 +769,8 @@ async function seedChallenges() {
         entryPoint: c.entryPoint,
         starterCode: c.starterCode,
         order: i,
+        status: 'PUBLISHED',
+        instructorId: null,
         testCases: {
           create: c.testCases.map((tc, ti) => ({
             input: tc.input as Prisma.InputJsonValue,

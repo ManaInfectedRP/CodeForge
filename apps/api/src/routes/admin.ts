@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { AdminCourseDto } from '@codeforge/shared';
+import type { AdminChallengeDto, AdminCourseDto } from '@codeforge/shared';
 import { prisma } from '../lib/prisma.ts';
 import { h } from '../lib/helpers.ts';
 import { requireAuth, requireRole } from '../middleware/auth.ts';
@@ -87,6 +87,82 @@ adminRouter.post(
 
     await prisma.course.update({
       where: { id: course.id },
+      data: { status: 'DRAFT', reviewNote: note ?? null },
+    });
+    res.json({ status: 'DRAFT' });
+  })
+);
+
+adminRouter.get(
+  '/challenges',
+  h(async (req, res) => {
+    const status = statusFilter.parse(
+      typeof req.query.status === 'string' && req.query.status !== '' ? req.query.status : undefined
+    );
+    const challenges = await prisma.challenge.findMany({
+      where: status ? { status } : {},
+      include: {
+        instructor: { select: { username: true } },
+        _count: { select: { testCases: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    const body: AdminChallengeDto[] = challenges.map((c) => ({
+      id: c.id,
+      title: c.title,
+      difficulty: c.difficulty,
+      languages: c.languages,
+      instructorName: c.instructor?.username ?? 'CodeForge Team',
+      status: c.status,
+      reviewNote: c.reviewNote,
+      testCaseCount: c._count.testCases,
+      createdAt: c.createdAt.toISOString(),
+    }));
+    res.json(body);
+  })
+);
+
+adminRouter.post(
+  '/challenges/:id/approve',
+  h(async (req, res) => {
+    const challenge = await prisma.challenge.findUnique({ where: { id: req.params.id } });
+    if (!challenge) throw new HttpError(404, 'Challenge not found');
+    if (challenge.status !== 'PENDING_REVIEW') throw new HttpError(400, 'Challenge is not pending review');
+
+    await prisma.challenge.update({
+      where: { id: challenge.id },
+      data: { status: 'PUBLISHED', reviewNote: null },
+    });
+    res.json({ status: 'PUBLISHED' });
+  })
+);
+
+adminRouter.post(
+  '/challenges/:id/reject',
+  h(async (req, res) => {
+    const { note } = rejectSchema.parse(req.body ?? {});
+    const challenge = await prisma.challenge.findUnique({ where: { id: req.params.id } });
+    if (!challenge) throw new HttpError(404, 'Challenge not found');
+    if (challenge.status !== 'PENDING_REVIEW') throw new HttpError(400, 'Challenge is not pending review');
+
+    await prisma.challenge.update({
+      where: { id: challenge.id },
+      data: { status: 'DRAFT', reviewNote: note ?? null },
+    });
+    res.json({ status: 'DRAFT' });
+  })
+);
+
+adminRouter.post(
+  '/challenges/:id/unpublish',
+  h(async (req, res) => {
+    const { note } = rejectSchema.parse(req.body ?? {});
+    const challenge = await prisma.challenge.findUnique({ where: { id: req.params.id } });
+    if (!challenge) throw new HttpError(404, 'Challenge not found');
+    if (challenge.status !== 'PUBLISHED') throw new HttpError(400, 'Challenge is not published');
+
+    await prisma.challenge.update({
+      where: { id: challenge.id },
       data: { status: 'DRAFT', reviewNote: note ?? null },
     });
     res.json({ status: 'DRAFT' });

@@ -45,6 +45,12 @@ enum AchievementMetric {
   CHALLENGES_SOLVED
 }
 
+enum ChallengeStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+}
+
 model User {
   id             String           @id @default(cuid())
   username       String           @unique
@@ -64,6 +70,7 @@ model User {
   coursesTaught  Course[]         @relation("InstructorCourses")
   challengeSubmissions ChallengeSubmission[]
   achievements         UserAchievement[]
+  challengesAuthored   Challenge[]           @relation("InstructorChallenges")
 }
 
 model LearningPath {
@@ -174,17 +181,22 @@ model LessonProgress {
 }
 
 model Challenge {
-  id          String                @id @default(cuid())
-  slug        String                @unique
-  title       String
-  difficulty  ChallengeDifficulty
-  languages   ChallengeLanguage[]
-  prompt      String
-  entryPoint  String
-  starterCode Json
-  order       Int                   @default(0)
-  testCases   ChallengeTestCase[]
-  submissions ChallengeSubmission[]
+  id           String                @id @default(cuid())
+  slug         String                @unique
+  title        String
+  difficulty   ChallengeDifficulty
+  languages    ChallengeLanguage[]
+  prompt       String
+  entryPoint   String
+  starterCode  Json
+  order        Int                   @default(0)
+  status       ChallengeStatus       @default(DRAFT)
+  reviewNote   String?
+  instructorId String?
+  createdAt    DateTime              @default(now())
+  instructor   User?                 @relation("InstructorChallenges", fields: [instructorId], references: [id])
+  testCases    ChallengeTestCase[]
+  submissions  ChallengeSubmission[]
 }
 
 model ChallengeTestCase {

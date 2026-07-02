@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Dropdown, dropdownItemClass } from './Dropdown';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -13,77 +14,92 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link to={user ? '/dashboard' : '/'} className="flex items-center gap-2.5 text-lg font-bold">
+        <Link to={user ? '/dashboard' : '/'} className="flex shrink-0 items-center gap-2.5 text-lg font-bold">
           <img src="/logo.png" alt="CodeForge Academy" className="h-9 w-9 rounded-lg object-cover" />
-          <span>
+          <span className="hidden sm:inline">
             CodeForge <span className="text-forge-500">Academy</span>
           </span>
         </Link>
 
-        <nav className="flex items-center gap-1">
-          {user ? (
-            <>
-              <NavLink to="/dashboard" className={navLinkClass}>
-                Dashboard
+        {user ? (
+          <div className="flex items-center gap-1">
+            <NavLink to="/dashboard" className={navLinkClass}>
+              Dashboard
+            </NavLink>
+            <NavLink to="/courses" className={navLinkClass}>
+              Courses
+            </NavLink>
+            <NavLink to="/challenges" className={navLinkClass}>
+              💻 Challenges
+            </NavLink>
+
+            <Dropdown trigger="More">
+              <NavLink to="/paths" className={dropdownItemClass}>
+                🧭 Learning paths
               </NavLink>
-              <NavLink to="/courses" className={navLinkClass}>
-                Courses
-              </NavLink>
-              <NavLink to="/paths" className={navLinkClass}>
-                Paths
-              </NavLink>
-              <NavLink to="/challenges" className={navLinkClass}>
-                💻 Challenges
-              </NavLink>
-              <NavLink to="/leaderboard" className={navLinkClass}>
+              <NavLink to="/leaderboard" className={dropdownItemClass}>
                 🏆 Leaderboard
               </NavLink>
-              <NavLink to="/achievements" className={navLinkClass}>
+              <NavLink to="/achievements" className={dropdownItemClass}>
                 🎖️ Achievements
               </NavLink>
-              {(user.role === 'INSTRUCTOR' || user.role === 'ADMIN') && (
-                <NavLink to="/teach" className={navLinkClass}>
-                  Teach
+            </Dropdown>
+
+            {(user.role === 'INSTRUCTOR' || user.role === 'ADMIN') && (
+              <Dropdown trigger="Manage">
+                <NavLink to="/teach" className={dropdownItemClass}>
+                  ✍️ Teach
                 </NavLink>
-              )}
-              {user.role === 'ADMIN' && (
-                <NavLink to="/admin" className={navLinkClass}>
-                  Review
+                <NavLink to="/teach/guide" className={dropdownItemClass}>
+                  📖 Instructor guide
                 </NavLink>
-              )}
-              <div className="ml-3 flex items-center gap-3 border-l border-slate-800 pl-4">
-                <span className="text-sm text-amber-400" title="XP">
-                  ⚡ {user.xp} XP
+                {user.role === 'ADMIN' && (
+                  <NavLink to="/admin" className={dropdownItemClass}>
+                    🛡️ Review
+                  </NavLink>
+                )}
+              </Dropdown>
+            )}
+
+            <div className="ml-2 flex items-center gap-2 border-l border-slate-800 pl-3">
+              <span className="hidden items-center gap-2.5 rounded-lg bg-slate-900 px-3 py-1.5 text-sm md:flex">
+                <span className="text-amber-400" title="XP">
+                  ⚡ {user.xp}
                 </span>
-                <span className="text-sm text-orange-400" title="Daily streak">
+                <span className="text-orange-400" title="Daily streak">
                   🔥 {user.streak}
                 </span>
-                <span className="hidden text-sm text-slate-300 sm:inline">{user.username}</span>
+              </span>
+
+              <Dropdown align="right" trigger={<span className="max-w-36 truncate">{user.username}</span>}>
+                <div className="border-b border-slate-800 px-4 py-2 text-xs text-slate-500 md:hidden">
+                  <span className="text-amber-400">⚡ {user.xp} XP</span> · <span className="text-orange-400">🔥 {user.streak} streak</span>
+                </div>
                 <button
                   onClick={() => {
                     logout();
                     navigate('/');
                   }}
-                  className="rounded-lg px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-white"
+                  className="block w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-slate-800/60 hover:text-white"
                 >
                   Log out
                 </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <NavLink to="/login" className={navLinkClass}>
-                Log in
-              </NavLink>
-              <Link
-                to="/register"
-                className="ml-2 rounded-lg bg-forge-600 px-4 py-2 text-sm font-semibold text-white hover:bg-forge-500"
-              >
-                Get started
-              </Link>
-            </>
-          )}
-        </nav>
+              </Dropdown>
+            </div>
+          </div>
+        ) : (
+          <nav className="flex items-center gap-1">
+            <NavLink to="/login" className={navLinkClass}>
+              Log in
+            </NavLink>
+            <Link
+              to="/register"
+              className="ml-2 rounded-lg bg-forge-600 px-4 py-2 text-sm font-semibold text-white hover:bg-forge-500"
+            >
+              Get started
+            </Link>
+          </nav>
+        )}
       </div>
     </header>
   );

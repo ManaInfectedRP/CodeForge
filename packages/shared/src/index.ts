@@ -234,6 +234,43 @@ export interface ChallengeSubmissionDto {
   xpAwarded: number;
 }
 
+export type ChallengeStatus = 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED';
+
+export interface TeachChallengeSummaryDto {
+  id: string;
+  title: string;
+  difficulty: ChallengeDifficulty;
+  languages: ChallengeLanguage[];
+  status: ChallengeStatus;
+  reviewNote: string | null;
+  testCaseCount: number;
+}
+
+export interface ChallengeTestCaseEditDto {
+  input: unknown[];
+  expectedOutput: unknown;
+  isHidden: boolean;
+}
+
+export interface TeachChallengeDetailDto extends TeachChallengeSummaryDto {
+  prompt: string;
+  entryPoint: string;
+  starterCode: Partial<Record<'python' | 'javascript' | 'typescript', string>>;
+  testCases: ChallengeTestCaseEditDto[];
+}
+
+export interface AdminChallengeDto {
+  id: string;
+  title: string;
+  difficulty: ChallengeDifficulty;
+  languages: ChallengeLanguage[];
+  instructorName: string;
+  status: ChallengeStatus;
+  reviewNote: string | null;
+  testCaseCount: number;
+  createdAt: string;
+}
+
 // --- Leaderboard ---
 
 export interface LeaderboardEntryDto {

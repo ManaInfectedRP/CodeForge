@@ -14,7 +14,10 @@ challengesRouter.get(
   '/',
   optionalAuth,
   h(async (req, res) => {
-    const challenges = await prisma.challenge.findMany({ orderBy: { order: 'asc' } });
+    const challenges = await prisma.challenge.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { order: 'asc' },
+    });
     const solvedIds = req.auth
       ? new Set(
           (
@@ -47,7 +50,7 @@ challengesRouter.get(
       where: { id: req.params.id },
       include: { testCases: { orderBy: { order: 'asc' } } },
     });
-    if (!challenge) throw new HttpError(404, 'Challenge not found');
+    if (!challenge || challenge.status !== 'PUBLISHED') throw new HttpError(404, 'Challenge not found');
 
     const solved = req.auth
       ? (await prisma.challengeSubmission.findFirst({
@@ -96,7 +99,7 @@ challengesRouter.post(
       where: { id: req.params.id },
       include: { testCases: true },
     });
-    if (!challenge) throw new HttpError(404, 'Challenge not found');
+    if (!challenge || challenge.status !== 'PUBLISHED') throw new HttpError(404, 'Challenge not found');
     if (!challenge.languages.includes(language)) throw new HttpError(400, 'Unsupported language for this challenge');
 
     const byId = new Map(results.map((r) => [r.testCaseId, r]));

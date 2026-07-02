@@ -7,6 +7,7 @@ import { lessonsRouter } from './routes/lessons.ts';
 import { quizzesRouter } from './routes/quizzes.ts';
 import { meRouter } from './routes/me.ts';
 import { instructorRouter } from './routes/instructor.ts';
+import { instructorChallengesRouter } from './routes/instructorChallenges.ts';
 import { adminRouter } from './routes/admin.ts';
 import { challengesRouter } from './routes/challenges.ts';
 import { leaderboardRouter } from './routes/leaderboard.ts';
@@ -30,6 +31,7 @@ export function createApp() {
   app.use('/api/quizzes', quizzesRouter);
   app.use('/api/me', meRouter);
   app.use('/api/instructor', instructorRouter);
+  app.use('/api/instructor/challenges', instructorChallengesRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/challenges', challengesRouter);
   app.use('/api/leaderboard', leaderboardRouter);
