@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
+import { VerifyEmailBanner } from './components/VerifyEmailBanner';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleRoute } from './components/RoleRoute';
 import { Landing } from './pages/Landing';
@@ -23,16 +24,22 @@ import { TeachChallengeEditor } from './pages/TeachChallengeEditor';
 import { TeachGuide } from './pages/TeachGuide';
 import { AdminReview } from './pages/AdminReview';
 import { AdminChallengeReview } from './pages/AdminChallengeReview';
+import { VerifyEmail } from './pages/VerifyEmail';
+import { Certificate } from './pages/Certificate';
+import { VerifyCertificate } from './pages/VerifyCertificate';
 
 export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Navbar />
+        <VerifyEmailBanner />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/verify/:code" element={<VerifyCertificate />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/paths" element={<ChoosePaths />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -43,6 +50,7 @@ export function App() {
             <Route path="/challenges/:id" element={<ChallengeSolve />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/achievements" element={<Achievements />} />
+            <Route path="/certificates/:id" element={<Certificate />} />
           </Route>
           <Route element={<RoleRoute roles={['INSTRUCTOR', 'ADMIN']} />}>
             <Route path="/teach" element={<TeachCourses />} />

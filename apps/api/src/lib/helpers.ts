@@ -19,5 +19,6 @@ export function toUserDto(user: User): UserDto {
     bio: user.bio,
     xp: user.xp,
     streak: user.streak,
+    emailVerified: user.emailVerified,
   };
 }

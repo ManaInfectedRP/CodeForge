@@ -124,6 +124,26 @@ POST /api/admin/challenges/:id/reject       send back with feedback
 POST /api/admin/challenges/:id/unpublish    pull a live challenge
 ```
 
+## Deploying to Render.com
+
+The repo ships a [render.yaml](render.yaml) blueprint: push to GitHub, then in the Render
+dashboard choose **New → Blueprint** and point it at the repo. It provisions a PostgreSQL
+database and a single web service that runs the API and serves the built frontend
+(migrations + seed run during build). Set the `SMTP_*` env vars in the dashboard to send
+real verification emails — until then, verification links are printed to the service logs.
+Note: on the free plan uploaded lesson videos are lost on redeploy; enable the disk
+(commented in the blueprint) on a paid instance to persist them.
+
+## Certificates & email verification
+
+- Completing every lesson **and** passing every quiz in a course unlocks a
+  **Claim your certificate** button on the course page. The certificate page shows the
+  student, course, date, certificate ID, and a QR code; anyone can verify it (no login)
+  at `/verify/<code>` — the QR points there. Print/save as PDF from the certificate page.
+- New accounts get a verification email (24h-expiry, single-use token). Unverified users
+  see a banner with a resend button; `/verify-email?token=…` completes the flow. Without
+  SMTP configured the API logs the link to the console so local dev still works.
+
 ## Roadmap (from the full spec)
 
 Certificates with QR verification ·

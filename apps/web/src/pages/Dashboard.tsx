@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import type { DashboardDto } from '@codeforge/shared';
+import type { CertificateDto, DashboardDto } from '@codeforge/shared';
 import { api } from '../lib/api';
 import { ProgressBar } from '../components/ProgressBar';
 
 export function Dashboard() {
   const [data, setData] = useState<DashboardDto | null>(null);
+  const [certificates, setCertificates] = useState<CertificateDto[]>([]);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     api.get<DashboardDto>('/me/dashboard').then((res) => setData(res.data)).catch(() => setFailed(true));
+    api.get<CertificateDto[]>('/me/certificates').then((res) => setCertificates(res.data)).catch(() => {});
   }, []);
 
   if (failed) return <main className="p-12 text-center text-red-400">Could not load your dashboard.</main>;
@@ -71,6 +73,27 @@ export function Dashboard() {
           </div>
         )}
       </section>
+
+      {certificates.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-bold">🎓 Certificates</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {certificates.map((c) => (
+              <Link
+                key={c.id}
+                to={`/certificates/${c.id}`}
+                className="rounded-2xl border border-amber-700/40 bg-slate-900 p-4 transition-colors hover:border-amber-500/60"
+              >
+                <p className="text-xs uppercase tracking-wide text-slate-500">{c.pathName}</p>
+                <p className="mt-1 font-semibold">{c.courseTitle}</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Issued {new Date(c.issuedAt).toLocaleDateString()}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="mt-10 grid gap-8 lg:grid-cols-2">
         <section>

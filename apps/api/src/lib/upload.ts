@@ -4,7 +4,9 @@ import crypto from 'node:crypto';
 import multer from 'multer';
 import { HttpError } from '../middleware/errors.ts';
 
-export const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads');
+export const UPLOADS_DIR = process.env.UPLOADS_DIR
+  ? path.resolve(process.env.UPLOADS_DIR)
+  : path.resolve(process.cwd(), 'uploads');
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const ALLOWED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime']);

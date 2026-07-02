@@ -12,8 +12,11 @@ import { adminRouter } from './routes/admin.ts';
 import { challengesRouter } from './routes/challenges.ts';
 import { leaderboardRouter } from './routes/leaderboard.ts';
 import { achievementsRouter } from './routes/achievements.ts';
+import { certificatesRouter } from './routes/certificates.ts';
 import { errorHandler } from './middleware/errors.ts';
 import { UPLOADS_DIR } from './lib/upload.ts';
+import path from 'node:path';
+import fs from 'node:fs';
 
 export function createApp() {
   const app = express();
@@ -36,6 +39,18 @@ export function createApp() {
   app.use('/api/challenges', challengesRouter);
   app.use('/api/leaderboard', leaderboardRouter);
   app.use('/api/achievements', achievementsRouter);
+  app.use('/api/certificates', certificatesRouter);
+
+  // In production (single-service deploys like Render) the API also serves the
+  // built frontend; in dev, Vite serves it and this block is skipped.
+  const webDist = path.resolve(process.cwd(), '../web/dist');
+  if (fs.existsSync(webDist)) {
+    app.use(express.static(webDist));
+    app.use((req, res, next) => {
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next();
+      res.sendFile(path.join(webDist, 'index.html'));
+    });
+  }
 
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
   app.use(errorHandler);
