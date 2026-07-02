@@ -179,3 +179,90 @@ export interface AdminCourseDto {
   lessonCount: number;
   createdAt: string;
 }
+
+// --- Challenges ---
+
+export type ChallengeDifficulty = 'EASY' | 'MEDIUM' | 'HARD';
+
+export type ChallengeLanguage = 'PYTHON' | 'JAVASCRIPT' | 'TYPESCRIPT';
+
+export interface ChallengeSummaryDto {
+  id: string;
+  slug: string;
+  title: string;
+  difficulty: ChallengeDifficulty;
+  languages: ChallengeLanguage[];
+  solved: boolean;
+}
+
+export interface ChallengeExampleDto {
+  input: unknown[];
+  expectedOutput: unknown;
+}
+
+export interface ChallengeTestCaseInputDto {
+  id: string;
+  input: unknown[];
+  isHidden: boolean;
+}
+
+export interface ChallengeDetailDto extends ChallengeSummaryDto {
+  prompt: string;
+  entryPoint: string;
+  starterCode: Partial<Record<'python' | 'javascript' | 'typescript', string>>;
+  examples: ChallengeExampleDto[];
+  testCases: ChallengeTestCaseInputDto[];
+}
+
+export interface ChallengeSubmissionResultDto {
+  testCaseId: string;
+  actualOutput: unknown;
+  errored: boolean;
+  errorMessage: string | null;
+}
+
+export interface ChallengeSubmitRequestDto {
+  language: ChallengeLanguage;
+  results: ChallengeSubmissionResultDto[];
+}
+
+export interface ChallengeSubmissionDto {
+  passed: boolean;
+  testsPassed: number;
+  testsTotal: number;
+  failedTestCaseIds: string[];
+  xpAwarded: number;
+}
+
+// --- Leaderboard ---
+
+export interface LeaderboardEntryDto {
+  rank: number;
+  userId: string;
+  username: string;
+  avatarUrl: string | null;
+  xp: number;
+  streak: number;
+  challengesSolved: number;
+  isCurrentUser: boolean;
+}
+
+export interface LeaderboardDto {
+  entries: LeaderboardEntryDto[];
+}
+
+// --- Achievements ---
+
+export type AchievementMetric = 'XP' | 'STREAK' | 'LESSONS_COMPLETED' | 'QUIZZES_PASSED' | 'CHALLENGES_SOLVED';
+
+export interface AchievementDto {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  icon: string;
+  metric: AchievementMetric;
+  threshold: number;
+  unlocked: boolean;
+  unlockedAt: string | null;
+}

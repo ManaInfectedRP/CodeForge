@@ -1,4 +1,11 @@
-import { PrismaClient, QuestionType } from '@prisma/client';
+import {
+  PrismaClient,
+  QuestionType,
+  Prisma,
+  type AchievementMetric,
+  type ChallengeDifficulty,
+  type ChallengeLanguage,
+} from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -506,6 +513,275 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
   },
 };
 
+type SeedTestCase = { input: unknown[]; expectedOutput: unknown; isHidden: boolean };
+
+type SeedChallenge = {
+  slug: string;
+  title: string;
+  difficulty: ChallengeDifficulty;
+  languages: ChallengeLanguage[];
+  prompt: string;
+  entryPoint: string;
+  starterCode: Partial<Record<'python' | 'javascript' | 'typescript', string>>;
+  testCases: SeedTestCase[];
+};
+
+const ALL_LANGS: ChallengeLanguage[] = ['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT'];
+
+const challenges: SeedChallenge[] = [
+  {
+    slug: 'sum-two-numbers',
+    title: 'Sum Two Numbers',
+    difficulty: 'EASY',
+    languages: ALL_LANGS,
+    prompt: 'Write `solve(a, b)` that returns the sum of two numbers.',
+    entryPoint: 'solve',
+    starterCode: {
+      python: 'def solve(a, b):\n    pass\n',
+      javascript: 'function solve(a, b) {\n  \n}\n',
+      typescript: 'function solve(a: number, b: number): number {\n  \n}\n',
+    },
+    testCases: [
+      { input: [2, 3], expectedOutput: 5, isHidden: false },
+      { input: [-1, 1], expectedOutput: 0, isHidden: false },
+      { input: [100, 250], expectedOutput: 350, isHidden: true },
+    ],
+  },
+  {
+    slug: 'reverse-a-string',
+    title: 'Reverse a String',
+    difficulty: 'EASY',
+    languages: ALL_LANGS,
+    prompt: 'Write `solve(s)` that returns the string `s` reversed.',
+    entryPoint: 'solve',
+    starterCode: {
+      python: 'def solve(s):\n    pass\n',
+      javascript: 'function solve(s) {\n  \n}\n',
+      typescript: 'function solve(s: string): string {\n  \n}\n',
+    },
+    testCases: [
+      { input: ['hello'], expectedOutput: 'olleh', isHidden: false },
+      { input: ['a'], expectedOutput: 'a', isHidden: false },
+      { input: ['CodeForge'], expectedOutput: 'egroFedoC', isHidden: true },
+    ],
+  },
+  {
+    slug: 'count-vowels',
+    title: 'Count Vowels',
+    difficulty: 'EASY',
+    languages: ALL_LANGS,
+    prompt: 'Write `solve(s)` that returns the number of vowels (a, e, i, o, u, case-insensitive) in `s`.',
+    entryPoint: 'solve',
+    starterCode: {
+      python: 'def solve(s):\n    pass\n',
+      javascript: 'function solve(s) {\n  \n}\n',
+      typescript: 'function solve(s: string): number {\n  \n}\n',
+    },
+    testCases: [
+      { input: ['hello'], expectedOutput: 2, isHidden: false },
+      { input: ['sky'], expectedOutput: 0, isHidden: false },
+      { input: ['Programming'], expectedOutput: 3, isHidden: true },
+    ],
+  },
+  {
+    slug: 'find-the-maximum',
+    title: 'Find the Maximum',
+    difficulty: 'EASY',
+    languages: ALL_LANGS,
+    prompt: 'Write `solve(nums)` that returns the largest number in the list `nums`.',
+    entryPoint: 'solve',
+    starterCode: {
+      python: 'def solve(nums):\n    pass\n',
+      javascript: 'function solve(nums) {\n  \n}\n',
+      typescript: 'function solve(nums: number[]): number {\n  \n}\n',
+    },
+    testCases: [
+      { input: [[1, 5, 3]], expectedOutput: 5, isHidden: false },
+      { input: [[-2, -5, -1]], expectedOutput: -1, isHidden: false },
+      { input: [[42]], expectedOutput: 42, isHidden: true },
+    ],
+  },
+  {
+    slug: 'fizzbuzz-list',
+    title: 'FizzBuzz List',
+    difficulty: 'MEDIUM',
+    languages: ALL_LANGS,
+    prompt:
+      'Write `solve(n)` that returns a list of strings for the numbers 1 to `n` (inclusive): "Fizz" for multiples of 3, "Buzz" for multiples of 5, "FizzBuzz" for multiples of both, otherwise the number as a string.',
+    entryPoint: 'solve',
+    starterCode: {
+      python: 'def solve(n):\n    pass\n',
+      javascript: 'function solve(n) {\n  \n}\n',
+      typescript: 'function solve(n: number): string[] {\n  \n}\n',
+    },
+    testCases: [
+      { input: [5], expectedOutput: ['1', '2', 'Fizz', '4', 'Buzz'], isHidden: false },
+      { input: [3], expectedOutput: ['1', '2', 'Fizz'], isHidden: false },
+      {
+        input: [15],
+        expectedOutput: [
+          '1', '2', 'Fizz', '4', 'Buzz', 'Fizz', '7', '8', 'Fizz', 'Buzz', '11', 'Fizz', '13', '14', 'FizzBuzz',
+        ],
+        isHidden: true,
+      },
+    ],
+  },
+  {
+    slug: 'is-palindrome',
+    title: 'Is Palindrome',
+    difficulty: 'MEDIUM',
+    languages: ALL_LANGS,
+    prompt: 'Write `solve(s)` that returns `true` if `s` reads the same forwards and backwards, `false` otherwise.',
+    entryPoint: 'solve',
+    starterCode: {
+      python: 'def solve(s):\n    pass\n',
+      javascript: 'function solve(s) {\n  \n}\n',
+      typescript: 'function solve(s: string): boolean {\n  \n}\n',
+    },
+    testCases: [
+      { input: ['level'], expectedOutput: true, isHidden: false },
+      { input: ['hello'], expectedOutput: false, isHidden: false },
+      { input: ['A'], expectedOutput: true, isHidden: true },
+    ],
+  },
+  {
+    slug: 'two-sum-indices',
+    title: 'Two Sum Indices',
+    difficulty: 'MEDIUM',
+    languages: ALL_LANGS,
+    prompt:
+      'Write `solve(nums, target)` that returns the indices `[i, j]` (i < j) of the two numbers in `nums` that add up to `target`. Assume exactly one solution exists.',
+    entryPoint: 'solve',
+    starterCode: {
+      python: 'def solve(nums, target):\n    pass\n',
+      javascript: 'function solve(nums, target) {\n  \n}\n',
+      typescript: 'function solve(nums: number[], target: number): number[] {\n  \n}\n',
+    },
+    testCases: [
+      { input: [[2, 7, 11, 15], 9], expectedOutput: [0, 1], isHidden: false },
+      { input: [[3, 2, 4], 6], expectedOutput: [1, 2], isHidden: false },
+      { input: [[1, 5, 3, 7], 10], expectedOutput: [2, 3], isHidden: true },
+    ],
+  },
+  {
+    slug: 'fibonacci-number',
+    title: 'Fibonacci Number',
+    difficulty: 'MEDIUM',
+    languages: ALL_LANGS,
+    prompt: 'Write `solve(n)` that returns the `n`th Fibonacci number (0-indexed: fib(0) = 0, fib(1) = 1).',
+    entryPoint: 'solve',
+    starterCode: {
+      python: 'def solve(n):\n    pass\n',
+      javascript: 'function solve(n) {\n  \n}\n',
+      typescript: 'function solve(n: number): number {\n  \n}\n',
+    },
+    testCases: [
+      { input: [0], expectedOutput: 0, isHidden: false },
+      { input: [1], expectedOutput: 1, isHidden: false },
+      { input: [10], expectedOutput: 55, isHidden: true },
+    ],
+  },
+  {
+    slug: 'valid-anagram',
+    title: 'Valid Anagram',
+    difficulty: 'HARD',
+    languages: ALL_LANGS,
+    prompt: 'Write `solve(s1, s2)` that returns `true` if `s2` is an anagram of `s1` (same letters, same counts), `false` otherwise.',
+    entryPoint: 'solve',
+    starterCode: {
+      python: 'def solve(s1, s2):\n    pass\n',
+      javascript: 'function solve(s1, s2) {\n  \n}\n',
+      typescript: 'function solve(s1: string, s2: string): boolean {\n  \n}\n',
+    },
+    testCases: [
+      { input: ['listen', 'silent'], expectedOutput: true, isHidden: false },
+      { input: ['rat', 'car'], expectedOutput: false, isHidden: false },
+      { input: ['anagram', 'nagaram'], expectedOutput: true, isHidden: true },
+    ],
+  },
+  {
+    slug: 'binary-search',
+    title: 'Binary Search',
+    difficulty: 'HARD',
+    languages: ALL_LANGS,
+    prompt: 'Write `solve(nums, target)` that returns the index of `target` in the sorted list `nums`, or `-1` if it is not present.',
+    entryPoint: 'solve',
+    starterCode: {
+      python: 'def solve(nums, target):\n    pass\n',
+      javascript: 'function solve(nums, target) {\n  \n}\n',
+      typescript: 'function solve(nums: number[], target: number): number {\n  \n}\n',
+    },
+    testCases: [
+      { input: [[1, 3, 5, 7, 9], 5], expectedOutput: 2, isHidden: false },
+      { input: [[1, 3, 5, 7, 9], 4], expectedOutput: -1, isHidden: false },
+      { input: [[2, 4, 6, 8, 10, 12], 12], expectedOutput: 5, isHidden: true },
+    ],
+  },
+];
+
+const achievements: {
+  key: string;
+  name: string;
+  description: string;
+  icon: string;
+  metric: AchievementMetric;
+  threshold: number;
+}[] = [
+  { key: 'first_lesson', name: 'First Steps', description: 'Complete your first lesson.', icon: '📘', metric: 'LESSONS_COMPLETED', threshold: 1 },
+  { key: 'lessons_10', name: 'Halfway Hero', description: 'Complete 10 lessons.', icon: '📚', metric: 'LESSONS_COMPLETED', threshold: 10 },
+  { key: 'first_quiz', name: 'Quiz Whiz', description: 'Pass your first quiz.', icon: '📝', metric: 'QUIZZES_PASSED', threshold: 1 },
+  { key: 'quizzes_10', name: 'Quiz Master', description: 'Pass 10 quizzes.', icon: '🧠', metric: 'QUIZZES_PASSED', threshold: 10 },
+  { key: 'first_challenge', name: 'Code Warrior', description: 'Solve your first coding challenge.', icon: '💻', metric: 'CHALLENGES_SOLVED', threshold: 1 },
+  { key: 'challenges_5', name: 'Challenge Crusher', description: 'Solve 5 coding challenges.', icon: '🏆', metric: 'CHALLENGES_SOLVED', threshold: 5 },
+  { key: 'challenges_10', name: 'Challenge Champion', description: 'Solve 10 coding challenges.', icon: '👑', metric: 'CHALLENGES_SOLVED', threshold: 10 },
+  { key: 'xp_100', name: 'XP Rookie', description: 'Earn 100 XP.', icon: '⚡', metric: 'XP', threshold: 100 },
+  { key: 'xp_500', name: 'XP Grinder', description: 'Earn 500 XP.', icon: '⚡', metric: 'XP', threshold: 500 },
+  { key: 'xp_1000', name: 'XP Legend', description: 'Earn 1000 XP.', icon: '🌟', metric: 'XP', threshold: 1000 },
+  { key: 'streak_3', name: 'On Fire', description: 'Reach a 3-day streak.', icon: '🔥', metric: 'STREAK', threshold: 3 },
+  { key: 'streak_7', name: 'Unstoppable', description: 'Reach a 7-day streak.', icon: '🔥', metric: 'STREAK', threshold: 7 },
+];
+
+async function seedChallenges() {
+  for (const [i, c] of challenges.entries()) {
+    const existing = await prisma.challenge.findUnique({ where: { slug: c.slug } });
+    if (existing) {
+      await prisma.challenge.update({
+        where: { slug: c.slug },
+        data: { title: c.title, difficulty: c.difficulty, languages: c.languages, prompt: c.prompt, order: i },
+      });
+      continue;
+    }
+    await prisma.challenge.create({
+      data: {
+        slug: c.slug,
+        title: c.title,
+        difficulty: c.difficulty,
+        languages: c.languages,
+        prompt: c.prompt,
+        entryPoint: c.entryPoint,
+        starterCode: c.starterCode,
+        order: i,
+        testCases: {
+          create: c.testCases.map((tc, ti) => ({
+            input: tc.input as Prisma.InputJsonValue,
+            expectedOutput: tc.expectedOutput as Prisma.InputJsonValue,
+            isHidden: tc.isHidden,
+            order: ti,
+          })),
+        },
+      },
+    });
+  }
+  console.log(`  ✓ ${challenges.length} coding challenges`);
+}
+
+async function seedAchievements() {
+  for (const a of achievements) {
+    await prisma.achievement.upsert({ where: { key: a.key }, update: a, create: a });
+  }
+  console.log(`  ✓ ${achievements.length} achievements`);
+}
+
 async function main() {
   console.log('Seeding CodeForge Academy...');
 
@@ -612,6 +888,9 @@ async function main() {
     });
     console.log(`  ✓ ${courseSeed.title} (${courseSeed.lessons.length} lessons)`);
   }
+
+  await seedChallenges();
+  await seedAchievements();
 
   console.log('Seed complete.');
   console.log('Demo accounts: student@codeforge.dev / student123, instructor@codeforge.dev / instructor123, admin@codeforge.dev / admin123');

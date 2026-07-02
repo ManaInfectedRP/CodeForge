@@ -11,6 +11,10 @@ import { Dashboard } from './pages/Dashboard';
 import { Courses } from './pages/Courses';
 import { CourseDetail } from './pages/CourseDetail';
 import { Lesson } from './pages/Lesson';
+import { Challenges } from './pages/Challenges';
+import { ChallengeSolve } from './pages/ChallengeSolve';
+import { Leaderboard } from './pages/Leaderboard';
+import { Achievements } from './pages/Achievements';
 import { TeachCourses } from './pages/TeachCourses';
 import { TeachCourseEditor } from './pages/TeachCourseEditor';
 import { TeachLessonEditor } from './pages/TeachLessonEditor';
@@ -31,6 +35,10 @@ export function App() {
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
             <Route path="/lessons/:id" element={<Lesson />} />
+            <Route path="/challenges" element={<Challenges />} />
+            <Route path="/challenges/:id" element={<ChallengeSolve />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/achievements" element={<Achievements />} />
           </Route>
           <Route element={<RoleRoute roles={['INSTRUCTOR', 'ADMIN']} />}>
             <Route path="/teach" element={<TeachCourses />} />

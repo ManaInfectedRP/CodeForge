@@ -16,11 +16,8 @@ export function Landing() {
         <img
           src="/logo.png"
           alt="CodeForge Academy"
-          className="mx-auto mb-6 h-32 w-32 rounded-3xl object-cover shadow-lg shadow-forge-600/20"
+          className="mx-auto mb-6 h-64 w-64 rounded-3xl object-cover shadow-lg shadow-forge-600/20"
         />
-        <p className="mb-4 inline-block rounded-full border border-forge-500/40 bg-forge-900/30 px-4 py-1.5 text-sm text-forge-100">
-          🎓 Learn to code, one forge at a time
-        </p>
         <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight sm:text-6xl">
           Forge your future as a <span className="bg-gradient-to-r from-forge-500 to-emerald-400 bg-clip-text text-transparent">software developer</span>
         </h1>

@@ -32,6 +32,15 @@ export function Navbar() {
               <NavLink to="/paths" className={navLinkClass}>
                 Paths
               </NavLink>
+              <NavLink to="/challenges" className={navLinkClass}>
+                💻 Challenges
+              </NavLink>
+              <NavLink to="/leaderboard" className={navLinkClass}>
+                🏆 Leaderboard
+              </NavLink>
+              <NavLink to="/achievements" className={navLinkClass}>
+                🎖️ Achievements
+              </NavLink>
               {(user.role === 'INSTRUCTOR' || user.role === 'ADMIN') && (
                 <NavLink to="/teach" className={navLinkClass}>
                   Teach

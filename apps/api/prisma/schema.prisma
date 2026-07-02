@@ -25,6 +25,26 @@ enum CourseStatus {
   PUBLISHED
 }
 
+enum ChallengeDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ChallengeLanguage {
+  PYTHON
+  JAVASCRIPT
+  TYPESCRIPT
+}
+
+enum AchievementMetric {
+  XP
+  STREAK
+  LESSONS_COMPLETED
+  QUIZZES_PASSED
+  CHALLENGES_SOLVED
+}
+
 model User {
   id             String           @id @default(cuid())
   username       String           @unique
@@ -42,6 +62,8 @@ model User {
   lessonProgress LessonProgress[]
   quizAttempts   QuizAttempt[]
   coursesTaught  Course[]         @relation("InstructorCourses")
+  challengeSubmissions ChallengeSubmission[]
+  achievements         UserAchievement[]
 }
 
 model LearningPath {
@@ -149,4 +171,67 @@ model LessonProgress {
   lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@id([userId, lessonId])
+}
+
+model Challenge {
+  id          String                @id @default(cuid())
+  slug        String                @unique
+  title       String
+  difficulty  ChallengeDifficulty
+  languages   ChallengeLanguage[]
+  prompt      String
+  entryPoint  String
+  starterCode Json
+  order       Int                   @default(0)
+  testCases   ChallengeTestCase[]
+  submissions ChallengeSubmission[]
+}
+
+model ChallengeTestCase {
+  id             String    @id @default(cuid())
+  challengeId    String
+  input          Json
+  expectedOutput Json
+  isHidden       Boolean   @default(true)
+  order          Int
+  challenge      Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, order])
+}
+
+model ChallengeSubmission {
+  id          String            @id @default(cuid())
+  challengeId String
+  userId      String
+  language    ChallengeLanguage
+  passed      Boolean
+  testsPassed Int
+  testsTotal  Int
+  results     Json
+  createdAt   DateTime          @default(now())
+  challenge   Challenge         @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId, userId])
+}
+
+model Achievement {
+  id          String            @id @default(cuid())
+  key         String            @unique
+  name        String
+  description String
+  icon        String
+  metric      AchievementMetric
+  threshold   Int
+  unlocks     UserAchievement[]
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
 }

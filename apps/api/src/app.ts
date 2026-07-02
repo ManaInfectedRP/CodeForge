@@ -8,6 +8,9 @@ import { quizzesRouter } from './routes/quizzes.ts';
 import { meRouter } from './routes/me.ts';
 import { instructorRouter } from './routes/instructor.ts';
 import { adminRouter } from './routes/admin.ts';
+import { challengesRouter } from './routes/challenges.ts';
+import { leaderboardRouter } from './routes/leaderboard.ts';
+import { achievementsRouter } from './routes/achievements.ts';
 import { errorHandler } from './middleware/errors.ts';
 import { UPLOADS_DIR } from './lib/upload.ts';
 
@@ -28,6 +31,9 @@ export function createApp() {
   app.use('/api/me', meRouter);
   app.use('/api/instructor', instructorRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/api/challenges', challengesRouter);
+  app.use('/api/leaderboard', leaderboardRouter);
+  app.use('/api/achievements', achievementsRouter);
 
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
   app.use(errorHandler);
