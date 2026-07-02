@@ -34,6 +34,8 @@ Prerequisites: Node.js 20+, a running PostgreSQL server.
 
 On Windows, run it from Git Bash: `bash fastboot.sh`.
 
+**Stopping**: Ctrl+C often won't fully stop it on Windows — the server is spawned several process layers deep (`npm` → `concurrently` → `npm` → `tsx watch` → `node`), and Windows console control events don't reliably propagate through that many `cmd.exe`/`npm.cmd` wrappers under Git Bash, leaving an orphaned `node` process still holding the port. Run `npm run stop` (or `bash stop.sh`) to force-kill whatever's actually listening on 4000/5173.
+
 ### Manual steps
 
 ```bash
@@ -71,11 +73,11 @@ Open http://localhost:5173.
 - **Gamification**, XP for lessons (+10), first quiz pass (+25), and first challenge solve (+30), daily streak tracking
 - **Dashboard**, XP, streak, enrolled courses with completion %, recent activity, selected paths
 - **Code playground**, every python/js/ts code block in a lesson is an editable editor with Run/Reset and an output panel. Code executes in the student's browser, fully sandboxed: Python via Pyodide (CPython on WebAssembly, lazy-loaded from CDN on first run), JavaScript in a Web Worker with a 5s timeout, TypeScript stripped with Sucrase then run as JS. C++/bash blocks stay static.
-- **Coding challenges** (`/challenges`), 10 seeded problems (Easy/Medium/Hard) solvable in Python, JavaScript, or TypeScript. Submissions run client-side in the same sandbox as the playground, but grading is server-authoritative: expected outputs for hidden test cases never leave the API, only inputs do, mirroring how quiz answers are graded.
+- **Coding challenges** (`/challenges`), 10 seeded problems plus instructor-authored ones (Easy/Medium/Hard) solvable in Python, JavaScript, or TypeScript. Submissions run client-side in the same sandbox as the playground, but grading is server-authoritative: expected outputs for hidden test cases never leave the API, only inputs do, mirroring how quiz answers are graded.
 - **Leaderboard** (`/leaderboard`), top students ranked by XP with streak and challenges-solved columns
 - **Achievements** (`/achievements`), 12 badges that unlock automatically across XP, streak, lessons, quizzes, and challenges milestones
-- **Instructor authoring** (`/teach`), create draft courses, write markdown lessons with live preview, upload lesson videos, build quizzes (all three question types), reorder/delete lessons, submit for review
-- **Admin review** (`/admin`), approve or send back pending courses with feedback, unpublish live courses; only approved courses appear in the student catalog
+- **Instructor authoring** (`/teach`), create draft courses, write markdown lessons with live preview, upload lesson videos, build quizzes (all three question types), reorder/delete lessons, submit for review; create draft coding challenges with per-language starter code and manually-entered test cases, submit for review; a step-by-step **guide page** (`/teach/guide`) walks through both workflows
+- **Admin review** (`/admin`, `/admin/challenges`), approve or send back pending courses and challenges with feedback, unpublish live ones; only approved content appears to students
 
 ## API overview
 
@@ -99,19 +101,27 @@ GET  /api/leaderboard          top students by XP
 GET  /api/achievements         achievement definitions + my unlock status
 
 # Instructor (role: INSTRUCTOR or ADMIN)
-GET/POST /api/instructor/courses            list / create draft courses
-GET/PUT  /api/instructor/courses/:id        edit course details
-POST /api/instructor/courses/:id/submit     submit draft for review
-POST /api/instructor/courses/:id/lessons    add lesson
-GET/PUT/DELETE /api/instructor/lessons/:id  edit / remove lesson
-POST /api/instructor/lessons/:id/move       reorder lesson
-PUT  /api/instructor/lessons/:id/quiz       replace lesson quiz
+GET/POST /api/instructor/courses               list / create draft courses
+GET/PUT  /api/instructor/courses/:id           edit course details
+POST /api/instructor/courses/:id/submit        submit draft for review
+POST /api/instructor/courses/:id/lessons       add lesson
+GET/PUT/DELETE /api/instructor/lessons/:id     edit / remove lesson
+POST /api/instructor/lessons/:id/move          reorder lesson
+PUT  /api/instructor/lessons/:id/quiz          replace lesson quiz
+GET/POST /api/instructor/challenges            list / create draft challenges
+GET/PUT  /api/instructor/challenges/:id        edit challenge details
+PUT  /api/instructor/challenges/:id/test-cases replace all test cases
+POST /api/instructor/challenges/:id/submit     submit draft for review
 
 # Admin (role: ADMIN)
 GET  /api/admin/courses?status=             all courses by status
 POST /api/admin/courses/:id/approve         publish
 POST /api/admin/courses/:id/reject          send back with feedback
 POST /api/admin/courses/:id/unpublish       pull a live course
+GET  /api/admin/challenges?status=          all challenges by status
+POST /api/admin/challenges/:id/approve      publish
+POST /api/admin/challenges/:id/reject       send back with feedback
+POST /api/admin/challenges/:id/unpublish    pull a live challenge
 ```
 
 ## Roadmap (from the full spec)
