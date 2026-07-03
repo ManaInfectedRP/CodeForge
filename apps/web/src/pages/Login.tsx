@@ -69,10 +69,6 @@ export function Login() {
           Create an account
         </Link>
       </p>
-      <p className="mt-3 rounded-lg border border-slate-800 bg-slate-900 p-3 text-xs text-slate-500">
-        Demo account: <code className="text-slate-300">student@codeforge.dev</code> /{' '}
-        <code className="text-slate-300">student123</code>
-      </p>
     </main>
   );
 }
