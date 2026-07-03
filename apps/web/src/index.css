@@ -15,8 +15,12 @@ body {
 
 .prose-lesson h1 { @apply text-3xl font-bold mt-2 mb-4; }
 .prose-lesson h2 { @apply text-xl font-semibold mt-6 mb-3 text-forge-100; }
+.prose-lesson h3 { @apply text-lg font-semibold mt-5 mb-2 text-slate-100; }
+.prose-lesson h4 { @apply text-base font-semibold mt-4 mb-2 text-slate-100; }
+.prose-lesson h5, .prose-lesson h6 { @apply text-sm font-semibold mt-4 mb-2 text-slate-200 uppercase tracking-wide; }
 .prose-lesson p { @apply my-3 leading-relaxed text-slate-300; }
 .prose-lesson ul, .prose-lesson ol { @apply my-3 ml-6 list-disc space-y-1 text-slate-300; }
+.prose-lesson ol { @apply list-decimal; }
 .prose-lesson code { @apply bg-slate-800 text-emerald-300 rounded px-1.5 py-0.5 text-sm; }
 .prose-lesson pre { @apply bg-slate-900 border border-slate-800 rounded-xl p-4 my-4 overflow-x-auto; }
 .prose-lesson pre code { @apply bg-transparent p-0 text-sm leading-relaxed; }
@@ -26,6 +30,41 @@ body {
 .prose-lesson td { @apply border border-slate-700 px-3 py-2 text-slate-400; }
 .prose-lesson tbody tr:nth-child(even) { @apply bg-slate-900/40; }
 .prose-lesson strong { @apply text-slate-100; }
+.prose-lesson del { @apply text-slate-500; }
+.prose-lesson hr { @apply my-6 border-slate-800; }
+.prose-lesson a { @apply text-forge-500 underline underline-offset-2 hover:text-forge-100; }
+.prose-lesson blockquote {
+  @apply my-4 border-l-4 border-slate-700 pl-4 italic text-slate-400;
+}
+.prose-lesson blockquote p { @apply text-slate-400; }
+.prose-lesson img { @apply my-4 max-w-full rounded-xl border border-slate-800; }
+
+/* GFM task lists: `- [ ]` / `- [x]` render as disabled checkboxes, not bullets */
+.prose-lesson .contains-task-list { @apply ml-0 list-none space-y-1.5; }
+.prose-lesson .task-list-item { @apply flex items-start gap-2; }
+.prose-lesson .task-list-item input[type='checkbox'] {
+  @apply mt-1 h-4 w-4 shrink-0 rounded border-slate-600 bg-slate-800 accent-forge-600;
+}
+
+/* GitHub-style alert callouts: > [!NOTE] / [!TIP] / [!IMPORTANT] / [!WARNING] / [!CAUTION] */
+.prose-lesson .markdown-alert {
+  @apply my-4 rounded-lg border-l-4 bg-slate-900 py-2.5 pl-4 pr-4 text-sm text-slate-300;
+}
+.prose-lesson .markdown-alert > :last-child { @apply mb-0; }
+.prose-lesson .markdown-alert-title {
+  @apply mb-1 flex items-center gap-2 text-sm font-semibold;
+}
+.prose-lesson .markdown-alert-title .octicon { @apply h-4 w-4 shrink-0 fill-current; }
+.prose-lesson .markdown-alert-note { @apply border-sky-500; }
+.prose-lesson .markdown-alert-note .markdown-alert-title { @apply text-sky-400; }
+.prose-lesson .markdown-alert-tip { @apply border-emerald-500; }
+.prose-lesson .markdown-alert-tip .markdown-alert-title { @apply text-emerald-400; }
+.prose-lesson .markdown-alert-important { @apply border-purple-500; }
+.prose-lesson .markdown-alert-important .markdown-alert-title { @apply text-purple-400; }
+.prose-lesson .markdown-alert-warning { @apply border-amber-500; }
+.prose-lesson .markdown-alert-warning .markdown-alert-title { @apply text-amber-400; }
+.prose-lesson .markdown-alert-caution { @apply border-red-500; }
+.prose-lesson .markdown-alert-caution .markdown-alert-title { @apply text-red-400; }
 
 /* Certificate printing: hide chrome, keep the sheet */
 @media print {
