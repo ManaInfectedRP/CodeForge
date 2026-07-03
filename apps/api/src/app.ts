@@ -13,6 +13,7 @@ import { challengesRouter } from './routes/challenges.ts';
 import { leaderboardRouter } from './routes/leaderboard.ts';
 import { achievementsRouter } from './routes/achievements.ts';
 import { certificatesRouter } from './routes/certificates.ts';
+import { chatRouter } from './routes/chat.ts';
 import { errorHandler } from './middleware/errors.ts';
 import { UPLOADS_DIR } from './lib/upload.ts';
 import path from 'node:path';
@@ -40,6 +41,7 @@ export function createApp() {
   app.use('/api/leaderboard', leaderboardRouter);
   app.use('/api/achievements', achievementsRouter);
   app.use('/api/certificates', certificatesRouter);
+  app.use('/api/chat', chatRouter);
 
   // In production (single-service deploys like Render) the API also serves the
   // built frontend; in dev, Vite serves it and this block is skipped.

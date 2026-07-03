@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import Editor from 'react-simple-code-editor';
 import { isPyodideLoading, normalizeLang, runJs, runPython, type RunnableLang } from '../lib/sandbox';
+import { highlight } from '../lib/prism';
 
 export { normalizeLang, type RunnableLang };
 
@@ -49,8 +51,6 @@ export function CodePlayground({ language, initialCode }: { language: RunnableLa
     setError(null);
   }
 
-  const lines = code.split('\n').length;
-
   return (
     <div className="my-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-2">
@@ -75,13 +75,20 @@ export function CodePlayground({ language, initialCode }: { language: RunnableLa
         </div>
       </div>
 
-      <textarea
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        rows={Math.min(Math.max(lines, 3), 24)}
-        spellCheck={false}
-        className="block w-full resize-y bg-slate-950 p-4 font-mono text-sm leading-relaxed text-slate-200 focus:outline-none"
-      />
+      <div className="max-h-[36rem] min-h-[4.5rem] overflow-auto bg-slate-950">
+        <Editor
+          value={code}
+          onValueChange={setCode}
+          highlight={(c) => highlight(c, language)}
+          padding={16}
+          textareaClassName="focus:outline-none"
+          style={{
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+            fontSize: '0.875rem',
+            lineHeight: 1.625,
+          }}
+        />
+      </div>
 
       {status && <div className="border-t border-slate-800 px-4 py-2 text-xs text-forge-500">{status}</div>}
 

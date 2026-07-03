@@ -24,7 +24,10 @@ import { TeachChallengeEditor } from './pages/TeachChallengeEditor';
 import { TeachGuide } from './pages/TeachGuide';
 import { AdminReview } from './pages/AdminReview';
 import { AdminChallengeReview } from './pages/AdminChallengeReview';
+import { AdminUsers } from './pages/AdminUsers';
 import { VerifyEmail } from './pages/VerifyEmail';
+import { Chat } from './pages/Chat';
+import { Settings } from './pages/Settings';
 import { Certificate } from './pages/Certificate';
 import { VerifyCertificate } from './pages/VerifyCertificate';
 
@@ -51,6 +54,8 @@ export function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/achievements" element={<Achievements />} />
             <Route path="/certificates/:id" element={<Certificate />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
           <Route element={<RoleRoute roles={['INSTRUCTOR', 'ADMIN']} />}>
             <Route path="/teach" element={<TeachCourses />} />
@@ -63,6 +68,7 @@ export function App() {
           <Route element={<RoleRoute roles={['ADMIN']} />}>
             <Route path="/admin" element={<AdminReview />} />
             <Route path="/admin/challenges" element={<AdminChallengeReview />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
           </Route>
           <Route path="*" element={<main className="p-16 text-center text-slate-400">Page not found</main>} />
         </Routes>

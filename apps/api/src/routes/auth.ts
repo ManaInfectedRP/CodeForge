@@ -8,7 +8,7 @@ import { signToken } from '../lib/jwt.ts';
 import { h, toUserDto } from '../lib/helpers.ts';
 import { HttpError } from '../middleware/errors.ts';
 import { requireAuth } from '../middleware/auth.ts';
-import { sendVerificationEmail } from '../lib/mailer.ts';
+import { isMailerConfigured, sendVerificationEmail } from '../lib/mailer.ts';
 
 const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -48,14 +48,23 @@ authRouter.post(
       throw new HttpError(409, existing.email === email ? 'Email already registered' : 'Username already taken');
     }
 
+    // without a mail provider there is no way to complete verification,
+    // so accounts are verified immediately until SMTP_* is configured
     const user = await prisma.user.create({
-      data: { username, email, passwordHash: await bcrypt.hash(password, 10), ...newVerifyToken() },
+      data: {
+        username,
+        email,
+        passwordHash: await bcrypt.hash(password, 10),
+        ...(isMailerConfigured ? newVerifyToken() : { emailVerified: true }),
+      },
     });
 
-    // fire-and-forget: registration should not fail if the mail provider is down
-    sendVerificationEmail(user.email, user.username, user.emailVerifyToken!).catch((err) =>
-      console.error('[mailer] failed to send verification email:', err)
-    );
+    if (isMailerConfigured) {
+      // fire-and-forget: registration should not fail if the mail provider is down
+      sendVerificationEmail(user.email, user.username, user.emailVerifyToken!).catch((err) =>
+        console.error('[mailer] failed to send verification email:', err)
+      );
+    }
 
     const body: AuthResponseDto = {
       token: signToken({ sub: user.id, role: user.role }),
@@ -109,6 +118,7 @@ authRouter.post(
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       throw new HttpError(401, 'Invalid email or password');
     }
+    if (user.bannedAt) throw new HttpError(403, 'Your account has been banned');
 
     const body: AuthResponseDto = {
       token: signToken({ sub: user.id, role: user.role }),

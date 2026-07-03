@@ -26,6 +26,23 @@ export const videoUpload = multer({
   },
 });
 
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+
+export const imageUpload = multer({
+  storage: multer.diskStorage({
+    destination: UPLOADS_DIR,
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase() || '.png';
+      cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_IMAGE_TYPES.has(file.mimetype)) cb(null, true);
+    else cb(new HttpError(400, 'Only image files are allowed (jpeg, png, webp, gif)'));
+  },
+});
+
 /** Removes a previously uploaded file when a lesson's video is replaced or deleted. */
 export function deleteLocalUpload(videoUrl: string | null) {
   if (!videoUrl?.startsWith('/uploads/')) return; // external URL, nothing to clean up

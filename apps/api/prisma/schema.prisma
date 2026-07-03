@@ -66,6 +66,8 @@ model User {
   emailVerified      Boolean          @default(false)
   emailVerifyToken   String?          @unique
   emailVerifyExpires DateTime?
+  bannedAt           DateTime?
+  chatBlockedAt      DateTime?
   certificates       Certificate[]
   paths          UserPath[]
   enrollments    Enrollment[]
@@ -75,6 +77,18 @@ model User {
   challengeSubmissions ChallengeSubmission[]
   achievements         UserAchievement[]
   challengesAuthored   Challenge[]           @relation("InstructorChallenges")
+  chatMessages         ChatMessage[]
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  room      String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([room, createdAt])
 }
 
 model LearningPath {

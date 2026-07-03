@@ -27,6 +27,29 @@ export interface CertificateDto {
   issuedAt: string;
 }
 
+export interface AdminUserDto {
+  id: string;
+  username: string;
+  email: string;
+  role: Role;
+  xp: number;
+  streak: number;
+  createdAt: string;
+  bannedAt: string | null;
+  chatBlockedAt: string | null;
+}
+
+export interface ChatMessageDto {
+  id: string;
+  room: string;
+  userId: string;
+  username: string;
+  avatarUrl: string | null;
+  role: Role;
+  content: string;
+  createdAt: string;
+}
+
 export interface CertificateVerificationDto {
   valid: boolean;
   studentName?: string;

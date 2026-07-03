@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { AuthResponseDto, UserDto } from '@codeforge/shared';
 import { api, getToken, setToken } from '../lib/api';
+import { disconnectChatSocket } from '../lib/socket';
 
 interface AuthContextValue {
   user: UserDto | null;
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function logout() {
     setToken(null);
     setUser(null);
+    disconnectChatSocket();
   }
 
   async function refreshUser() {

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import Editor from 'react-simple-code-editor';
 import type { ChallengeDetailDto, ChallengeLanguage, ChallengeSubmissionDto, ChallengeSubmissionResultDto } from '@codeforge/shared';
 import { api, errorMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { LessonMarkdown } from '../components/LessonMarkdown';
 import { runTestCase, type RunnableLang } from '../lib/sandbox';
+import { highlight } from '../lib/prism';
 
 const langToRunnable: Record<ChallengeLanguage, RunnableLang> = {
   PYTHON: 'python',
@@ -146,13 +148,20 @@ export function ChallengeSolve() {
           </button>
         </div>
 
-        <textarea
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          rows={14}
-          spellCheck={false}
-          className="block w-full resize-y bg-slate-950 p-4 font-mono text-sm leading-relaxed text-slate-200 focus:outline-none"
-        />
+        <div className="max-h-[36rem] min-h-[14rem] overflow-auto bg-slate-950">
+          <Editor
+            value={code}
+            onValueChange={setCode}
+            highlight={(c) => highlight(c, langToRunnable[language])}
+            padding={16}
+            textareaClassName="focus:outline-none"
+            style={{
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+              fontSize: '0.875rem',
+              lineHeight: 1.625,
+            }}
+          />
+        </div>
       </div>
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}

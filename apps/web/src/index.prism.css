@@ -1,0 +1,75 @@
+/*
+ * Hand-tuned dark theme for Prism tokens, matching VS Code's Dark+ palette
+ * so highlighted code fits the app's slate/forge color scheme.
+ */
+code[class*='language-'],
+pre[class*='language-'] {
+  color: #d4d4d4;
+  font-family: inherit;
+  text-shadow: none;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #6a9955;
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: #d4d4d4;
+}
+
+.token.keyword,
+.token.operator-keyword {
+  color: #569cd6;
+}
+
+.token.builtin,
+.token.class-name,
+.token.maybe-class-name {
+  color: #4ec9b0;
+}
+
+.token.function {
+  color: #dcdcaa;
+}
+
+.token.string,
+.token.char {
+  color: #ce9178;
+}
+
+.token.number,
+.token.boolean {
+  color: #b5cea8;
+}
+
+.token.operator,
+.token.entity,
+.token.url {
+  color: #d4d4d4;
+}
+
+.token.property,
+.token.attr-name {
+  color: #9cdcfe;
+}
+
+.token.variable {
+  color: #9cdcfe;
+}
+
+.token.regex {
+  color: #d16969;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
