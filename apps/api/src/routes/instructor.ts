@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { TeachCourseDetailDto, TeachCourseSummaryDto, TeachLessonDetailDto } from '@codeforge/shared';
+import { slugify, type TeachCourseDetailDto, type TeachCourseSummaryDto, type TeachLessonDetailDto } from '@codeforge/shared';
 import type { Course } from '@prisma/client';
 import { prisma } from '../lib/prisma.ts';
 import { h } from '../lib/helpers.ts';
@@ -8,6 +8,7 @@ import { requireAuth, requireRole } from '../middleware/auth.ts';
 import { HttpError } from '../middleware/errors.ts';
 import type { TokenPayload } from '../lib/jwt.ts';
 import { deleteLocalUpload, videoUpload } from '../lib/upload.ts';
+import { buildCourseMarkdown } from '../lib/exportMarkdown.ts';
 
 const courseSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(120),
@@ -139,6 +140,26 @@ instructorRouter.get(
       lessons: lessons.map((l) => ({ id: l.id, title: l.title, order: l.order, hasQuiz: l.quiz !== null })),
     };
     res.json(body);
+  })
+);
+
+instructorRouter.get(
+  '/courses/:id/export',
+  h(async (req, res) => {
+    const course = await ownedCourse(req.params.id, req.auth!);
+    const [path, lessons] = await Promise.all([
+      prisma.learningPath.findUniqueOrThrow({ where: { id: course.pathId } }),
+      prisma.lesson.findMany({
+        where: { courseId: course.id },
+        include: { quiz: { include: { questions: { orderBy: { order: 'asc' } } } } },
+        orderBy: { order: 'asc' },
+      }),
+    ]);
+
+    const markdown = buildCourseMarkdown(course, path, lessons);
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${slugify(course.title)}.md"`);
+    res.send(markdown);
   })
 );
 

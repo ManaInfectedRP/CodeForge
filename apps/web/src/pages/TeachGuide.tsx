@@ -17,6 +17,50 @@ const guide = `
 6. Once you have at least one lesson, click **Submit for review** on the course page. The course moves to *Pending review* and becomes visible to an admin, but not to students yet.
 7. An admin will either **approve** it (it goes live immediately) or **send it back** with feedback, in which case it returns to *Draft* so you can fix it up and resubmit.
 8. You can keep editing a course at any status, published courses will show your live edits to students immediately.
+9. Export any course you own as a single Markdown file anytime with the **Export as Markdown** button on the course page, handy for backups or moving content elsewhere.
+
+## ✍️ Writing lesson content in Markdown
+
+Lesson content, challenge prompts, and this guide itself are all written in Markdown, so everything below works in any **Content** box.
+
+- **Headings** — \`#\`, \`##\`, \`###\` for section structure.
+- **Emphasis** — \`**bold**\`, \`*italic*\`, \`~~strikethrough~~\`.
+- **Lists** — \`- item\` for bullets, \`1. item\` for numbered, \`- [ ]\` / \`- [x]\` for a checklist, rendered as real checkboxes:
+  - [x] a completed step
+  - [ ] a pending step
+- **Links & images** — \`[text](url)\` and \`![alt](url)\`.
+- **Tables** — standard pipe syntax, rendered with real borders and a shaded header row:
+
+| Difficulty | Stars |
+|------------|-------|
+| Easy | ⭐ |
+| Hard | ⭐⭐⭐⭐⭐ |
+
+### Code blocks
+
+Tag a fenced code block with a language. **Python, JavaScript, and TypeScript become interactive, editable playgrounds** with a Run button, students can execute the code right there in the lesson:
+
+\`\`\`python
+print("Try editing me and hit Run!")
+\`\`\`
+
+Every other language (C++, bash, JSON, C) renders as static, syntax-highlighted code instead:
+
+\`\`\`bash
+npm install
+\`\`\`
+
+### Callouts
+
+Five GitHub-style alert types highlight important information. Start a blockquote with \`[!NOTE]\`, \`[!TIP]\`, \`[!IMPORTANT]\`, \`[!WARNING]\`, or \`[!CAUTION]\`:
+
+> [!NOTE]
+> Useful information readers should know.
+
+> [!WARNING]
+> Something that needs immediate attention.
+
+A plain \`>\` blockquote without one of those markers renders as an ordinary quote instead.
 
 ## 💻 Adding a coding challenge
 
