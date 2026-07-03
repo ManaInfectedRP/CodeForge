@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { AdminChallengeDto, AdminCourseDto } from '@codeforge/shared';
+import type { AdminChallengeDto, AdminCourseDto, AdminUserDto } from '@codeforge/shared';
+import type { User } from '@prisma/client';
 import { prisma } from '../lib/prisma.ts';
 import { h } from '../lib/helpers.ts';
 import { requireAuth, requireRole } from '../middleware/auth.ts';
@@ -15,6 +16,138 @@ const statusFilter = z.enum(['DRAFT', 'PENDING_REVIEW', 'PUBLISHED']).optional()
 export const adminRouter = Router();
 
 adminRouter.use(requireAuth, requireRole('ADMIN'));
+
+function toAdminUserDto(u: User): AdminUserDto {
+  return {
+    id: u.id,
+    username: u.username,
+    email: u.email,
+    role: u.role,
+    xp: u.xp,
+    streak: u.streak,
+    createdAt: u.createdAt.toISOString(),
+    bannedAt: u.bannedAt?.toISOString() ?? null,
+    chatBlockedAt: u.chatBlockedAt?.toISOString() ?? null,
+  };
+}
+
+/** Loads the target of a moderation action; admin accounts are off-limits. */
+async function moderatableUser(id: string): Promise<User> {
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) throw new HttpError(404, 'User not found');
+  if (user.role === 'ADMIN') throw new HttpError(400, 'Admin accounts cannot be moderated');
+  return user;
+}
+
+adminRouter.get(
+  '/users',
+  h(async (req, res) => {
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const users = await prisma.user.findMany({
+      where: search
+        ? {
+            OR: [
+              { username: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {},
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    res.json(users.map(toAdminUserDto));
+  })
+);
+
+adminRouter.post(
+  '/users/:id/chat-block',
+  h(async (req, res) => {
+    const user = await moderatableUser(req.params.id);
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { chatBlockedAt: user.chatBlockedAt ?? new Date() },
+    });
+    res.json(toAdminUserDto(updated));
+  })
+);
+
+adminRouter.post(
+  '/users/:id/chat-unblock',
+  h(async (req, res) => {
+    const user = await moderatableUser(req.params.id);
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { chatBlockedAt: null },
+    });
+    res.json(toAdminUserDto(updated));
+  })
+);
+
+adminRouter.post(
+  '/users/:id/ban',
+  h(async (req, res) => {
+    const user = await moderatableUser(req.params.id);
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { bannedAt: user.bannedAt ?? new Date() },
+    });
+    res.json(toAdminUserDto(updated));
+  })
+);
+
+adminRouter.post(
+  '/users/:id/unban',
+  h(async (req, res) => {
+    const user = await moderatableUser(req.params.id);
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { bannedAt: null },
+    });
+    res.json(toAdminUserDto(updated));
+  })
+);
+
+adminRouter.post(
+  '/users/:id/promote',
+  h(async (req, res) => {
+    const user = await moderatableUser(req.params.id);
+    if (user.role !== 'STUDENT') throw new HttpError(400, 'Only students can be promoted to instructor');
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { role: 'INSTRUCTOR' },
+    });
+    res.json(toAdminUserDto(updated));
+  })
+);
+
+adminRouter.post(
+  '/users/:id/demote',
+  h(async (req, res) => {
+    const user = await moderatableUser(req.params.id);
+    if (user.role !== 'INSTRUCTOR') throw new HttpError(400, 'Only instructors can be demoted to student');
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { role: 'STUDENT' },
+    });
+    res.json(toAdminUserDto(updated));
+  })
+);
+
+adminRouter.post(
+  '/users/:id/reset-stats',
+  h(async (req, res) => {
+    const user = await moderatableUser(req.params.id);
+    const [, , updated] = await prisma.$transaction([
+      prisma.userAchievement.deleteMany({ where: { userId: user.id } }),
+      prisma.challengeSubmission.deleteMany({ where: { userId: user.id } }),
+      prisma.user.update({
+        where: { id: user.id },
+        data: { xp: 0, streak: 0, lastActiveAt: null },
+      }),
+    ]);
+    res.json(toAdminUserDto(updated));
+  })
+);
 
 adminRouter.get(
   '/courses',

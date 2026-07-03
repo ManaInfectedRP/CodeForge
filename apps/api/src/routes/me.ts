@@ -1,13 +1,29 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import type { CertificateDto, DashboardDto, EnrollmentDto } from '@codeforge/shared';
 import { prisma } from '../lib/prisma.ts';
 import { h, toUserDto } from '../lib/helpers.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { HttpError } from '../middleware/errors.ts';
+import { deleteLocalUpload, imageUpload } from '../lib/upload.ts';
 
 const selectPathsSchema = z.object({
   slugs: z.array(z.string()).min(1, 'Select at least one learning path'),
+});
+
+const profileSchema = z.object({
+  username: z
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must be at most 30 characters')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Username may only contain letters, numbers, and underscores'),
+  bio: z.string().max(500, 'Bio must be at most 500 characters').nullable(),
+});
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters'),
 });
 
 export const meRouter = Router();
@@ -27,6 +43,72 @@ meRouter.put(
       prisma.userPath.createMany({ data: paths.map((p) => ({ userId, pathId: p.id })) }),
     ]);
     res.json({ selected: slugs });
+  })
+);
+
+meRouter.put(
+  '/profile',
+  h(async (req, res) => {
+    const { username, bio } = profileSchema.parse(req.body);
+    const userId = req.auth!.sub;
+
+    const taken = await prisma.user.findFirst({
+      where: { username, id: { not: userId } },
+    });
+    if (taken) throw new HttpError(409, 'Username already taken');
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { username, bio: bio?.trim() || null },
+    });
+    res.json(toUserDto(user));
+  })
+);
+
+meRouter.put(
+  '/password',
+  h(async (req, res) => {
+    const { currentPassword, newPassword } = passwordSchema.parse(req.body);
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.sub } });
+
+    if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+      throw new HttpError(401, 'Current password is incorrect');
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash: await bcrypt.hash(newPassword, 10) },
+    });
+    res.json({ changed: true });
+  })
+);
+
+meRouter.post(
+  '/avatar',
+  imageUpload.single('avatar'),
+  h(async (req, res) => {
+    if (!req.file) throw new HttpError(400, 'No image file received');
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.sub } });
+
+    deleteLocalUpload(user.avatarUrl);
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { avatarUrl: `/uploads/${req.file.filename}` },
+    });
+    res.status(201).json(toUserDto(updated));
+  })
+);
+
+meRouter.delete(
+  '/avatar',
+  h(async (req, res) => {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.sub } });
+    deleteLocalUpload(user.avatarUrl);
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { avatarUrl: null },
+    });
+    res.json(toUserDto(updated));
   })
 );
 

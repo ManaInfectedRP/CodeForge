@@ -32,6 +32,9 @@ export function Navbar() {
             <NavLink to="/challenges" className={navLinkClass}>
               💻 Challenges
             </NavLink>
+            <NavLink to="/chat" className={navLinkClass}>
+              💬 Chat
+            </NavLink>
 
             <Dropdown trigger="More">
               <NavLink to="/paths" className={dropdownItemClass}>
@@ -55,7 +58,7 @@ export function Navbar() {
                 </NavLink>
                 {user.role === 'ADMIN' && (
                   <NavLink to="/admin" className={dropdownItemClass}>
-                    🛡️ Review
+                    🛡️ Admin
                   </NavLink>
                 )}
               </Dropdown>
@@ -71,10 +74,23 @@ export function Navbar() {
                 </span>
               </span>
 
-              <Dropdown align="right" trigger={<span className="max-w-36 truncate">{user.username}</span>}>
+              <Dropdown
+                align="right"
+                trigger={
+                  <span className="flex items-center gap-2">
+                    {user.avatarUrl && (
+                      <img src={user.avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
+                    )}
+                    <span className="max-w-36 truncate">{user.username}</span>
+                  </span>
+                }
+              >
                 <div className="border-b border-slate-800 px-4 py-2 text-xs text-slate-500 md:hidden">
                   <span className="text-amber-400">⚡ {user.xp} XP</span> · <span className="text-orange-400">🔥 {user.streak} streak</span>
                 </div>
+                <NavLink to="/settings" className={dropdownItemClass}>
+                  ⚙️ Settings
+                </NavLink>
                 <button
                   onClick={() => {
                     logout();

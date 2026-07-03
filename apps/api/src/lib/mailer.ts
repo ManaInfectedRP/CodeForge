@@ -8,6 +8,9 @@ export function appUrl(): string {
   return process.env.APP_URL ?? process.env.RENDER_EXTERNAL_URL ?? 'http://localhost:5173';
 }
 
+/** When no SMTP is configured, accounts are auto-verified at registration instead. */
+export const isMailerConfigured = Boolean(process.env.SMTP_HOST);
+
 const transport = process.env.SMTP_HOST
   ? nodemailer.createTransport({
       host: process.env.SMTP_HOST,

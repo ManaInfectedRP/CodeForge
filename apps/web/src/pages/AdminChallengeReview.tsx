@@ -58,6 +58,9 @@ export function AdminChallengeReview() {
         <NavLink to="/admin/challenges" className={adminTabClass}>
           Challenges
         </NavLink>
+        <NavLink to="/admin/users" className={adminTabClass}>
+          Users
+        </NavLink>
       </nav>
 
       <h1 className="mt-6 text-3xl font-bold">Challenge review</h1>
