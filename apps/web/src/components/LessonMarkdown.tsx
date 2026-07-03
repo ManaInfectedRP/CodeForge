@@ -1,6 +1,7 @@
 import { isValidElement, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { remarkAlert } from 'remark-github-blockquote-alert';
 import { CodePlayground, normalizeLang } from './CodePlayground';
 import { highlight, resolvePrismLang } from '../lib/prism';
 
@@ -36,7 +37,7 @@ function PreBlock({ children, ...props }: ComponentProps<'pre'>) {
 
 export function LessonMarkdown({ children }: { children: string }) {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: PreBlock }}>
+    <ReactMarkdown remarkPlugins={[remarkGfm, remarkAlert]} components={{ pre: PreBlock }}>
       {children}
     </ReactMarkdown>
   );
