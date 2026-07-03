@@ -7,8 +7,10 @@ import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-typescript';
 import 'prismjs/components/prism-bash';
 import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-markup';
+import 'prismjs/components/prism-markdown';
 
-export type PrismLang = 'python' | 'javascript' | 'typescript' | 'cpp' | 'c' | 'bash' | 'json';
+export type PrismLang = 'python' | 'javascript' | 'typescript' | 'cpp' | 'c' | 'bash' | 'json' | 'markdown';
 
 const ALIASES: Record<string, PrismLang> = {
   python: 'python',
@@ -24,6 +26,8 @@ const ALIASES: Record<string, PrismLang> = {
   sh: 'bash',
   shell: 'bash',
   json: 'json',
+  markdown: 'markdown',
+  md: 'markdown',
 };
 
 export function resolvePrismLang(lang: string): PrismLang | null {
