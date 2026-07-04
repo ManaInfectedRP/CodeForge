@@ -152,7 +152,7 @@ function extractSentinel(output: string): TestCaseRunResult {
       return { actualOutput: null, errored: true, errorMessage: line.slice(ERROR_PREFIX.length) };
     }
   }
-  return { actualOutput: null, errored: true, errorMessage: 'No result produced — did the function return a value?' };
+  return { actualOutput: null, errored: true, errorMessage: 'No result produced, did the function return a value?' };
 }
 
 function buildPythonHarness(studentCode: string, entryPoint: string, input: unknown[]): string {

@@ -113,7 +113,7 @@ export function Chat() {
 
       <div className="mt-4 flex-1 space-y-1 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-4">
         {messages.length === 0 && (
-          <p className="py-10 text-center text-sm text-slate-500">No messages yet — say hi! 👋</p>
+          <p className="py-10 text-center text-sm text-slate-500">No messages yet, say hi! 👋</p>
         )}
         {messages.map((m, i) => {
           const prev = messages[i - 1];

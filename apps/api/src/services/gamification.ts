@@ -37,7 +37,7 @@ export async function recordActivity(userId: string, xpAwarded: number) {
 
 /**
  * Runs after every XP-earning action (lesson complete, quiz pass, challenge solve)
- * since they all funnel through recordActivity — one hook covers every source.
+ * since they all funnel through recordActivity, one hook covers every source.
  */
 async function checkAchievements(userId: string, user: { xp: number; streak: number }) {
   const [achievements, alreadyUnlocked, lessonsCompleted, quizzesPassed, challengesSolved] = await Promise.all([

@@ -917,10 +917,10 @@ async function main() {
     await prisma.chatMessage.createMany({
       data: [
         { room: 'general', userId: admin.id, content: 'Welcome to the CodeForge community chat! 👋 Be kind, help each other, and keep it friendly.' },
-        { room: 'general', userId: instructor.id, content: 'Hi everyone! I teach the backend courses here — ask me anything about Node.js or Express.' },
+        { room: 'general', userId: instructor.id, content: 'Hi everyone! I teach the backend courses here, ask me anything about Node.js or Express.' },
         { room: 'general', userId: student.id, content: 'Just passed my first Python quiz 🐍🔥' },
         { room: 'help', userId: instructor.id, content: 'Stuck on a lesson or challenge? Post it here with the error message and someone will help.' },
-        { room: 'showcase', userId: admin.id, content: 'Finished a course project? Share a link or screenshot here — we love seeing what you build! 🚀' },
+        { room: 'showcase', userId: admin.id, content: 'Finished a course project? Share a link or screenshot here, we love seeing what you build! 🚀' },
       ],
     });
     console.log('  ✓ starter chat messages');

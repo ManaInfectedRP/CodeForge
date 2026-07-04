@@ -28,12 +28,12 @@ export function buildCourseMarkdown(course: Course, path: LearningPath, lessons:
   ];
 
   lessons.forEach((lesson, i) => {
-    lines.push('---', '', `## Lesson ${lesson.order} — ${lesson.title}`, '');
+    lines.push('---', '', `## Lesson ${lesson.order}, ${lesson.title}`, '');
     if (lesson.videoUrl) lines.push('> [!NOTE]', `> 🎥 Video: ${lesson.videoUrl}`, '');
     lines.push(lesson.content.trim(), '');
 
     if (lesson.quiz) {
-      lines.push(`### 📝 Quiz — ${lesson.quiz.title} (passing score: ${lesson.quiz.passingScore}%)`, '');
+      lines.push(`### 📝 Quiz, ${lesson.quiz.title} (passing score: ${lesson.quiz.passingScore}%)`, '');
       lesson.quiz.questions.forEach((q, qi) => lines.push(...questionMarkdown(q, qi)));
     }
     if (i === lessons.length - 1) lines.push('---');

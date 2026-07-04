@@ -67,7 +67,7 @@ export function setupChat(io: Server) {
         });
         if (!sender || sender.bannedAt) throw new Error('Your account has been banned');
         if (sender.chatBlockedAt) {
-          throw new Error('You are blocked from posting in chat — an admin can lift this');
+          throw new Error('You are blocked from posting in chat, an admin can lift this');
         }
 
         const message = await prisma.chatMessage.create({

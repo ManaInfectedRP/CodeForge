@@ -34,7 +34,7 @@ Prerequisites: Node.js 20+, a running PostgreSQL server.
 
 On Windows, run it from Git Bash: `bash fastboot.sh`.
 
-**Stopping**: Ctrl+C often won't fully stop it on Windows — the server is spawned several process layers deep (`npm` → `concurrently` → `npm` → `tsx watch` → `node`), and Windows console control events don't reliably propagate through that many `cmd.exe`/`npm.cmd` wrappers under Git Bash, leaving an orphaned `node` process still holding the port. Run `npm run stop` (or `bash stop.sh`) to force-kill whatever's actually listening on 4000/5173.
+**Stopping**: Ctrl+C often won't fully stop it on Windows, the server is spawned several process layers deep (`npm` → `concurrently` → `npm` → `tsx watch` → `node`), and Windows console control events don't reliably propagate through that many `cmd.exe`/`npm.cmd` wrappers under Git Bash, leaving an orphaned `node` process still holding the port. Run `npm run stop` (or `bash stop.sh`) to force-kill whatever's actually listening on 4000/5173.
 
 ### Manual steps
 
@@ -130,7 +130,7 @@ The repo ships a [render.yaml](render.yaml) blueprint: push to GitHub, then in t
 dashboard choose **New → Blueprint** and point it at the repo. It provisions a PostgreSQL
 database and a single web service that runs the API and serves the built frontend
 (migrations + seed run during build). Set the `SMTP_*` env vars in the dashboard to send
-real verification emails — until then, verification links are printed to the service logs.
+real verification emails, until then, verification links are printed to the service logs.
 Note: on the free plan uploaded lesson videos are lost on redeploy; enable the disk
 (commented in the blueprint) on a paid instance to persist them.
 
@@ -139,7 +139,7 @@ Note: on the free plan uploaded lesson videos are lost on redeploy; enable the d
 - Completing every lesson **and** passing every quiz in a course unlocks a
   **Claim your certificate** button on the course page. The certificate page shows the
   student, course, date, certificate ID, and a QR code; anyone can verify it (no login)
-  at `/verify/<code>` — the QR points there. Print/save as PDF from the certificate page.
+  at `/verify/<code>`, the QR points there. Print/save as PDF from the certificate page.
 - New accounts get a verification email (24h-expiry, single-use token). Unverified users
   see a banner with a resend button; `/verify-email?token=…` completes the flow. Without
   SMTP configured the API logs the link to the console so local dev still works.

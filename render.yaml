@@ -46,7 +46,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       # Email (verification mails). Leave unset to log verification links to the
-      # service logs instead of sending — fill these in the Render dashboard
+      # service logs instead of sending, fill these in the Render dashboard
       # with your provider (Resend, SendGrid, Mailgun, Gmail app password, …).
       - key: SMTP_HOST
         sync: false
@@ -59,7 +59,7 @@ services:
       - key: EMAIL_FROM
         sync: false
       # Public URL used in email links + certificate QR codes.
-      # Defaults to RENDER_EXTERNAL_URL (set automatically) — override only if
+      # Defaults to RENDER_EXTERNAL_URL (set automatically), override only if
       # you serve the app from a custom domain.
       - key: APP_URL
         sync: false

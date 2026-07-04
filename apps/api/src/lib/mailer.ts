@@ -26,7 +26,7 @@ const FROM = process.env.EMAIL_FROM ?? 'CodeForge Academy <no-reply@codeforge.lo
 
 export async function sendMail(to: string, subject: string, html: string, text: string) {
   if (!transport) {
-    // no SMTP configured (local dev) — log instead of sending so the flow stays testable
+    // no SMTP configured (local dev), log instead of sending so the flow stays testable
     console.log(`[mailer] SMTP not configured. Would send to ${to}: "${subject}"\n${text}`);
     return;
   }

@@ -23,13 +23,13 @@ const guide = `
 
 Lesson content, challenge prompts, and this guide itself are all written in Markdown, so everything below works in any **Content** box.
 
-- **Headings** — \`#\`, \`##\`, \`###\` for section structure.
-- **Emphasis** — \`**bold**\`, \`*italic*\`, \`~~strikethrough~~\`.
-- **Lists** — \`- item\` for bullets, \`1. item\` for numbered, \`- [ ]\` / \`- [x]\` for a checklist, rendered as real checkboxes:
+- **Headings**, \`#\`, \`##\`, \`###\` for section structure.
+- **Emphasis**, \`**bold**\`, \`*italic*\`, \`~~strikethrough~~\`.
+- **Lists**, \`- item\` for bullets, \`1. item\` for numbered, \`- [ ]\` / \`- [x]\` for a checklist, rendered as real checkboxes:
   - [x] a completed step
   - [ ] a pending step
-- **Links & images** — \`[text](url)\` and \`![alt](url)\`.
-- **Tables** — standard pipe syntax, rendered with real borders and a shaded header row:
+- **Links & images**, \`[text](url)\` and \`![alt](url)\`.
+- **Tables**, standard pipe syntax, rendered with real borders and a shaded header row:
 
 | Difficulty | Stars |
 |------------|-------|

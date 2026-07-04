@@ -82,7 +82,7 @@ authRouter.post(
     const user = await prisma.user.findUnique({ where: { emailVerifyToken: token } });
     if (!user) throw new HttpError(400, 'Invalid or already-used verification link');
     if (user.emailVerifyExpires && user.emailVerifyExpires < new Date()) {
-      throw new HttpError(400, 'This verification link has expired — request a new one from your dashboard');
+      throw new HttpError(400, 'This verification link has expired, request a new one from your dashboard');
     }
 
     const updated = await prisma.user.update({

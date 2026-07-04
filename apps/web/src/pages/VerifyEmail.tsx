@@ -12,11 +12,11 @@ export function VerifyEmail() {
   const requested = useRef(false);
 
   useEffect(() => {
-    if (requested.current) return; // StrictMode double-invoke guard — token is single-use
+    if (requested.current) return; // StrictMode double-invoke guard, token is single-use
     requested.current = true;
 
     if (!token) {
-      setError('Missing verification token — use the link from your email.');
+      setError('Missing verification token, use the link from your email.');
       setState('error');
       return;
     }
