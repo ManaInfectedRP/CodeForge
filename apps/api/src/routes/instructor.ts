@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { TeachCourseDetailDto, TeachCourseSummaryDto, TeachLessonDetailDto } from '@codeforge/shared';
+import type {
+  InstructorSubmissionDto,
+  TeachCourseDetailDto,
+  TeachCourseSummaryDto,
+  TeachLessonDetailDto,
+} from '@codeforge/shared';
 import type { Course } from '@prisma/client';
 import { prisma } from '../lib/prisma.ts';
 import { h } from '../lib/helpers.ts';
@@ -23,6 +28,11 @@ const lessonUpdateSchema = z.object({
   title: z.string().min(3).max(120).optional(),
   videoUrl: z.string().url('Video URL must be a valid URL').nullable().optional(),
   content: z.string().min(1, 'Content cannot be empty').optional(),
+  requiresSubmission: z.boolean().optional(),
+});
+
+const requestChangesSchema = z.object({
+  feedback: z.string().min(1, 'Add feedback so the student knows what to fix').max(2000),
 });
 
 const questionSchema = z
@@ -69,6 +79,18 @@ async function ownedLesson(lessonId: string, auth: TokenPayload) {
     throw new HttpError(403, 'You do not own this lesson');
   }
   return lesson;
+}
+
+async function ownedSubmission(submissionId: string, auth: TokenPayload) {
+  const submission = await prisma.projectSubmission.findUnique({
+    where: { id: submissionId },
+    include: { lesson: { include: { course: true } } },
+  });
+  if (!submission) throw new HttpError(404, 'Submission not found');
+  if (submission.lesson.course.instructorId !== auth.sub && auth.role !== 'ADMIN') {
+    throw new HttpError(403, 'You do not own this submission');
+  }
+  return submission;
 }
 
 export const instructorRouter = Router();
@@ -214,6 +236,7 @@ instructorRouter.get(
       order: lesson.order,
       videoUrl: lesson.videoUrl,
       content: lesson.content,
+      requiresSubmission: lesson.requiresSubmission,
       quiz: quiz
         ? {
             title: quiz.title,
@@ -337,5 +360,79 @@ instructorRouter.put(
       }
     });
     res.json({ saved: true, hasQuiz: quiz.questions.length > 0 });
+  })
+);
+
+function toInstructorSubmissionDto(s: {
+  id: string;
+  lessonId: string;
+  submissionUrl: string;
+  status: 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED';
+  feedback: string | null;
+  submittedAt: Date;
+  reviewedAt: Date | null;
+  lesson: { title: string; course: { id: string; title: string } };
+  user: { id: string; username: string };
+}): InstructorSubmissionDto {
+  return {
+    id: s.id,
+    lessonId: s.lessonId,
+    lessonTitle: s.lesson.title,
+    courseId: s.lesson.course.id,
+    courseTitle: s.lesson.course.title,
+    studentId: s.user.id,
+    studentUsername: s.user.username,
+    submissionUrl: s.submissionUrl,
+    status: s.status,
+    feedback: s.feedback,
+    submittedAt: s.submittedAt.toISOString(),
+    reviewedAt: s.reviewedAt?.toISOString() ?? null,
+  };
+}
+
+const submissionStatusFilter = z.enum(['PENDING', 'APPROVED', 'CHANGES_REQUESTED']).optional();
+
+instructorRouter.get(
+  '/submissions',
+  h(async (req, res) => {
+    const status = submissionStatusFilter.parse(
+      typeof req.query.status === 'string' && req.query.status !== '' ? req.query.status : undefined
+    );
+    const submissions = await prisma.projectSubmission.findMany({
+      where: {
+        ...(status ? { status } : {}),
+        ...(req.auth!.role === 'ADMIN' ? {} : { lesson: { course: { instructorId: req.auth!.sub } } }),
+      },
+      include: { lesson: { include: { course: { select: { id: true, title: true } } } }, user: true },
+      orderBy: { submittedAt: 'desc' },
+    });
+    res.json(submissions.map(toInstructorSubmissionDto));
+  })
+);
+
+instructorRouter.post(
+  '/submissions/:id/approve',
+  h(async (req, res) => {
+    const submission = await ownedSubmission(req.params.id, req.auth!);
+    const updated = await prisma.projectSubmission.update({
+      where: { id: submission.id },
+      data: { status: 'APPROVED', feedback: null, reviewedAt: new Date() },
+      include: { lesson: { include: { course: { select: { id: true, title: true } } } }, user: true },
+    });
+    res.json(toInstructorSubmissionDto(updated));
+  })
+);
+
+instructorRouter.post(
+  '/submissions/:id/request-changes',
+  h(async (req, res) => {
+    const { feedback } = requestChangesSchema.parse(req.body);
+    const submission = await ownedSubmission(req.params.id, req.auth!);
+    const updated = await prisma.projectSubmission.update({
+      where: { id: submission.id },
+      data: { status: 'CHANGES_REQUESTED', feedback, reviewedAt: new Date() },
+      include: { lesson: { include: { course: { select: { id: true, title: true } } } }, user: true },
+    });
+    res.json(toInstructorSubmissionDto(updated));
   })
 );

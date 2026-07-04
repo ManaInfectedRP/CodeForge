@@ -4,6 +4,7 @@ import type { LessonDetailDto } from '@codeforge/shared';
 import { LessonMarkdown } from '../components/LessonMarkdown';
 import { api, errorMessage } from '../lib/api';
 import { QuizPlayer } from '../components/QuizPlayer';
+import { ProjectSubmissionPanel } from '../components/ProjectSubmissionPanel';
 import { useAuth } from '../context/AuthContext';
 
 export function Lesson() {
@@ -64,15 +65,28 @@ export function Lesson() {
         <LessonMarkdown>{lesson.content}</LessonMarkdown>
       </article>
 
-      {!lesson.completed && (
-        <button
-          onClick={markComplete}
-          disabled={completing}
-          className="mt-8 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
-        >
-          {completing ? 'Saving…' : '✓ Mark lesson complete (+10 XP)'}
-        </button>
+      {lesson.requiresSubmission && (
+        <ProjectSubmissionPanel
+          lessonId={lesson.id}
+          submission={lesson.mySubmission}
+          onSubmitted={(mySubmission) => setLesson({ ...lesson, mySubmission })}
+        />
       )}
+
+      {!lesson.completed &&
+        (lesson.requiresSubmission && lesson.mySubmission?.status !== 'APPROVED' ? (
+          <p className="mt-8 rounded-xl border border-dashed border-slate-700 px-4 py-3 text-sm text-slate-400">
+            Waiting on an approved project submission before this lesson can be marked complete.
+          </p>
+        ) : (
+          <button
+            onClick={markComplete}
+            disabled={completing}
+            className="mt-8 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+          >
+            {completing ? 'Saving…' : '✓ Mark lesson complete (+10 XP)'}
+          </button>
+        ))}
 
       {lesson.quiz && <QuizPlayer key={lesson.quiz.id} quiz={lesson.quiz} />}
 

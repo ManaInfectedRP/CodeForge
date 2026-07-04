@@ -22,6 +22,7 @@ import { TeachLessonEditor } from './pages/TeachLessonEditor';
 import { TeachChallenges } from './pages/TeachChallenges';
 import { TeachChallengeEditor } from './pages/TeachChallengeEditor';
 import { TeachGuide } from './pages/TeachGuide';
+import { TeachSubmissions } from './pages/TeachSubmissions';
 import { AdminReview } from './pages/AdminReview';
 import { AdminChallengeReview } from './pages/AdminChallengeReview';
 import { AdminUsers } from './pages/AdminUsers';
@@ -64,6 +65,7 @@ export function App() {
             <Route path="/teach/challenges" element={<TeachChallenges />} />
             <Route path="/teach/challenges/:id" element={<TeachChallengeEditor />} />
             <Route path="/teach/guide" element={<TeachGuide />} />
+            <Route path="/teach/submissions" element={<TeachSubmissions />} />
           </Route>
           <Route element={<RoleRoute roles={['ADMIN']} />}>
             <Route path="/admin" element={<AdminReview />} />
