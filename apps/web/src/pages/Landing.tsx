@@ -23,7 +23,7 @@ export function Landing() {
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">
           Interactive courses, hands-on coding exercises, quizzes, and real projects across C++, Python,
-          JavaScript, TypeScript, and Node.js. Track your progress, keep your streak alive, and earn XP as
+          JavaScript, TypeScript, Node.js, and Git. Track your progress, keep your streak alive, and earn XP as
           you learn.
         </p>
         <div className="mt-8 flex justify-center gap-4">
