@@ -42,7 +42,16 @@ export function Lesson() {
     }
   }
 
-  if (error) return <main className="p-12 text-center text-red-400">{error}</main>;
+  if (error) {
+    return (
+      <main className="p-12 text-center">
+        <p className="text-red-400">{error}</p>
+        <Link to="/courses" className="mt-4 inline-block text-sm text-forge-500 hover:underline">
+          ← Back to courses
+        </Link>
+      </main>
+    );
+  }
   if (!lesson) return <main className="p-12 text-center text-slate-400">Loading lesson…</main>;
 
   return (
@@ -114,9 +123,18 @@ export function Lesson() {
           <span />
         )}
         {lesson.nextLessonId ? (
-          <Link to={`/lessons/${lesson.nextLessonId}`} className="text-forge-500 hover:underline">
-            Next lesson →
-          </Link>
+          lesson.completed ? (
+            <Link
+              to={`/lessons/${lesson.nextLessonId}`}
+              className="rounded-lg bg-emerald-600 px-5 py-2.5 font-semibold text-white hover:bg-emerald-500"
+            >
+              Next lesson →
+            </Link>
+          ) : (
+            <Link to={`/lessons/${lesson.nextLessonId}`} className="text-forge-500 hover:underline">
+              Next lesson →
+            </Link>
+          )
         ) : (
           <Link to={`/courses/${lesson.courseId}`} className="text-emerald-400 hover:underline">
             Back to course overview →

@@ -94,6 +94,8 @@ export interface LessonSummaryDto {
   order: number;
   hasQuiz: boolean;
   completed: boolean;
+  /** false once an earlier lesson in the course is still incomplete, lessons must be done in order */
+  unlocked: boolean;
 }
 
 export interface CourseDetailDto extends CourseSummaryDto {
@@ -247,6 +249,29 @@ export interface InstructorSubmissionDto {
   feedback: string | null;
   submittedAt: string;
   reviewedAt: string | null;
+}
+
+// --- Student progress & quiz results (instructor view) ---
+
+export interface InstructorStudentQuizDto {
+  lessonId: string;
+  lessonTitle: string;
+  quizTitle: string;
+  passingScore: number;
+  attemptCount: number;
+  bestScore: number | null;
+  passed: boolean;
+  lastAttemptAt: string | null;
+}
+
+export interface InstructorStudentProgressDto {
+  userId: string;
+  username: string;
+  enrolledAt: string;
+  completedLessons: number;
+  totalLessons: number;
+  certificateIssued: boolean;
+  quizzes: InstructorStudentQuizDto[];
 }
 
 // --- Admin review ---

@@ -18,6 +18,7 @@ import { Leaderboard } from './pages/Leaderboard';
 import { Achievements } from './pages/Achievements';
 import { TeachCourses } from './pages/TeachCourses';
 import { TeachCourseEditor } from './pages/TeachCourseEditor';
+import { TeachCourseStudents } from './pages/TeachCourseStudents';
 import { TeachLessonEditor } from './pages/TeachLessonEditor';
 import { TeachChallenges } from './pages/TeachChallenges';
 import { TeachChallengeEditor } from './pages/TeachChallengeEditor';
@@ -61,6 +62,7 @@ export function App() {
           <Route element={<RoleRoute roles={['INSTRUCTOR', 'ADMIN']} />}>
             <Route path="/teach" element={<TeachCourses />} />
             <Route path="/teach/courses/:id" element={<TeachCourseEditor />} />
+            <Route path="/teach/courses/:id/students" element={<TeachCourseStudents />} />
             <Route path="/teach/lessons/:id" element={<TeachLessonEditor />} />
             <Route path="/teach/challenges" element={<TeachChallenges />} />
             <Route path="/teach/challenges/:id" element={<TeachChallengeEditor />} />

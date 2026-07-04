@@ -101,13 +101,21 @@ export function TeachCourseEditor() {
         <p className="text-sm text-slate-500">
           {course.enrollmentCount} students enrolled · {course.lessonCount} lessons
         </p>
-        <button
-          onClick={exportMarkdown}
-          disabled={busy}
-          className="rounded-lg border border-slate-700 px-4 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-        >
-          ⬇️ Export as Markdown
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            to={`/teach/courses/${id}/students`}
+            className="rounded-lg border border-slate-700 px-4 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-800"
+          >
+            📊 View students
+          </Link>
+          <button
+            onClick={exportMarkdown}
+            disabled={busy}
+            className="rounded-lg border border-slate-700 px-4 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+          >
+            ⬇️ Export as Markdown
+          </button>
+        </div>
       </div>
 
       {course.reviewNote && (
