@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { slugify, type TeachCourseDetailDto, type TeachCourseSummaryDto, type TeachLessonDetailDto } from '@codeforge/shared';
+import {
+  slugify,
+  type InstructorSubmissionDto,
+  type TeachCourseDetailDto,
+  type TeachCourseSummaryDto,
+  type TeachLessonDetailDto,
+} from '@codeforge/shared';
 import type { Course } from '@prisma/client';
 import { prisma } from '../lib/prisma.ts';
 import { h } from '../lib/helpers.ts';

@@ -56,6 +56,15 @@ const paths = [
     projectCount: 16,
     description: 'Server-side JavaScript, REST APIs, real-time apps, and backend engineering with Node.js.',
   },
+  {
+    slug: 'git',
+    name: 'Git',
+    icon: '🌿',
+    difficulty: 2,
+    estimatedHours: 20,
+    projectCount: 5,
+    description: 'Version control fundamentals, track changes, branch, merge, and collaborate with Git and GitHub.',
+  },
 ];
 
 type SeedQuestion = {
@@ -487,6 +496,141 @@ const cppLessons: SeedLesson[] = [
   },
 ];
 
+const gitLessons: SeedLesson[] = [
+  {
+    title: 'Introduction to Git',
+    content: lessonContent(
+      'Introduction to Git',
+      `Git is a **distributed version control system**, it tracks every change to your code over time, lets you go back to any previous state, and makes it possible for multiple people to work on the same project without stepping on each other's changes.\n\n## Why use version control?\n\n- **History**, every commit is a snapshot you can return to.\n- **Branching**, try risky changes on a separate line of work without touching the working code.\n- **Collaboration**, merge everyone's work together instead of emailing zip files around.\n\n## Installing Git and setting your identity\n\nCheck whether Git is already installed:\n\n\`\`\`bash\ngit --version\n\`\`\`\n\nEvery commit is stamped with an author, so set your identity once per machine:\n\n\`\`\`bash\ngit config --global user.name "Your Name"\ngit config --global user.email "you@example.com"\n\`\`\`\n\n\`--global\` applies these settings to every repository on your machine, not just the current one.`
+    ),
+    quiz: {
+      title: 'Git Basics',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What type of software is Git?',
+          options: ['A programming language', 'A distributed version control system', 'A cloud hosting service', 'A text editor'],
+          answer: 'A distributed version control system',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Git and GitHub are the same thing.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The command to set your Git username globally is: git config --global user.____',
+          options: [],
+          answer: 'name',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Your First Repository',
+    content: lessonContent(
+      'Your First Repository',
+      `A Git **repository** ("repo") is a project folder Git is tracking. Let's create one.\n\n## Initializing a repository\n\n\`\`\`bash\nmkdir my-project\ncd my-project\ngit init\n\`\`\`\n\n\`git init\` creates a hidden \`.git\` folder, that's where Git stores the entire history of your project.\n\n## The three states of a file\n\n| State | Meaning |\n|-------|---------|\n| Untracked / Modified | Changed on disk, not yet staged |\n| Staged | Marked to be included in the next commit |\n| Committed | Saved permanently in the project's history |\n\n\`\`\`bash\ngit status                   # see what's changed\ngit add app.js                # stage a specific file\ngit add .                     # stage everything\ngit commit -m "Add app.js"    # save the staged changes\n\`\`\`\n\n## Viewing history\n\n\`\`\`bash\ngit log\ngit log --oneline    # one line per commit, easier to scan\n\`\`\`\n\n> [!TIP]\n> Commit often, in small, focused chunks. "Add login form" is a much more useful commit message than "stuff".`
+    ),
+    quiz: {
+      title: 'First Repository Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which command turns a folder into a Git repository?',
+          options: ['git start', 'git init', 'git create', 'git new'],
+          answer: 'git init',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which command moves changes into the staging area?',
+          options: ['git stage', 'git add', 'git track', 'git save'],
+          answer: 'git add',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "git commit saves your staged changes to the project's permanent history.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Branching and Merging',
+    content: lessonContent(
+      'Branching and Merging',
+      `A **branch** is an independent line of development. The default branch is usually called \`main\`.\n\n## Creating and switching branches\n\n\`\`\`bash\ngit branch feature-login        # create a branch\ngit switch feature-login         # switch to it\n\n# or do both in one step:\ngit switch -c feature-login\n\`\`\`\n\nOlder tutorials use \`git checkout -b feature-login\`, it does the same thing as \`git switch -c\`.\n\n## Merging\n\nOnce your branch is ready, merge it back into \`main\`:\n\n\`\`\`bash\ngit switch main\ngit merge feature-login\n\`\`\`\n\n## Merge conflicts\n\nIf the same lines were changed on both branches, Git can't automatically decide which version to keep, that's a **merge conflict**. Git marks the conflicting lines directly in the file:\n\n\`\`\`\n<<<<<<< HEAD\nconst greeting = "Hello!";\n=======\nconst greeting = "Hi there!";\n>>>>>>> feature-login\n\`\`\`\n\nEdit the file to keep the version you want, remove the \`<<<<<<<\`/\`=======\`/\`>>>>>>>\` markers, then stage and commit as usual.\n\n> [!WARNING]\n> Always pull the latest changes before starting new work, resolving a conflict is much easier when it's small.`
+    ),
+    quiz: {
+      title: 'Branching Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which command creates and switches to a new branch in one step?',
+          options: ['git branch new', 'git switch -c new', 'git merge new', 'git commit new'],
+          answer: 'git switch -c new',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Combining changes from one branch into another is called a ____.',
+          options: [],
+          answer: 'merge',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A merge conflict happens when Git can automatically combine changes without any help.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Remotes: Push, Pull, and Clone',
+    content: lessonContent(
+      'Remotes: Push, Pull, and Clone',
+      `So far everything has lived only on your machine. A **remote** is a copy of your repository hosted somewhere else, usually GitHub, GitLab, or Bitbucket.\n\n## Connecting a remote\n\nCreate an empty repository on GitHub, then connect it to your local project:\n\n\`\`\`bash\ngit remote add origin https://github.com/you/my-project.git\ngit push -u origin main\n\`\`\`\n\n\`-u\` (short for \`--set-upstream\`) links your local \`main\` branch to \`origin/main\`, so future pushes only need:\n\n\`\`\`bash\ngit push\n\`\`\`\n\n## Getting changes from a remote\n\n\`\`\`bash\ngit pull     # fetch + merge in one step\ngit fetch    # download changes without merging yet\n\`\`\`\n\n## Cloning an existing project\n\nTo get a full copy of someone else's repository:\n\n\`\`\`bash\ngit clone https://github.com/them/their-project.git\n\`\`\`\n\n> [!NOTE]\n> \`origin\` is just a nickname, the default one Git suggests, but you can name a remote anything.`
+    ),
+    quiz: {
+      title: 'Remotes Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which command uploads your local commits to a remote repository?',
+          options: ['git push', 'git pull', 'git fetch', 'git clone'],
+          answer: 'git push',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which command downloads a full copy of an existing remote repository?',
+          options: ['git pull', 'git clone', 'git init', 'git remote'],
+          answer: 'git clone',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The default name Git suggests for your primary remote is ____.',
+          options: [],
+          answer: 'origin',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Publish Your Own Repo',
+    content: lessonContent(
+      'Final Project: Publish Your Own Repo',
+      `Time to put it all together.\n\n## Requirements\n\n1. Create a new project folder locally, anything you like, a script, a small app, whatever you want to practice on.\n2. Run \`git init\` and make at least 3 separate commits as you build it.\n3. Create a new empty repository on GitHub (or GitLab/Bitbucket).\n4. Connect your local repo to it and push your commits.\n5. Create at least one additional branch, make a change on it, and merge it back into \`main\`.\n\n## Stretch goals\n\n- Add a \`.gitignore\` file for files that shouldn't be tracked (e.g. \`node_modules/\`).\n- Write a proper \`README.md\` describing your project.\n- Open a pull request on your own repo and merge it from the GitHub UI instead of the command line.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }> = {
   nodejs: {
     title: 'Node.js Backend Fundamentals',
@@ -512,6 +656,12 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
     title: 'C++ Foundations',
     description: 'Compiled programming, pointers, and memory, the bedrock of systems development.',
     lessons: cppLessons,
+  },
+  git: {
+    title: 'Git & Version Control Fundamentals',
+    description:
+      'Learn to track changes, branch, merge, and collaborate on code using Git, the version control system behind virtually every modern software project.',
+    lessons: gitLessons,
   },
 };
 
