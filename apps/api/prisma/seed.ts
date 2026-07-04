@@ -69,6 +69,7 @@ type SeedLesson = {
   title: string;
   content: string;
   videoUrl?: string;
+  requiresSubmission?: boolean;
   quiz?: { title: string; passingScore: number; questions: SeedQuestion[] };
 };
 
@@ -218,8 +219,9 @@ const nodeLessons: SeedLesson[] = [
     title: 'Final Project: URL Shortener',
     content: lessonContent(
       'Final Project: URL Shortener',
-      `Time to put it all together. Build a URL shortener API with:\n\n## Requirements\n\n1. \`POST /api/links\`, accepts a long URL, returns a short code.\n2. \`GET /:code\`, redirects to the original URL.\n3. \`GET /api/links/:code/stats\`, visit count and creation date.\n4. Persist links in PostgreSQL.\n5. Validate URLs and handle unknown codes with a 404.\n\n## Stretch goals\n\n- Rate limiting\n- Custom short codes\n- Expiring links\n\nSubmit your repository link when you are done. Good luck! 🚀`
+      `Time to put it all together. Build a URL shortener API with:\n\n## Requirements\n\n1. \`POST /api/links\`, accepts a long URL, returns a short code.\n2. \`GET /:code\`, redirects to the original URL.\n3. \`GET /api/links/:code/stats\`, visit count and creation date.\n4. Persist links in PostgreSQL.\n5. Validate URLs and handle unknown codes with a 404.\n\n## Stretch goals\n\n- Rate limiting\n- Custom short codes\n- Expiring links\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
     ),
+    requiresSubmission: true,
   },
 ];
 
@@ -857,7 +859,7 @@ async function main() {
         if (match) {
           await prisma.lesson.update({
             where: { id: match.id },
-            data: { title: lesson.title, content: lesson.content },
+            data: { title: lesson.title, content: lesson.content, requiresSubmission: lesson.requiresSubmission ?? false },
           });
         }
       }
@@ -878,6 +880,7 @@ async function main() {
             order: i + 1,
             content: lesson.content,
             videoUrl: lesson.videoUrl ?? null,
+            requiresSubmission: lesson.requiresSubmission ?? false,
             quiz: lesson.quiz
               ? {
                   create: {

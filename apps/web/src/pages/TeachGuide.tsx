@@ -48,6 +48,9 @@ export function TeachGuide() {
         <NavLink to="/teach/guide" className={teachTabClass}>
           Guide
         </NavLink>
+        <NavLink to="/teach/submissions" className={teachTabClass}>
+          Submissions
+        </NavLink>
       </nav>
 
       <h1 className="mt-6 text-3xl font-bold">📖 Instructor guide</h1>

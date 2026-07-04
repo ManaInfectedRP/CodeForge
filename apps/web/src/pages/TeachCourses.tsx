@@ -54,6 +54,9 @@ export function TeachCourses() {
         <NavLink to="/teach/guide" className={teachTabClass}>
           Guide
         </NavLink>
+        <NavLink to="/teach/submissions" className={teachTabClass}>
+          Submissions
+        </NavLink>
       </nav>
 
       <div className="mt-6 flex items-center justify-between">

@@ -18,6 +18,7 @@ export function TeachLessonEditor() {
   const [videoUrl, setVideoUrl] = useState('');
   const [content, setContent] = useState('');
   const [preview, setPreview] = useState(false);
+  const [requiresSubmission, setRequiresSubmission] = useState(false);
   const [quizTitle, setQuizTitle] = useState('');
   const [passingScore, setPassingScore] = useState(70);
   const [questions, setQuestions] = useState<QuizQuestionEditDto[]>([]);
@@ -35,6 +36,7 @@ export function TeachLessonEditor() {
         setTitle(l.title);
         setVideoUrl(l.videoUrl ?? '');
         setContent(l.content);
+        setRequiresSubmission(l.requiresSubmission);
         setQuizTitle(l.quiz?.title ?? `${l.title} Quiz`);
         setPassingScore(l.quiz?.passingScore ?? 70);
         setQuestions(l.quiz?.questions ?? []);
@@ -63,6 +65,7 @@ export function TeachLessonEditor() {
           title,
           videoUrl: videoUrl.trim() === '' ? null : videoUrl.trim(),
           content,
+          requiresSubmission,
         }),
       'Lesson saved.'
     );
@@ -217,6 +220,20 @@ export function TeachLessonEditor() {
             />
           )}
         </div>
+        <label className="flex items-start gap-2.5 rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-3 text-sm text-slate-300">
+          <input
+            type="checkbox"
+            checked={requiresSubmission}
+            onChange={(e) => setRequiresSubmission(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-600 bg-slate-800 accent-forge-600"
+          />
+          <span>
+            <span className="font-medium text-slate-200">Require a project submission</span>
+            <br />
+            Students must submit a link (e.g. a repo URL) and get it approved by an instructor before they can mark
+            this lesson complete.
+          </span>
+        </label>
         <button
           onClick={saveLesson}
           disabled={busy}

@@ -51,6 +51,12 @@ enum ChallengeStatus {
   PUBLISHED
 }
 
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+}
+
 model User {
   id                 String           @id @default(cuid())
   username           String           @unique
@@ -78,6 +84,7 @@ model User {
   achievements         UserAchievement[]
   challengesAuthored   Challenge[]           @relation("InstructorChallenges")
   chatMessages         ChatMessage[]
+  projectSubmissions   ProjectSubmission[]
 }
 
 model ChatMessage {
@@ -143,17 +150,34 @@ model Certificate {
 }
 
 model Lesson {
-  id       String           @id @default(cuid())
-  courseId String
-  title    String
-  order    Int
-  videoUrl String?
-  content  String
-  course   Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  quiz     Quiz?
-  progress LessonProgress[]
+  id                 String              @id @default(cuid())
+  courseId           String
+  title              String
+  order              Int
+  videoUrl           String?
+  content            String
+  requiresSubmission Boolean             @default(false)
+  course             Course              @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  quiz               Quiz?
+  progress           LessonProgress[]
+  submissions        ProjectSubmission[]
 
   @@unique([courseId, order])
+}
+
+model ProjectSubmission {
+  id            String           @id @default(cuid())
+  lessonId      String
+  userId        String
+  submissionUrl String
+  status        SubmissionStatus @default(PENDING)
+  feedback      String?
+  submittedAt   DateTime         @default(now())
+  reviewedAt    DateTime?
+  lesson        Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, userId])
 }
 
 model Quiz {

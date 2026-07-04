@@ -113,6 +113,17 @@ export interface QuizDto {
   questions: QuizQuestionDto[];
 }
 
+export type SubmissionStatus = 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED';
+
+export interface ProjectSubmissionDto {
+  id: string;
+  submissionUrl: string;
+  status: SubmissionStatus;
+  feedback: string | null;
+  submittedAt: string;
+  reviewedAt: string | null;
+}
+
 export interface LessonDetailDto {
   id: string;
   courseId: string;
@@ -125,6 +136,8 @@ export interface LessonDetailDto {
   quiz: QuizDto | null;
   prevLessonId: string | null;
   nextLessonId: string | null;
+  requiresSubmission: boolean;
+  mySubmission: ProjectSubmissionDto | null;
 }
 
 export interface QuizResultDto {
@@ -209,7 +222,25 @@ export interface TeachLessonDetailDto {
   order: number;
   videoUrl: string | null;
   content: string;
+  requiresSubmission: boolean;
   quiz: QuizEditDto | null;
+}
+
+// --- Project submission review ---
+
+export interface InstructorSubmissionDto {
+  id: string;
+  lessonId: string;
+  lessonTitle: string;
+  courseId: string;
+  courseTitle: string;
+  studentId: string;
+  studentUsername: string;
+  submissionUrl: string;
+  status: SubmissionStatus;
+  feedback: string | null;
+  submittedAt: string;
+  reviewedAt: string | null;
 }
 
 // --- Admin review ---
