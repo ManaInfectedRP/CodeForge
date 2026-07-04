@@ -44,7 +44,7 @@ lessonsRouter.get(
     });
     if (!lesson || lesson.course.status !== 'PUBLISHED') throw new HttpError(404, 'Lesson not found');
 
-    const [progress, siblings, submission] = await Promise.all([
+    const [progress, siblings, submission, passingAttempt] = await Promise.all([
       prisma.lessonProgress.findUnique({
         where: { userId_lessonId: { userId: req.auth!.sub, lessonId: lesson.id } },
       }),
@@ -56,6 +56,12 @@ lessonsRouter.get(
       prisma.projectSubmission.findUnique({
         where: { lessonId_userId: { lessonId: lesson.id, userId: req.auth!.sub } },
       }),
+      lesson.quiz
+        ? prisma.quizAttempt.findFirst({
+            where: { quizId: lesson.quiz.id, userId: req.auth!.sub, passed: true },
+            select: { id: true },
+          })
+        : Promise.resolve(null),
     ]);
 
     const idx = siblings.findIndex((s) => s.id === lesson.id);
@@ -68,6 +74,7 @@ lessonsRouter.get(
       videoUrl: lesson.videoUrl,
       content: lesson.content,
       completed: progress !== null,
+      quizPassed: lesson.quiz ? passingAttempt !== null : true,
       prevLessonId: idx > 0 ? siblings[idx - 1].id : null,
       nextLessonId: idx < siblings.length - 1 ? siblings[idx + 1].id : null,
       requiresSubmission: lesson.requiresSubmission,
@@ -98,7 +105,10 @@ lessonsRouter.post(
   h(async (req, res) => {
     const lesson = await prisma.lesson.findUnique({
       where: { id: req.params.id },
-      include: { course: { select: { status: true } } },
+      include: {
+        course: { select: { status: true } },
+        quiz: { select: { id: true } },
+      },
     });
     if (!lesson || lesson.course.status !== 'PUBLISHED') throw new HttpError(404, 'Lesson not found');
 
@@ -107,6 +117,16 @@ lessonsRouter.post(
     });
     if (existing) {
       return res.json({ completed: true, xpAwarded: 0 });
+    }
+
+    if (lesson.quiz) {
+      const passed = await prisma.quizAttempt.findFirst({
+        where: { quizId: lesson.quiz.id, userId: req.auth!.sub, passed: true },
+        select: { id: true },
+      });
+      if (!passed) {
+        throw new HttpError(400, 'Complete and pass the quiz before marking this lesson complete');
+      }
     }
 
     if (lesson.requiresSubmission) {
