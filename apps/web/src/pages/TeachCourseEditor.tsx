@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { LearningPathDto, TeachCourseDetailDto } from '@codeforge/shared';
+import { slugify, type LearningPathDto, type TeachCourseDetailDto } from '@codeforge/shared';
 import { api, errorMessage } from '../lib/api';
 import { StatusBadge } from '../components/StatusBadge';
 
@@ -64,6 +64,26 @@ export function TeachCourseEditor() {
     });
   }
 
+  async function exportMarkdown() {
+    if (!course) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.get<string>(`/instructor/courses/${id}/export`, { responseType: 'text' });
+      const blob = new Blob([res.data], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slugify(course.title)}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (error && !course) return <main className="p-12 text-center text-red-400">{error}</main>;
   if (!course) return <main className="p-12 text-center text-slate-400">Loading…</main>;
 
@@ -77,9 +97,18 @@ export function TeachCourseEditor() {
         <h1 className="text-3xl font-bold">{course.title}</h1>
         <StatusBadge status={course.status} />
       </div>
-      <p className="mt-1 text-sm text-slate-500">
-        {course.enrollmentCount} students enrolled · {course.lessonCount} lessons
-      </p>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-slate-500">
+          {course.enrollmentCount} students enrolled · {course.lessonCount} lessons
+        </p>
+        <button
+          onClick={exportMarkdown}
+          disabled={busy}
+          className="rounded-lg border border-slate-700 px-4 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+        >
+          ⬇️ Export as Markdown
+        </button>
+      </div>
 
       {course.reviewNote && (
         <p className="mt-4 rounded-xl bg-red-950/40 px-4 py-3 text-sm text-red-300">

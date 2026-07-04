@@ -1,3 +1,7 @@
+export function slugify(input: string): string {
+  return input.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'untitled';
+}
+
 export type Role = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';
 
 export type QuestionType = 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'FILL_BLANK';
