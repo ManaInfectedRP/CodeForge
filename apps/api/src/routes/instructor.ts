@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   slugify,
   type InstructorStudentProgressDto,
+  type InstructorStudentQuizDto,
   type InstructorSubmissionDto,
   type TeachCourseDetailDto,
   type TeachCourseSummaryDto,
@@ -94,6 +95,55 @@ async function ownedSubmission(submissionId: string, auth: TokenPayload) {
     throw new HttpError(403, 'You do not own this submission');
   }
   return submission;
+}
+
+/** Computes each (course, user) pair's quiz attempt history, for reviewing a student's submission in context. */
+async function quizSummariesByCourseUser(
+  pairs: { courseId: string; userId: string }[]
+): Promise<Map<string, InstructorStudentQuizDto[]>> {
+  const courseIds = [...new Set(pairs.map((p) => p.courseId))];
+  const userIds = [...new Set(pairs.map((p) => p.userId))];
+
+  const lessons = await prisma.lesson.findMany({
+    where: { courseId: { in: courseIds } },
+    orderBy: { order: 'asc' },
+    include: { quiz: { select: { id: true, title: true, passingScore: true } } },
+  });
+  const quizLessons = lessons.filter((l) => l.quiz !== null);
+  const quizIds = quizLessons.map((l) => l.quiz!.id);
+
+  const attempts =
+    quizIds.length > 0 && userIds.length > 0
+      ? await prisma.quizAttempt.findMany({
+          where: { quizId: { in: quizIds }, userId: { in: userIds } },
+          orderBy: { createdAt: 'asc' },
+        })
+      : [];
+
+  const result = new Map<string, InstructorStudentQuizDto[]>();
+  for (const { courseId, userId } of pairs) {
+    const key = `${courseId}:${userId}`;
+    if (result.has(key)) continue;
+    const userAttempts = attempts.filter((a) => a.userId === userId);
+    const quizzes = quizLessons
+      .filter((l) => l.courseId === courseId)
+      .map((l) => {
+        const quizAttempts = userAttempts.filter((a) => a.quizId === l.quiz!.id);
+        const bestScore = quizAttempts.length > 0 ? Math.max(...quizAttempts.map((a) => a.score)) : null;
+        return {
+          lessonId: l.id,
+          lessonTitle: l.title,
+          quizTitle: l.quiz!.title,
+          passingScore: l.quiz!.passingScore,
+          attemptCount: quizAttempts.length,
+          bestScore,
+          passed: quizAttempts.some((a) => a.passed),
+          lastAttemptAt: quizAttempts.length > 0 ? quizAttempts[quizAttempts.length - 1].createdAt.toISOString() : null,
+        };
+      });
+    result.set(key, quizzes);
+  }
+  return result;
 }
 
 export const instructorRouter = Router();
@@ -485,17 +535,20 @@ instructorRouter.put(
   })
 );
 
-function toInstructorSubmissionDto(s: {
-  id: string;
-  lessonId: string;
-  submissionUrl: string;
-  status: 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED';
-  feedback: string | null;
-  submittedAt: Date;
-  reviewedAt: Date | null;
-  lesson: { title: string; course: { id: string; title: string } };
-  user: { id: string; username: string };
-}): InstructorSubmissionDto {
+function toInstructorSubmissionDto(
+  s: {
+    id: string;
+    lessonId: string;
+    submissionUrl: string;
+    status: 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED';
+    feedback: string | null;
+    submittedAt: Date;
+    reviewedAt: Date | null;
+    lesson: { title: string; course: { id: string; title: string } };
+    user: { id: string; username: string };
+  },
+  quizzes: InstructorStudentQuizDto[]
+): InstructorSubmissionDto {
   return {
     id: s.id,
     lessonId: s.lessonId,
@@ -509,6 +562,7 @@ function toInstructorSubmissionDto(s: {
     feedback: s.feedback,
     submittedAt: s.submittedAt.toISOString(),
     reviewedAt: s.reviewedAt?.toISOString() ?? null,
+    quizzes,
   };
 }
 
@@ -528,7 +582,12 @@ instructorRouter.get(
       include: { lesson: { include: { course: { select: { id: true, title: true } } } }, user: true },
       orderBy: { submittedAt: 'desc' },
     });
-    res.json(submissions.map(toInstructorSubmissionDto));
+    const quizMap = await quizSummariesByCourseUser(
+      submissions.map((s) => ({ courseId: s.lesson.course.id, userId: s.user.id }))
+    );
+    res.json(
+      submissions.map((s) => toInstructorSubmissionDto(s, quizMap.get(`${s.lesson.course.id}:${s.user.id}`) ?? []))
+    );
   })
 );
 
@@ -541,7 +600,8 @@ instructorRouter.post(
       data: { status: 'APPROVED', feedback: null, reviewedAt: new Date() },
       include: { lesson: { include: { course: { select: { id: true, title: true } } } }, user: true },
     });
-    res.json(toInstructorSubmissionDto(updated));
+    const quizMap = await quizSummariesByCourseUser([{ courseId: updated.lesson.course.id, userId: updated.user.id }]);
+    res.json(toInstructorSubmissionDto(updated, quizMap.get(`${updated.lesson.course.id}:${updated.user.id}`) ?? []));
   })
 );
 
@@ -555,6 +615,7 @@ instructorRouter.post(
       data: { status: 'CHANGES_REQUESTED', feedback, reviewedAt: new Date() },
       include: { lesson: { include: { course: { select: { id: true, title: true } } } }, user: true },
     });
-    res.json(toInstructorSubmissionDto(updated));
+    const quizMap = await quizSummariesByCourseUser([{ courseId: updated.lesson.course.id, userId: updated.user.id }]);
+    res.json(toInstructorSubmissionDto(updated, quizMap.get(`${updated.lesson.course.id}:${updated.user.id}`) ?? []));
   })
 );

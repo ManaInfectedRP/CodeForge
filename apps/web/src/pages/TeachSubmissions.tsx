@@ -144,6 +144,37 @@ export function TeachSubmissions() {
                 </p>
               )}
 
+              {s.quizzes.length > 0 && (
+                <details className="mt-3 rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm">
+                  <summary className="cursor-pointer font-medium text-slate-300">
+                    Quiz attempts across this course ({s.quizzes.filter((q) => q.passed).length}/{s.quizzes.length} passed)
+                  </summary>
+                  <ul className="mt-2 space-y-1.5">
+                    {s.quizzes.map((q) => (
+                      <li key={q.lessonId} className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-slate-400">
+                          {q.lessonTitle} <span className="text-slate-600">· {q.quizTitle}</span>
+                        </span>
+                        <span className="flex items-center gap-2">
+                          {q.attemptCount === 0 ? (
+                            <span className="text-slate-500">Not attempted</span>
+                          ) : (
+                            <>
+                              <span className="text-slate-500">
+                                {q.attemptCount} attempt{q.attemptCount === 1 ? '' : 's'}, best {q.bestScore}%
+                              </span>
+                              <span className={q.passed ? 'text-emerald-400' : 'text-red-400'}>
+                                {q.passed ? '✅' : '❌'}
+                              </span>
+                            </>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+
               {s.status === 'PENDING' && (
                 <div className="mt-4 flex flex-wrap items-center gap-2">
                   <button

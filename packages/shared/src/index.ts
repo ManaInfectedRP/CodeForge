@@ -249,6 +249,8 @@ export interface InstructorSubmissionDto {
   feedback: string | null;
   submittedAt: string;
   reviewedAt: string | null;
+  /** this student's quiz attempt history across every quiz lesson in the course, for review context */
+  quizzes: InstructorStudentQuizDto[];
 }
 
 // --- Student progress & quiz results (instructor view) ---
