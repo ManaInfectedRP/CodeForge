@@ -137,6 +137,8 @@ export interface LessonDetailDto {
   videoUrl: string | null;
   content: string;
   completed: boolean;
+  /** true when the lesson has no quiz, or the student has already passed it */
+  quizPassed: boolean;
   quiz: QuizDto | null;
   prevLessonId: string | null;
   nextLessonId: string | null;

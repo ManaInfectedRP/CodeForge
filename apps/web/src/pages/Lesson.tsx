@@ -11,15 +11,20 @@ export function Lesson() {
   const { id } = useParams<{ id: string }>();
   const { refreshUser } = useAuth();
   const [lesson, setLesson] = useState<LessonDetailDto | null>(null);
+  const [quizPassed, setQuizPassed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
 
   useEffect(() => {
     setLesson(null);
+    setQuizPassed(false);
     setError(null);
     api
       .get<LessonDetailDto>(`/lessons/${id}`)
-      .then((res) => setLesson(res.data))
+      .then((res) => {
+        setLesson(res.data);
+        setQuizPassed(res.data.quizPassed);
+      })
       .catch((err) => setError(errorMessage(err)));
   }, [id]);
 
@@ -73,8 +78,20 @@ export function Lesson() {
         />
       )}
 
+      {lesson.quiz && (
+        <QuizPlayer
+          key={lesson.quiz.id}
+          quiz={lesson.quiz}
+          onPass={() => setQuizPassed(true)}
+        />
+      )}
+
       {!lesson.completed &&
-        (lesson.requiresSubmission && lesson.mySubmission?.status !== 'APPROVED' ? (
+        (!quizPassed ? (
+          <p className="mt-8 rounded-xl border border-dashed border-slate-700 px-4 py-3 text-sm text-slate-400">
+            Pass the quiz above to unlock lesson completion.
+          </p>
+        ) : lesson.requiresSubmission && lesson.mySubmission?.status !== 'APPROVED' ? (
           <p className="mt-8 rounded-xl border border-dashed border-slate-700 px-4 py-3 text-sm text-slate-400">
             Waiting on an approved project submission before this lesson can be marked complete.
           </p>
@@ -87,8 +104,6 @@ export function Lesson() {
             {completing ? 'Saving…' : '✓ Mark lesson complete (+10 XP)'}
           </button>
         ))}
-
-      {lesson.quiz && <QuizPlayer key={lesson.quiz.id} quiz={lesson.quiz} />}
 
       <nav className="mt-12 flex justify-between border-t border-slate-800 pt-6 text-sm">
         {lesson.prevLessonId ? (

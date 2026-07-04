@@ -3,7 +3,7 @@ import type { QuizDto, QuizResultDto } from '@codeforge/shared';
 import { api, errorMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
-export function QuizPlayer({ quiz }: { quiz: QuizDto }) {
+export function QuizPlayer({ quiz, onPass }: { quiz: QuizDto; onPass?: () => void }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [result, setResult] = useState<QuizResultDto | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +20,7 @@ export function QuizPlayer({ quiz }: { quiz: QuizDto }) {
       const { data } = await api.post<QuizResultDto>(`/quizzes/${quiz.id}/attempts`, { answers });
       setResult(data);
       if (data.xpAwarded > 0) await refreshUser();
+      if (data.passed) onPass?.();
     } catch (err) {
       setError(errorMessage(err));
     } finally {
