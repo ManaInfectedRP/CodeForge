@@ -108,39 +108,44 @@ export function CourseDetail() {
       <section className="mt-10">
         <h2 className="text-xl font-bold">Curriculum</h2>
         <ol className="mt-4 space-y-2">
-          {course.lessons.map((l) => (
-            <li key={l.id}>
-              <Link
-                to={course.enrolled ? `/lessons/${l.id}` : '#'}
-                onClick={(e) => {
-                  if (!course.enrolled) e.preventDefault();
-                }}
-                className={`flex items-center justify-between rounded-xl border px-5 py-4 transition-colors ${
-                  course.enrolled
-                    ? 'border-slate-800 bg-slate-900 hover:border-slate-600'
-                    : 'cursor-not-allowed border-slate-800/60 bg-slate-900/50 opacity-60'
-                }`}
-              >
-                <span className="flex items-center gap-3">
-                  <span
-                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                      l.completed ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    {l.completed ? '✓' : l.order}
+          {course.lessons.map((l) => {
+            const clickable = course.enrolled && l.unlocked;
+            return (
+              <li key={l.id}>
+                <Link
+                  to={clickable ? `/lessons/${l.id}` : '#'}
+                  onClick={(e) => {
+                    if (!clickable) e.preventDefault();
+                  }}
+                  className={`flex items-center justify-between rounded-xl border px-5 py-4 transition-colors ${
+                    clickable
+                      ? 'border-slate-800 bg-slate-900 hover:border-slate-600'
+                      : 'cursor-not-allowed border-slate-800/60 bg-slate-900/50 opacity-60'
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                        l.completed ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {l.completed ? '✓' : l.order}
+                    </span>
+                    <span className="font-medium">{l.title}</span>
                   </span>
-                  <span className="font-medium">{l.title}</span>
-                </span>
-                <span className="text-sm text-slate-500">
-                  {l.hasQuiz && '📝 quiz'}
-                  {!course.enrolled && ' 🔒'}
-                </span>
-              </Link>
-            </li>
-          ))}
+                  <span className="text-sm text-slate-500">
+                    {l.hasQuiz && '📝 quiz'}
+                    {!clickable && ' 🔒'}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ol>
-        {!course.enrolled && (
+        {!course.enrolled ? (
           <p className="mt-3 text-sm text-slate-500">Enroll to unlock the lessons.</p>
+        ) : (
+          <p className="mt-3 text-sm text-slate-500">Lessons unlock in order, complete each one to open the next.</p>
         )}
       </section>
     </main>

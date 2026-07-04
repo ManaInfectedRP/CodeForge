@@ -65,6 +65,16 @@ lessonsRouter.get(
     ]);
 
     const idx = siblings.findIndex((s) => s.id === lesson.id);
+    if (idx > 0) {
+      const previousIds = siblings.slice(0, idx).map((s) => s.id);
+      const completedPreviousCount = await prisma.lessonProgress.count({
+        where: { userId: req.auth!.sub, lessonId: { in: previousIds } },
+      });
+      if (completedPreviousCount < previousIds.length) {
+        throw new HttpError(403, 'Complete the previous lessons in this course before this one');
+      }
+    }
+
     const body: LessonDetailDto = {
       id: lesson.id,
       courseId: lesson.course.id,
@@ -117,6 +127,19 @@ lessonsRouter.post(
     });
     if (existing) {
       return res.json({ completed: true, xpAwarded: 0 });
+    }
+
+    const previousLessons = await prisma.lesson.findMany({
+      where: { courseId: lesson.courseId, order: { lt: lesson.order } },
+      select: { id: true },
+    });
+    if (previousLessons.length > 0) {
+      const completedPreviousCount = await prisma.lessonProgress.count({
+        where: { userId: req.auth!.sub, lessonId: { in: previousLessons.map((l) => l.id) } },
+      });
+      if (completedPreviousCount < previousLessons.length) {
+        throw new HttpError(400, 'Complete the previous lessons in this course before this one');
+      }
     }
 
     if (lesson.quiz) {

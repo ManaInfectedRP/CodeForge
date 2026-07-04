@@ -91,13 +91,21 @@ coursesRouter.get(
       lessonCount: course.lessons.length,
       enrolled,
       completedLessons: completedIds.size,
-      lessons: course.lessons.map((l) => ({
-        id: l.id,
-        title: l.title,
-        order: l.order,
-        hasQuiz: l.quiz !== null,
-        completed: completedIds.has(l.id),
-      })),
+      lessons: (() => {
+        let previousCompleted = true;
+        return course.lessons.map((l) => {
+          const unlocked = previousCompleted;
+          if (!completedIds.has(l.id)) previousCompleted = false;
+          return {
+            id: l.id,
+            title: l.title,
+            order: l.order,
+            hasQuiz: l.quiz !== null,
+            completed: completedIds.has(l.id),
+            unlocked,
+          };
+        });
+      })(),
     };
     res.json(body);
   })

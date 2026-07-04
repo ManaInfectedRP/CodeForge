@@ -65,6 +65,33 @@ const paths = [
     projectCount: 5,
     description: 'Version control fundamentals, track changes, branch, merge, and collaborate with Git and GitHub.',
   },
+  {
+    slug: 'react',
+    name: 'React',
+    icon: '⚛️',
+    difficulty: 3,
+    estimatedHours: 50,
+    projectCount: 16,
+    description: 'Component-based UI development with React, JSX, props, state, hooks, and building real interactive apps.',
+  },
+  {
+    slug: 'csharp',
+    name: 'C#',
+    icon: '🟣',
+    difficulty: 3,
+    estimatedHours: 45,
+    projectCount: 14,
+    description: 'Statically-typed, object-oriented programming with C# and the .NET ecosystem.',
+  },
+  {
+    slug: 'sql',
+    name: 'SQL',
+    icon: '🗄️',
+    difficulty: 3,
+    estimatedHours: 55,
+    projectCount: 11,
+    description: 'Query, filter, join, and aggregate relational data with SQL, the language behind virtually every database-backed application.',
+  },
 ];
 
 type SeedQuestion = {
@@ -993,38 +1020,962 @@ const gitLessons: SeedLesson[] = [
   },
 ];
 
-const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }> = {
-  nodejs: {
-    title: 'Node.js Backend Fundamentals',
-    description: 'From your first console.log to a deployed REST API with authentication, the complete Node.js foundation.',
-    lessons: nodeLessons,
+const reactLessons: SeedLesson[] = [
+  {
+    title: 'Introduction to React and JSX',
+    content: lessonContent(
+      'Introduction to React and JSX',
+      `React is a JavaScript library for building user interfaces out of small, reusable **components**. Instead of manually updating the page, you describe what the UI should look like for a given state, and React handles the updates.\n\n## Your first component\n\nA component is just a JavaScript function that returns **JSX**, an HTML-like syntax that compiles down to regular JavaScript.\n\n\`\`\`\nfunction Welcome() {\n  return <h1>Hello, CodeForge!</h1>;\n}\n\`\`\`\n\n*JSX needs a React app (and a build step) to render, so it's read-only here, every example in this course uses this style, you'll run real components in the final project.*\n\n## Embedding JavaScript in JSX\n\nCurly braces \`{ }\` let you drop any JavaScript expression into your markup:\n\n\`\`\`\nfunction Greeting() {\n  const name = 'Ada';\n  return <h1>Hello, {name}!</h1>;\n}\n\`\`\`\n\n## One rule to remember\n\nA component must return a **single root element**. To return multiple sibling elements without adding an extra \`<div>\`, wrap them in a Fragment: \`<>...</>\`.`
+    ),
+    quiz: {
+      title: 'React Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does JSX let you write directly inside JavaScript?',
+          options: ['SQL queries', 'HTML-like markup', 'CSS stylesheets', 'YAML config'],
+          answer: 'HTML-like markup',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A React component is just a JavaScript ____ that returns JSX.',
+          options: [],
+          answer: 'function',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A component can return multiple sibling elements without wrapping them in a single parent element or Fragment.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
   },
-  python: {
-    title: 'Python for Absolute Beginners',
-    description: 'Learn programming from zero with the most beginner-friendly language in the world.',
-    lessons: pythonLessons,
+  {
+    title: 'Props and Component Composition',
+    content: lessonContent(
+      'Props and Component Composition',
+      `**Props** (short for properties) are how a parent component passes data down to a child component, they work a lot like function arguments.\n\n\`\`\`\nfunction Badge({ label, color }) {\n  return <span style={{ color }}>{label}</span>;\n}\n\nfunction Profile() {\n  return (\n    <div>\n      <Badge label="Instructor" color="blue" />\n      <Badge label="5-star" color="gold" />\n    </div>\n  );\n}\n\`\`\`\n\n## Key rules\n\n- Props are **read-only**, a component should never modify the props it receives, if it needs to change over time, that's what state (next lesson) is for.\n- Destructuring props in the function signature, \`function Badge({ label, color })\`, is the idiomatic way to read them.\n- The special \`children\` prop holds whatever JSX is nested between a component's opening and closing tags, letting you build flexible wrapper components like \`<Card>...</Card>\`.\n\n**Composition** is the practice of building complex UIs out of small components like \`Badge\`, plugged into bigger ones like \`Profile\`.`
+    ),
+    quiz: {
+      title: 'Props Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How does a parent component pass data down to a child component?',
+          options: ['Global variables', 'Via props', 'Direct DOM manipulation', 'Environment variables'],
+          answer: 'Via props',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A component is allowed to modify (mutate) the props it receives.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The special prop that holds JSX nested between a component's opening and closing tags is called ____.",
+          options: [],
+          answer: 'children',
+        },
+      ],
+    },
   },
-  javascript: {
-    title: 'Modern JavaScript Essentials',
-    description: 'DOM manipulation, array methods, and async programming, everything the modern web is built on.',
-    lessons: jsLessons,
+  {
+    title: 'State and Event Handling',
+    content: lessonContent(
+      'State and Event Handling',
+      `Props let data flow in from a parent, **state** lets a component remember and update its own data over time. The \`useState\` hook is how you add state to a function component.\n\n\`\`\`\nimport { useState } from 'react';\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <button onClick={() => setCount(count + 1)}>\n      Clicked {count} times\n    </button>\n  );\n}\n\`\`\`\n\n## How it works\n\n- \`useState(0)\` returns a pair, the **current value** (\`count\`) and a **setter function** (\`setCount\`), starting at \`0\`.\n- Calling \`setCount(...)\` tells React the value changed, React then **re-renders** the component with the new value.\n- \`onClick={() => setCount(count + 1)}\` attaches an event handler, the same pattern works for \`onChange\`, \`onSubmit\`, and every other DOM event.\n\n> [!WARNING]\n> Never mutate state directly (\`count++\` or \`count = count + 1\`), always go through the setter, or React won't know to re-render.`
+    ),
+    quiz: {
+      title: 'State Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does useState(0) return?',
+          options: [
+            'Just the current value',
+            'An array with the current value and a setter function',
+            'A Promise that resolves to the value',
+            'Nothing, it only has a side effect',
+          ],
+          answer: 'An array with the current value and a setter function',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Calling the setter function returned by useState triggers a component ____.',
+          options: [],
+          answer: 're-render',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'You should mutate a state variable directly instead of calling its setter function.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
   },
-  typescript: {
-    title: 'TypeScript from JavaScript',
-    description: 'Level up your JavaScript with static types, interfaces, and compiler-driven confidence.',
-    lessons: tsLessons,
+  {
+    title: 'Effects and Side Effects',
+    content: lessonContent(
+      'Effects and Side Effects',
+      `Rendering should stay pure, no fetching, no timers, no subscriptions. The \`useEffect\` hook is where that kind of **side effect** belongs.\n\n\`\`\`\nimport { useState, useEffect } from 'react';\n\nfunction CourseList() {\n  const [courses, setCourses] = useState([]);\n\n  useEffect(() => {\n    fetch('/api/courses')\n      .then((res) => res.json())\n      .then(setCourses);\n  }, []); // empty array: run once, when the component mounts\n\n  return (\n    <ul>\n      {courses.map((c) => <li key={c.id}>{c.title}</li>)}\n    </ul>\n  );\n}\n\`\`\`\n\n## The dependency array\n\nThe second argument to \`useEffect\` controls **when** it re-runs:\n\n| Dependency array | Behavior |\n|---|---|\n| omitted | Runs after every render |\n| \`[]\` | Runs once, after the first render |\n| \`[someValue]\` | Runs once after the first render, then again whenever \`someValue\` changes |\n\n## Cleaning up\n\nIf your effect subscribes to something (a timer, a WebSocket, an event listener), return a **cleanup function** from it, React calls it before the effect re-runs and when the component unmounts:\n\n\`\`\`\nuseEffect(() => {\n  const id = setInterval(() => console.log('tick'), 1000);\n  return () => clearInterval(id);\n}, []);\n\`\`\``
+    ),
+    quiz: {
+      title: 'Effects Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does an empty dependency array `[]` mean for useEffect?',
+          options: [
+            'The effect never runs',
+            'The effect runs once, when the component mounts',
+            'The effect runs on every render',
+            'The effect only runs on unmount',
+          ],
+          answer: 'The effect runs once, when the component mounts',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'To fetch data when a component first renders, you would use the ____ hook.',
+          options: [],
+          answer: 'useEffect',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A function returned from inside useEffect is used to clean up before the next run or on unmount.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
   },
-  cpp: {
-    title: 'C++ Foundations',
-    description: 'Compiled programming, pointers, and memory, the bedrock of systems development.',
-    lessons: cppLessons,
+  {
+    title: 'Rendering Lists and Building Forms',
+    content: lessonContent(
+      'Rendering Lists and Building Forms',
+      `## Rendering lists\n\nUse \`.map()\` to turn an array of data into an array of JSX elements, each one needs a unique \`key\` prop so React can track it across re-renders.\n\n\`\`\`\nfunction TaskList({ tasks }) {\n  return (\n    <ul>\n      {tasks.map((task) => (\n        <li key={task.id}>{task.text}</li>\n      ))}\n    </ul>\n  );\n}\n\`\`\`\n\n> [!WARNING]\n> Prefer a stable id for \`key\`, using the array index breaks when items are reordered, inserted, or removed, React can confuse which item is which.\n\n## Controlled forms\n\nA **controlled input** gets its displayed value from state, and updates that state on every keystroke:\n\n\`\`\`\nfunction TaskForm({ onAdd }) {\n  const [text, setText] = useState('');\n\n  function handleSubmit(event) {\n    event.preventDefault();\n    onAdd(text);\n    setText('');\n  }\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <input value={text} onChange={(e) => setText(e.target.value)} />\n      <button type="submit">Add</button>\n    </form>\n  );\n}\n\`\`\`\n\n\`event.preventDefault()\` stops the browser's default full-page reload on form submit, letting React handle it instead.`
+    ),
+    quiz: {
+      title: 'Lists & Forms Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "In a controlled input, what determines the input's displayed value?",
+          options: ['The DOM, directly', 'A state variable', 'The HTML value attribute alone', 'Nothing, it is uncontrolled by default'],
+          answer: 'A state variable',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'When rendering a list with .map(), each element needs a unique ____ prop.',
+          options: [],
+          answer: 'key',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Using the array index as a key is always safe, even when items can be reordered or removed.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
   },
-  git: {
-    title: 'Git & Version Control Fundamentals',
-    description:
-      'Learn to track changes, branch, merge, and collaborate on code using Git, the version control system behind virtually every modern software project.',
-    lessons: gitLessons,
+  {
+    title: 'Final Project: Build a Task Board',
+    content: lessonContent(
+      'Final Project: Build a Task Board',
+      `Time to combine components, props, state, effects, and forms into a real React app.\n\n## Requirements\n\n1. Render a list of tasks (\`{ id, text, done }\`) using \`.map()\` with a proper, stable \`key\`.\n2. Let the user add a new task through a controlled form input.\n3. Let the user toggle a task's done state and delete a task, updating state immutably (no direct mutation of the array or its objects).\n4. Fetch an initial list of tasks from an API (or a mock async function) inside \`useEffect\` when the board first mounts.\n5. Split the UI into at least three components, e.g. \`TaskBoard\`, \`TaskForm\`, and \`TaskItem\`, that communicate through props.\n\n## Stretch goals\n\n- Persist tasks to \`localStorage\` so they survive a page reload.\n- Add filter buttons for All / Active / Completed.\n- Show a loading state while the initial fetch is in flight.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
   },
+];
+
+const csharpLessons: SeedLesson[] = [
+  {
+    title: 'Hello, C#',
+    content: lessonContent(
+      'Hello, C#',
+      `C# (pronounced "C sharp") is a statically-typed, object-oriented language built by Microsoft for the .NET platform. It's used for everything from web APIs (ASP.NET) to desktop apps to game development (Unity).\n\n\`\`\`csharp\nusing System;\n\nclass Program\n{\n    static void Main()\n    {\n        Console.WriteLine("Hello, CodeForge!");\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`using System;\` imports the namespace that contains \`Console\` and other common types.\n- Every C# program needs an entry point method called \`Main\`, that's where execution starts.\n- \`Console.WriteLine(...)\` prints a line of text to the terminal.\n\nCompile and run a C# project with the .NET CLI:\n\n\`\`\`bash\ndotnet run\n\`\`\``
+    ),
+    quiz: {
+      title: 'C# Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the entry point method of a C# program called?',
+          options: ['Start', 'Main', 'Run', 'Init'],
+          answer: 'Main',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Console.____("Hello!") prints a line of text to the console.',
+          options: [],
+          answer: 'WriteLine',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'C# is a statically-typed language.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Variables and Types',
+    content: lessonContent(
+      'Variables and Types',
+      `\`\`\`csharp\nint xp = 100;\nstring name = "Ada";\nbool isInstructor = true;\ndouble score = 92.5;\n\nConsole.WriteLine($"{name} has {xp} XP");\n\`\`\`\n\n## Common types\n\n| Type | Example |\n|------|---------|\n| \`int\` | \`42\` |\n| \`double\` | \`3.14\` |\n| \`string\` | \`"hello"\` |\n| \`bool\` | \`true\` / \`false\` |\n\n## String interpolation\n\nA \`$"..."\` string lets you embed expressions directly with \`{ }\`, this is called **string interpolation**.\n\n## Type inference with \`var\`\n\n\`\`\`csharp\nvar count = 10; // the compiler infers count is an int\n\`\`\`\n\n\`var\` doesn't make C# dynamically typed, the compiler still figures out and locks in a concrete type at compile time, it just saves you from writing it out.`
+    ),
+    quiz: {
+      title: 'Variables Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Which keyword lets the compiler infer a variable's type from its initial value?",
+          options: ['auto', 'var', 'let', 'dynamic'],
+          answer: 'var',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Embedding expressions directly in a string with $"{name}" is called string ____.',
+          options: [],
+          answer: 'interpolation',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Once a variable is declared as an int, you can later assign a string to it without casting or conversion.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Control Flow and Loops',
+    content: lessonContent(
+      'Control Flow and Loops',
+      `\`\`\`csharp\nint xp = 45;\n\nif (xp >= 50)\n{\n    Console.WriteLine("Level up!");\n}\nelse\n{\n    Console.WriteLine($"Keep going, {50 - xp} XP to go.");\n}\n\nfor (int i = 1; i <= 5; i++)\n{\n    Console.WriteLine($"Lesson {i}");\n}\n\nforeach (var lang in new[] { "C#", "Python", "JavaScript" })\n{\n    Console.WriteLine(lang);\n}\n\`\`\`\n\n## The pieces\n\n- \`if\` / \`else\` branch on a boolean condition.\n- \`for (init; condition; increment)\` is best when you know how many times to loop.\n- \`foreach (var item in collection)\` visits every element of an array or collection without needing an index, use it whenever you don't need the index itself.`
+    ),
+    quiz: {
+      title: 'Control Flow Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which loop is the best fit for visiting every element of a collection without needing an index?',
+          options: ['for', 'foreach', 'while', 'do-while'],
+          answer: 'foreach',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A for loop has three parts separated by semicolons: initializer, condition, and ____.',
+          options: [],
+          answer: 'increment',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An if statement in C# requires its condition to evaluate to a boolean.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Methods and Classes',
+    content: lessonContent(
+      'Methods and Classes',
+      `A **class** bundles data (fields) and behavior (methods) together, it's the blueprint for creating objects.\n\n\`\`\`csharp\nclass Student\n{\n    public string Name;\n    public int Xp;\n\n    public Student(string name, int xp = 0)\n    {\n        Name = name;\n        Xp = xp;\n    }\n\n    public int GainXp(int amount)\n    {\n        Xp += amount;\n        return Xp;\n    }\n}\n\nvar ada = new Student("Ada");\nada.GainXp(50);\nConsole.WriteLine($"{ada.Name} has {ada.Xp} XP");\n\`\`\`\n\n## Key pieces\n\n- The method with the same name as the class (\`Student(string name, int xp = 0)\`) is the **constructor**, it runs when you create a new instance.\n- \`new Student("Ada")\` allocates a new object and runs its constructor.\n- \`public\` fields and methods are accessible from outside the class, by convention C# method and property names use PascalCase (\`GainXp\`, not \`gainXp\`).`
+    ),
+    quiz: {
+      title: 'Classes Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the method that runs automatically when you create a new instance of a class called?',
+          options: ['The destructor', 'The constructor', 'The initializer', 'The allocator'],
+          answer: 'The constructor',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The ____ keyword allocates a new instance of a class and runs its constructor.',
+          options: [],
+          answer: 'new',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'By convention, C# method names use PascalCase, like GainXp rather than gainXp.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Collections and LINQ',
+    content: lessonContent(
+      'Collections and LINQ',
+      `\`\`\`csharp\nusing System.Linq;\n\nList<int> scores = new List<int> { 80, 92, 67, 100 };\n\nvar passed = scores.Where(s => s >= 70).ToList();\nvar doubled = scores.Select(s => s * 2).ToList();\nint total = scores.Sum();\n\nConsole.WriteLine($"passed: {string.Join(", ", passed)}");\nConsole.WriteLine($"total: {total}");\n\`\`\`\n\n## Collections\n\n\`List<T>\` is a resizable, generic collection, the \`<int>\` says it only holds \`int\`s.\n\n## LINQ\n\n**LINQ** (Language Integrated Query) adds query-style methods to collections, similar to JavaScript's \`map\`/\`filter\`/\`reduce\`:\n\n| LINQ | JavaScript equivalent |\n|------|------------------------|\n| \`Where(predicate)\` | \`filter\` |\n| \`Select(transform)\` | \`map\` |\n| \`Sum()\` | \`reduce\` (adding) |\n\nLINQ methods live in the \`System.Linq\` namespace, and (like the JavaScript array methods they resemble) return a new sequence rather than modifying the original.`
+    ),
+    quiz: {
+      title: 'Collections & LINQ Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which LINQ method keeps only the elements that match a condition?',
+          options: ['Select', 'Where', 'Sum', 'ToList'],
+          answer: 'Where',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A resizable, generic collection of integers is declared as List<____>.',
+          options: [],
+          answer: 'int',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'LINQ methods like Where and Select modify the original collection in place.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Console Grade Book',
+    content: lessonContent(
+      'Final Project: Console Grade Book',
+      `Time to combine classes, collections, and LINQ into a real console application.\n\n## Requirements\n\n1. Create a \`Student\` class with a name and a list of scores.\n2. Store several students in a \`List<Student>\`.\n3. Write a method that computes a student's average score.\n4. Use LINQ (\`Where\`, \`Select\`, or similar) to filter and report which students are passing (e.g. average \`>= 70\`).\n5. Loop over every student and print a report line with their name, average, and a letter grade (A/B/C/D/F) based on thresholds you define.\n\n## Stretch goals\n\n- Read student data from \`Console.ReadLine()\` instead of hardcoding it.\n- Sort students by average score, highest first.\n- Wrap score parsing in a \`try/catch\` to handle invalid input gracefully.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const sqlLessons: SeedLesson[] = [
+  {
+    title: 'Introduction to SQL and SELECT',
+    content: lessonContent(
+      'Introduction to SQL and SELECT',
+      `SQL (Structured Query Language) is how you talk to a **relational database**, data organized into tables made of rows and columns. Almost every application with a database uses SQL under the hood.\n\nImagine a \`students\` table:\n\n| id | name | xp |\n|----|------|-----|\n| 1 | Ada | 120 |\n| 2 | Grace | 95 |\n| 3 | Alan | 60 |\n\n## Selecting data\n\n\`\`\`sql\nSELECT name, xp\nFROM students;\n\nSELECT *\nFROM students;\n\`\`\`\n\n- \`SELECT\` lists the columns you want back, or \`*\` for every column.\n- \`FROM\` says which table to read from.\n- Every statement ends with a semicolon \`;\`.\n\n> [!NOTE]\n> SQL keywords like \`SELECT\` and \`FROM\` aren't case-sensitive (\`select\` works too), but writing them in \`UPPERCASE\` is the near-universal convention, it makes queries easier to scan.`
+    ),
+    quiz: {
+      title: 'SQL Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does SQL stand for?',
+          options: ['Structured Query Language', 'Sequential Query Logic', 'System Query Layer', 'Structured Question Language'],
+          answer: 'Structured Query Language',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The ____ clause specifies which table a query reads from.',
+          options: [],
+          answer: 'FROM',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'SQL keywords like SELECT and FROM are not case-sensitive.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Filtering with WHERE',
+    content: lessonContent(
+      'Filtering with WHERE',
+      `\`\`\`sql\nSELECT name, xp\nFROM students\nWHERE xp >= 100;\n\nSELECT name\nFROM students\nWHERE name LIKE 'A%';\n\`\`\`\n\n## Comparisons and patterns\n\n- \`WHERE\` filters rows before they're returned, only rows where the condition is true make it into the result.\n- \`LIKE 'A%'\` matches names starting with \`A\`, \`%\` is a wildcard for "anything, any length".\n- Combine conditions with \`AND\` / \`OR\`, and control the result order with \`ORDER BY\`:\n\n\`\`\`sql\nSELECT name, xp\nFROM students\nWHERE xp >= 50 AND name != 'Ada'\nORDER BY xp DESC;\n\`\`\`\n\n\`ORDER BY xp DESC\` sorts highest-XP first, drop \`DESC\` (or use \`ASC\`) to sort lowest first.`
+    ),
+    quiz: {
+      title: 'WHERE Clause Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which keyword matches a text pattern like a prefix or suffix?',
+          options: ['MATCH', 'LIKE', 'HAS', 'IN'],
+          answer: 'LIKE',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'To sort query results from highest to lowest, you add ORDER BY column ____.',
+          options: [],
+          answer: 'DESC',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The WHERE clause filters rows before they are included in the result set.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Joining Tables',
+    content: lessonContent(
+      'Joining Tables',
+      `Relational databases spread data across multiple tables, a \`JOIN\` combines rows from two tables based on a shared column.\n\nGiven \`students(id, name)\` and \`enrollments(student_id, course_title)\`:\n\n\`\`\`sql\nSELECT students.name, enrollments.course_title\nFROM students\nJOIN enrollments ON students.id = enrollments.student_id;\n\`\`\`\n\n\`ON students.id = enrollments.student_id\` tells the database how to match rows between the two tables.\n\n## INNER JOIN vs. LEFT JOIN\n\n- A plain \`JOIN\` (short for \`INNER JOIN\`) only returns rows that have a match in **both** tables.\n- A \`LEFT JOIN\` keeps every row from the left (first) table, filling in \`NULL\` for columns from the right table when there's no match, useful for finding students with **zero** enrollments.\n\n\`\`\`sql\nSELECT students.name, enrollments.course_title\nFROM students\nLEFT JOIN enrollments ON students.id = enrollments.student_id;\n\`\`\``
+    ),
+    quiz: {
+      title: 'Joins Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does a JOIN need in order to combine rows from two tables?',
+          options: ['A shared, matching column', 'Identical column names everywhere', 'The same number of rows in each table', 'Nothing extra'],
+          answer: 'A shared, matching column',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A ____ JOIN keeps every row from the left table even when there is no match, filling in NULLs.',
+          options: [],
+          answer: 'LEFT',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An INNER JOIN only returns rows that have a match in both tables.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Aggregating with GROUP BY',
+    content: lessonContent(
+      'Aggregating with GROUP BY',
+      `**Aggregate functions** summarize many rows into one value, \`COUNT\`, \`SUM\`, \`AVG\`, \`MIN\`, \`MAX\`. \`GROUP BY\` buckets rows before aggregating.\n\n\`\`\`sql\nSELECT course_title, COUNT(*) AS student_count\nFROM enrollments\nGROUP BY course_title;\n\`\`\`\n\nThis counts how many enrollment rows exist per \`course_title\`, one summary row per group.\n\n## Filtering groups with HAVING\n\n\`WHERE\` filters individual rows **before** grouping, \`HAVING\` filters the grouped results **after** aggregating:\n\n\`\`\`sql\nSELECT course_title, AVG(xp) AS average_xp\nFROM enrollments\nJOIN students ON students.id = enrollments.student_id\nGROUP BY course_title\nHAVING AVG(xp) > 50;\n\`\`\`\n\nYou can't write \`WHERE AVG(xp) > 50\`, the average doesn't exist yet at the point \`WHERE\` runs, that's exactly what \`HAVING\` is for.`
+    ),
+    quiz: {
+      title: 'Aggregation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which clause filters groups after aggregation, where WHERE cannot be used?',
+          options: ['WHERE', 'HAVING', 'FILTER', 'GROUP'],
+          answer: 'HAVING',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'COUNT(*) counts the number of ____ in each group.',
+          options: [],
+          answer: 'rows',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'You can filter on an aggregate result like COUNT(*) using a plain WHERE clause.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Modifying Data: INSERT, UPDATE, DELETE',
+    content: lessonContent(
+      'Modifying Data: INSERT, UPDATE, DELETE',
+      `So far every example has only read data. These three statements change it.\n\n\`\`\`sql\nINSERT INTO students (name, xp)\nVALUES ('Grace', 0);\n\nUPDATE students\nSET xp = xp + 25\nWHERE name = 'Grace';\n\nDELETE FROM students\nWHERE xp = 0 AND name = 'Inactive User';\n\`\`\`\n\n- \`INSERT INTO table (columns) VALUES (...)\` adds a new row.\n- \`UPDATE table SET column = value WHERE ...\` modifies existing rows that match the condition.\n- \`DELETE FROM table WHERE ...\` removes matching rows.\n\n> [!WARNING]\n> \`UPDATE\` and \`DELETE\` without a \`WHERE\` clause apply to **every row in the table**. Forgetting the \`WHERE\` is one of the most common, and most costly, mistakes in SQL, always double-check it before running either statement.`
+    ),
+    quiz: {
+      title: 'Modifying Data Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which statement adds a brand-new row to a table?',
+          options: ['UPDATE', 'INSERT', 'CREATE', 'ADD'],
+          answer: 'INSERT',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Running UPDATE students SET xp = 0 without a ____ clause would reset every row.',
+          options: [],
+          answer: 'WHERE',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Forgetting the WHERE clause on an UPDATE or DELETE is a common and costly mistake.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Query a Mini Course Catalog',
+    content: lessonContent(
+      'Final Project: Query a Mini Course Catalog',
+      `Time to combine everything into a set of real queries against a small schema of your own design, with tables like \`students(id, name, xp)\`, \`courses(id, title)\`, and \`enrollments(student_id, course_id)\`.\n\n## Requirements\n\n1. Write a \`SELECT\` with a \`WHERE\` clause that lists all students above a given XP threshold.\n2. Write a query that \`JOIN\`s students and enrollments (and courses) to show which courses each student is taking.\n3. Write a query using \`GROUP BY\` and \`COUNT\` to show how many students are enrolled in each course.\n4. Write an \`UPDATE\` statement that safely modifies a specific row, with a \`WHERE\` clause.\n5. Write an \`INSERT\` statement that adds a new student.\n\n## Stretch goals\n\n- Use a \`LEFT JOIN\` to find students with zero enrollments.\n- Use \`HAVING\` to find courses with more than a set number of students.\n- Add a \`DELETE\` statement (with a safe \`WHERE\` clause!) for removing a dropped enrollment.\n\nSubmit a link to your schema and queries (e.g. a repo or gist) below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const nodePrismaLessons: SeedLesson[] = [
+  {
+    title: 'Why Prisma? Connecting Node.js to PostgreSQL',
+    content: lessonContent(
+      'Why Prisma? Connecting Node.js to PostgreSQL',
+      `You've written raw SQL by hand. Now let's connect a real Node.js application to a real PostgreSQL database, and see how **Prisma** makes that connection type-safe and far less error-prone.\n\n## The stack\n\n\`\`\`\nNode.js application\n        │\n        ▼\n  Prisma Client   (generated, type-safe query API)\n        │\n        ▼\n  PostgreSQL database\n\`\`\`\n\nPrisma is an **ORM** (Object-Relational Mapper) for Node.js and TypeScript. You describe your data once, in a schema file, and Prisma generates:\n\n- **Prisma Client**, a fully-typed query API your app calls instead of writing SQL strings by hand.\n- **Migrations**, versioned SQL files that evolve your database schema safely over time.\n\n## Why not just write SQL directly?\n\nYou still can, Prisma Client executes real SQL under the hood. What it adds is:\n\n- **Type safety**, your editor autocompletes column names and catches typos before you ever run the code.\n- **Migrations tracked in version control**, so your team and your database never drift out of sync.\n- Protection against SQL injection by default, since every query is parameterized.\n\n> [!NOTE]\n> Everything you learned in the SQL Fundamentals course still applies, Prisma generates SQL very close to what you'd write by hand, it just does it for you, safely.`
+    ),
+    quiz: {
+      title: 'Prisma Intro Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is Prisma?',
+          options: [
+            'A PostgreSQL hosting provider',
+            'An ORM that generates a type-safe query API and manages migrations',
+            'A frontend framework',
+            'A replacement for JavaScript',
+          ],
+          answer: 'An ORM that generates a type-safe query API and manages migrations',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Prisma Client is generated from a ____ file that describes your data models.',
+          options: [],
+          answer: 'schema',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Prisma Client still executes real SQL against the database under the hood.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Setting Up PostgreSQL and a Prisma Project',
+    content: lessonContent(
+      'Setting Up PostgreSQL and a Prisma Project',
+      `## 1. Get a PostgreSQL database running\n\nLocally (via Docker) or a hosted free tier both work, either way you end up with a **connection string**:\n\n\`\`\`\npostgresql://USER:PASSWORD@HOST:PORT/DATABASE\n\`\`\`\n\n## 2. Create a Node project and install Prisma\n\n\`\`\`bash\nnpm init -y\nnpm install prisma --save-dev\nnpm install @prisma/client\nnpx prisma init\n\`\`\`\n\n\`npx prisma init\` creates:\n\n- \`prisma/schema.prisma\`, where you'll define your data models.\n- \`.env\`, with a \`DATABASE_URL\` placeholder for your connection string.\n\n## 3. Point it at your database\n\n\`\`\`\nDATABASE_URL="postgresql://postgres:secret@localhost:5432/blog_dev?schema=public"\n\`\`\`\n\nPrisma reads \`DATABASE_URL\` from your environment, never hardcode credentials directly in \`schema.prisma\`.`
+    ),
+    quiz: {
+      title: 'Setup Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which command scaffolds a new prisma/schema.prisma file and a .env template?',
+          options: ['npx prisma generate', 'npx prisma init', 'npx prisma migrate dev', 'npm install prisma'],
+          answer: 'npx prisma init',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Prisma reads the database connection string from the environment variable ____.',
+          options: [],
+          answer: 'DATABASE_URL',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Database credentials should be hardcoded directly inside schema.prisma.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Defining Your Prisma Schema',
+    content: lessonContent(
+      'Defining Your Prisma Schema',
+      `\`prisma/schema.prisma\` has three parts: a generator, a datasource, and one or more models.\n\n\`\`\`\ngenerator client {\n  provider = "prisma-client-js"\n}\n\ndatasource db {\n  provider = "postgresql"\n  url      = env("DATABASE_URL")\n}\n\nmodel User {\n  id    Int     @id @default(autoincrement())\n  email String  @unique\n  name  String?\n}\n\`\`\`\n\n## Reading a model\n\n- Each field has a name, a type (\`Int\`, \`String\`, \`Boolean\`, \`DateTime\`, ...), and optional attributes.\n- \`@id\` marks the primary key.\n- \`@default(autoincrement())\` lets PostgreSQL assign the next integer automatically, exactly like \`SERIAL\` in raw SQL.\n- \`@unique\` adds a unique constraint, no two users can share an email.\n- A trailing \`?\` (like \`String?\`) makes a field optional, it maps to a nullable column.\n\nEvery model becomes a table, every field becomes a column, this is the same shape of data you already modeled in the SQL Fundamentals course, just described declaratively instead of with \`CREATE TABLE\`.`
+    ),
+    quiz: {
+      title: 'Schema Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which attribute marks a field as the primary key?',
+          options: ['@unique', '@primary', '@id', '@key'],
+          answer: '@id',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A field type written with a trailing ____ mark, like String?, is optional in the database.',
+          options: [],
+          answer: '?',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every model block in schema.prisma becomes a table in the database.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Migrations with Prisma Migrate',
+    content: lessonContent(
+      'Migrations with Prisma Migrate',
+      `A **migration** is a versioned, applied change to your database schema. Prisma Migrate generates and runs the SQL for you, based on the differences it sees in \`schema.prisma\`.\n\n\`\`\`bash\nnpx prisma migrate dev --name init\n\`\`\`\n\nThis command:\n\n1. Compares your schema to the database's current state.\n2. Generates a plain SQL migration file (you can open and read it, it's just \`CREATE TABLE\`, \`ALTER TABLE\`, and so on).\n3. Applies it to your database.\n4. Regenerates Prisma Client so your code's types match the new schema.\n\nEach migration lives in \`prisma/migrations/<timestamp>_init/migration.sql\`, committed to version control alongside your code, exactly like the rest of your app's history.\n\n## Inspecting your data\n\n\`\`\`bash\nnpx prisma studio\n\`\`\`\n\nOpens a local, visual browser for your database, handy for checking that a migration or query did what you expected.`
+    ),
+    quiz: {
+      title: 'Migrations Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does npx prisma migrate dev generate?',
+          options: [
+            'A plain SQL migration file that gets applied to the database',
+            'A compiled binary',
+            'A new PostgreSQL server',
+            'A JSON config file only',
+          ],
+          answer: 'A plain SQL migration file that gets applied to the database',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'npx prisma ____ opens a local, visual browser for your database.',
+          options: [],
+          answer: 'studio',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Prisma migration files are meant to be committed to version control.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Prisma Client: Basic CRUD',
+    content: lessonContent(
+      'Prisma Client: Basic CRUD',
+      `Once your schema is migrated, Prisma Client gives you a typed method for every model.\n\n\`\`\`\nimport { PrismaClient } from '@prisma/client';\nconst prisma = new PrismaClient();\n\n// Create\nconst user = await prisma.user.create({\n  data: { email: 'ada@example.com', name: 'Ada' },\n});\n\n// Read\nconst users = await prisma.user.findMany();\nconst one = await prisma.user.findUnique({ where: { id: 1 } });\n\n// Update\nconst updated = await prisma.user.update({\n  where: { id: 1 },\n  data: { name: 'Ada Lovelace' },\n});\n\n// Delete\nawait prisma.user.delete({ where: { id: 1 } });\n\`\`\`\n\n*This needs a running Node.js process connected to a real PostgreSQL database, so it's read-only here, you'll run code exactly like this in the final project.*\n\nNotice the shape: every method takes a single options object (\`where\`, \`data\`, ...), and every method returns a fully-typed result, your editor knows \`user.email\` is a \`string\` without you writing a type annotation anywhere.`
+    ),
+    quiz: {
+      title: 'CRUD Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which Prisma Client method fetches every row that matches optional filters?',
+          options: ['findOne', 'findMany', 'getAll', 'selectAll'],
+          answer: 'findMany',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'prisma.user.____({ where: { id: 1 } }) fetches a single user by a unique field.',
+          options: [],
+          answer: 'findUnique',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Prisma Client's create and update methods return the affected row, fully typed.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Filtering, Sorting, and Pagination',
+    content: lessonContent(
+      'Filtering, Sorting, and Pagination',
+      `Prisma Client mirrors the \`WHERE\`, \`ORDER BY\`, and \`LIMIT\`/\`OFFSET\` you already know from SQL, as options on \`findMany\`.\n\n\`\`\`\nconst topPosts = await prisma.post.findMany({\n  where: {\n    published: true,\n    title: { contains: 'Prisma' },\n  },\n  orderBy: { createdAt: 'desc' },\n  skip: 0,\n  take: 10,\n});\n\`\`\`\n\n## Mapping to SQL\n\n| Prisma option | SQL equivalent |\n|---|---|\n| \`where: { published: true }\` | \`WHERE published = true\` |\n| \`orderBy: { createdAt: 'desc' }\` | \`ORDER BY created_at DESC\` |\n| \`take: 10\` | \`LIMIT 10\` |\n| \`skip: 20\` | \`OFFSET 20\` |\n\n\`skip\` + \`take\` together give you **pagination**, page 3 of 10-per-page results is \`skip: 20, take: 10\`.`
+    ),
+    quiz: {
+      title: 'Filtering & Pagination Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which Prisma option is equivalent to SQL\'s LIMIT?',
+          options: ['skip', 'take', 'limit', 'first'],
+          answer: 'take',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The ____ option in findMany is equivalent to SQL\'s OFFSET.',
+          options: [],
+          answer: 'skip',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Prisma's orderBy option maps directly to SQL's ORDER BY clause.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Modeling Relations: One-to-Many and Many-to-Many',
+    content: lessonContent(
+      'Modeling Relations: One-to-Many and Many-to-Many',
+      `Just like the \`JOIN\`s you wrote in SQL, Prisma models real relationships between tables, but you declare them once in the schema.\n\n## One-to-many\n\nOne \`User\` can have many \`Post\`s:\n\n\`\`\`\nmodel User {\n  id    Int    @id @default(autoincrement())\n  email String @unique\n  posts Post[]\n}\n\nmodel Post {\n  id       Int    @id @default(autoincrement())\n  title    String\n  authorId Int\n  author   User   @relation(fields: [authorId], references: [id])\n}\n\`\`\`\n\n\`authorId\` is a real foreign-key column, \`author\`/\`posts\` are the Prisma-side relation fields you query through.\n\n## Many-to-many\n\nA \`Post\` can have many \`Tag\`s, and a \`Tag\` can apply to many \`Post\`s:\n\n\`\`\`\nmodel Post {\n  id    Int   @id @default(autoincrement())\n  title String\n  tags  Tag[]\n}\n\nmodel Tag {\n  id    Int    @id @default(autoincrement())\n  name  String @unique\n  posts Post[]\n}\n\`\`\`\n\nPrisma automatically creates and manages the hidden join table behind the scenes, the same \`_PostToTag\` style table you'd have written by hand in SQL.`
+    ),
+    quiz: {
+      title: 'Relations Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In a one-to-many relation, which side holds the actual foreign-key column?',
+          options: ['The "many" side (e.g. Post.authorId)', 'The "one" side (e.g. User)', 'Neither, Prisma stores it separately', 'Both sides equally'],
+          answer: 'The "many" side (e.g. Post.authorId)',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A many-to-many relation like Post.tags and Tag.posts is backed by a hidden ____ table.',
+          options: [],
+          answer: 'join',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'For an implicit many-to-many relation, you must manually create the join table yourself.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Querying Relations with include and select',
+    content: lessonContent(
+      'Querying Relations with include and select',
+      `By default, Prisma Client only returns a model's own columns, related data has to be requested explicitly.\n\n\`\`\`\n// Fetch a user together with their posts\nconst userWithPosts = await prisma.user.findUnique({\n  where: { id: 1 },\n  include: { posts: true },\n});\n\n// Shape exactly which fields come back\nconst summaries = await prisma.post.findMany({\n  select: {\n    title: true,\n    author: { select: { name: true } },\n  },\n});\n\n// Create a user and their first post in one call\nconst newUser = await prisma.user.create({\n  data: {\n    email: 'grace@example.com',\n    name: 'Grace',\n    posts: { create: [{ title: 'Hello, Prisma!' }] },\n  },\n});\n\`\`\`\n\n\`include\` adds related records on top of all normal fields, \`select\` replaces the default fields entirely, letting you return only what you need. A **nested write** like the \`posts: { create: [...] }\` above creates both rows in a single call.`
+    ),
+    quiz: {
+      title: 'Include & Select Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the include option do?',
+          options: [
+            'Replaces all fields with only the ones listed',
+            'Adds related records on top of the normal fields',
+            'Deletes unrelated records',
+            'Renames columns',
+          ],
+          answer: 'Adds related records on top of the normal fields',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Creating a user and a related post in a single call, via posts: { create: [...] }, is called a nested ____.',
+          options: [],
+          answer: 'write',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'By default, Prisma Client automatically includes every related model on every query.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Transactions and Data Integrity',
+    content: lessonContent(
+      'Transactions and Data Integrity',
+      `Some operations only make sense together. If you move XP from one account to another, both the debit and the credit must succeed, or neither should.\n\n## Batch transactions\n\n\`\`\`\nconst [fromAccount, toAccount] = await prisma.$transaction([\n  prisma.account.update({ where: { id: 1 }, data: { xp: { decrement: 50 } } }),\n  prisma.account.update({ where: { id: 2 }, data: { xp: { increment: 50 } } }),\n]);\n\`\`\`\n\nIf either update fails, PostgreSQL rolls back both, your data never ends up half-changed.\n\n## Interactive transactions\n\nFor logic that needs to check something in between steps, pass a function instead:\n\n\`\`\`\nawait prisma.$transaction(async (tx) => {\n  const from = await tx.account.findUniqueOrThrow({ where: { id: 1 } });\n  if (from.xp < 50) throw new Error('Insufficient XP');\n\n  await tx.account.update({ where: { id: 1 }, data: { xp: { decrement: 50 } } });\n  await tx.account.update({ where: { id: 2 }, data: { xp: { increment: 50 } } });\n});\n\`\`\`\n\nThrowing anywhere inside the callback rolls back every query that already ran in that transaction.`
+    ),
+    quiz: {
+      title: 'Transactions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What happens if one query inside a prisma.$transaction([...]) call fails?',
+          options: [
+            'Only that query is skipped, the rest still commit',
+            'All queries in the transaction are rolled back',
+            'The database is deleted',
+            'Nothing, errors inside transactions are ignored',
+          ],
+          answer: 'All queries in the transaction are rolled back',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Throwing an error inside an interactive $transaction callback function ____ every query that already ran in it.',
+          options: [],
+          answer: 'rolls back',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Transactions guarantee that a group of related writes either all succeed or all fail together.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Building a REST API with Express and Prisma',
+    content: lessonContent(
+      'Building a REST API with Express and Prisma',
+      `Wiring Prisma into an Express route handler looks almost exactly like the CRUD calls from earlier, just inside a request handler.\n\n\`\`\`\nimport express from 'express';\nimport { PrismaClient } from '@prisma/client';\n\nconst app = express();\nconst prisma = new PrismaClient();\napp.use(express.json());\n\napp.get('/api/posts', async (req, res) => {\n  const posts = await prisma.post.findMany({\n    where: { published: true },\n    include: { author: { select: { name: true } } },\n    orderBy: { createdAt: 'desc' },\n  });\n  res.json(posts);\n});\n\napp.post('/api/posts', async (req, res) => {\n  try {\n    const post = await prisma.post.create({ data: req.body });\n    res.status(201).json(post);\n  } catch (err) {\n    res.status(400).json({ error: 'Could not create post' });\n  }\n});\n\napp.listen(4000);\n\`\`\`\n\nOne \`PrismaClient\` instance is created once and reused across every request, creating a new one per request would open far too many database connections.`
+    ),
+    quiz: {
+      title: 'Express + Prisma Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How many PrismaClient instances should a typical Express app create?',
+          options: ['One per request', 'One, reused across every request', 'One per database table', 'It does not matter'],
+          answer: 'One, reused across every request',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Wrapping a Prisma call in try/catch inside a route handler lets you return a proper error ____ code instead of crashing.',
+          options: [],
+          answer: 'status',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Prisma Client calls inside an Express route handler must be awaited, just like anywhere else.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Seeding and Testing Your Database',
+    content: lessonContent(
+      'Seeding and Testing Your Database',
+      `A **seed script** fills a fresh database with starter data, so you (and your teammates) aren't testing against an empty database every time.\n\n\`\`\`\n// prisma/seed.ts\nimport { PrismaClient } from '@prisma/client';\nconst prisma = new PrismaClient();\n\nasync function main() {\n  await prisma.user.create({\n    data: {\n      email: 'ada@example.com',\n      name: 'Ada',\n      posts: { create: [{ title: 'My first post' }] },\n    },\n  });\n}\n\nmain().finally(() => prisma.$disconnect());\n\`\`\`\n\nWire it up in \`package.json\`:\n\n\`\`\`\n{\n  "prisma": {\n    "seed": "tsx prisma/seed.ts"\n  }\n}\n\`\`\`\n\nThen run it with:\n\n\`\`\`bash\nnpx prisma db seed\n\`\`\`\n\n## Resetting during development\n\n\`\`\`bash\nnpx prisma migrate reset\n\`\`\`\n\nDrops your dev database, reapplies every migration from scratch, and reruns your seed script, an easy way to get back to a known, clean state while building.\n\n> [!TIP]\n> This whole platform's own course catalog, including this lesson, is generated by exactly this kind of seed script.`
+    ),
+    quiz: {
+      title: 'Seeding Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the purpose of a seed script?',
+          options: [
+            'To back up production data',
+            'To fill a fresh database with starter data for development',
+            'To compile TypeScript',
+            'To generate the Prisma schema',
+          ],
+          answer: 'To fill a fresh database with starter data for development',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'npx prisma migrate ____ drops the dev database, reapplies migrations, and reruns the seed script.',
+          options: [],
+          answer: 'reset',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A seed script is typically run against a production database with real user data.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Blog API with Prisma & PostgreSQL',
+    content: lessonContent(
+      'Final Project: Build a Blog API with Prisma & PostgreSQL',
+      `Time to combine everything, schema design, migrations, relations, transactions, and Express, into one real project.\n\n## Requirements\n\n1. Design a \`schema.prisma\` with at least two related models (e.g. \`User\` and \`Post\`, one-to-many).\n2. Generate and run a migration with \`npx prisma migrate dev\` against a real PostgreSQL database.\n3. Build a REST API in Express with full CRUD endpoints for at least one model, backed by Prisma Client.\n4. Implement one list endpoint that supports filtering, sorting, and pagination (\`where\`, \`orderBy\`, \`skip\`/\`take\`).\n5. Use \`prisma.$transaction\` somewhere the logic genuinely requires it (e.g. an operation that touches two related records atomically).\n6. Write a \`prisma/seed.ts\` script that populates a few starter rows.\n\n## Stretch goals\n\n- Add a many-to-many relation (e.g. tags on posts) and an endpoint that filters by tag.\n- Return pagination metadata (total count, page number) alongside the results.\n- Write at least one automated test for an endpoint.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
+  nodejs: [
+    {
+      title: 'Node.js Backend Fundamentals',
+      description: 'From your first console.log to a deployed REST API with authentication, the complete Node.js foundation.',
+      lessons: nodeLessons,
+    },
+  ],
+  python: [
+    {
+      title: 'Python for Absolute Beginners',
+      description: 'Learn programming from zero with the most beginner-friendly language in the world.',
+      lessons: pythonLessons,
+    },
+  ],
+  javascript: [
+    {
+      title: 'Modern JavaScript Essentials',
+      description: 'DOM manipulation, array methods, and async programming, everything the modern web is built on.',
+      lessons: jsLessons,
+    },
+  ],
+  typescript: [
+    {
+      title: 'TypeScript from JavaScript',
+      description: 'Level up your JavaScript with static types, interfaces, and compiler-driven confidence.',
+      lessons: tsLessons,
+    },
+  ],
+  cpp: [
+    {
+      title: 'C++ Foundations',
+      description: 'Compiled programming, pointers, and memory, the bedrock of systems development.',
+      lessons: cppLessons,
+    },
+  ],
+  git: [
+    {
+      title: 'Git & Version Control Fundamentals',
+      description:
+        'Learn to track changes, branch, merge, and collaborate on code using Git, the version control system behind virtually every modern software project.',
+      lessons: gitLessons,
+    },
+  ],
+  react: [
+    {
+      title: 'React Fundamentals',
+      description: 'Component-based UI development with React, JSX, props, state, hooks, and building real interactive apps.',
+      lessons: reactLessons,
+    },
+  ],
+  csharp: [
+    {
+      title: 'C# Foundations',
+      description: 'Learn statically-typed, object-oriented programming with C# and the .NET ecosystem, from your first program to building console applications.',
+      lessons: csharpLessons,
+    },
+  ],
+  sql: [
+    {
+      title: 'SQL Fundamentals',
+      description: 'Learn to query, filter, join, and aggregate data with SQL, the standard language for relational databases.',
+      lessons: sqlLessons,
+    },
+    {
+      title: 'Node.js, Prisma & PostgreSQL',
+      description:
+        'Go from raw SQL to a real, type-safe backend: model your data with Prisma, migrate a PostgreSQL database, and query it from a Node.js application.',
+      lessons: nodePrismaLessons,
+    },
+  ],
 };
 
 type SeedTestCase = { input: unknown[]; expectedOutput: unknown; isHidden: boolean };
@@ -1359,28 +2310,67 @@ async function main() {
       create: p,
     });
 
-    const courseSeed = coursesByPath[p.slug];
-    const existing = await prisma.course.findFirst({ where: { pathId: path.id, title: courseSeed.title } });
-    if (existing) {
-      // refresh lesson text in place so content updates reach existing installs
-      // without touching quizzes, enrollments, or student progress; lessons newly
-      // added to the seed (beyond what already exists) are created with their quiz
-      const current = await prisma.lesson.findMany({ where: { courseId: existing.id } });
-      const byOrder = new Map(current.map((l) => [l.order, l]));
-      for (const [i, lesson] of courseSeed.lessons.entries()) {
-        const order = i + 1;
-        const match = byOrder.get(order);
-        if (match) {
-          await prisma.lesson.update({
-            where: { id: match.id },
-            data: { title: lesson.title, content: lesson.content, requiresSubmission: lesson.requiresSubmission ?? false },
-          });
-        } else {
-          await prisma.lesson.create({
-            data: {
-              courseId: existing.id,
+    for (const courseSeed of coursesByPath[p.slug] ?? []) {
+      const existing = await prisma.course.findFirst({ where: { pathId: path.id, title: courseSeed.title } });
+      if (existing) {
+        // refresh lesson text in place so content updates reach existing installs
+        // without touching quizzes, enrollments, or student progress; lessons newly
+        // added to the seed (beyond what already exists) are created with their quiz
+        const current = await prisma.lesson.findMany({ where: { courseId: existing.id } });
+        const byOrder = new Map(current.map((l) => [l.order, l]));
+        for (const [i, lesson] of courseSeed.lessons.entries()) {
+          const order = i + 1;
+          const match = byOrder.get(order);
+          if (match) {
+            await prisma.lesson.update({
+              where: { id: match.id },
+              data: { title: lesson.title, content: lesson.content, requiresSubmission: lesson.requiresSubmission ?? false },
+            });
+          } else {
+            await prisma.lesson.create({
+              data: {
+                courseId: existing.id,
+                title: lesson.title,
+                order,
+                content: lesson.content,
+                videoUrl: lesson.videoUrl ?? null,
+                requiresSubmission: lesson.requiresSubmission ?? false,
+                quiz: lesson.quiz
+                  ? {
+                      create: {
+                        title: lesson.quiz.title,
+                        passingScore: lesson.quiz.passingScore,
+                        questions: {
+                          create: lesson.quiz.questions.map((q, qi) => ({
+                            type: q.type,
+                            prompt: q.prompt,
+                            options: q.options,
+                            answer: q.answer,
+                            order: qi + 1,
+                          })),
+                        },
+                      },
+                    }
+                  : undefined,
+              },
+            });
+          }
+        }
+        console.log(`  ✓ ${courseSeed.title} (content refreshed, ${courseSeed.lessons.length} lessons)`);
+        continue;
+      }
+
+      await prisma.course.create({
+        data: {
+          title: courseSeed.title,
+          description: courseSeed.description,
+          status: 'PUBLISHED',
+          pathId: path.id,
+          instructorId: instructor.id,
+          lessons: {
+            create: courseSeed.lessons.map((lesson, i) => ({
               title: lesson.title,
-              order,
+              order: i + 1,
               content: lesson.content,
               videoUrl: lesson.videoUrl ?? null,
               requiresSubmission: lesson.requiresSubmission ?? false,
@@ -1401,50 +2391,12 @@ async function main() {
                     },
                   }
                 : undefined,
-            },
-          });
-        }
-      }
-      console.log(`  ✓ ${courseSeed.title} (content refreshed, ${courseSeed.lessons.length} lessons)`);
-      continue;
-    }
-
-    await prisma.course.create({
-      data: {
-        title: courseSeed.title,
-        description: courseSeed.description,
-        status: 'PUBLISHED',
-        pathId: path.id,
-        instructorId: instructor.id,
-        lessons: {
-          create: courseSeed.lessons.map((lesson, i) => ({
-            title: lesson.title,
-            order: i + 1,
-            content: lesson.content,
-            videoUrl: lesson.videoUrl ?? null,
-            requiresSubmission: lesson.requiresSubmission ?? false,
-            quiz: lesson.quiz
-              ? {
-                  create: {
-                    title: lesson.quiz.title,
-                    passingScore: lesson.quiz.passingScore,
-                    questions: {
-                      create: lesson.quiz.questions.map((q, qi) => ({
-                        type: q.type,
-                        prompt: q.prompt,
-                        options: q.options,
-                        answer: q.answer,
-                        order: qi + 1,
-                      })),
-                    },
-                  },
-                }
-              : undefined,
-          })),
+            })),
+          },
         },
-      },
-    });
-    console.log(`  ✓ ${courseSeed.title} (${courseSeed.lessons.length} lessons)`);
+      });
+      console.log(`  ✓ ${courseSeed.title} (${courseSeed.lessons.length} lessons)`);
+    }
   }
 
   await seedChallenges();

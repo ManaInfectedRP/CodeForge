@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   slugify,
+  type InstructorStudentProgressDto,
   type InstructorSubmissionDto,
   type TeachCourseDetailDto,
   type TeachCourseSummaryDto,
@@ -183,6 +184,105 @@ instructorRouter.get(
     res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${slugify(course.title)}.md"`);
     res.send(markdown);
+  })
+);
+
+instructorRouter.get(
+  '/courses/:id/students',
+  h(async (req, res) => {
+    const course = await ownedCourse(req.params.id, req.auth!);
+
+    const [lessons, enrollments] = await Promise.all([
+      prisma.lesson.findMany({
+        where: { courseId: course.id },
+        orderBy: { order: 'asc' },
+        include: { quiz: { select: { id: true, title: true, passingScore: true } } },
+      }),
+      prisma.enrollment.findMany({
+        where: { courseId: course.id },
+        include: { user: { select: { id: true, username: true } } },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    const lessonIds = lessons.map((l) => l.id);
+    const quizLessons = lessons.filter((l) => l.quiz !== null);
+    const quizIds = quizLessons.map((l) => l.quiz!.id);
+    const userIds = enrollments.map((e) => e.userId);
+
+    const [progress, attempts, certificates] = await Promise.all([
+      userIds.length > 0
+        ? prisma.lessonProgress.findMany({ where: { lessonId: { in: lessonIds }, userId: { in: userIds } } })
+        : Promise.resolve([]),
+      quizIds.length > 0 && userIds.length > 0
+        ? prisma.quizAttempt.findMany({
+            where: { quizId: { in: quizIds }, userId: { in: userIds } },
+            orderBy: { createdAt: 'asc' },
+          })
+        : Promise.resolve([]),
+      userIds.length > 0
+        ? prisma.certificate.findMany({ where: { courseId: course.id, userId: { in: userIds } } })
+        : Promise.resolve([]),
+    ]);
+
+    const body: InstructorStudentProgressDto[] = enrollments.map((e) => {
+      const userAttempts = attempts.filter((a) => a.userId === e.userId);
+      const quizzes = quizLessons.map((l) => {
+        const quizAttempts = userAttempts.filter((a) => a.quizId === l.quiz!.id);
+        const bestScore = quizAttempts.length > 0 ? Math.max(...quizAttempts.map((a) => a.score)) : null;
+        return {
+          lessonId: l.id,
+          lessonTitle: l.title,
+          quizTitle: l.quiz!.title,
+          passingScore: l.quiz!.passingScore,
+          attemptCount: quizAttempts.length,
+          bestScore,
+          passed: quizAttempts.some((a) => a.passed),
+          lastAttemptAt: quizAttempts.length > 0 ? quizAttempts[quizAttempts.length - 1].createdAt.toISOString() : null,
+        };
+      });
+
+      return {
+        userId: e.userId,
+        username: e.user.username,
+        enrolledAt: e.createdAt.toISOString(),
+        completedLessons: progress.filter((p) => p.userId === e.userId).length,
+        totalLessons: lessonIds.length,
+        certificateIssued: certificates.some((c) => c.userId === e.userId),
+        quizzes,
+      };
+    });
+
+    res.json(body);
+  })
+);
+
+instructorRouter.post(
+  '/courses/:id/students/:userId/reset',
+  h(async (req, res) => {
+    const course = await ownedCourse(req.params.id, req.auth!);
+    const { userId } = req.params;
+
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId: course.id } },
+    });
+    if (!enrollment) throw new HttpError(404, 'This student is not enrolled in the course');
+
+    const lessons = await prisma.lesson.findMany({
+      where: { courseId: course.id },
+      select: { id: true, quiz: { select: { id: true } } },
+    });
+    const lessonIds = lessons.map((l) => l.id);
+    const quizIds = lessons.map((l) => l.quiz?.id).filter((qid): qid is string => !!qid);
+
+    await prisma.$transaction([
+      prisma.lessonProgress.deleteMany({ where: { userId, lessonId: { in: lessonIds } } }),
+      prisma.quizAttempt.deleteMany({ where: { userId, quizId: { in: quizIds } } }),
+      prisma.projectSubmission.deleteMany({ where: { userId, lessonId: { in: lessonIds } } }),
+      prisma.certificate.deleteMany({ where: { userId, courseId: course.id } }),
+    ]);
+
+    res.json({ reset: true });
   })
 );
 

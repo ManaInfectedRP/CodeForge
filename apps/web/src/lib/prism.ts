@@ -2,6 +2,8 @@ import Prism from 'prismjs';
 import 'prismjs/components/prism-clike';
 import 'prismjs/components/prism-c';
 import 'prismjs/components/prism-cpp';
+import 'prismjs/components/prism-csharp';
+import 'prismjs/components/prism-sql';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-javascript';
 import 'prismjs/components/prism-typescript';
@@ -10,7 +12,17 @@ import 'prismjs/components/prism-json';
 import 'prismjs/components/prism-markup';
 import 'prismjs/components/prism-markdown';
 
-export type PrismLang = 'python' | 'javascript' | 'typescript' | 'cpp' | 'c' | 'bash' | 'json' | 'markdown';
+export type PrismLang =
+  | 'python'
+  | 'javascript'
+  | 'typescript'
+  | 'cpp'
+  | 'c'
+  | 'csharp'
+  | 'sql'
+  | 'bash'
+  | 'json'
+  | 'markdown';
 
 const ALIASES: Record<string, PrismLang> = {
   python: 'python',
@@ -22,6 +34,10 @@ const ALIASES: Record<string, PrismLang> = {
   cpp: 'cpp',
   'c++': 'cpp',
   c: 'c',
+  csharp: 'csharp',
+  'c#': 'csharp',
+  cs: 'csharp',
+  sql: 'sql',
   bash: 'bash',
   sh: 'bash',
   shell: 'bash',
