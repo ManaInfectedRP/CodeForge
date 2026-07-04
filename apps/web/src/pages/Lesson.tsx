@@ -131,9 +131,7 @@ export function Lesson() {
               Next lesson →
             </Link>
           ) : (
-            <Link to={`/lessons/${lesson.nextLessonId}`} className="text-forge-500 hover:underline">
-              Next lesson →
-            </Link>
+            <span />
           )
         ) : (
           <Link to={`/courses/${lesson.courseId}`} className="text-emerald-400 hover:underline">
