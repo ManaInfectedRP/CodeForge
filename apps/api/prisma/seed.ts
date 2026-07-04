@@ -310,6 +310,76 @@ const pythonLessons: SeedLesson[] = [
       ],
     },
   },
+  {
+    title: 'Working with Files',
+    content: lessonContent(
+      'Working with Files',
+      `Programs are more useful when they can save data between runs. Python's built-in \`open()\` reads and writes files.\n\n\`\`\`python\nwith open("scores.txt", "w") as f:\n    f.write("Ada,95\\n")\n    f.write("Grace,98\\n")\n\nwith open("scores.txt", "r") as f:\n    for line in f:\n        name, score = line.strip().split(",")\n        print(f"{name}: {score}")\n\`\`\`\n\n## The \`with\` statement\n\n\`with open(...) as f:\` opens the file and guarantees it gets closed automatically when the block ends, even if an error happens inside it. Without \`with\`, you'd have to remember to call \`f.close()\` yourself.\n\n## Common modes\n\n| Mode | Meaning |\n|------|---------|\n| \`"r"\` | Read (default), errors if the file doesn't exist |\n| \`"w"\` | Write, creates the file or overwrites it completely |\n| \`"a"\` | Append, adds to the end without erasing existing content |`
+    ),
+    quiz: {
+      title: 'Files Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which file mode adds new content to the end of a file without erasing what is already there?',
+          options: ['"r"', '"w"', '"a"', '"x"'],
+          answer: '"a"',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The `with` statement automatically closes a file when its block ends.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Opening a file for writing, overwriting any existing content, uses mode ____.',
+          options: [],
+          answer: 'w',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Classes and Objects',
+    content: lessonContent(
+      'Classes and Objects',
+      `A **class** is a blueprint for creating objects that bundle data and behavior together.\n\n\`\`\`python\nclass Student:\n    def __init__(self, name, xp=0):\n        self.name = name\n        self.xp = xp\n\n    def gain_xp(self, amount):\n        self.xp += amount\n        return self.xp\n\nada = Student("Ada")\nada.gain_xp(50)\nprint(f"{ada.name} has {ada.xp} XP")\n\ngrace = Student("Grace", xp=10)\ngrace.gain_xp(5)\nprint(f"{grace.name} has {grace.xp} XP")\n\`\`\`\n\n## Key pieces\n\n- \`__init__\` is the **constructor**, it runs automatically whenever you create a new instance with \`Student(...)\`.\n- \`self\` refers to the specific instance a method was called on, it's always the first parameter of an instance method.\n- Each instance (\`ada\`, \`grace\`) keeps its own independent copy of the data set in \`__init__\`.`
+    ),
+    quiz: {
+      title: 'Classes Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The constructor method that runs automatically when a new instance is created is called ____.',
+          options: [],
+          answer: '__init__',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does `self` refer to inside an instance method?',
+          options: ['The class itself', 'The instance the method was called on', 'The parent class', 'Nothing, it is optional'],
+          answer: 'The instance the method was called on',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Two instances of the same class always share the same attribute values.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Contact Book CLI',
+    content: lessonContent(
+      'Final Project: Contact Book CLI',
+      `Time to combine everything, functions, collections, classes, and files, into one program.\n\n## Requirements\n\n1. Represent each contact with a class (or dictionary) storing a name, phone number, and email.\n2. Support adding a new contact and listing all contacts.\n3. Support searching for a contact by name, and handle the case where no match is found without crashing.\n4. Persist contacts to a text or JSON file so they survive between runs, using what you learned about file I/O.\n5. Write at least one function with a clear docstring and type hints.\n\n## Stretch goals\n\n- Support deleting a contact.\n- Sort the contact list alphabetically by name.\n- Use the \`json\` module to save and load contacts as structured JSON instead of plain text.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
 ];
 
 const jsLessons: SeedLesson[] = [
@@ -388,6 +458,81 @@ const jsLessons: SeedLesson[] = [
       ],
     },
   },
+  {
+    title: 'Objects and Destructuring',
+    content: lessonContent(
+      'Objects and Destructuring',
+      `Objects group related data together. **Destructuring** and the **spread operator** make working with them much less repetitive.\n\n\`\`\`js\nconst course = { title: 'Modern JavaScript Essentials', lessons: 6, published: true };\n\nconst { title, lessons } = course;\nconsole.log(title, lessons);\n\nconst student = { name: 'Ada', scores: [88, 92, 79] };\nconst { name, scores: [first, ...rest] } = student;\nconsole.log(name, first, rest);\n\nconst upgraded = { ...course, lessons: course.lessons + 1 };\nconsole.log(upgraded);\nconsole.log('original untouched:', course.lessons);\n\`\`\`\n\n## What's happening\n\n- \`const { title, lessons } = course\` pulls properties straight out of an object into variables.\n- \`...rest\` collects whatever is left over into a new array (or object).\n- \`{ ...course, lessons: 7 }\` **copies** every property from \`course\` into a brand-new object, then overrides \`lessons\`, the original object is never mutated.`
+    ),
+    quiz: {
+      title: 'Objects & Destructuring Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the spread operator do when used inside a new object literal, e.g. `{ ...course }`?',
+          options: [
+            'Deletes the original object',
+            'Copies the properties of course into the new object',
+            'Converts course to a string',
+            'Freezes the original object',
+          ],
+          answer: 'Copies the properties of course into the new object',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'const { title } = course; is an example of object ____.',
+          options: [],
+          answer: 'destructuring',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Writing `{ ...course, lessons: 7 }` mutates the original course object.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Events and the DOM',
+    content: lessonContent(
+      'Events and the DOM',
+      `Beyond reading the DOM, real pages react to what the user does, clicks, typing, submitting forms, through **events**.\n\n\`\`\`\nconst button = document.querySelector('#save');\nbutton.addEventListener('click', (event) => {\n  event.preventDefault();\n  console.log('Saved!');\n});\n\nconst input = document.querySelector('#name');\ninput.addEventListener('input', (event) => {\n  console.log('Typing:', event.target.value);\n});\n\`\`\`\n\n*This needs a real web page with a #save button and #name input, so it's read-only here, you'll wire up real event handlers in the final project.*\n\n## Key ideas\n\n- \`addEventListener(type, handler)\` attaches a handler for an event type (\`'click'\`, \`'input'\`, \`'submit'\`, and many more) without overwriting any handlers already attached.\n- The \`event\` object passed to your handler describes what happened, \`event.target\` is the element the event fired on, \`event.target.value\` reads an input's current text.\n- \`event.preventDefault()\` stops the browser's default behavior, most commonly used to stop a form from reloading the page on submit.`
+    ),
+    quiz: {
+      title: 'Events Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which method attaches an event handler to an element?',
+          options: ['element.onEvent()', 'element.addEventListener()', 'element.handle()', 'element.listen()'],
+          answer: 'element.addEventListener()',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "Calling event.____() stops a form's default submit behavior.",
+          options: [],
+          answer: 'preventDefault',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An element can have more than one event listener attached to it at the same time.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Interactive To-Do List',
+    content: lessonContent(
+      'Final Project: Interactive To-Do List',
+      `Time to combine array methods, objects, and DOM events into a real interactive page.\n\n## Requirements\n\n1. Render a list of tasks from an array of objects, e.g. \`{ id, text, done }\`.\n2. Let the user add a new task through an input and button (or a form submit).\n3. Let the user toggle a task's done state and remove a task.\n4. Use \`map\`/\`filter\` to derive what gets rendered rather than mutating the DOM by hand everywhere.\n5. Persist the task list in \`localStorage\` so it survives a page reload.\n\n## Stretch goals\n\n- Add filter buttons for All / Active / Completed.\n- Allow editing a task's text inline.\n- Show a live count of remaining tasks.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
 ];
 
 const tsLessons: SeedLesson[] = [
@@ -441,6 +586,117 @@ const tsLessons: SeedLesson[] = [
       ],
     },
   },
+  {
+    title: 'Generics',
+    content: lessonContent(
+      'Generics',
+      `**Generics** let you write a function or type once and have it work correctly with whatever type gets passed in, without losing type safety.\n\n\`\`\`ts\nfunction firstElement<T>(items: T[]): T | undefined {\n  return items[0];\n}\n\nconsole.log(firstElement([1, 2, 3]));        // inferred as number | undefined\nconsole.log(firstElement(['a', 'b', 'c']));   // inferred as string | undefined\n\ninterface Box<T> {\n  value: T;\n}\n\nconst numberBox: Box<number> = { value: 42 };\nconsole.log(numberBox.value);\n\`\`\`\n\nThink of \`<T>\` as a placeholder: "whatever type you give me, I'll give the same type back out." The compiler figures out \`T\` automatically from the argument you pass, and still catches mistakes, \`firstElement([1, 2, 3])[0].toUpperCase()\` would be a compile error because that element is a \`number\`, not a \`string\`.`
+    ),
+    quiz: {
+      title: 'Generics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A generic type parameter is conventionally named a single capital letter, most commonly ____.',
+          options: [],
+          answer: 'T',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the main benefit of using generics?',
+          options: [
+            'They disable type checking for flexibility',
+            'They let you reuse code across types while staying type-safe',
+            'They convert all types to any',
+            'They are only usable with arrays',
+          ],
+          answer: 'They let you reuse code across types while staying type-safe',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'firstElement<string>(...) and firstElement<number>(...) can share the exact same function implementation.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Enums and Advanced Types',
+    content: lessonContent(
+      'Enums and Advanced Types',
+      `## Enums\n\nAn \`enum\` gives a set of related constants readable names.\n\n\`\`\`ts\nenum Role {\n  Student = 'STUDENT',\n  Instructor = 'INSTRUCTOR',\n  Admin = 'ADMIN',\n}\n\nfunction permissions(role: Role): string[] {\n  switch (role) {\n    case Role.Admin:\n      return ['read', 'write', 'delete'];\n    case Role.Instructor:\n      return ['read', 'write'];\n    default:\n      return ['read'];\n  }\n}\n\nconsole.log(permissions(Role.Instructor));\n\`\`\`\n\n## Discriminated unions\n\nCombining a union type with a shared \"tag\" property lets TypeScript narrow which shape you're working with.\n\n\`\`\`ts\ntype ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };\n\nfunction unwrap<T>(result: ApiResult<T>): T {\n  if (!result.ok) throw new Error(result.error);\n  return result.data; // TypeScript knows result is the { ok: true } branch here\n}\n\nconsole.log(unwrap({ ok: true, data: 42 }));\n\`\`\`\n\nThe \`ok\` property is the discriminant, checking it narrows \`result\` to exactly one branch of the union inside each \`if\`.`
+    ),
+    quiz: {
+      title: 'Enums & Unions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What kind of type is `{ ok: true; data: T } | { ok: false; error: string }`?',
+          options: ['A generic constraint', 'A discriminated union', 'An enum', 'An intersection type'],
+          answer: 'A discriminated union',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The keyword used to define a set of named constants in TypeScript is ____.',
+          options: [],
+          answer: 'enum',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Checking a shared property like `result.ok` lets TypeScript narrow the type inside an if branch.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Classes and Access Modifiers',
+    content: lessonContent(
+      'Classes and Access Modifiers',
+      `TypeScript classes add access modifiers on top of JavaScript classes to enforce encapsulation at compile time.\n\n\`\`\`ts\nclass Account {\n  private balance: number;\n  readonly owner: string;\n\n  constructor(owner: string, startingBalance = 0) {\n    this.owner = owner;\n    this.balance = startingBalance;\n  }\n\n  deposit(amount: number): number {\n    this.balance += amount;\n    return this.balance;\n  }\n\n  getBalance(): number {\n    return this.balance;\n  }\n}\n\nconst acct = new Account('Ada', 100);\nacct.deposit(50);\nconsole.log(acct.owner, acct.getBalance());\n\n// acct.balance ❌ the compiler rejects this before the code ever runs:\n// "Property 'balance' is private and only accessible within class 'Account'"\n\`\`\`\n\n## Modifiers\n\n| Modifier | Meaning |\n|----------|---------|\n| \`public\` (default) | Accessible from anywhere |\n| \`private\` | Only accessible inside the class itself |\n| \`readonly\` | Can be set once (usually in the constructor), never reassigned after |`
+    ),
+    quiz: {
+      title: 'Classes Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does marking a field `private` do?',
+          options: [
+            'Makes it read-only',
+            'Prevents it from being accessed outside the class',
+            'Makes it optional',
+            'Turns it into a generic',
+          ],
+          answer: 'Prevents it from being accessed outside the class',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A field marked ____ can be set once but never reassigned afterward.',
+          options: [],
+          answer: 'readonly',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'By default, class fields in TypeScript are public.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Typed Task Tracker',
+    content: lessonContent(
+      'Final Project: Typed Task Tracker',
+      `Time to combine interfaces, generics, unions, and classes into one typed program.\n\n## Requirements\n\n1. Define an interface (or type) describing a \`Task\`: \`id\`, \`title\`, \`done\`, and \`priority: 'low' | 'medium' | 'high'\`.\n2. Write a generic \`Store<T>\` class (or a set of typed functions) that can add, remove, and list items of any type, then use it to manage \`Task\` objects.\n3. Write a function that filters tasks by priority and returns a properly typed result.\n4. Model an "add task" operation as a discriminated union or use an \`enum\` somewhere meaningful, e.g. a result type that can succeed or fail validation.\n5. Make sure the whole file compiles with no implicit \`any\`s, add explicit types anywhere inference doesn't cover you.\n\n## Stretch goals\n\n- Sort tasks by priority.\n- Add a \`readonly createdAt\` field set in the constructor.\n- Split your types into a separate file and import them with \`import\`/\`export\`.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
 ];
 
 const cppLessons: SeedLesson[] = [
@@ -493,6 +749,112 @@ const cppLessons: SeedLesson[] = [
         },
       ],
     },
+  },
+  {
+    title: 'Control Flow and Loops',
+    content: lessonContent(
+      'Control Flow and Loops',
+      `\`\`\`cpp\n#include <iostream>\n\nint main() {\n    int xp = 45;\n\n    if (xp >= 50) {\n        std::cout << "Level up!" << std::endl;\n    } else {\n        std::cout << "Keep going, " << (50 - xp) << " XP to go." << std::endl;\n    }\n\n    for (int i = 1; i <= 5; i++) {\n        std::cout << "Lesson " << i << std::endl;\n    }\n\n    int count = 0;\n    while (count < 3) {\n        std::cout << "count = " << count << std::endl;\n        count++;\n    }\n\n    return 0;\n}\n\`\`\`\n\n## The pieces\n\n- \`if\` / \`else\` branch on a boolean condition, always wrapped in parentheses.\n- \`for (init; condition; increment)\` is best when you know how many times to loop.\n- \`while (condition)\` loops as long as the condition stays true, useful when the number of iterations isn't known ahead of time.`
+    ),
+    quiz: {
+      title: 'Control Flow Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which loop is the best fit when you know exactly how many iterations you need?',
+          options: ['for', 'while', 'do', 'if'],
+          answer: 'for',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A while loop whose condition never becomes false is called an ____ loop.',
+          options: [],
+          answer: 'infinite',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "In C++, the condition in an if statement must be wrapped in parentheses.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Functions',
+    content: lessonContent(
+      'Functions',
+      `\`\`\`cpp\n#include <iostream>\n#include <string>\n\nint add(int a, int b) {\n    return a + b;\n}\n\nvoid greet(const std::string& name) {\n    std::cout << "Hello, " << name << "!" << std::endl;\n}\n\nint main() {\n    std::cout << "add(2, 3) = " << add(2, 3) << std::endl;\n    greet("CodeForge");\n    return 0;\n}\n\`\`\`\n\n## Key ideas\n\n- A function's declared return type (\`int\`, \`void\`, ...) must match what it actually returns, \`void\` means "returns nothing".\n- Passing a parameter as \`const std::string&\` passes it **by reference** instead of copying it, faster for large objects like strings, and \`const\` promises the function won't modify it.\n- Functions must generally be declared (or defined) before they're used, that's why \`add\` and \`greet\` appear above \`main\`.`
+    ),
+    quiz: {
+      title: 'Functions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does a function declared with return type `void` return?',
+          options: ['Nothing', 'Zero', 'A null pointer', 'An empty string'],
+          answer: 'Nothing',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Declaring a parameter as `const std::string&` avoids copying the argument by passing it by ____.',
+          options: [],
+          answer: 'reference',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A function's return type must match the type of value it actually returns.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Arrays and Vectors',
+    content: lessonContent(
+      'Arrays and Vectors',
+      `\`\`\`cpp\n#include <iostream>\n#include <vector>\n\nint main() {\n    int scores[3] = {80, 92, 67};   // fixed-size array\n    std::cout << "first score: " << scores[0] << std::endl;\n\n    std::vector<int> xp = {10, 20, 30};   // resizable array\n    xp.push_back(40);\n\n    int total = 0;\n    for (int value : xp) {\n        total += value;\n    }\n    std::cout << "total xp: " << total << std::endl;\n    std::cout << "vector size: " << xp.size() << std::endl;\n\n    return 0;\n}\n\`\`\`\n\n## Arrays vs. vectors\n\n- A plain array (\`int scores[3]\`) has a **fixed size** decided at compile time, it can never grow or shrink.\n- \`std::vector<T>\`, part of the Standard Template Library (STL), is a **resizable** array, \`push_back\` adds an element, \`size()\` tells you how many there are.\n- The range-based \`for (int value : xp)\` loop visits every element without needing an index.`
+    ),
+    quiz: {
+      title: 'Arrays & Vectors Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the main advantage of std::vector over a plain fixed-size array?',
+          options: [
+            'It uses less memory always',
+            'It can grow and shrink at runtime',
+            'It is faster to access by index',
+            'It cannot store integers',
+          ],
+          answer: 'It can grow and shrink at runtime',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The method used to add an element to the end of a vector is ____().',
+          options: [],
+          answer: 'push_back',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An array declared as `int scores[3]` can change size after it is created.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Grade Calculator',
+    content: lessonContent(
+      'Final Project: Grade Calculator',
+      `Time to combine control flow, functions, and vectors into one program.\n\n## Requirements\n\n1. Store a list of student scores using a \`std::vector<int>\`.\n2. Write a function that computes the average of the scores.\n3. Write a function that returns the highest and lowest score.\n4. Loop over the scores and print each one alongside a letter grade (A/B/C/D/F) based on thresholds you define.\n5. Print a final summary of the average, highest, and lowest scores using \`std::cout\`.\n\n## Stretch goals\n\n- Read scores from the user with \`std::cin\` instead of hardcoding them.\n- Use a \`struct\` to bundle a student's name together with their scores.\n- Split the logic into multiple small functions, each with one clear responsibility.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
   },
 ];
 
@@ -1001,19 +1363,49 @@ async function main() {
     const existing = await prisma.course.findFirst({ where: { pathId: path.id, title: courseSeed.title } });
     if (existing) {
       // refresh lesson text in place so content updates reach existing installs
-      // without touching quizzes, enrollments, or student progress
+      // without touching quizzes, enrollments, or student progress; lessons newly
+      // added to the seed (beyond what already exists) are created with their quiz
       const current = await prisma.lesson.findMany({ where: { courseId: existing.id } });
       const byOrder = new Map(current.map((l) => [l.order, l]));
       for (const [i, lesson] of courseSeed.lessons.entries()) {
-        const match = byOrder.get(i + 1);
+        const order = i + 1;
+        const match = byOrder.get(order);
         if (match) {
           await prisma.lesson.update({
             where: { id: match.id },
             data: { title: lesson.title, content: lesson.content, requiresSubmission: lesson.requiresSubmission ?? false },
           });
+        } else {
+          await prisma.lesson.create({
+            data: {
+              courseId: existing.id,
+              title: lesson.title,
+              order,
+              content: lesson.content,
+              videoUrl: lesson.videoUrl ?? null,
+              requiresSubmission: lesson.requiresSubmission ?? false,
+              quiz: lesson.quiz
+                ? {
+                    create: {
+                      title: lesson.quiz.title,
+                      passingScore: lesson.quiz.passingScore,
+                      questions: {
+                        create: lesson.quiz.questions.map((q, qi) => ({
+                          type: q.type,
+                          prompt: q.prompt,
+                          options: q.options,
+                          answer: q.answer,
+                          order: qi + 1,
+                        })),
+                      },
+                    },
+                  }
+                : undefined,
+            },
+          });
         }
       }
-      console.log(`  ✓ ${courseSeed.title} (content refreshed)`);
+      console.log(`  ✓ ${courseSeed.title} (content refreshed, ${courseSeed.lessons.length} lessons)`);
       continue;
     }
 
