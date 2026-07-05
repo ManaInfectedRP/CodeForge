@@ -22,9 +22,9 @@ export function Landing() {
           Din väg mot en karriär som <span className="bg-gradient-to-r from-forge-500 to-emerald-400 bg-clip-text text-transparent">mjukvaruutvecklare</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">
-          Interaktiva kurser, praktiska kodövningar, quiz och verkliga projekt inom bland annat C++, Python,
-          JavaScript, TypeScript, Node.js, Git, React, C# och SQL. Följ dina framsteg, håll din streak vid liv
-          och tjäna XP medan du lär dig.
+          Kliv för kliv, från din första rad kod till din första utvecklarroll. Interaktiva kurser, verkliga
+          projekt och quiz i bland annat C++, Python, JavaScript, TypeScript, Node.js, Git, React, C# och SQL,
+          med XP och streaks som håller farten uppe.
         </p>
         <div className="mt-8 flex justify-center gap-4">
           <Link
@@ -62,10 +62,6 @@ export function Landing() {
           ))}
         </div>
       </section>
-
-      <footer className="border-t border-slate-800 py-8 text-center text-sm text-slate-500">
-        Kodstigen, byggt med Node.js, Express, React och PostgreSQL.
-      </footer>
     </main>
   );
 }
