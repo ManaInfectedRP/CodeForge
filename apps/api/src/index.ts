@@ -11,5 +11,5 @@ const io = new Server(httpServer, { cors: { origin: true } });
 setupChat(io);
 
 httpServer.listen(port, () => {
-  console.log(`CodeForge API listening on http://localhost:${port}`);
+  console.log(`Kodstigen API listening on http://localhost:${port}`);
 });

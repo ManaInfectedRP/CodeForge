@@ -43,7 +43,7 @@ export function VerifyCertificate() {
             <p className="mt-2 font-mono text-xs text-slate-500">ID: {result.certificateId}</p>
           </div>
           <p className="mt-4 text-xs text-slate-500">
-            This certificate was issued by CodeForge Academy and its record matches our registry.
+            This certificate was issued by Kodstigen and its record matches our registry.
           </p>
         </>
       ) : (

@@ -15,35 +15,39 @@ export function Landing() {
       <section className="mx-auto max-w-6xl px-4 py-16 text-center">
         <img
           src="/logo.png"
-          alt="CodeForge Academy"
+          alt="Kodstigen"
           className="mx-auto mb-6 h-64 w-64 rounded-3xl object-cover shadow-lg shadow-forge-600/20"
         />
         <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight sm:text-6xl">
-          Forge your future as a <span className="bg-gradient-to-r from-forge-500 to-emerald-400 bg-clip-text text-transparent">software developer</span>
+          Din väg mot en karriär som <span className="bg-gradient-to-r from-forge-500 to-emerald-400 bg-clip-text text-transparent">mjukvaruutvecklare</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">
-          Interactive courses, hands-on coding exercises, quizzes, and real projects across C++, Python,
-          JavaScript, TypeScript, Node.js, and Git. Track your progress, keep your streak alive, and earn XP as
-          you learn.
+          Interaktiva kurser, praktiska kodövningar, quiz och verkliga projekt inom bland annat C++, Python,
+          JavaScript, TypeScript, Node.js, Git, React, C# och SQL. Följ dina framsteg, håll din streak vid liv
+          och tjäna XP medan du lär dig.
         </p>
         <div className="mt-8 flex justify-center gap-4">
           <Link
             to="/register"
             className="rounded-xl bg-forge-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-forge-600/25 hover:bg-forge-500"
           >
-            Start learning free
+            Börja lära dig gratis
           </Link>
           <Link
             to="/login"
             className="rounded-xl border border-slate-700 px-8 py-3.5 font-semibold text-slate-200 hover:bg-slate-800"
           >
-            Log in
+            Logga in
           </Link>
         </div>
+        <p className="mx-auto mt-5 max-w-xl text-sm text-slate-500">
+          Den här sidan visas på svenska, men efter att du registrerar dig eller loggar in fortsätter allt i
+          appen på engelska.
+        </p>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-20">
-        <h2 className="mb-8 text-center text-2xl font-bold">Choose your path</h2>
+        <h2 className="mb-8 text-center text-2xl font-bold">Välj din stig</h2>
 
         <div className="flex flex-wrap items-start justify-center gap-x-10 gap-y-6 sm:gap-x-14">
           {paths.map((p) => (
@@ -60,7 +64,7 @@ export function Landing() {
       </section>
 
       <footer className="border-t border-slate-800 py-8 text-center text-sm text-slate-500">
-        CodeForge Academy, built with Node.js, Express, React & PostgreSQL.
+        Kodstigen, byggt med Node.js, Express, React och PostgreSQL.
       </footer>
     </main>
   );
