@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import type { AnalyticsSummaryDto } from '@codeforge/shared';
 import { api, errorMessage } from '../lib/api';
+import { Sparkline } from '../components/Sparkline';
 
 const adminTabClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-full px-4 py-1.5 text-sm font-medium ${
@@ -65,16 +66,19 @@ export function AdminAnalytics() {
                 {summary.topPages.map((p, i) => (
                   <li
                     key={p.path}
-                    className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3"
+                    className="flex items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-3"
                   >
-                    <span className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-400">
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-400">
                         {i + 1}
                       </span>
-                      <span className="font-mono text-sm text-slate-300">{p.path}</span>
+                      <span className="truncate font-mono text-sm text-slate-300">{p.path}</span>
                     </span>
-                    <span className="text-sm text-slate-400">
-                      {p.views.toLocaleString()} view{p.views === 1 ? '' : 's'}
+                    <span className="flex shrink-0 items-center gap-4">
+                      <Sparkline data={p.trend} />
+                      <span className="w-20 text-right text-sm text-slate-400">
+                        {p.views.toLocaleString()} view{p.views === 1 ? '' : 's'}
+                      </span>
                     </span>
                   </li>
                 ))}

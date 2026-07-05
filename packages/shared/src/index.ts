@@ -403,6 +403,8 @@ export interface LeaderboardDto {
 export interface AnalyticsTopPageDto {
   path: string;
   views: number;
+  /** daily view counts for the last 14 days, oldest first, for a per-page trend sparkline */
+  trend: number[];
 }
 
 export interface AnalyticsSummaryDto {
