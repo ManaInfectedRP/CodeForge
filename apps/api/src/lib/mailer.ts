@@ -22,7 +22,7 @@ const transport = process.env.SMTP_HOST
     })
   : null;
 
-const FROM = process.env.EMAIL_FROM ?? 'CodeForge Academy <no-reply@codeforge.local>';
+const FROM = process.env.EMAIL_FROM ?? 'Kodstigen <no-reply@kodstigen.local>';
 
 export async function sendMail(to: string, subject: string, html: string, text: string) {
   if (!transport) {
@@ -37,9 +37,9 @@ export async function sendVerificationEmail(to: string, username: string, token:
   const link = `${appUrl()}/verify-email?token=${token}`;
   await sendMail(
     to,
-    'Verify your CodeForge Academy email',
+    'Verify your Kodstigen email',
     `<div style="font-family:sans-serif;max-width:480px;margin:0 auto">
-      <h2>Welcome to CodeForge Academy, ${username}! ⚒️</h2>
+      <h2>Welcome to Kodstigen, ${username}! ⚒️</h2>
       <p>Confirm your email address to finish setting up your account.</p>
       <p style="margin:24px 0">
         <a href="${link}" style="background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
@@ -49,6 +49,6 @@ export async function sendVerificationEmail(to: string, username: string, token:
       <p style="color:#666;font-size:13px">Or paste this link into your browser:<br>${link}</p>
       <p style="color:#666;font-size:13px">This link expires in 24 hours. If you didn't create an account, you can ignore this email.</p>
     </div>`,
-    `Welcome to CodeForge Academy, ${username}!\n\nVerify your email: ${link}\n\nThis link expires in 24 hours.`
+    `Welcome to Kodstigen, ${username}!\n\nVerify your email: ${link}\n\nThis link expires in 24 hours.`
   );
 }

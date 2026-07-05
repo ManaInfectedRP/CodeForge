@@ -245,7 +245,7 @@ adminRouter.get(
       title: c.title,
       difficulty: c.difficulty,
       languages: c.languages,
-      instructorName: c.instructor?.username ?? 'CodeForge Team',
+      instructorName: c.instructor?.username ?? 'Kodstigen Team',
       status: c.status,
       reviewNote: c.reviewNote,
       testCaseCount: c._count.testCases,

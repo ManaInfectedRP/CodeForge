@@ -1,4 +1,4 @@
-# ⚒️ CodeForge Academy
+# ⚒️ Kodstigen
 
 A modern programming learning platform. Students pick learning paths (C++, Python, JavaScript, TypeScript, Node.js), enroll in courses, complete lessons, pass quizzes, and earn XP while keeping a daily streak alive.
 

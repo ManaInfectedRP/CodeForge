@@ -45,7 +45,7 @@ export function Certificate() {
       </div>
 
       <div className="certificate-sheet mt-6 rounded-2xl border-4 border-double border-amber-500/60 bg-slate-900 p-10 text-center">
-        <img src="/logo.png" alt="CodeForge Academy" className="mx-auto h-20 w-20 rounded-2xl" />
+        <img src="/logo.png" alt="Kodstigen" className="mx-auto h-20 w-20 rounded-2xl" />
         <p className="mt-4 text-xs font-semibold uppercase tracking-[0.3em] text-amber-400">
           Certificate of Completion
         </p>

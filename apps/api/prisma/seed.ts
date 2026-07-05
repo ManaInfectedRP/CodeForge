@@ -2258,7 +2258,7 @@ async function seedAchievements() {
 }
 
 async function main() {
-  console.log('Seeding CodeForge Academy...');
+  console.log('Seeding Kodstigen...');
 
   const [instructorPass, adminPass, studentPass] = await Promise.all([
     bcrypt.hash('instructor123', 10),
