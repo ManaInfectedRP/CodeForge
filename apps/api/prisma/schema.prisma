@@ -302,3 +302,19 @@ model UserAchievement {
 
   @@id([userId, achievementId])
 }
+
+model PageViewCount {
+  path      String   @id
+  views     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+// One row per (page, day), incremented the same way as PageViewCount, just
+// bucketed by day. Powers the per-page trend sparkline without logging events.
+model PageViewDaily {
+  path  String
+  date  String
+  views Int    @default(0)
+
+  @@id([path, date])
+}

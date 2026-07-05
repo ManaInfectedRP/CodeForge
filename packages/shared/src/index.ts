@@ -398,6 +398,21 @@ export interface LeaderboardDto {
   entries: LeaderboardEntryDto[];
 }
 
+// --- Analytics ---
+
+export interface AnalyticsTopPageDto {
+  path: string;
+  views: number;
+  /** daily view counts for the last 14 days, oldest first, for a per-page trend sparkline */
+  trend: number[];
+}
+
+export interface AnalyticsSummaryDto {
+  totalViews: number;
+  pagesTracked: number;
+  topPages: AnalyticsTopPageDto[];
+}
+
 // --- Achievements ---
 
 export type AchievementMetric = 'XP' | 'STREAK' | 'LESSONS_COMPLETED' | 'QUIZZES_PASSED' | 'CHALLENGES_SOLVED';

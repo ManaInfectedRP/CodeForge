@@ -58,6 +58,9 @@ export function AdminReview() {
         <NavLink to="/admin/users" className={adminTabClass}>
           Users
         </NavLink>
+        <NavLink to="/admin/analytics" className={adminTabClass}>
+          Analytics
+        </NavLink>
       </nav>
 
       <h1 className="mt-6 text-3xl font-bold">Course review</h1>
