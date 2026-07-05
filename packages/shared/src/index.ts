@@ -398,6 +398,28 @@ export interface LeaderboardDto {
   entries: LeaderboardEntryDto[];
 }
 
+// --- Analytics ---
+
+export interface AnalyticsDayDto {
+  date: string;
+  views: number;
+  visitors: number;
+}
+
+export interface AnalyticsTopPageDto {
+  path: string;
+  views: number;
+}
+
+export interface AnalyticsSummaryDto {
+  totalViews: number;
+  viewsLast30Days: number;
+  uniqueVisitorsLast30Days: number;
+  newVisitorsToday: number;
+  viewsPerDay: AnalyticsDayDto[];
+  topPages: AnalyticsTopPageDto[];
+}
+
 // --- Achievements ---
 
 export type AchievementMetric = 'XP' | 'STREAK' | 'LESSONS_COMPLETED' | 'QUIZZES_PASSED' | 'CHALLENGES_SOLVED';

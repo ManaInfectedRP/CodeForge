@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { PageTracker } from './components/PageTracker';
 import { VerifyEmailBanner } from './components/VerifyEmailBanner';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleRoute } from './components/RoleRoute';
@@ -29,6 +30,7 @@ import { TeachSubmissions } from './pages/TeachSubmissions';
 import { AdminReview } from './pages/AdminReview';
 import { AdminChallengeReview } from './pages/AdminChallengeReview';
 import { AdminUsers } from './pages/AdminUsers';
+import { AdminAnalytics } from './pages/AdminAnalytics';
 import { VerifyEmail } from './pages/VerifyEmail';
 import { Chat } from './pages/Chat';
 import { Settings } from './pages/Settings';
@@ -39,6 +41,7 @@ export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <PageTracker />
         <div className="flex min-h-screen flex-col">
           <Navbar />
           <VerifyEmailBanner />
@@ -78,6 +81,7 @@ export function App() {
                 <Route path="/admin" element={<AdminReview />} />
                 <Route path="/admin/challenges" element={<AdminChallengeReview />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/analytics" element={<AdminAnalytics />} />
               </Route>
               <Route path="*" element={<main className="p-16 text-center text-slate-400">Page not found</main>} />
             </Routes>
