@@ -85,7 +85,6 @@ model User {
   challengesAuthored   Challenge[]           @relation("InstructorChallenges")
   chatMessages         ChatMessage[]
   projectSubmissions   ProjectSubmission[]
-  pageViews            PageView[]
 }
 
 model ChatMessage {
@@ -304,16 +303,8 @@ model UserAchievement {
   @@id([userId, achievementId])
 }
 
-model PageView {
-  id        String   @id @default(cuid())
-  path      String
-  visitorId String
-  userId    String?
-  referrer  String?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([path])
-  @@index([createdAt])
-  @@index([visitorId])
+model PageViewCount {
+  path      String   @id
+  views     Int      @default(0)
+  updatedAt DateTime @updatedAt
 }

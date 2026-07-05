@@ -400,12 +400,6 @@ export interface LeaderboardDto {
 
 // --- Analytics ---
 
-export interface AnalyticsDayDto {
-  date: string;
-  views: number;
-  visitors: number;
-}
-
 export interface AnalyticsTopPageDto {
   path: string;
   views: number;
@@ -413,10 +407,7 @@ export interface AnalyticsTopPageDto {
 
 export interface AnalyticsSummaryDto {
   totalViews: number;
-  viewsLast30Days: number;
-  uniqueVisitorsLast30Days: number;
-  newVisitorsToday: number;
-  viewsPerDay: AnalyticsDayDto[];
+  pagesTracked: number;
   topPages: AnalyticsTopPageDto[];
 }
 
