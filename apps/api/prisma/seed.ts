@@ -25,8 +25,8 @@ const paths = [
     name: 'Python',
     icon: '🐍',
     difficulty: 2,
-    estimatedHours: 55,
-    projectCount: 20,
+    estimatedHours: 80,
+    projectCount: 21,
     description: 'The friendliest way into programming, scripting, automation, data, and AI with Python.',
   },
   {
@@ -91,6 +91,24 @@ const paths = [
     estimatedHours: 55,
     projectCount: 11,
     description: 'Query, filter, join, and aggregate relational data with SQL, the language behind virtually every database-backed application.',
+  },
+  {
+    slug: 'docker',
+    name: 'Docker',
+    icon: '🐳',
+    difficulty: 3,
+    estimatedHours: 30,
+    projectCount: 8,
+    description: 'Package, ship, and run applications anywhere with containers, images, Dockerfiles, and Docker Compose.',
+  },
+  {
+    slug: 'azure',
+    name: 'Azure',
+    icon: '☁️',
+    difficulty: 3,
+    estimatedHours: 35,
+    projectCount: 8,
+    description: 'Deploy, host, and scale real applications in the cloud with Microsoft Azure.',
   },
 ];
 
@@ -266,7 +284,7 @@ const pythonLessons: SeedLesson[] = [
     title: 'Getting Started with Python',
     content: lessonContent(
       'Getting Started with Python',
-      `Python is famous for its readable syntax and gentle learning curve.\n\n\`\`\`python\nprint("Hello, CodeForge!")\n\nname = "student"\nxp = 0\nxp += 10\nprint(f"{name} has {xp} XP")\n\`\`\`\n\nNo semicolons, no braces, indentation defines structure.`
+      `Python is one of the most popular programming languages in the world, and one of the friendliest for beginners. It's used for everything from web apps and automation scripts to data science and AI.\n\n## Your first program\n\n\`\`\`python\nprint("Hello, Kodstigen!")\n\nname = "student"\nxp = 0\nxp += 10\nprint(f"{name} has {xp} XP")\n\`\`\`\n\n## Reading it line by line\n\n- \`print(...)\` writes text to the console, it's usually the very first thing anyone learns in any language.\n- \`name = "student"\` creates a **variable**, a named container for a value, Python figures out the type (here, a piece of text) automatically, you never have to declare it up front.\n- \`xp += 10\` is shorthand for \`xp = xp + 10\`, add 10 to whatever \`xp\` already is.\n- \`f"{name} has {xp} XP"\` is an **f-string**, the \`f\` right before the quotes lets you embed variables directly inside \`{ }\`, without it you'd have to write something clunkier like \`name + " has " + str(xp) + " XP"\`.\n\n## No semicolons, no braces\n\nUnlike many languages, Python doesn't use \`{ }\` to mark where a block of code starts and ends, it uses **indentation** (consistent spaces at the start of a line) instead. Get the indentation wrong and Python refuses to run your code, that's a feature, not a bug, it forces code to stay readable.\n\n> [!TIP]\n> Comments start with \`#\` and are ignored when the program runs, use them to explain *why* you did something, not just *what* the code does.`
     ),
     quiz: {
       title: 'Python Basics Quiz',
@@ -291,7 +309,7 @@ const pythonLessons: SeedLesson[] = [
     title: 'Lists, Dicts, and Loops',
     content: lessonContent(
       'Lists, Dicts, and Loops',
-      `\`\`\`python\nlanguages = ["python", "javascript", "cpp"]\nscores = {"python": 95, "javascript": 88}\n\nfor lang in languages:\n    print(lang.upper())\n\n# List comprehension\nlengths = [len(lang) for lang in languages]\nprint("lengths:", lengths)\nprint("python score:", scores["python"])\n\`\`\`\n\nLists are ordered and mutable; dicts map keys to values; comprehensions build lists in one expression.`
+      `Two of Python's most-used data structures are **lists** (ordered collections) and **dictionaries** (key-value pairs).\n\n\`\`\`python\nlanguages = ["python", "javascript", "cpp"]\nscores = {"python": 95, "javascript": 88}\n\nfor lang in languages:\n    print(lang.upper())\n\n# List comprehension\nlengths = [len(lang) for lang in languages]\nprint("lengths:", lengths)\nprint("python score:", scores["python"])\n\`\`\`\n\n## Lists\n\n\`languages\` is a **list**, an ordered, mutable (changeable) collection. Access an item by its position, starting from \`0\`, so \`languages[0]\` is \`"python"\`. Lists can hold any mix of types and grow or shrink with methods like \`.append(...)\`.\n\n## Dictionaries\n\n\`scores\` is a **dict**, it maps **keys** (like \`"python"\`) to **values** (like \`95\`), instead of positions. Look up a value with \`scores["python"]\`, trying to access a key that doesn't exist raises an error.\n\n## Loops\n\n\`for lang in languages:\` visits every item in the list, one at a time, \`lang\` is a new variable holding the current item on each pass.\n\n## List comprehensions\n\n\`[len(lang) for lang in languages]\` builds a brand-new list in a single line. Read it right to left: "for each \`lang\` in \`languages\`, compute \`len(lang)\`, and collect the results into a list." It's exactly equivalent to:\n\n\`\`\`python\nlengths = []\nfor lang in languages:\n    lengths.append(len(lang))\n\`\`\`\n\njust shorter, once the pattern clicks, you'll use it constantly.`
     ),
     quiz: {
       title: 'Collections Quiz',
@@ -316,7 +334,7 @@ const pythonLessons: SeedLesson[] = [
     title: 'Functions and Error Handling',
     content: lessonContent(
       'Functions and Error Handling',
-      `\`\`\`python\ndef divide(a: float, b: float) -> float:\n    if b == 0:\n        raise ValueError("Cannot divide by zero")\n    return a / b\n\ntry:\n    print("10 / 2 =", divide(10, 2))\n    print("10 / 0 =", divide(10, 0))\nexcept ValueError as err:\n    print(f"Error: {err}")\n\`\`\`\n\nUse \`try/except\` to handle failures gracefully, and type hints to document intent.`
+      `A **function** is a named, reusable block of code, you define it once and call it as many times as you need.\n\n\`\`\`python\ndef divide(a: float, b: float) -> float:\n    if b == 0:\n        raise ValueError("Cannot divide by zero")\n    return a / b\n\ntry:\n    print("10 / 2 =", divide(10, 2))\n    print("10 / 0 =", divide(10, 0))\nexcept ValueError as err:\n    print(f"Error: {err}")\n\`\`\`\n\n## Defining a function\n\n\`def divide(a, b):\` starts a function definition, \`a\` and \`b\` are **parameters**, placeholders for whatever values get passed in when the function is called. \`return\` sends a value back to whoever called the function, once \`return\` runs, the function stops immediately.\n\n## Type hints\n\n\`a: float, b: float) -> float\` are **type hints**, they document what types a function expects and returns. Python doesn't enforce them at runtime (you *could* still pass in the wrong type), but they help tools, editors, and other developers understand your code, and catch mistakes early.\n\n## Handling errors\n\nSometimes something goes wrong that a function can't recover from itself, dividing by zero, a missing file, invalid input. Python handles this with **exceptions**:\n\n- \`raise ValueError("...")\` signals "something is wrong" and stops normal execution.\n- \`try:\` wraps code that might fail.\n- \`except ValueError as err:\` catches that specific kind of error if it happens, letting your program respond gracefully instead of crashing.\n\nWithout the \`try\`/\`except\`, calling \`divide(10, 0)\` would crash the whole program the moment the \`ValueError\` was raised.`
     ),
     quiz: {
       title: 'Functions Quiz',
@@ -409,12 +427,183 @@ const pythonLessons: SeedLesson[] = [
   },
 ];
 
+const mongoFastApiLessons: SeedLesson[] = [
+  {
+    title: 'Why FastAPI and MongoDB?',
+    content: lessonContent(
+      'Why FastAPI and MongoDB?',
+      `You've learned Python the language, now let's build a real backend with it. **FastAPI** is a modern, high-performance Python web framework, and **MongoDB** is a NoSQL database that stores flexible, JSON-like documents instead of rigid rows and columns.\n\n## Why FastAPI\n\n- **Fast to write**, path operations are plain Python functions with type hints.\n- **Automatic validation**, request and response data is checked against the types you declare.\n- **Free interactive docs**, every API automatically gets a Swagger UI page at \`/docs\`.\n- **Async-first**, built to handle many concurrent requests efficiently.\n\n## Why MongoDB\n\nA relational database (like the PostgreSQL you may have used with SQL) stores data in tables with a fixed set of columns. MongoDB stores **documents**, JSON-like objects that can have nested data and don't all need identical fields:\n\n\`\`\`\n{\n  "_id": "64f1b2c3d4e5f6",\n  "title": "Buy groceries",\n  "done": false,\n  "tags": ["errands", "urgent"]\n}\n\`\`\`\n\n> [!NOTE]\n> Neither approach is "better", relational databases shine when your data has clear, stable structure and relationships; document databases shine when your data is nested, varies shape, or evolves quickly.`
+    ),
+    quiz: {
+      title: 'FastAPI & MongoDB Intro Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does FastAPI automatically generate for every API you build?',
+          options: ['A mobile app', 'Interactive documentation at /docs', 'A MongoDB cluster', 'CSS styles'],
+          answer: 'Interactive documentation at /docs',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'MongoDB stores data as flexible, JSON-like ____ instead of rows in a fixed table.',
+          options: [],
+          answer: 'documents',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every document in a MongoDB collection must have exactly the same fields.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Setting Up FastAPI and MongoDB',
+    content: lessonContent(
+      'Setting Up FastAPI and MongoDB',
+      `## 1. Install the pieces\n\n\`\`\`bash\npip install fastapi uvicorn motor\n\`\`\`\n\n- \`fastapi\`, the web framework itself.\n- \`uvicorn\`, the server that actually runs your FastAPI app.\n- \`motor\`, the official **async** MongoDB driver for Python.\n\n## 2. A minimal app\n\n\`\`\`\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get("/")\nasync def root():\n    return {"message": "Hello, Kodstigen!"}\n\`\`\`\n\nRun it with:\n\n\`\`\`bash\nuvicorn main:app --reload\n\`\`\`\n\n\`--reload\` restarts the server automatically whenever you save a file, handy during development.\n\n## 3. Connecting to MongoDB\n\n\`\`\`\nfrom motor.motor_asyncio import AsyncIOMotorClient\n\nclient = AsyncIOMotorClient("mongodb://localhost:27017")\ndb = client.kodstigen_db\ntasks_collection = db.tasks\n\`\`\`\n\nA MongoDB server organizes data into **databases**, which contain **collections** (roughly, a collection is like a table), which contain **documents** (roughly, a document is like a row).`
+    ),
+    quiz: {
+      title: 'Setup Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which package actually runs (serves) a FastAPI application?',
+          options: ['fastapi', 'uvicorn', 'motor', 'pip'],
+          answer: 'uvicorn',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Running uvicorn with the ____ flag restarts the server automatically when files change.',
+          options: [],
+          answer: '--reload',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In MongoDB, a collection contains documents, similar to how a table contains rows.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Defining Data Models with Pydantic',
+    content: lessonContent(
+      'Defining Data Models with Pydantic',
+      `FastAPI uses **Pydantic** models to describe the shape of your data, then automatically validates incoming requests against them.\n\n\`\`\`\nfrom pydantic import BaseModel\nfrom typing import Optional\n\nclass Task(BaseModel):\n    title: str\n    done: bool = False\n    tags: list[str] = []\n\nclass TaskOut(Task):\n    id: str\n\`\`\`\n\n## What this buys you\n\n- If a request is missing \`title\`, or sends the wrong type, FastAPI rejects it with a clear \`422\` error automatically, your code never even runs.\n- \`done: bool = False\` gives that field a default, so callers don't have to include it.\n- \`TaskOut\` reuses \`Task\` and adds an \`id\` field, useful for responses (which include a database-assigned id) versus requests (which don't have one yet).\n\n> [!TIP]\n> Think of Pydantic models as the FastAPI equivalent of a SQL table schema, they're where you write down the "shape" your data must have.`
+    ),
+    quiz: {
+      title: 'Pydantic Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What happens if a request body is missing a required field on a Pydantic model?',
+          options: [
+            'FastAPI fills it in with null',
+            'FastAPI automatically rejects the request with a validation error',
+            'The server crashes',
+            'The field is silently ignored',
+          ],
+          answer: 'FastAPI automatically rejects the request with a validation error',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Pydantic model classes inherit from ____.',
+          options: [],
+          answer: 'BaseModel',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Giving a field a default value, like `done: bool = False`, makes it optional in requests.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Basic CRUD with Motor',
+    content: lessonContent(
+      'Basic CRUD with Motor',
+      `Motor's methods mirror MongoDB's query language closely, and every call is \`async\`.\n\n\`\`\`\n# Create\nresult = await tasks_collection.insert_one({"title": "Buy groceries", "done": False})\nnew_id = result.inserted_id\n\n# Read one\ntask = await tasks_collection.find_one({"_id": new_id})\n\n# Read many\ncursor = tasks_collection.find({"done": False})\nincomplete_tasks = await cursor.to_list(length=100)\n\n# Update\nawait tasks_collection.update_one({"_id": new_id}, {"$set": {"done": True}})\n\n# Delete\nawait tasks_collection.delete_one({"_id": new_id})\n\`\`\`\n\n## Reading the pieces\n\n- The first argument to each method is a **filter**, a document describing which record(s) to match, \`{}\` matches everything.\n- \`find()\` returns a **cursor**, not the data itself, you iterate it (or call \`.to_list()\`) to actually fetch documents.\n- \`update_one\` needs an update operator like \`$set\`, MongoDB won't just replace the whole document unless you ask it to.`
+    ),
+    quiz: {
+      title: 'CRUD Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does tasks_collection.find({...}) return?',
+          options: ['A list of documents directly', 'A single document', 'A cursor you iterate to get documents', 'A count'],
+          answer: 'A cursor you iterate to get documents',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'To update specific fields on a document without replacing the whole thing, you use the ____ operator.',
+          options: [],
+          answer: '$set',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every Motor method call must be awaited.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Building REST Endpoints',
+    content: lessonContent(
+      'Building REST Endpoints',
+      `Wiring a Pydantic model and Motor together inside a path operation gives you a real REST endpoint.\n\n\`\`\`\nfrom fastapi import FastAPI, HTTPException\n\napp = FastAPI()\n\n@app.post("/tasks", response_model=TaskOut)\nasync def create_task(task: Task):\n    result = await tasks_collection.insert_one(task.model_dump())\n    created = await tasks_collection.find_one({"_id": result.inserted_id})\n    return {**created, "id": str(created["_id"])}\n\n@app.get("/tasks/{task_id}", response_model=TaskOut)\nasync def get_task(task_id: str):\n    task = await tasks_collection.find_one({"_id": ObjectId(task_id)})\n    if task is None:\n        raise HTTPException(status_code=404, detail="Task not found")\n    return {**task, "id": str(task["_id"])}\n\`\`\`\n\n## Key ideas\n\n- \`{task_id}\` in the route path becomes a function parameter automatically, FastAPI calls this **path parameter binding**.\n- \`task: Task\` as a parameter tells FastAPI to parse and validate the request body as a \`Task\`.\n- \`response_model=TaskOut\` shapes and validates what gets sent back, and shows up correctly in the auto-generated docs.\n- Raising \`HTTPException\` is how you return a non-200 status code with a message.`
+    ),
+    quiz: {
+      title: 'Endpoints Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How do you return a 404 response from inside a FastAPI path operation?',
+          options: ['return 404', 'raise HTTPException(status_code=404, ...)', 'app.error(404)', 'response.status = 404'],
+          answer: 'raise HTTPException(status_code=404, ...)',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Writing {task_id} inside a route path like "/tasks/{task_id}" is called a path ____.',
+          options: [],
+          answer: 'parameter',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Declaring a parameter as `task: Task` tells FastAPI to validate the request body against the Task model.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Task API with FastAPI & MongoDB',
+    content: lessonContent(
+      'Final Project: Build a Task API with FastAPI & MongoDB',
+      `Time to combine models, Motor, and path operations into a real API.\n\n## Requirements\n\n1. Define a Pydantic \`Task\` model with at least a title, a completed flag, and one more field of your choice.\n2. Connect to a MongoDB database (local, Docker, or a free Atlas cluster) using Motor.\n3. Build full CRUD endpoints, \`POST /tasks\`, \`GET /tasks\`, \`GET /tasks/{id}\`, \`PUT /tasks/{id}\`, and \`DELETE /tasks/{id}\`.\n4. Return a proper \`404\` when a requested task doesn't exist.\n5. Confirm your endpoints work using the automatic docs at \`/docs\`.\n\n## Stretch goals\n\n- Add a query parameter to filter tasks by \`done\` status.\n- Add pagination with \`skip\`/\`limit\` query parameters.\n- Add a second collection (e.g. \`users\` or \`projects\`) with a relationship to tasks.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const jsLessons: SeedLesson[] = [
   {
     title: 'JavaScript in the Browser',
     content: lessonContent(
       'JavaScript in the Browser',
-      `JavaScript brings web pages to life, reacting to clicks, fetching data, and updating the page.\n\n## Your first JavaScript\n\n\`\`\`js\nconst name = 'CodeForge';\nconsole.log('Hello, ' + name + '!');\n\nconst year = new Date().getFullYear();\nconsole.log('It is', year);\n\`\`\`\n\n## The DOM\n\nIn a real page, JavaScript reads and modifies the **DOM** (Document Object Model), the live tree of elements your code can change:\n\n\`\`\`\nconst button = document.querySelector('#greet');\nbutton.addEventListener('click', () => {\n  document.querySelector('#out').textContent = 'Hello!';\n});\n\`\`\`\n\n*DOM code needs a real web page, so that block is read-only here, every other example in this course is runnable. Try the first one!*`
+      `JavaScript is the one programming language that runs natively in every web browser, it's what makes pages interactive: reacting to clicks, fetching data, and updating content without a full page reload.\n\n## Your first JavaScript\n\n\`\`\`js\nconst name = 'Kodstigen';\nconsole.log('Hello, ' + name + '!');\n\nconst year = new Date().getFullYear();\nconsole.log('It is', year);\n\`\`\`\n\n## Declaring variables\n\n- \`const\` declares a variable that can't be reassigned after it's set, use it by default.\n- \`let\` declares a variable you *can* reassign later, use it when a value needs to change (like a counter).\n- \`var\` is the old way of declaring variables, from before \`let\`/\`const\` existed, you'll still see it in older code, but modern JavaScript avoids it.\n\n\`\`\`js\nlet xp = 0;\nxp = xp + 10; // fine, let can be reassigned\n\nconst name = 'Ada';\n// name = 'Grace'; ❌ this would throw an error, const can't be reassigned\n\`\`\`\n\n## The DOM\n\nIn a real page, JavaScript reads and modifies the **DOM** (Document Object Model), the live tree of elements your code can change:\n\n\`\`\`\nconst button = document.querySelector('#greet');\nbutton.addEventListener('click', () => {\n  document.querySelector('#out').textContent = 'Hello!';\n});\n\`\`\`\n\n*DOM code needs a real web page, so that block is read-only here, every other example in this course is runnable. Try the first one!*`
     ),
     quiz: {
       title: 'DOM Quiz',
@@ -439,7 +628,7 @@ const jsLessons: SeedLesson[] = [
     title: 'Arrays and Higher-Order Functions',
     content: lessonContent(
       'Arrays and Higher-Order Functions',
-      `\`\`\`js\nconst scores = [80, 92, 67, 100];\n\nconst passed = scores.filter(s => s >= 70);   // [80, 92, 100]\nconst doubled = scores.map(s => s * 2);\nconst total = scores.reduce((sum, s) => sum + s, 0);\n\nconsole.log('passed:', passed);\nconsole.log('doubled:', doubled);\nconsole.log('total:', total);\n\`\`\`\n\n\`map\`, \`filter\`, and \`reduce\` transform arrays without mutating them, the backbone of modern JavaScript.`
+      `A **higher-order function** is simply a function that takes another function as an argument, or returns one. Arrays have several built-in higher-order functions that let you transform data without writing manual loops.\n\n\`\`\`js\nconst scores = [80, 92, 67, 100];\n\nconst passed = scores.filter(s => s >= 70);   // [80, 92, 100]\nconst doubled = scores.map(s => s * 2);\nconst total = scores.reduce((sum, s) => sum + s, 0);\n\nconsole.log('passed:', passed);\nconsole.log('doubled:', doubled);\nconsole.log('total:', total);\n\`\`\`\n\n## The three big ones\n\n- \`.filter(fn)\` builds a **new array** containing only the elements where \`fn\` returns \`true\`. Here, \`s => s >= 70\` keeps every score of 70 or above.\n- \`.map(fn)\` builds a **new array** by transforming every element. Here, \`s => s * 2\` doubles each score.\n- \`.reduce((acc, s) => ..., initialValue)\` combines every element into a single value. \`acc\` (the "accumulator") carries the running result forward from one element to the next, starting at \`initialValue\` (here, \`0\`).\n\n## Why not just use a for loop?\n\nYou could write the same logic with a \`for\` loop, but \`map\`/\`filter\`/\`reduce\` say *what* you want ("give me only the passing scores") instead of *how* to get it (looping, checking, pushing to a new array). None of them modify the original array, \`scores\` is untouched after all three calls, that predictability is a big part of why they're the backbone of modern JavaScript.`
     ),
     quiz: {
       title: 'Array Methods Quiz',
@@ -464,7 +653,7 @@ const jsLessons: SeedLesson[] = [
     title: 'Promises and fetch',
     content: lessonContent(
       'Promises and fetch',
-      `A **Promise** represents a value that will exist later. \`async/await\` lets you write asynchronous code that reads like synchronous code.\n\n\`\`\`js\nfunction loadCourse(id) {\n  // simulate a slow network request\n  return new Promise((resolve) => {\n    setTimeout(() => resolve({ id, title: 'Modern JavaScript' }), 500);\n  });\n}\n\nconsole.log('loading…');\nconst course = await loadCourse(42);\nconsole.log('loaded:', course.title);\n\`\`\`\n\nWith a real API you'd use \`fetch\` exactly the same way:\n\n\`\`\`\nconst res = await fetch('/api/courses');\nif (!res.ok) throw new Error('Request failed');\nconst courses = await res.json();\n\`\`\``
+      `Some operations, like a network request, take time and don't finish immediately. A **Promise** represents a value that will exist *later*, either successfully (**resolved**) or with an error (**rejected**). \`async\`/\`await\` lets you write that asynchronous code so it reads top-to-bottom, like ordinary synchronous code.\n\n\`\`\`js\nfunction loadCourse(id) {\n  // simulate a slow network request\n  return new Promise((resolve) => {\n    setTimeout(() => resolve({ id, title: 'Modern JavaScript' }), 500);\n  });\n}\n\nconsole.log('loading…');\nconst course = await loadCourse(42);\nconsole.log('loaded:', course.title);\n\`\`\`\n\n## Reading it\n\n- \`new Promise((resolve) => { ... })\` creates a Promise that starts out **pending**. Calling \`resolve(value)\` (usually once some async work finishes) moves it to **resolved** with that value.\n- \`await\` pauses the surrounding \`async\` function until the Promise resolves, then hands you the resolved value directly, no \`.then()\` callback needed.\n- Notice the console logs "loading…" *before* "loaded: ...", \`await\` doesn't freeze the whole page, it just pauses this function while other things could still happen.\n\n## fetch\n\nWith a real API you'd use \`fetch\` exactly the same way, it returns a Promise too:\n\n\`\`\`\nconst res = await fetch('/api/courses');\nif (!res.ok) throw new Error('Request failed');\nconst courses = await res.json();\n\`\`\`\n\n\`res.json()\` is itself asynchronous (parsing the response body takes a moment), so it needs its own \`await\` too.`
     ),
     quiz: {
       title: 'Async Quiz',
@@ -567,7 +756,7 @@ const tsLessons: SeedLesson[] = [
     title: 'Why TypeScript?',
     content: lessonContent(
       'Why TypeScript?',
-      `TypeScript adds static types on top of JavaScript. The compiler catches whole categories of bugs before your code ever runs.\n\n\`\`\`ts\nfunction greet(name: string): string {\n  return \`Hello, \${name}\`;\n}\n\nconsole.log(greet('CodeForge'));\n\n// greet(42) ❌ the compiler rejects this before the code ever runs:\n// "Argument of type 'number' is not assignable to parameter of type 'string'"\n\`\`\`\n\nEvery valid JavaScript program is already valid TypeScript, you can adopt it gradually.\n\n*Note: the playground runs TypeScript by stripping the types, full type checking happens in your editor and compiler.*`
+      `TypeScript adds **static types** on top of JavaScript, the compiler checks that your code is internally consistent *before* it ever runs, catching whole categories of bugs that would otherwise only show up at runtime, in production, in front of a user.\n\n\`\`\`ts\nfunction greet(name: string): string {\n  return \`Hello, \${name}\`;\n}\n\nconsole.log(greet('Kodstigen'));\n\n// greet(42) ❌ the compiler rejects this before the code ever runs:\n// "Argument of type 'number' is not assignable to parameter of type 'string'"\n\`\`\`\n\n## What changed from JavaScript\n\n- \`name: string\` declares that the \`name\` parameter must be a string, pass anything else and the compiler stops you immediately, instead of the bug surfacing later as a confusing runtime error.\n- \`): string\` after the parameter list declares the function's **return type**, if the function body tried to \`return 42\` instead, that would be a compile error too.\n- Every valid JavaScript program is already valid TypeScript, you can add types gradually, file by file, instead of rewriting everything at once.\n\n## Compile time vs. runtime\n\nTypeScript types only exist while you're writing and compiling code, they're checked once, then stripped away entirely. The JavaScript that actually runs in a browser or Node.js has no idea types ever existed, this is why TypeScript can catch bugs early without slowing down the program itself.\n\n*Note: the playground runs TypeScript by stripping the types, full type checking happens in your editor and compiler.*`
     ),
     quiz: {
       title: 'TypeScript Intro Quiz',
@@ -592,7 +781,7 @@ const tsLessons: SeedLesson[] = [
     title: 'Interfaces and Types',
     content: lessonContent(
       'Interfaces and Types',
-      `\`\`\`ts\ninterface Course {\n  id: string;\n  title: string;\n  lessons: number;\n  published?: boolean; // optional\n}\n\ntype Role = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN'; // union type\n\nfunction describe(course: Course, role: Role): string {\n  return \`\${role} viewing "\${course.title}" (\${course.lessons} lessons)\`;\n}\n\nconsole.log(describe({ id: 'c1', title: 'TypeScript from JavaScript', lessons: 12 }, 'STUDENT'));\n\`\`\`\n\nInterfaces describe object shapes; union types restrict a value to a fixed set of options.`
+      `As programs grow, describing the *shape* of your data becomes just as important as describing its logic. TypeScript gives you two main tools for that: **interfaces** and **type aliases**.\n\n\`\`\`ts\ninterface Course {\n  id: string;\n  title: string;\n  lessons: number;\n  published?: boolean; // optional\n}\n\ntype Role = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN'; // union type\n\nfunction describe(course: Course, role: Role): string {\n  return \`\${role} viewing "\${course.title}" (\${course.lessons} lessons)\`;\n}\n\nconsole.log(describe({ id: 'c1', title: 'TypeScript from JavaScript', lessons: 12 }, 'STUDENT'));\n\`\`\`\n\n## Interfaces describe object shapes\n\n\`interface Course { ... }\` says: "a \`Course\` is an object with exactly these properties." Passing an object missing \`title\`, or with a \`lessons\` that's a string instead of a number, is a compile error. The \`?\` after \`published\` marks it **optional**, an object can be a valid \`Course\` with or without it.\n\n## Union types restrict the possible values\n\n\`type Role = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';\` means a \`Role\` can only ever be one of those three exact strings, nothing else. Try passing \`'ADMINISTRATOR'\` where a \`Role\` is expected, and the compiler catches the typo immediately, something plain JavaScript could never do.\n\n> [!NOTE]\n> \`interface\` and \`type\` overlap a lot in practice, a common convention is: use \`interface\` for the shape of objects, and \`type\` for unions, primitives, or anything an interface can't express.`
     ),
     quiz: {
       title: 'Types Quiz',
@@ -731,7 +920,7 @@ const cppLessons: SeedLesson[] = [
     title: 'Hello, C++',
     content: lessonContent(
       'Hello, C++',
-      `C++ is a compiled, statically-typed language used for games, engines, embedded systems, and high-performance software.\n\n\`\`\`cpp\n#include <iostream>\n\nint main() {\n    std::cout << "Hello, CodeForge!" << std::endl;\n    return 0;\n}\n\`\`\`\n\nCompile and run:\n\n\`\`\`bash\ng++ hello.cpp -o hello\n./hello\n\`\`\``
+      `C++ is a **compiled**, statically-typed language, your source code is translated into machine code by a compiler before the program ever runs. That extra step is part of why C++ programs run so fast, and why "compile errors" catch many mistakes before you even try running anything. It's used everywhere performance matters: games and game engines, operating systems, embedded devices, and other high-performance software.\n\n## Your first program\n\n\`\`\`cpp\n#include <iostream>\n\nint main() {\n    std::cout << "Hello, Kodstigen!" << std::endl;\n    return 0;\n}\n\`\`\`\n\n## Reading it line by line\n\n- \`#include <iostream>\` pulls in the input/output library, without it \`std::cout\` wouldn't exist.\n- \`int main() { ... }\` is the **entry point**, every C++ program starts running here, and only here.\n- \`std::cout << "..."\` sends text to the console, \`std::\` means "this comes from the standard library", and \`<<\` pushes a value into the output stream.\n- \`std::endl\` ends the current line.\n- \`return 0;\` tells the operating system the program finished successfully, by convention \`0\` means "no errors" (anything else signals a problem).\n\n## Compiling and running\n\nUnlike Python or JavaScript, C++ code doesn't run directly, a compiler translates it into an executable first:\n\n\`\`\`bash\ng++ hello.cpp -o hello\n./hello\n\`\`\`\n\n\`g++ hello.cpp -o hello\` compiles \`hello.cpp\` into a program named \`hello\`, \`./hello\` then runs it.`
     ),
     quiz: {
       title: 'C++ Intro Quiz',
@@ -756,7 +945,7 @@ const cppLessons: SeedLesson[] = [
     title: 'Variables and Memory',
     content: lessonContent(
       'Variables and Memory',
-      `\`\`\`cpp\nint xp = 100;          // stack variable\nint* ptr = &xp;        // pointer to xp\nint& ref = xp;         // reference to xp\n\nstd::cout << *ptr;     // dereference: prints 100\n\`\`\`\n\nC++ gives you direct control over memory. Pointers hold addresses; references are aliases. With great power comes great responsibility, dangling pointers and leaks are on you.`
+      `Every variable lives somewhere in your computer's memory, and C++ is unusual among popular languages in letting you work with that memory directly.\n\n## Declaring variables\n\n\`\`\`cpp\nint xp = 100;         // an integer variable holding the value 100\ndouble price = 9.99;  // a floating-point number\nchar grade = 'A';     // a single character\nbool passed = true;   // true or false\n\`\`\`\n\nEvery variable in C++ has a fixed **type** decided when it's declared, an \`int\` can never later hold a decimal or a piece of text.\n\n## Addresses, pointers, and references\n\nEvery variable lives at a specific **address** in memory, think of memory as a huge street of numbered houses, a variable's address is just its house number.\n\n\`\`\`cpp\nint xp = 100;\nstd::cout << &xp;      // prints xp's address, e.g. 0x7ffc3a2b1c\n\nint* ptr = &xp;        // ptr is a pointer: it stores xp's address\nstd::cout << *ptr;     // *ptr "dereferences" ptr: prints 100, the value at that address\n\nint& ref = xp;         // ref is a reference: another name for xp itself\nref = 200;             // this actually changes xp too!\nstd::cout << xp;       // prints 200\n\`\`\`\n\n| Symbol | Meaning | Example |\n|---|---|---|\n| \`&x\` | "address of x" | \`int* p = &x;\` |\n| \`*p\` | "the value at the address p points to" | \`std::cout << *p;\` |\n| \`T*\` | "a pointer to a T" | \`int* p;\` |\n| \`T&\` | "a reference to a T" | \`int& r = x;\` |\n\n## Pointers vs. references\n\n- A **pointer** is a variable that stores an address, it can be reassigned to point somewhere else, or set to \`nullptr\` to point at nothing at all.\n- A **reference** is an alias for an existing variable, it must be bound to something when it's created, and can never be changed to refer to something else afterward.\n\n> [!WARNING]\n> A pointer that still holds the address of something that's already been destroyed is called a **dangling pointer**, dereferencing it is undefined behavior, one of the most common sources of bugs in C++. Always be sure what a pointer points at is still alive before you dereference it.`
     ),
     quiz: {
       title: 'Memory Quiz',
@@ -781,7 +970,7 @@ const cppLessons: SeedLesson[] = [
     title: 'Control Flow and Loops',
     content: lessonContent(
       'Control Flow and Loops',
-      `\`\`\`cpp\n#include <iostream>\n\nint main() {\n    int xp = 45;\n\n    if (xp >= 50) {\n        std::cout << "Level up!" << std::endl;\n    } else {\n        std::cout << "Keep going, " << (50 - xp) << " XP to go." << std::endl;\n    }\n\n    for (int i = 1; i <= 5; i++) {\n        std::cout << "Lesson " << i << std::endl;\n    }\n\n    int count = 0;\n    while (count < 3) {\n        std::cout << "count = " << count << std::endl;\n        count++;\n    }\n\n    return 0;\n}\n\`\`\`\n\n## The pieces\n\n- \`if\` / \`else\` branch on a boolean condition, always wrapped in parentheses.\n- \`for (init; condition; increment)\` is best when you know how many times to loop.\n- \`while (condition)\` loops as long as the condition stays true, useful when the number of iterations isn't known ahead of time.`
+      `Programs need to make decisions and repeat work. C++'s control-flow keywords work a lot like other C-family languages (JavaScript, C#, Java), so what you learn here will transfer directly.\n\n\`\`\`cpp\n#include <iostream>\n\nint main() {\n    int xp = 45;\n\n    if (xp >= 50) {\n        std::cout << "Level up!" << std::endl;\n    } else {\n        std::cout << "Keep going, " << (50 - xp) << " XP to go." << std::endl;\n    }\n\n    for (int i = 1; i <= 5; i++) {\n        std::cout << "Lesson " << i << std::endl;\n    }\n\n    int count = 0;\n    while (count < 3) {\n        std::cout << "count = " << count << std::endl;\n        count++;\n    }\n\n    return 0;\n}\n\`\`\`\n\n## The pieces\n\n- \`if\` / \`else\` branches on a boolean condition, the condition must always be wrapped in parentheses.\n- \`for (init; condition; increment)\` runs the init once, then repeats: check condition, run the loop body, run the increment, check condition again, and so on. Best when you know how many times to loop.\n- \`while (condition)\` keeps looping as long as the condition stays true, checked before every iteration, useful when you don't know the number of iterations ahead of time.\n\n> [!TIP]\n> Forgetting to update the loop variable (like \`count++\`) is one of the most common beginner bugs, it creates an **infinite loop** that never becomes false.`
     ),
     quiz: {
       title: 'Control Flow Quiz',
@@ -812,7 +1001,7 @@ const cppLessons: SeedLesson[] = [
     title: 'Functions',
     content: lessonContent(
       'Functions',
-      `\`\`\`cpp\n#include <iostream>\n#include <string>\n\nint add(int a, int b) {\n    return a + b;\n}\n\nvoid greet(const std::string& name) {\n    std::cout << "Hello, " << name << "!" << std::endl;\n}\n\nint main() {\n    std::cout << "add(2, 3) = " << add(2, 3) << std::endl;\n    greet("CodeForge");\n    return 0;\n}\n\`\`\`\n\n## Key ideas\n\n- A function's declared return type (\`int\`, \`void\`, ...) must match what it actually returns, \`void\` means "returns nothing".\n- Passing a parameter as \`const std::string&\` passes it **by reference** instead of copying it, faster for large objects like strings, and \`const\` promises the function won't modify it.\n- Functions must generally be declared (or defined) before they're used, that's why \`add\` and \`greet\` appear above \`main\`.`
+      `A **function** packages up a piece of logic so you can reuse it by name, instead of retyping the same code everywhere.\n\n\`\`\`cpp\n#include <iostream>\n#include <string>\n\nint add(int a, int b) {\n    return a + b;\n}\n\nvoid greet(const std::string& name) {\n    std::cout << "Hello, " << name << "!" << std::endl;\n}\n\nint main() {\n    std::cout << "add(2, 3) = " << add(2, 3) << std::endl;\n    greet("Kodstigen");\n    return 0;\n}\n\`\`\`\n\n## Key ideas\n\n- A function's declared return type (\`int\`, \`void\`, ...) must match what it actually returns, \`void\` means "returns nothing".\n- In \`add(int a, int b)\`, \`a\` and \`b\` are **parameters**, placeholders for whatever values get passed in when the function is called (the actual values, like \`2\` and \`3\`, are called **arguments**).\n- Passing a parameter as \`const std::string&\` passes it **by reference** instead of copying it, faster for large objects like strings, and \`const\` promises the function won't modify it.\n- Functions must generally be declared (or defined) before they're used, that's why \`add\` and \`greet\` appear above \`main\`.`
     ),
     quiz: {
       title: 'Functions Quiz',
@@ -843,7 +1032,7 @@ const cppLessons: SeedLesson[] = [
     title: 'Arrays and Vectors',
     content: lessonContent(
       'Arrays and Vectors',
-      `\`\`\`cpp\n#include <iostream>\n#include <vector>\n\nint main() {\n    int scores[3] = {80, 92, 67};   // fixed-size array\n    std::cout << "first score: " << scores[0] << std::endl;\n\n    std::vector<int> xp = {10, 20, 30};   // resizable array\n    xp.push_back(40);\n\n    int total = 0;\n    for (int value : xp) {\n        total += value;\n    }\n    std::cout << "total xp: " << total << std::endl;\n    std::cout << "vector size: " << xp.size() << std::endl;\n\n    return 0;\n}\n\`\`\`\n\n## Arrays vs. vectors\n\n- A plain array (\`int scores[3]\`) has a **fixed size** decided at compile time, it can never grow or shrink.\n- \`std::vector<T>\`, part of the Standard Template Library (STL), is a **resizable** array, \`push_back\` adds an element, \`size()\` tells you how many there are.\n- The range-based \`for (int value : xp)\` loop visits every element without needing an index.`
+      `Most programs need to work with collections of values, not just single variables. C++ gives you two main options: fixed-size arrays and resizable vectors.\n\n\`\`\`cpp\n#include <iostream>\n#include <vector>\n\nint main() {\n    int scores[3] = {80, 92, 67};   // fixed-size array\n    std::cout << "first score: " << scores[0] << std::endl;\n\n    std::vector<int> xp = {10, 20, 30};   // resizable array\n    xp.push_back(40);\n\n    int total = 0;\n    for (int value : xp) {\n        total += value;\n    }\n    std::cout << "total xp: " << total << std::endl;\n    std::cout << "vector size: " << xp.size() << std::endl;\n\n    return 0;\n}\n\`\`\`\n\n## Arrays vs. vectors\n\n- A plain array (\`int scores[3]\`) has a **fixed size** decided at compile time, it can never grow or shrink, and accessing an out-of-bounds index (like \`scores[5]\`) is undefined behavior, C++ won't stop you.\n- \`std::vector<T>\`, part of the Standard Template Library (STL), is a **resizable** array, \`push_back\` adds an element, \`size()\` tells you how many there are.\n- The range-based \`for (int value : xp)\` loop visits every element without needing an index, read it as "for each value in xp".\n\n> [!TIP]\n> When you're not sure how many elements you'll need, reach for \`std::vector\` by default, plain arrays are mostly useful when the size is small and fixed ahead of time.`
     ),
     quiz: {
       title: 'Arrays & Vectors Quiz',
@@ -1905,6 +2094,353 @@ const nodePrismaLessons: SeedLesson[] = [
   },
 ];
 
+const dockerLessons: SeedLesson[] = [
+  {
+    title: 'Why Docker? Containers vs. Virtual Machines',
+    content: lessonContent(
+      'Why Docker? Containers vs. Virtual Machines',
+      `"It works on my machine" is one of the oldest problems in software. **Docker** solves it by packaging an application together with everything it needs to run, code, runtime, libraries, system tools, into a single **container** that behaves the same everywhere.\n\n## Containers vs. virtual machines\n\n| | Virtual Machine | Container |\n|---|---|---|\n| Includes | A full guest operating system | Just the app and its dependencies |\n| Startup time | Minutes | Seconds |\n| Size | Gigabytes | Often megabytes |\n| Isolation | Full hardware-level virtualization | Shares the host OS kernel, isolated processes |\n\nContainers are lighter because they don't boot a whole separate operating system, they share the host machine's kernel but keep everything else (filesystem, processes, network) isolated.\n\n## Images vs. containers\n\n- An **image** is a read-only template, the blueprint (think: a class).\n- A **container** is a running instance of an image (think: an object). You can start many containers from the same image.\n\n> [!NOTE]\n> Docker Desktop (or Docker Engine on Linux) is the tool that builds images and runs containers. Install it before the next lesson.`
+    ),
+    quiz: {
+      title: 'Containers Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What do containers share with the host machine that virtual machines do not?',
+          options: ['The filesystem', 'The kernel', 'The network', 'Nothing, they are identical to VMs'],
+          answer: 'The kernel',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A Docker ____ is the read-only template that containers are started from.',
+          options: [],
+          answer: 'image',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'You can run multiple containers from the same image at the same time.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Your First Docker Container',
+    content: lessonContent(
+      'Your First Docker Container',
+      `\`\`\`bash\ndocker --version\ndocker run hello-world\n\`\`\`\n\n\`docker run\` downloads the \`hello-world\` image from **Docker Hub** (a public registry of images) if you don't already have it, then starts a container from it.\n\n## Essential commands\n\n\`\`\`bash\ndocker pull nginx              # download an image without running it\ndocker images                  # list images you have locally\ndocker run -d -p 8080:80 nginx # run nginx in the background, map port 8080 -> 80\ndocker ps                      # list running containers\ndocker ps -a                   # list all containers, including stopped ones\ndocker stop <container_id>     # stop a running container\ndocker rm <container_id>       # remove a stopped container\n\`\`\`\n\n\`-p 8080:80\` maps port 8080 on your machine to port 80 inside the container, that's how you reach a containerized web server from your browser.\n\n> [!TIP]\n> \`docker ps\` only shows running containers, add \`-a\` to see stopped ones too, a common source of confusion for beginners.`
+    ),
+    quiz: {
+      title: 'First Container Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which command lists currently running containers?',
+          options: ['docker images', 'docker ps', 'docker pull', 'docker list'],
+          answer: 'docker ps',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The flag -p 8080:____ maps port 8080 on your machine to port 80 inside the container.',
+          options: [],
+          answer: '80',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'docker ps shows stopped containers by default, without needing any extra flags.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Writing a Dockerfile',
+    content: lessonContent(
+      'Writing a Dockerfile',
+      `A **Dockerfile** is a script that describes how to build your own image, step by step.\n\n\`\`\`\nFROM node:20-alpine\n\nWORKDIR /app\n\nCOPY package*.json ./\nRUN npm install\n\nCOPY . .\n\nEXPOSE 3000\nCMD ["node", "server.js"]\n\`\`\`\n\n## Reading it line by line\n\n- \`FROM\` picks a base image to start from, here a lightweight Node.js image.\n- \`WORKDIR\` sets the working directory inside the container for every instruction after it.\n- \`COPY\` copies files from your machine into the image.\n- \`RUN\` executes a command **while building** the image (installing dependencies, here).\n- \`EXPOSE\` documents which port the container listens on.\n- \`CMD\` is the command that runs **when a container starts** from this image.\n\n## Building and running your image\n\n\`\`\`bash\ndocker build -t my-app .\ndocker run -p 3000:3000 my-app\n\`\`\`\n\n\`-t my-app\` tags the image with a name so you can refer to it later instead of a random id.\n\n> [!WARNING]\n> Copying \`package*.json\` and running \`npm install\` **before** copying the rest of your code lets Docker reuse that cached layer when only your source changes, skipping a slow reinstall on every build.`
+    ),
+    quiz: {
+      title: 'Dockerfile Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which Dockerfile instruction runs a command while the image is being built (like installing dependencies)?',
+          options: ['CMD', 'RUN', 'EXPOSE', 'FROM'],
+          answer: 'RUN',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The docker ____ -t my-app . command builds an image from a Dockerfile and tags it "my-app".',
+          options: [],
+          answer: 'build',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'CMD specifies the command that runs when a container starts, not while the image is built.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Volumes and Environment Variables',
+    content: lessonContent(
+      'Volumes and Environment Variables',
+      `Containers are meant to be disposable, when one is removed, anything written to its filesystem is gone too. **Volumes** and **environment variables** are how you deal with data and configuration that need to survive or vary between environments.\n\n## Volumes: persisting data\n\n\`\`\`bash\ndocker run -d -p 27017:27017 -v mongo_data:/data/db mongo\n\`\`\`\n\n\`-v mongo_data:/data/db\` mounts a named volume called \`mongo_data\` at \`/data/db\` inside the container. MongoDB's actual data lives in that volume, on the host machine, so it survives even if the container is removed and recreated.\n\n## Environment variables: configuration\n\n\`\`\`bash\ndocker run -e DATABASE_URL="postgresql://user:pass@db:5432/app" -p 3000:3000 my-app\n\`\`\`\n\n\`-e\` passes an environment variable into the container, exactly like setting one in your shell, letting the same image behave differently across dev, staging, and production without being rebuilt.\n\n> [!TIP]\n> Never bake secrets (passwords, API keys) directly into an image with \`COPY\` or \`RUN\`, pass them in at runtime with \`-e\` or an env file instead.`
+    ),
+    quiz: {
+      title: 'Volumes & Env Vars Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why use a volume instead of writing data directly into a container?',
+          options: [
+            'Volumes make containers start faster',
+            'Data in a volume survives even if the container is removed',
+            'Volumes are required for every container',
+            'Volumes disable networking',
+          ],
+          answer: 'Data in a volume survives even if the container is removed',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The ____ flag passes an environment variable into a running container.',
+          options: [],
+          answer: '-e',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Secrets like passwords should be baked directly into a Docker image with COPY.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Docker Compose: Multi-Container Apps',
+    content: lessonContent(
+      'Docker Compose: Multi-Container Apps',
+      `Real applications are rarely a single container, you usually need an app server, a database, maybe a cache. **Docker Compose** describes a whole multi-container setup in one file.\n\n\`\`\`\nservices:\n  web:\n    build: .\n    ports:\n      - "3000:3000"\n    environment:\n      DATABASE_URL: postgresql://user:pass@db:5432/app\n    depends_on:\n      - db\n\n  db:\n    image: postgres:16\n    environment:\n      POSTGRES_PASSWORD: pass\n    volumes:\n      - db_data:/var/lib/postgresql/data\n\nvolumes:\n  db_data:\n\`\`\`\n\n## Running it\n\n\`\`\`bash\ndocker compose up -d\ndocker compose down\n\`\`\`\n\n\`docker compose up\` builds (if needed) and starts every service defined in the file. Notice \`web\` reaches the database at the hostname \`db\`, Compose automatically creates a shared network where each service can find the others **by service name**.\n\n\`depends_on\` controls startup order, but doesn't wait for the database to be fully ready to accept connections, that's a common real-world gotcha worth knowing about early.`
+    ),
+    quiz: {
+      title: 'Compose Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In Docker Compose, how does one service reach another (e.g. web reaching db)?',
+          options: [
+            'By IP address only',
+            'By the service name, as a hostname',
+            'They cannot communicate',
+            'By port forwarding to localhost',
+          ],
+          answer: 'By the service name, as a hostname',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'docker compose ____ builds and starts every service defined in the compose file.',
+          options: [],
+          answer: 'up',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "depends_on guarantees a service won't start until the service it depends on is fully ready to accept connections.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Containerize a Web App',
+    content: lessonContent(
+      'Final Project: Containerize a Web App',
+      `Time to package a real application with Docker.\n\n## Requirements\n\n1. Write a \`Dockerfile\` for an existing app of yours (or a simple new one), ordering instructions so dependency installation is cached separately from your source code.\n2. Build the image and run it as a container, confirm it works by accessing it from your browser or a REST client.\n3. Add a second service the app depends on (a database, cache, etc.) using a \`docker-compose.yml\` file.\n4. Use a named volume so that service's data survives \`docker compose down\` and \`docker compose up\` again.\n5. Pass at least one piece of configuration in via an environment variable rather than hardcoding it.\n\n## Stretch goals\n\n- Add a \`.dockerignore\` file to keep \`node_modules\`/\`.git\`/etc. out of your image.\n- Use a multi-stage build to keep the final image small.\n- Push your image to Docker Hub.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const azureLessons: SeedLesson[] = [
+  {
+    title: 'Introduction to Cloud Computing and Azure',
+    content: lessonContent(
+      'Introduction to Cloud Computing and Azure',
+      `**Cloud computing** means renting computing power, storage, and services from a provider instead of buying and maintaining your own servers. **Microsoft Azure** is one of the largest cloud providers, alongside AWS and Google Cloud.\n\n## The service models\n\n| Model | You manage | Provider manages | Example |\n|---|---|---|---|\n| IaaS | OS, runtime, app | Physical hardware, networking | Azure Virtual Machines |\n| PaaS | Just your app and data | OS, runtime, scaling | Azure App Service |\n| SaaS | Just your data | Everything else | Microsoft 365 |\n\nMost of this course focuses on **PaaS**, services like App Service let you deploy code directly without managing servers at all.\n\n## Azure's building blocks\n\n- **Regions**, physical data center locations around the world (e.g. "West Europe").\n- **Resource groups**, logical containers that hold related resources (a web app, its database, its storage) so you can manage and delete them together.\n- **Azure Portal**, the web dashboard for creating and managing everything visually, at [portal.azure.com](https://portal.azure.com).\n\n> [!NOTE]\n> Every Azure resource you create belongs to exactly one resource group, get comfortable with them early, they're the organizing unit for almost everything else in this course.`
+    ),
+    quiz: {
+      title: 'Cloud Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In the PaaS model, which of these does the cloud provider manage for you?',
+          options: ['Only physical hardware', 'The OS, runtime, and scaling', 'Nothing, you manage everything', 'Only your application code'],
+          answer: 'The OS, runtime, and scaling',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A ____ is a logical container that groups related Azure resources together.',
+          options: [],
+          answer: 'resource group',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every Azure resource belongs to exactly one resource group.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Resource Groups and the Azure CLI',
+    content: lessonContent(
+      'Resource Groups and the Azure CLI',
+      `The **Azure CLI** (\`az\`) lets you create and manage resources from the command line, scriptable and repeatable, unlike clicking through the Portal.\n\n\`\`\`bash\naz login\n\naz group create --name kodstigen-rg --location westeurope\n\naz group list --output table\n\naz group delete --name kodstigen-rg\n\`\`\`\n\n## Reading the commands\n\n- \`az login\` opens a browser to authenticate the CLI with your Azure account.\n- \`az group create\` makes a new resource group in a chosen **region** (\`--location\`).\n- \`--output table\` formats results as a readable table instead of raw JSON, useful while exploring.\n- \`az group delete\` removes the resource group **and everything inside it**, a fast way to clean up when you're done experimenting.\n\n> [!WARNING]\n> Deleting a resource group deletes every resource inside it permanently. It's convenient for cleanup, but double-check the name before you run it.`
+    ),
+    quiz: {
+      title: 'Azure CLI Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which command authenticates the Azure CLI with your account?',
+          options: ['az auth', 'az login', 'az connect', 'az signin'],
+          answer: 'az login',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'az group create uses the ____ flag to pick which region the resource group lives in.',
+          options: [],
+          answer: '--location',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Deleting a resource group only deletes the group itself, leaving the resources inside it untouched.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Deploying a Web App with Azure App Service',
+    content: lessonContent(
+      'Deploying a Web App with Azure App Service',
+      `**Azure App Service** is a fully-managed PaaS for hosting web apps and APIs, you push your code, Azure handles the servers, scaling, and patching.\n\n\`\`\`bash\naz webapp up \\\n  --name kodstigen-demo-app \\\n  --resource-group kodstigen-rg \\\n  --runtime "NODE:20-lts"\n\`\`\`\n\n\`az webapp up\` is a convenience command, it creates an App Service plan and web app if they don't exist yet, then deploys your current folder's code to it in one step.\n\n## Key concepts\n\n- An **App Service Plan** defines the underlying compute (how much CPU/RAM, how many instances), think of it as the "size" of the box your app runs in.\n- A **Web App** is the actual application running on that plan, you can run multiple web apps on one plan.\n- Once deployed, your app is reachable at \`https://<app-name>.azurewebsites.net\`.\n\n\`\`\`bash\naz webapp log tail --name kodstigen-demo-app --resource-group kodstigen-rg\n\`\`\`\n\n\`log tail\` streams your app's live logs, the first thing to check when a deployment doesn't behave as expected.`
+    ),
+    quiz: {
+      title: 'App Service Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does an App Service Plan define?',
+          options: [
+            'The domain name of your app',
+            'The underlying compute size and capacity your app runs on',
+            'The programming language only',
+            'The database connection string',
+          ],
+          answer: 'The underlying compute size and capacity your app runs on',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A deployed web app is reachable at https://<app-name>.____.net by default.',
+          options: [],
+          answer: 'azurewebsites',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Multiple web apps can run on the same App Service Plan.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Storing Data with Azure Storage',
+    content: lessonContent(
+      'Storing Data with Azure Storage',
+      `**Azure Storage** is a family of services for storing files, structured data, and messages at scale. The one you'll reach for most often is **Blob Storage**, built for unstructured files like images, videos, backups, and documents.\n\n## The hierarchy\n\n- A **storage account**, the top-level container for all your storage services.\n- **Containers**, similar to folders, group related blobs together.\n- **Blobs**, the actual files themselves.\n\n\`\`\`bash\naz storage account create --name kodstigenstorage --resource-group kodstigen-rg --sku Standard_LRS\n\naz storage container create --name uploads --account-name kodstigenstorage\n\naz storage blob upload --account-name kodstigenstorage --container-name uploads --name photo.jpg --file ./photo.jpg\n\`\`\`\n\n## When to use what\n\n| Service | Best for |\n|---|---|\n| Blob Storage | Files: images, videos, backups, static website assets |\n| Table Storage | Simple key-value / NoSQL data at massive scale |\n| Queue Storage | Passing messages between parts of an application |\n\n\`--sku Standard_LRS\` picks a pricing/redundancy tier, "Locally Redundant Storage", the cheapest option, keeping multiple copies within one data center.`
+    ),
+    quiz: {
+      title: 'Storage Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which Azure Storage service is best suited for storing image and video files?',
+          options: ['Table Storage', 'Queue Storage', 'Blob Storage', 'App Service'],
+          answer: 'Blob Storage',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Inside a storage account, blobs are grouped into ____, similar to folders.',
+          options: [],
+          answer: 'containers',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A storage account is the top-level container that holds all of your storage services.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Azure Databases: Azure SQL and Cosmos DB',
+    content: lessonContent(
+      'Azure Databases: Azure SQL and Cosmos DB',
+      `Rather than running your own database server on a VM, Azure offers fully-managed database services, Azure handles patching, backups, and failover for you.\n\n## Azure SQL Database\n\nA managed, relational SQL Server database, a good fit if your data has a stable, well-defined schema.\n\n\`\`\`bash\naz sql server create --name kodstigen-sql --resource-group kodstigen-rg --admin-user sqladmin --admin-password "P@ssword123!"\n\naz sql db create --name kodstigen-db --server kodstigen-sql --resource-group kodstigen-rg --service-objective S0\n\`\`\`\n\n## Azure Cosmos DB\n\nA globally distributed, multi-model NoSQL database, if the flexible, document-style data you worked with in MongoDB sounded appealing, Cosmos DB even offers an API that speaks MongoDB's wire protocol.\n\n\`\`\`bash\naz cosmosdb create --name kodstigen-cosmos --resource-group kodstigen-rg --kind GlobalDocumentDB\n\`\`\`\n\n## Which one?\n\n| | Azure SQL Database | Cosmos DB |\n|---|---|---|\n| Data shape | Rows and columns | Flexible documents |\n| Best for | Structured, relational data | High-scale, globally distributed apps |\n| Query language | T-SQL | SQL-like, or MongoDB/Cassandra/Gremlin APIs |\n\n> [!NOTE]\n> Both services are billed based on the capacity/tier you provision, always check the pricing tier before creating one, it's easy to leave an expensive tier running by accident.`
+    ),
+    quiz: {
+      title: 'Azure Databases Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which managed Azure database is the best fit for structured, relational data queried with T-SQL?',
+          options: ['Cosmos DB', 'Azure SQL Database', 'Blob Storage', 'Queue Storage'],
+          answer: 'Azure SQL Database',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Azure ____ DB is a globally distributed, multi-model NoSQL database that can even speak the MongoDB wire protocol.',
+          options: [],
+          answer: 'Cosmos',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Using a managed database service means Azure handles patching and backups for you.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Deploy a Full App to Azure',
+    content: lessonContent(
+      'Final Project: Deploy a Full App to Azure',
+      `Time to put a real application live on Azure.\n\n## Requirements\n\n1. Create a resource group for the project using the Azure CLI.\n2. Deploy a web app (frontend, API, or full-stack) to Azure App Service using \`az webapp up\` or your CI/CD tool of choice.\n3. Create a storage account and use Blob Storage for at least one piece of user-uploaded or generated content (an image, a file export, etc.).\n4. Confirm the deployed app is reachable at its \`azurewebsites.net\` URL and actually uses the storage account.\n5. Use \`az webapp log tail\` at least once to debug something during deployment.\n\n## Stretch goals\n\n- Add an Azure SQL Database or Cosmos DB instance and connect your app to it.\n- Set an environment variable/app setting on the Web App via the CLI instead of the Portal.\n- Clean up by deleting the resource group when you're done, and confirm everything inside it is gone.\n\nSubmit your repository link (or a link to your deployed app) below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
   nodejs: [
     {
@@ -1918,6 +2454,12 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       title: 'Python for Absolute Beginners',
       description: 'Learn programming from zero with the most beginner-friendly language in the world.',
       lessons: pythonLessons,
+    },
+    {
+      title: 'MongoDB with FastAPI & Python',
+      description:
+        'Build a real, async REST API with FastAPI and MongoDB: Pydantic models, CRUD with Motor, and a full backend project.',
+      lessons: mongoFastApiLessons,
     },
   ],
   javascript: [
@@ -1974,6 +2516,20 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       description:
         'Go from raw SQL to a real, type-safe backend: model your data with Prisma, migrate a PostgreSQL database, and query it from a Node.js application.',
       lessons: nodePrismaLessons,
+    },
+  ],
+  docker: [
+    {
+      title: 'Docker Fundamentals',
+      description: 'Package, ship, and run applications anywhere with containers, images, Dockerfiles, and Docker Compose.',
+      lessons: dockerLessons,
+    },
+  ],
+  azure: [
+    {
+      title: 'Azure Fundamentals',
+      description: 'Deploy, host, and scale real applications in the cloud with Microsoft Azure.',
+      lessons: azureLessons,
     },
   ],
 };
