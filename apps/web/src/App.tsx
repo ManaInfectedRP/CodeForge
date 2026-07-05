@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
+import { Footer } from './components/Footer';
 import { VerifyEmailBanner } from './components/VerifyEmailBanner';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleRoute } from './components/RoleRoute';
@@ -37,45 +38,50 @@ export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Navbar />
-        <VerifyEmailBanner />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/verify/:code" element={<VerifyCertificate />} />
-          <Route element={<ProtectedRoute />}>
-            <Route path="/paths" element={<ChoosePaths />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/courses" element={<Courses />} />
-            <Route path="/courses/:id" element={<CourseDetail />} />
-            <Route path="/lessons/:id" element={<Lesson />} />
-            <Route path="/challenges" element={<Challenges />} />
-            <Route path="/challenges/:id" element={<ChallengeSolve />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/achievements" element={<Achievements />} />
-            <Route path="/certificates/:id" element={<Certificate />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
-          <Route element={<RoleRoute roles={['INSTRUCTOR', 'ADMIN']} />}>
-            <Route path="/teach" element={<TeachCourses />} />
-            <Route path="/teach/courses/:id" element={<TeachCourseEditor />} />
-            <Route path="/teach/courses/:id/students" element={<TeachCourseStudents />} />
-            <Route path="/teach/lessons/:id" element={<TeachLessonEditor />} />
-            <Route path="/teach/challenges" element={<TeachChallenges />} />
-            <Route path="/teach/challenges/:id" element={<TeachChallengeEditor />} />
-            <Route path="/teach/guide" element={<TeachGuide />} />
-            <Route path="/teach/submissions" element={<TeachSubmissions />} />
-          </Route>
-          <Route element={<RoleRoute roles={['ADMIN']} />}>
-            <Route path="/admin" element={<AdminReview />} />
-            <Route path="/admin/challenges" element={<AdminChallengeReview />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-          </Route>
-          <Route path="*" element={<main className="p-16 text-center text-slate-400">Page not found</main>} />
-        </Routes>
+        <div className="flex min-h-screen flex-col">
+          <Navbar />
+          <VerifyEmailBanner />
+          <div className="flex-1">
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/verify/:code" element={<VerifyCertificate />} />
+              <Route element={<ProtectedRoute />}>
+                <Route path="/paths" element={<ChoosePaths />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/courses" element={<Courses />} />
+                <Route path="/courses/:id" element={<CourseDetail />} />
+                <Route path="/lessons/:id" element={<Lesson />} />
+                <Route path="/challenges" element={<Challenges />} />
+                <Route path="/challenges/:id" element={<ChallengeSolve />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+                <Route path="/achievements" element={<Achievements />} />
+                <Route path="/certificates/:id" element={<Certificate />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/settings" element={<Settings />} />
+              </Route>
+              <Route element={<RoleRoute roles={['INSTRUCTOR', 'ADMIN']} />}>
+                <Route path="/teach" element={<TeachCourses />} />
+                <Route path="/teach/courses/:id" element={<TeachCourseEditor />} />
+                <Route path="/teach/courses/:id/students" element={<TeachCourseStudents />} />
+                <Route path="/teach/lessons/:id" element={<TeachLessonEditor />} />
+                <Route path="/teach/challenges" element={<TeachChallenges />} />
+                <Route path="/teach/challenges/:id" element={<TeachChallengeEditor />} />
+                <Route path="/teach/guide" element={<TeachGuide />} />
+                <Route path="/teach/submissions" element={<TeachSubmissions />} />
+              </Route>
+              <Route element={<RoleRoute roles={['ADMIN']} />}>
+                <Route path="/admin" element={<AdminReview />} />
+                <Route path="/admin/challenges" element={<AdminChallengeReview />} />
+                <Route path="/admin/users" element={<AdminUsers />} />
+              </Route>
+              <Route path="*" element={<main className="p-16 text-center text-slate-400">Page not found</main>} />
+            </Routes>
+          </div>
+          <Footer />
+        </div>
       </AuthProvider>
     </BrowserRouter>
   );
