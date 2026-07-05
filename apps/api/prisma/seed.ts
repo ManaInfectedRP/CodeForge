@@ -92,6 +92,15 @@ const paths = [
     projectCount: 11,
     description: 'Query, filter, join, and aggregate relational data with SQL, the language behind virtually every database-backed application.',
   },
+  {
+    slug: 'ai-coding',
+    name: 'AI Coding',
+    icon: '🤖',
+    difficulty: 2,
+    estimatedHours: 15,
+    projectCount: 5,
+    description: 'Work effectively with AI coding assistants: writing clear prompts, giving the right context, and reviewing what they build.',
+  },
 ];
 
 type SeedQuestion = {
@@ -1905,6 +1914,197 @@ const nodePrismaLessons: SeedLesson[] = [
   },
 ];
 
+const promptEngineeringLessons: SeedLesson[] = [
+  {
+    title: 'What Is Prompt Engineering (and Vibe Coding)?',
+    content: lessonContent(
+      'What Is Prompt Engineering (and Vibe Coding)?',
+      `AI coding assistants (like Claude Code, GitHub Copilot, and ChatGPT) can now write, edit, and even run code from natural-language instructions. Two terms have emerged to describe working with them.\n\n## Prompt engineering\n\nThe practice of writing instructions that reliably get an AI model to produce the output you actually want. It's less about "magic words" and more about being clear, specific, and giving the right context, the same skill you'd use writing a good ticket for a human teammate.\n\n## Vibe coding\n\nA newer, more informal term for a style of development where you describe *what* you want in plain language and let an AI agent write (and often run) the code, iterating conversationally instead of typing every line yourself. It can be incredibly fast, but it shifts your job from *writing* code to *directing and reviewing* code.\n\n## The spectrum\n\n| | Autocomplete | Prompted generation | Vibe coding |\n|---|---|---|---|\n| You write | Every line, AI suggests completions | A prompt, AI writes a function or file | A goal, AI plans and executes multi-step changes |\n| You review | Character by character as you type | The generated snippet | The whole diff, tests, and behavior |\n| Best for | Familiar, fast-moving code | Well-scoped, isolated tasks | Larger features, paired with careful review |\n\n> [!NOTE]\n> None of this changes who's responsible for the code that ships. Whether you typed it or an AI did, you still own the bugs, the security holes, and the technical debt. This course is about using these tools well, not blindly.`
+    ),
+    quiz: {
+      title: 'Prompt Engineering Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is "vibe coding"?',
+          options: [
+            'Writing code without using any AI tools',
+            'Describing a goal in plain language and letting an AI agent write and run the code',
+            'A formal certification for developers',
+            'A type of syntax highlighting theme',
+          ],
+          answer: 'Describing a goal in plain language and letting an AI agent write and run the code',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Prompt ____ is the practice of writing instructions that reliably get an AI model to produce the output you want.',
+          options: [],
+          answer: 'engineering',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Using an AI assistant to write code means you're no longer responsible for bugs it introduces.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Writing Clear, Specific Prompts',
+    content: lessonContent(
+      'Writing Clear, Specific Prompts',
+      `A vague prompt gets a vague, or wrong, result. The single biggest lever you have over an AI's output is how clearly you describe the task.\n\n## Vague vs. specific\n\n\`\`\`\n❌ "Fix the login bug"\n\n✅ "Users can't log in with an uppercase email address. The login\nroute at apps/api/src/routes/auth.ts compares email exactly instead\nof case-insensitively. Make the comparison case-insensitive without\nchanging how emails are stored."\n\`\`\`\n\nThe second prompt tells the AI **what's broken**, **where**, **why**, and **what not to change**, four things a vague one-liner leaves it to guess.\n\n## A simple checklist\n\n- **Goal**, what should be true when you're done?\n- **Location**, which file(s), function(s), or area of the app?\n- **Constraints**, what should stay the same? Anything to avoid?\n- **Examples**, a sample input/output, or a similar pattern already in the codebase, if one exists.\n\n## Iterate, don't restart\n\nIf the first result isn't quite right, you rarely need to throw it away and start over. Point at exactly what's wrong:\n\n\`\`\`\n"Close, but this also matches emails that are subsets of each other,\nlike 'a@b.com' matching 'aa@b.com'. Only treat them as equal if they\nmatch exactly, ignoring case."\n\`\`\`\n\n> [!TIP]\n> Treat your prompt like a well-written bug report or a ticket for a new teammate, if it would confuse a human collaborator, it'll confuse the AI too.`
+    ),
+    quiz: {
+      title: 'Clear Prompts Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which of these is most likely to produce a good result from an AI coding assistant?',
+          options: [
+            'A single vague sentence',
+            'A prompt describing the goal, location, and constraints',
+            'Repeating the exact same short prompt several times',
+            'Avoiding any mention of file names',
+          ],
+          answer: 'A prompt describing the goal, location, and constraints',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "When a result isn't quite right, it's usually more effective to describe exactly what's wrong than to ____ from scratch.",
+          options: [],
+          answer: 'restart',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Providing an example of the desired input/output typically improves an AI's response.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Giving AI the Right Context',
+    content: lessonContent(
+      'Giving AI the Right Context',
+      `Even a perfectly worded prompt fails if the AI doesn't know your codebase's conventions, constraints, or history. Context often matters more than phrasing.\n\n## What counts as context\n\n- **Relevant files**, pointing at the actual code involved instead of describing it from memory.\n- **Project conventions**, naming patterns, folder structure, preferred libraries, things a new human hire would also need to learn.\n- **Error messages and logs**, the exact text, not a paraphrase, stack traces often contain the one detail that matters.\n- **Constraints**, "don't add new dependencies," "this must stay backward compatible," "keep this file under 200 lines."\n\n## Standing instructions\n\nMany AI coding tools support a persistent instructions file (Claude Code uses \`CLAUDE.md\`, for example) that's automatically included in every conversation, a good place for conventions that apply to *every* task, so you don't have to repeat them.\n\n\`\`\`\n# CLAUDE.md\n- Use Tailwind utility classes, not custom CSS files.\n- All new API routes need a matching Zod schema.\n- Run \`npm test\` before considering a change complete.\n\`\`\`\n\n## Breaking work into steps\n\nLarge, multi-part tasks ("build a whole checkout flow") produce weaker results than a sequence of smaller, well-defined ones ("add the cart total calculation," then "wire it into the checkout page," then "add validation"). Each smaller step is easier to verify, and a mistake in step one doesn't compound through steps two and three before you notice it.\n\n> [!WARNING]\n> An AI that doesn't have access to your actual codebase will still confidently guess, and often get file paths, function names, or library APIs wrong. Always give it a way to look at the real code rather than working from a description alone.`
+    ),
+    quiz: {
+      title: 'Context Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is a persistent instructions file (like CLAUDE.md) used for?',
+          options: [
+            'Storing passwords and secrets',
+            'Conventions and constraints that should apply to every task automatically',
+            'Replacing prompts entirely, so you never need to write one',
+            'Documentation that the AI never actually reads',
+          ],
+          answer: 'Conventions and constraints that should apply to every task automatically',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Breaking a large task into a sequence of smaller, well-defined ____ produces more reliable results than one big vague request.',
+          options: [],
+          answer: 'steps',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Pasting the exact error message and stack trace is generally more useful than paraphrasing the error in your own words.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Reviewing AI-Generated Code',
+    content: lessonContent(
+      'Reviewing AI-Generated Code',
+      `The fastest way for vibe coding to go wrong is treating AI output as finished, rather than as a draft that still needs your review, exactly like you'd review a pull request from a teammate.\n\n## What to check every time\n\n- **Does it actually do what you asked?** Re-read the diff against your original goal, not just "does it run."\n- **Logic errors**, off-by-one mistakes, wrong comparison operators, edge cases (empty lists, zero, null) that were never tested.\n- **Security**, this is where blind trust is most dangerous: SQL/command injection, missing input validation, secrets hardcoded into source, authentication or authorization checks that got weakened or removed.\n- **Scope creep**, did it change more than you asked for? Unrelated refactors hidden inside a "simple fix" are easy to miss if you don't read the whole diff.\n\n## Test before you trust\n\n\`\`\`\n1. Run the change locally.\n2. Exercise the exact scenario you asked for.\n3. Try at least one edge case or invalid input.\n4. Check existing tests still pass, and add a new one if the change deserves it.\n\`\`\`\n\n## You still have to understand it\n\nIf a bug shows up in production next month, you're the one debugging it, whether or not you personally typed the original code. Reading and understanding *why* an approach works, not just confirming *that* it appears to work, is what turns vibe coding into a sustainable practice instead of a liability.\n\n> [!WARNING]\n> Never let an AI assistant run destructive commands (deleting data, force-pushing, dropping database tables) without explicitly reviewing and approving that specific action first.`
+    ),
+    quiz: {
+      title: 'Code Review Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What's the most important thing to verify in AI-generated code before shipping it?",
+          options: [
+            'That it compiles',
+            'That it does what you asked, handles edge cases, and has no security issues',
+            'That it is the shortest possible solution',
+            'That it uses the newest available syntax',
+          ],
+          answer: 'That it does what you asked, handles edge cases, and has no security issues',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'AI-generated code should go through the same ____ process as code written by a human teammate.',
+          options: [],
+          answer: 'review',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'If an AI assistant writes a bug that reaches production, only the AI is responsible for it.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Vibe Coding Responsibly: Risks and Guardrails',
+    content: lessonContent(
+      'Vibe Coding Responsibly: Risks and Guardrails',
+      `Vibe coding can make you dramatically faster, and it can also let mistakes compound quickly if you're not careful. A few guardrails keep the speed without the chaos.\n\n## Common risks\n\n- **Hallucinated APIs**, confidently using a function, library, or config option that doesn't actually exist, or doesn't work the way it assumed.\n- **Silent scope creep**, an agent "helpfully" refactoring unrelated code while completing your actual request.\n- **Security blind spots**, especially around authentication, input validation, and anything touching money or personal data.\n- **Losing understanding of your own codebase**, if every feature was written by an agent you only skimmed, you'll struggle to debug, extend, or explain any of it later.\n\n## Guardrails that help\n\n- **Commit before big changes.** A clean git history lets you review a diff properly, and revert instantly if something's wrong, rather than untangling a huge uncommitted mess.\n- **Work in small, reviewable increments.** Ask for one feature or fix at a time rather than "build the whole app," the smaller the change, the easier it is to actually verify.\n- **Ask the AI to explain its reasoning.** "Why did you choose this approach?", if the explanation doesn't make sense, that's a signal to dig deeper before accepting the change.\n- **Keep a human in the loop for anything risky.** Deleting data, sending real emails, spending real money, touching production, these should always get an explicit human review, no exceptions.\n- **Test the unhappy paths yourself.** AI-generated tests tend to cover the scenario you asked for, but you're still responsible for thinking about what could go wrong.\n\n> [!TIP]\n> A good habit: after an AI finishes a task, ask yourself "could I explain this code to a coworker right now?" If the honest answer is no, that's worth fixing before you move on, not after something breaks.`
+    ),
+    quiz: {
+      title: 'Guardrails Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is a "hallucinated API"?',
+          options: [
+            'A deprecated but still-working API',
+            'An AI confidently using a function or library option that does not actually exist',
+            'A slow API endpoint',
+            'An API with unusually good documentation',
+          ],
+          answer: 'An AI confidently using a function or library option that does not actually exist',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Committing your code before a large AI-driven change makes it easy to ____ if something goes wrong.',
+          options: [],
+          answer: 'revert',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Destructive actions, like deleting data or force-pushing, should always get explicit human review before an AI executes them.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Feature Using an AI Coding Assistant',
+    content: lessonContent(
+      'Final Project: Build a Feature Using an AI Coding Assistant',
+      `Time to put these habits into practice on a real, if small, feature.\n\n## Requirements\n\n1. Pick a small, well-scoped feature or bug fix in a project of your choice (new or existing).\n2. Use an AI coding assistant to help implement it, and write down the actual prompts you used as you go.\n3. Before accepting any AI-generated change, review the full diff yourself and note anything you changed or rejected.\n4. Test the feature manually, including at least one edge case, and add or update an automated test if the project has any.\n5. Write a short summary, a few sentences, explaining what the feature does and why your approach works, in your own words, not copied from the AI's explanation.\n\n## Stretch goals\n\n- Deliberately give the AI an underspecified prompt first, see what goes wrong, then rewrite it following this course's checklist and compare the results.\n- Set up a persistent instructions file (like a \`CLAUDE.md\`) for a project you work on regularly.\n- Find and fix one thing the AI got subtly wrong before you would have shipped it.\n\nSubmit a link to your prompts, diff, and summary (a repo, gist, or doc) below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
   nodejs: [
     {
@@ -1974,6 +2174,14 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       description:
         'Go from raw SQL to a real, type-safe backend: model your data with Prisma, migrate a PostgreSQL database, and query it from a Node.js application.',
       lessons: nodePrismaLessons,
+    },
+  ],
+  'ai-coding': [
+    {
+      title: 'Prompt Engineering & Vibe Coding',
+      description:
+        'What to think about before, during, and after using an AI coding assistant: writing effective prompts, giving the right context, and reviewing what it builds.',
+      lessons: promptEngineeringLessons,
     },
   ],
 };
