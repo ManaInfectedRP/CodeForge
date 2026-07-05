@@ -11,6 +11,8 @@ import 'prismjs/components/prism-bash';
 import 'prismjs/components/prism-json';
 import 'prismjs/components/prism-markup';
 import 'prismjs/components/prism-markdown';
+import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-lua';
 
 export type PrismLang =
   | 'python'
@@ -22,7 +24,10 @@ export type PrismLang =
   | 'sql'
   | 'bash'
   | 'json'
-  | 'markdown';
+  | 'markdown'
+  | 'markup'
+  | 'css'
+  | 'lua';
 
 const ALIASES: Record<string, PrismLang> = {
   python: 'python',
@@ -44,6 +49,11 @@ const ALIASES: Record<string, PrismLang> = {
   json: 'json',
   markdown: 'markdown',
   md: 'markdown',
+  html: 'markup',
+  htm: 'markup',
+  xml: 'markup',
+  css: 'css',
+  lua: 'lua',
 };
 
 export function resolvePrismLang(lang: string): PrismLang | null {

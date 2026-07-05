@@ -119,6 +119,33 @@ const paths = [
     projectCount: 5,
     description: 'Work effectively with AI coding assistants: writing clear prompts, giving the right context, and reviewing what they build.',
   },
+  {
+    slug: 'html',
+    name: 'HTML',
+    icon: '📄',
+    difficulty: 1,
+    estimatedHours: 20,
+    projectCount: 8,
+    description: 'The building blocks of every website: structure, semantics, forms, and accessibility with HTML.',
+  },
+  {
+    slug: 'css',
+    name: 'CSS',
+    icon: '🎨',
+    difficulty: 2,
+    estimatedHours: 30,
+    projectCount: 10,
+    description: 'Style and lay out the web: the box model, Flexbox, Grid, responsive design, and animation with CSS.',
+  },
+  {
+    slug: 'lua',
+    name: 'Lua',
+    icon: '🌙',
+    difficulty: 2,
+    estimatedHours: 25,
+    projectCount: 8,
+    description: 'A lightweight, embeddable scripting language used everywhere from game engines to Neovim configs.',
+  },
 ];
 
 type SeedQuestion = {
@@ -2641,6 +2668,524 @@ const promptEngineeringLessons: SeedLesson[] = [
   },
 ];
 
+const htmlLessons: SeedLesson[] = [
+  {
+    title: 'What Is HTML? Structure of a Web Page',
+    content: lessonContent(
+      'What Is HTML? Structure of a Web Page',
+      `HTML (HyperText Markup Language) is not a programming language, it's a **markup** language: it describes the structure and meaning of content on a page, not how to compute anything. Every website you've ever visited, however fancy, has HTML underneath it.\n\n## The skeleton of every page\n\n\`\`\`html\n<!DOCTYPE html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <title>My First Page</title>\n  </head>\n  <body>\n    <h1>Hello, world!</h1>\n    <p>This is my first web page.</p>\n  </body>\n</html>\n\`\`\`\n\n| Piece | Purpose |\n|---|---|\n| \`<!DOCTYPE html>\` | Tells the browser this is a modern HTML5 document. |\n| \`<html lang="en">\` | The root element; \`lang\` helps screen readers and search engines. |\n| \`<head>\` | Metadata: title, character encoding, linked stylesheets, not visible content. |\n| \`<body>\` | Everything the visitor actually sees. |\n\n## Elements, tags, and attributes\n\nAn **element** is usually written as an opening tag, some content, and a closing tag: \`<p>content</p>\`. Some elements are **void elements** and never have a closing tag or content, like \`<img>\` or \`<br>\`.\n\nAn **attribute** adds extra information to a tag, written inside the opening tag as \`name="value"\`:\n\n\`\`\`html\n<img src="cat.jpg" alt="A sleeping cat" width="300" />\n\`\`\`\n\nHere \`src\`, \`alt\`, and \`width\` are all attributes of the \`img\` element.\n\n> [!NOTE]\n> HTML elements can nest inside each other, but they must close in the reverse order they opened, \`<p><strong>bold</strong></p>\` is valid, \`<p><strong>bold</p></strong>\` is not.`
+    ),
+    quiz: {
+      title: 'HTML Structure Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which part of an HTML document holds the visible page content?',
+          options: ['<head>', '<body>', '<title>', '<meta>'],
+          answer: '<body>',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Void elements like <img> never have a closing tag.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In <img src="cat.jpg" alt="A cat" />, "src" and "alt" are called ____.',
+          options: [],
+          answer: 'attributes',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Text Content: Headings, Paragraphs, and Lists',
+    content: lessonContent(
+      'Text Content: Headings, Paragraphs, and Lists',
+      `Most of a web page is text, and HTML gives you a small set of elements to describe what kind of text it is.\n\n## Headings and paragraphs\n\n\`\`\`html\n<h1>CodeForge</h1>\n<h2>Learn to Code</h2>\n<p>CodeForge is a platform for learning to code through interactive lessons and projects.</p>\n\`\`\`\n\nThere are six heading levels, \`<h1>\` through \`<h6>\`, from most to least important. Use exactly one \`<h1>\` per page, it's the page's main title, and don't skip levels just to make text smaller, that's what CSS is for.\n\n## Lists\n\n\`\`\`html\n<ul>\n  <li>HTML</li>\n  <li>CSS</li>\n  <li>JavaScript</li>\n</ul>\n\n<ol>\n  <li>Write the HTML</li>\n  <li>Style it with CSS</li>\n  <li>Add behavior with JavaScript</li>\n</ol>\n\`\`\`\n\n- \`<ul>\` is an **unordered list** (bullets), use it when order doesn't matter.\n- \`<ol>\` is an **ordered list** (numbers), use it when sequence matters, like steps in a recipe.\n- Every item in either list goes inside an \`<li>\` (list item).\n\n## Inline emphasis\n\n\`\`\`html\n<p>This is <strong>very important</strong> and this is <em>subtly emphasized</em>.</p>\n\`\`\`\n\n\`<strong>\` and \`<em>\` carry real semantic meaning (importance and emphasis) that screen readers announce differently, they're not just "bold" and "italic". The purely visual tags \`<b>\` and \`<i>\` still exist but should be reserved for cases with no semantic meaning at all.`
+    ),
+    quiz: {
+      title: 'Text Content Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which list type should you use for numbered, sequential steps?',
+          options: ['<ul>', '<ol>', '<li>', '<dl>'],
+          answer: '<ol>',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A page should generally have more than one <h1> so search engines see multiple important topics.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Every item inside a <ul> or <ol> must be wrapped in an ____ element.',
+          options: [],
+          answer: 'li',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Links, Images, and Semantic Elements',
+    content: lessonContent(
+      'Links, Images, and Semantic Elements',
+      `## Links\n\n\`\`\`html\n<a href="https://example.com">Visit Example</a>\n<a href="/about.html">About page (relative link)</a>\n<a href="https://example.com" target="_blank" rel="noopener">Opens in a new tab</a>\n\`\`\`\n\nThe \`href\` attribute is where the link goes. Links can point to other sites (absolute URLs) or other pages on your own site (relative URLs). \`target="_blank"\` opens a new tab, and should be paired with \`rel="noopener"\` so the new page can't control the original tab.\n\n## Images\n\n\`\`\`html\n<img src="logo.png" alt="CodeForge logo" width="120" height="120" />\n\`\`\`\n\n\`alt\` text is not optional, it's read aloud by screen readers and shown if the image fails to load. A decorative image with no informational value can use \`alt=""\`, but never omit the attribute entirely.\n\n## Semantic layout elements\n\nInstead of wrapping everything in generic \`<div>\`s, HTML5 gives you elements that describe a section's *role* on the page:\n\n| Element | Role |\n|---|---|\n| \`<header>\` | Introductory content, often a logo and navigation. |\n| \`<nav>\` | A block of navigation links. |\n| \`<main>\` | The primary content, unique to this page, one per page. |\n| \`<section>\` | A thematic grouping of content, usually with its own heading. |\n| \`<article>\` | Self-contained content that would make sense on its own (a blog post, a product card). |\n| \`<footer>\` | Closing content, like copyright or contact links. |\n\n\`\`\`html\n<header>\n  <h1>CodeForge</h1>\n  <nav>\n    <a href="/">Home</a>\n    <a href="/courses">Courses</a>\n  </nav>\n</header>\n<main>\n  <article>\n    <h2>Why Learn to Code?</h2>\n    <p>...</p>\n  </article>\n</main>\n<footer>\n  <p>&copy; 2026 CodeForge</p>\n</footer>\n\`\`\`\n\n> [!TIP]\n> Semantic elements look identical to a \`<div>\` by default, their real value is meaning: screen readers, browsers, and search engines all use them to understand your page's structure.`
+    ),
+    quiz: {
+      title: 'Links & Semantics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which attribute tells the browser where a link should navigate to?',
+          options: ['src', 'href', 'link', 'to'],
+          answer: 'href',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The alt attribute on an <img> can safely be left out if the image is purely decorative.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The semantic element for a block of navigation links is <____>.',
+          options: [],
+          answer: 'nav',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Building Forms',
+    content: lessonContent(
+      'Building Forms',
+      `Forms are how HTML collects input from a visitor: search boxes, login screens, checkout pages.\n\n## A basic form\n\n\`\`\`html\n<form action="/submit" method="POST">\n  <label for="username">Username</label>\n  <input type="text" id="username" name="username" required />\n\n  <label for="email">Email</label>\n  <input type="email" id="email" name="email" required />\n\n  <label for="plan">Plan</label>\n  <select id="plan" name="plan">\n    <option value="free">Free</option>\n    <option value="pro">Pro</option>\n  </select>\n\n  <button type="submit">Sign Up</button>\n</form>\n\`\`\`\n\n- \`action\` is the URL the data is sent to; \`method\` is usually \`GET\` (data in the URL, for searches/filters) or \`POST\` (data in the request body, for anything that changes data).\n- Every \`<input>\` needs a matching \`<label>\`, connected by \`for\` on the label and \`id\` on the input. This isn't cosmetic, screen reader users rely on it, and it lets sighted users click the label text to focus the field.\n\n## Input types matter\n\n\`\`\`html\n<input type="text" />\n<input type="email" />\n<input type="password" />\n<input type="number" min="0" max="100" />\n<input type="checkbox" />\n<input type="radio" name="tier" value="free" />\n<input type="date" />\n\`\`\`\n\nEach \`type\` changes both the on-screen keyboard/widget shown (especially on mobile) and what the browser validates automatically, \`type="email"\` alone gives you free client-side validation for a well-formed address.\n\n> [!WARNING]\n> Client-side form validation (like \`required\` or \`type="email"\`) improves the experience, but it is never a substitute for validating input on the server. Anyone can bypass it entirely by sending a request directly.`
+    ),
+    quiz: {
+      title: 'Forms Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How do you connect a <label> to its <input> for accessibility?',
+          options: [
+            'Put them next to each other in the HTML',
+            'Match the label\'s "for" attribute to the input\'s "id"',
+            'Wrap the input in <strong>',
+            'Give both the same name attribute',
+          ],
+          answer: 'Match the label\'s "for" attribute to the input\'s "id"',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Client-side validation like the "required" attribute means you no longer need to validate on the server.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The form attribute that controls where submitted data is sent is ____.',
+          options: [],
+          answer: 'action',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Tables and Accessibility',
+    content: lessonContent(
+      'Tables and Accessibility',
+      `## Tables\n\nHTML tables are for **tabular data**, rows and columns of related values, not for page layout (that job belongs to CSS).\n\n\`\`\`html\n<table>\n  <thead>\n    <tr>\n      <th>Course</th>\n      <th>Lessons</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>HTML Foundations</td>\n      <td>6</td>\n    </tr>\n    <tr>\n      <td>CSS Foundations</td>\n      <td>6</td>\n    </tr>\n  </tbody>\n</table>\n\`\`\`\n\n\`<thead>\` groups the header row, \`<tbody>\` groups the data rows, and each \`<th>\` (header cell) is announced by screen readers as a column label for every \`<td>\` (data cell) beneath it.\n\n## Why accessibility matters\n\nAccessible HTML isn't an extra feature, it's what makes your site usable for people using screen readers, keyboard-only navigation, or voice control, and it usually makes the site better for everyone else too.\n\n- Use real buttons (\`<button>\`) and links (\`<a>\`) instead of \`<div onclick>\`, they come with keyboard support and screen-reader semantics for free.\n- Always give images meaningful \`alt\` text.\n- Keep a logical heading order (\`h1\` → \`h2\` → \`h3\`), don't skip levels.\n- Make sure interactive elements are reachable and usable with the Tab key alone.\n\n\`\`\`html\n<!-- Bad: no keyboard support, no semantics -->\n<div onclick="submitForm()">Submit</div>\n\n<!-- Good: works with keyboard, mouse, and screen readers -->\n<button onclick="submitForm()">Submit</button>\n\`\`\`\n\n> [!TIP]\n> A quick way to sanity-check accessibility: unplug your mouse and try to use the whole page with only Tab, Shift+Tab, and Enter. If you get stuck, so will some of your visitors.`
+    ),
+    quiz: {
+      title: 'Tables & Accessibility Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the main reason to prefer <button> over a clickable <div> for actions?',
+          options: [
+            'It looks better by default',
+            'It comes with keyboard and screen-reader support built in',
+            'It loads faster',
+            'Divs cannot have click handlers',
+          ],
+          answer: 'It comes with keyboard and screen-reader support built in',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'HTML tables should be used for arranging general page layout, like columns of unrelated content.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The table element that groups the header row is <____>.',
+          options: [],
+          answer: 'thead',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Multi-Section Personal Portfolio Page',
+    content: lessonContent(
+      'Final Project: Build a Multi-Section Personal Portfolio Page',
+      `Bring together everything from this course into a single, real page.\n\n## Requirements\n\n1. Use a full HTML5 skeleton (\`<!DOCTYPE html>\`, \`<html lang="en">\`, \`<head>\` with a \`<title>\`).\n2. Include a \`<header>\` with your name and a \`<nav>\` linking to at least three sections on the page (\`<a href="#projects">\`, etc.).\n3. Include a \`<main>\` with at least three \`<section>\`s: an "About Me", a "Projects" list using semantic \`<article>\` elements, and a "Contact" section with a working \`<form>\` (name, email, message, submit button, every input properly labeled).\n4. Use at least one \`<ul>\` or \`<ol>\`, at least one \`<img>\` with meaningful \`alt\` text, and a heading hierarchy that doesn't skip levels.\n5. Include a \`<footer>\` with a copyright line.\n\n## Stretch goals\n\n- Add a \`<table>\` summarizing your skills and proficiency levels.\n- Make every interactive element reachable and usable with only the keyboard.\n- Validate your page's HTML using the [W3C Markup Validator](https://validator.w3.org/) and fix any errors it reports.\n\nSubmit a link to your finished page (a repo, CodePen, or hosted URL) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const cssLessons: SeedLesson[] = [
+  {
+    title: 'What Is CSS? Selectors and the Cascade',
+    content: lessonContent(
+      'What Is CSS? Selectors and the Cascade',
+      `CSS (Cascading Style Sheets) controls how HTML looks: colors, fonts, spacing, layout, and more. HTML says *what* something is, CSS says *how it appears*.\n\n## Three ways to add CSS\n\n\`\`\`html\n<link rel="stylesheet" href="styles.css" />\n\`\`\`\n\nAn external stylesheet, linked from \`<head>\`, is almost always the right choice: it's cacheable and keeps style separate from structure.\n\n## Selectors\n\n\`\`\`css\np { color: navy; }              /* every <p> */\n.card { padding: 16px; }        /* every element with class="card" */\n#logo { width: 120px; }         /* the one element with id="logo" */\nnav a { text-decoration: none; } /* every <a> inside a <nav> */\n\`\`\`\n\n| Selector | Matches |\n|---|---|\n| \`element\` | Every element of that tag, e.g. \`p\`, \`h1\` |\n| \`.class\` | Every element with that class attribute |\n| \`#id\` | The single element with that id |\n| \`a b\` | Every \`b\` element nested anywhere inside an \`a\` |\n\n## The cascade and specificity\n\nWhen two rules target the same element and property, CSS decides the winner using **specificity**: IDs beat classes, classes beat plain elements. If specificity ties, the rule that appears *later* in the stylesheet wins.\n\n\`\`\`css\np { color: navy; }        /* specificity: 0-0-1 */\n.highlight { color: gold; } /* specificity: 0-1-0, wins over the rule above */\n#alert { color: red; }     /* specificity: 1-0-0, wins over both */\n\`\`\`\n\n> [!WARNING]\n> \`!important\` overrides normal specificity entirely and is very hard to override again later. Treat it as a last resort, almost every specificity fight can be solved by writing a more specific (or simpler) selector instead.`
+    ),
+    quiz: {
+      title: 'Selectors & Cascade Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Given equal specificity, which rule wins when two CSS rules conflict?',
+          options: ['The shorter one', 'The one written first', 'The one written last', 'Whichever uses a class'],
+          answer: 'The one written last',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An ID selector (#logo) has higher specificity than a class selector (.logo).',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A selector that targets every element with class="card" is written as ____card.',
+          options: [],
+          answer: '.',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The Box Model',
+    content: lessonContent(
+      'The Box Model',
+      `Every element on a page is rendered as a rectangular box, and every box is built from the same four layers, from the inside out.\n\n\`\`\`css\n.card {\n  width: 300px;\n  padding: 16px;      /* space between content and border */\n  border: 2px solid #333; /* the border itself */\n  margin: 24px;       /* space outside the border, between this box and others */\n}\n\`\`\`\n\n| Layer | What it does |\n|---|---|\n| Content | The actual text/images, sized by \`width\`/\`height\`. |\n| Padding | Transparent space inside the border, pushes content inward. |\n| Border | A visible (or invisible) line around the padding. |\n| Margin | Transparent space outside the border, pushes other elements away. |\n\n## box-sizing\n\nBy default, \`width\` only sets the *content* width, padding and border are added on top, so a \`300px\`-wide box with \`16px\` padding and a \`2px\` border actually takes up \`336px\`. Most developers override this globally:\n\n\`\`\`css\n*, *::before, *::after {\n  box-sizing: border-box;\n}\n\`\`\`\n\nWith \`border-box\`, \`width: 300px\` means the *whole box*, content, padding, and border, is 300px total, which is far more predictable when building layouts.\n\n## display: block vs. inline\n\n- **Block** elements (\`<div>\`, \`<p>\`, \`<h1>\`) take the full available width and stack vertically; \`width\`/\`height\`/\`margin\` all apply normally.\n- **Inline** elements (\`<span>\`, \`<a>\`) only take up as much width as their content and sit in the flow of text; vertical \`margin\`/\`height\` are ignored.\n- \`display: inline-block\` gives you the best of both, flows like text but respects \`width\`/\`height\`/\`margin\`.\n\n> [!TIP]\n> When a layout looks subtly "off" by a few pixels, the box model is the first thing to check, open devtools and look at the computed padding, border, and margin for the element in question.`
+    ),
+    quiz: {
+      title: 'Box Model Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which box-model layer sits directly outside the border?',
+          options: ['Content', 'Padding', 'Margin', 'Outline'],
+          answer: 'Margin',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'With box-sizing: border-box, the width property includes padding and border.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The CSS property that adds transparent space between an element\'s content and its border is ____.',
+          options: [],
+          answer: 'padding',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Flexbox: One-Dimensional Layouts',
+    content: lessonContent(
+      'Flexbox: One-Dimensional Layouts',
+      `Flexbox arranges items along a single line, row or column, and is the workhorse for navbars, toolbars, cards, and centering content.\n\n\`\`\`css\n.nav {\n  display: flex;\n  flex-direction: row;      /* default: left to right */\n  justify-content: space-between; /* spacing along the main axis */\n  align-items: center;      /* alignment along the cross axis */\n  gap: 16px;\n}\n\`\`\`\n\n\`\`\`html\n<div class="nav">\n  <span>Logo</span>\n  <a href="/courses">Courses</a>\n  <a href="/login">Login</a>\n</div>\n\`\`\`\n\n## The two axes\n\nFlexbox thinks in terms of a **main axis** (the direction set by \`flex-direction\`) and a **cross axis** (perpendicular to it).\n\n| Property | Controls | Common values |\n|---|---|---|\n| \`justify-content\` | Spacing along the main axis | \`flex-start\`, \`center\`, \`space-between\`, \`space-around\` |\n| \`align-items\` | Alignment along the cross axis | \`flex-start\`, \`center\`, \`stretch\` |\n| \`flex-wrap\` | Whether items wrap to new lines | \`nowrap\` (default), \`wrap\` |\n| \`gap\` | Space between items | any length, e.g. \`16px\` |\n\n## Sizing individual items\n\n\`\`\`css\n.sidebar { flex: 0 0 250px; } /* never grow, never shrink, fixed 250px */\n.content { flex: 1; }         /* grow to fill remaining space */\n\`\`\`\n\n\`flex: grow shrink basis\` controls how a specific child behaves inside the flex container, \`flex: 1\` is shorthand for "take an equal share of whatever space is left".\n\n> [!TIP]\n> Centering something perfectly, both horizontally and vertically, used to be a running joke in CSS. With Flexbox it's three lines: \`display: flex; justify-content: center; align-items: center;\`.`
+    ),
+    quiz: {
+      title: 'Flexbox Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which property controls spacing of flex items along the main axis?',
+          options: ['align-items', 'justify-content', 'flex-wrap', 'gap'],
+          answer: 'justify-content',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'By default, flex items will wrap onto new lines when they run out of horizontal space.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'To turn any element into a flex container, you set display: ____.',
+          options: [],
+          answer: 'flex',
+        },
+      ],
+    },
+  },
+  {
+    title: 'CSS Grid: Two-Dimensional Layouts',
+    content: lessonContent(
+      'CSS Grid: Two-Dimensional Layouts',
+      `Where Flexbox handles a single row or column, Grid handles rows *and* columns together, ideal for full page layouts and card galleries.\n\n\`\`\`css\n.page {\n  display: grid;\n  grid-template-columns: 200px 1fr;\n  grid-template-rows: auto 1fr auto;\n  gap: 16px;\n  min-height: 100vh;\n}\n\`\`\`\n\n\`\`\`html\n<div class="page">\n  <header style="grid-column: 1 / -1;">Header</header>\n  <nav>Sidebar</nav>\n  <main>Content</main>\n  <footer style="grid-column: 1 / -1;">Footer</footer>\n</div>\n\`\`\`\n\n## Defining tracks\n\n- \`grid-template-columns: 200px 1fr\` creates two columns: a fixed 200px sidebar and a flexible column that takes the rest (\`1fr\` = "one fraction of the remaining space").\n- \`repeat()\` avoids repetition: \`grid-template-columns: repeat(3, 1fr)\` creates three equal columns.\n- \`grid-column: 1 / -1\` makes an element span from the first line to the very last, a common trick for a full-width header or footer in a grid.\n\n## A responsive card gallery in one line\n\n\`\`\`css\n.gallery {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));\n  gap: 16px;\n}\n\`\`\`\n\nThis creates as many 200px-minimum columns as fit the container, and stretches them evenly to fill any leftover space, all without a single media query.\n\n> [!TIP]\n> A common rule of thumb: reach for Flexbox when you're arranging items in one direction (a toolbar, a list of tags), reach for Grid when you're arranging a whole page or a two-dimensional layout (rows *and* columns together).`
+    ),
+    quiz: {
+      title: 'CSS Grid Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the "1fr" unit represent in a grid track definition?',
+          options: [
+            'Exactly 1 pixel',
+            'One fraction of the remaining available space',
+            'A fixed percentage of the viewport',
+            'One row of text',
+          ],
+          answer: 'One fraction of the remaining available space',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'CSS Grid can only control columns, not rows.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The property used to turn an element into a grid container is display: ____.',
+          options: [],
+          answer: 'grid',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Responsive Design, Transitions, and Animations',
+    content: lessonContent(
+      'Responsive Design, Transitions, and Animations',
+      `## Media queries\n\nA **media query** applies CSS only when certain conditions are true, most often, viewport width, letting one stylesheet adapt to phones, tablets, and desktops.\n\n\`\`\`css\n.gallery {\n  grid-template-columns: 1fr; /* single column by default (mobile) */\n}\n\n@media (min-width: 768px) {\n  .gallery {\n    grid-template-columns: repeat(3, 1fr); /* three columns on wider screens */\n  }\n}\n\`\`\`\n\n> [!TIP]\n> Writing your base styles for mobile first, then adding \`min-width\` media queries for larger screens, tends to produce simpler CSS than starting from desktop and fighting your way down.\n\n## Transitions\n\nA **transition** smoothly animates a property change over time instead of snapping instantly.\n\n\`\`\`css\n.button {\n  background: #2563eb;\n  transition: background 0.2s ease, transform 0.2s ease;\n}\n.button:hover {\n  background: #1d4ed8;\n  transform: translateY(-2px);\n}\n\`\`\`\n\n\`transition: property duration easing\` says *which* property to animate, *how long* it takes, and *how* it accelerates.\n\n## Keyframe animations\n\nFor anything more complex than a two-state hover effect, use \`@keyframes\`:\n\n\`\`\`css\n@keyframes pulse {\n  0%   { opacity: 1; }\n  50%  { opacity: 0.4; }\n  100% { opacity: 1; }\n}\n\n.loading-dot {\n  animation: pulse 1.2s ease-in-out infinite;\n}\n\`\`\`\n\n\`@keyframes\` defines named stops along the animation as percentages, then \`animation\` on the element says which keyframes to use, how long one cycle takes, and how many times to repeat (\`infinite\` for forever).\n\n> [!WARNING]\n> Animating \`width\`, \`height\`, \`top\`, or \`left\` forces the browser to recompute layout on every frame and can look janky. Prefer animating \`transform\` and \`opacity\`, which the browser can run on the GPU without recalculating layout at all.`
+    ),
+    quiz: {
+      title: 'Responsive & Animation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which two CSS properties are cheapest to animate because they skip layout recalculation?',
+          options: ['width and height', 'top and left', 'transform and opacity', 'margin and padding'],
+          answer: 'transform and opacity',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A "mobile first" approach means writing base styles for small screens, then overriding with min-width media queries for larger ones.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The CSS at-rule used to define named animation steps is @____.',
+          options: [],
+          answer: 'keyframes',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Style a Responsive Landing Page',
+    content: lessonContent(
+      'Final Project: Style a Responsive Landing Page',
+      `Take a plain HTML page (your own, or a simple one you write for this project) and turn it into a polished, responsive landing page.\n\n## Requirements\n\n1. Set \`box-sizing: border-box\` globally and use a consistent spacing scale (e.g. multiples of 8px) for padding and margin.\n2. Build the page's navigation bar with Flexbox (logo on one side, links on the other).\n3. Build at least one section, like a feature list or pricing cards, using CSS Grid with \`repeat()\` and \`minmax()\` so it reflows automatically.\n4. Add at least one \`@media\` breakpoint that meaningfully changes the layout between mobile and desktop (e.g. stacked cards become a 3-column grid).\n5. Add at least one \`transition\` (e.g. on button hover) and one \`@keyframes\` animation somewhere on the page.\n\n## Stretch goals\n\n- Add a dark mode using the \`prefers-color-scheme\` media query.\n- Use CSS custom properties (\`--brand-color: #2563eb;\`) for your color palette so the whole page can be re-themed by changing a handful of variables.\n- Run the page through Lighthouse in Chrome DevTools and address any layout-related warnings.\n\nSubmit a link to your finished page (a repo, CodePen, or hosted URL) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const luaLessons: SeedLesson[] = [
+  {
+    title: 'Why Lua? Getting Started',
+    content: lessonContent(
+      'Why Lua? Getting Started',
+      `Lua is a small, fast, embeddable scripting language. You'll rarely run a "Lua application" on its own, instead, Lua gets embedded inside something bigger: game engines (Roblox, Love2D, World of Warcraft addons), Neovim configuration, and even network appliances.\n\n## Why it's popular for embedding\n\n- **Tiny and fast**, the reference interpreter is a few hundred KB and famously quick for a dynamic language.\n- **Simple to embed**, a C program can create a Lua interpreter, hand it data, and call Lua functions in only a few lines.\n- **Small core language**, few keywords, one data structure (the table) that does almost everything.\n\n## Your first script\n\n\`\`\`lua\nprint("Hello from Lua!")\n\nlocal name = "CodeForge"\nprint("Welcome to " .. name)\n\`\`\`\n\nRun it with:\n\n\`\`\`bash\nlua hello.lua\n\`\`\`\n\n- \`print\` writes a line to standard output.\n- \`local\` declares a variable scoped to the current block, without it, a variable is **global** by default, almost always a mistake.\n- \`..\` is the string concatenation operator (Lua does not overload \`+\` for strings the way JavaScript does).\n\n> [!NOTE]\n> Lua array/table indices start at **1**, not 0. This trips up almost everyone coming from C-family languages, and it's worth committing to memory right now.`
+    ),
+    quiz: {
+      title: 'Lua Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which operator concatenates two strings in Lua?',
+          options: ['+', '&', '..', '.'],
+          answer: '..',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Lua table and array indices start at 1 by convention, not 0.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Declaring a variable with the ____ keyword scopes it to the current block instead of making it global.',
+          options: [],
+          answer: 'local',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Variables, Types, and Control Flow',
+    content: lessonContent(
+      'Variables, Types, and Control Flow',
+      `Lua is dynamically typed, a variable's type is decided by whatever value it currently holds, and can change at runtime.\n\n## Basic types\n\n\`\`\`lua\nlocal xp = 100          -- number (Lua has no separate int/float, just "number")\nlocal name = "Ada"       -- string\nlocal passed = true      -- boolean\nlocal nothing = nil      -- absence of a value\nlocal scores = {90, 85, 100} -- table (used for arrays, maps, and objects)\n\nprint(type(xp), type(name), type(passed), type(nothing), type(scores))\n\`\`\`\n\n\`nil\` is Lua's "no value", it's what an undeclared variable holds, and it's the only value besides \`false\` that counts as falsy in a condition.\n\n## Control flow\n\n\`\`\`lua\nlocal xp = 45\n\nif xp >= 50 then\n  print("Level up!")\nelseif xp >= 25 then\n  print("Halfway there.")\nelse\n  print("Keep going.")\nend\n\nfor i = 1, 5 do\n  print("Lesson " .. i)\nend\n\nlocal count = 0\nwhile count < 3 do\n  print("count = " .. count)\n  count = count + 1\nend\n\`\`\`\n\n- Every block (\`if\`, \`for\`, \`while\`, functions) is closed with the keyword \`end\`, there are no curly braces in Lua.\n- \`for i = 1, 5 do ... end\` is a **numeric for loop**: start, stop, and an optional step (\`for i = 10, 1, -1\` counts down).\n- Only \`nil\` and \`false\` are falsy, everything else, including \`0\` and \`""\`, is truthy. This is a common gotcha for people coming from JavaScript or Python.\n\n> [!WARNING]\n> Unlike most C-family languages, \`0\` is **truthy** in Lua. \`if 0 then print("yes") end\` prints "yes". Only \`nil\` and \`false\` are falsy.`
+    ),
+    quiz: {
+      title: 'Types & Control Flow Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which two values are considered "falsy" in a Lua condition?',
+          options: ['nil and false', '0 and ""', 'nil and 0', 'false and 0'],
+          answer: 'nil and false',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Lua uses curly braces { } to open and close if/for/while blocks.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Every Lua block (if, for, while, function) must be closed with the keyword ____.',
+          options: [],
+          answer: 'end',
+        },
+      ],
+    },
+  },
+  {
+    title: "Tables: Lua's Only Data Structure",
+    content: lessonContent(
+      "Tables: Lua's Only Data Structure",
+      `Lua has exactly one built-in data structure, the **table**, and it does the job of arrays, dictionaries/maps, and even objects in other languages.\n\n## Tables as arrays\n\n\`\`\`lua\nlocal scores = {90, 85, 100}\n\nprint(scores[1])       -- 90, indices start at 1\nprint(#scores)          -- 3, the length operator\n\ntable.insert(scores, 75)  -- appends to the end\ntable.remove(scores, 1)   -- removes the first element, shifts the rest down\n\nfor i, score in ipairs(scores) do\n  print(i, score)\n end\n\`\`\`\n\n\`ipairs\` iterates a table in order from index 1 until the first \`nil\`, exactly what you want for array-like tables.\n\n## Tables as maps/objects\n\n\`\`\`lua\nlocal player = {\n  name = "Ada",\n  xp = 250,\n  ["favorite color"] = "blue", -- keys with spaces need bracket syntax\n}\n\nprint(player.name)               -- dot syntax, sugar for player["name"]\nprint(player["favorite color"])  -- bracket syntax, required for non-identifier keys\n\nplayer.level = 3 -- adding a new key is just an assignment\n\nfor key, value in pairs(player) do\n  print(key, value)\nend\n\`\`\`\n\n\`pairs\` iterates every key in a table, in an unspecified order, use it for map-style tables where order doesn't matter. \`player.name\` and \`player["name"]\` always refer to the exact same table entry, dot syntax is purely a convenience for string keys that are valid identifiers.\n\n> [!TIP]\n> Because arrays, maps, and objects are all "just a table" in Lua, a single table can even mix both styles: numeric indices for a list part and named keys for extra fields on the same object.`
+    ),
+    quiz: {
+      title: 'Tables Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which built-in function iterates an array-like table in order from index 1?',
+          options: ['pairs', 'ipairs', 'next', 'table.iter'],
+          answer: 'ipairs',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'player.name and player["name"] refer to the same table entry.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The # operator in front of a table, like #scores, returns the table\'s ____.',
+          options: [],
+          answer: 'length',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Functions and Scope',
+    content: lessonContent(
+      'Functions and Scope',
+      `Functions in Lua are values, they can be stored in variables, passed as arguments, and returned from other functions, just like tables or numbers.\n\n## Defining and calling functions\n\n\`\`\`lua\nlocal function add(a, b)\n  return a + b\nend\n\nprint(add(2, 3)) -- 5\n\n-- Multiple return values\nlocal function minMax(numbers)\n  local lo, hi = numbers[1], numbers[1]\n  for _, n in ipairs(numbers) do\n    if n < lo then lo = n end\n    if n > hi then hi = n end\n  end\n  return lo, hi\nend\n\nlocal lowest, highest = minMax({4, 1, 9, 2})\nprint(lowest, highest) -- 1  9\n\`\`\`\n\nLua functions can return **multiple values** at once, something many other languages need a tuple or object to fake.\n\n## Scope with local vs. global\n\n\`\`\`lua\nxp = 100        -- global! visible everywhere, including other files\n\nlocal function levelUp()\n  local bonus = 10 -- local: only visible inside this function\n  xp = xp + bonus\nend\n\nlevelUp()\nprint(xp) -- 110\nprint(bonus) -- nil, bonus does not exist outside levelUp\n\`\`\`\n\n> [!WARNING]\n> Forgetting \`local\` silently creates a **global** variable, visible to your entire program (and, if you're embedded in a game or app, potentially to other scripts too). Get in the habit of typing \`local\` in front of every variable and function unless you deliberately want it global.\n\n## Functions as arguments\n\n\`\`\`lua\nlocal function forEach(list, callback)\n  for _, item in ipairs(list) do\n    callback(item)\n  end\nend\n\nforEach({"a", "b", "c"}, function(item)\n  print("Item: " .. item)\nend)\n\`\`\`\n\nPassing an anonymous \`function(...) ... end\` directly as an argument is idiomatic Lua, this is exactly how callback-style APIs (like button click handlers in game engines) are typically used.`
+    ),
+    quiz: {
+      title: 'Functions & Scope Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What happens if you assign to a variable without the "local" keyword inside a function?',
+          options: [
+            'It causes a syntax error',
+            'It creates a global variable',
+            'It is scoped to that function only',
+            'Lua infers whether it should be local automatically',
+          ],
+          answer: 'It creates a global variable',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A Lua function can return more than one value at a time.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The keyword used to define a function in Lua is ____.',
+          options: [],
+          answer: 'function',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Metatables and Modules',
+    content: lessonContent(
+      'Metatables and Modules',
+      `## Metatables: customizing table behavior\n\nA **metatable** is a table attached to another table that defines how it behaves for operations it doesn't natively support, like addition, or missing-key lookups. This is how Lua achieves "object-oriented programming" without a built-in \`class\` keyword.\n\n\`\`\`lua\nlocal Vector = {}\nVector.__index = Vector -- missing keys on an instance fall back to Vector\n\nfunction Vector.new(x, y)\n  local self = setmetatable({}, Vector)\n  self.x = x\n  self.y = y\n  return self\nend\n\nfunction Vector:length()\n  return math.sqrt(self.x ^ 2 + self.y ^ 2)\nend\n\nlocal v = Vector.new(3, 4)\nprint(v:length()) -- 5.0\n\`\`\`\n\n- \`setmetatable(t, mt)\` attaches metatable \`mt\` to table \`t\`.\n- \`__index\` is a special metamethod: when you look up a key that \`v\` doesn't have directly (like \`length\`), Lua checks \`__index\` next, this is how "instances" share methods defined on a common table.\n- \`function Vector:length()\` is sugar for \`function Vector.length(self)\`, the colon automatically adds a hidden \`self\` first parameter, and \`v:length()\` automatically passes \`v\` as that \`self\`.\n\n## Modules\n\nLua organizes reusable code into modules, files that return a table of functions.\n\n\`\`\`lua\n-- mathutils.lua\nlocal M = {}\n\nfunction M.double(n)\n  return n * 2\nend\n\nreturn M\n\`\`\`\n\n\`\`\`lua\n-- main.lua\nlocal mathutils = require("mathutils")\nprint(mathutils.double(21)) -- 42\n\`\`\`\n\n\`require\` loads a module by name, runs it once, and caches its returned value, calling \`require\` again for the same module returns the cached table instead of re-running the file.\n\n> [!TIP]\n> If you've used JavaScript's ES modules or Python's imports, \`require\` will feel familiar, the key difference is that a Lua module file explicitly \`return\`s the table of things it wants to expose, instead of using an \`export\` keyword.`
+    ),
+    quiz: {
+      title: 'Metatables & Modules Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which metamethod lets a table fall back to another table when a key is missing?',
+          options: ['__missing', '__index', '__default', '__fallback'],
+          answer: '__index',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Calling require("mathutils") twice runs the mathutils.lua file twice.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The function used to attach a metatable to a table is ____(t, mt).',
+          options: [],
+          answer: 'setmetatable',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Text Adventure Game in Lua',
+    content: lessonContent(
+      'Final Project: Build a Text Adventure Game in Lua',
+      `Put tables, functions, and control flow together into a small, playable text adventure.\n\n## Requirements\n\n1. Model at least three rooms as a table of tables, each with a description and a table of exits (e.g. \`{ north = "cave", south = "forest" }\`).\n2. Track the player's current room and inventory (a table used as a list) in local state.\n3. Write a main loop that prints the current room's description, reads a command from the player, and reacts to at least: moving through an exit, picking up an item, and checking inventory.\n4. Use functions to organize the logic, at minimum, a function to describe the current room and a function to handle a single command.\n5. Add a win condition, e.g. reaching a specific room, or collecting a specific item, that ends the loop with a victory message.\n\n## Stretch goals\n\n- Use a metatable so every room and item shares common behavior (like a generic \`:describe()\` method).\n- Split your rooms/items data into a separate module file and \`require\` it from your main script.\n- Add simple combat or a puzzle that requires an item from one room to progress past another.\n\nSubmit a link to your finished script (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
   nodejs: [
     {
@@ -2738,6 +3283,27 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       description:
         'What to think about before, during, and after using an AI coding assistant: writing effective prompts, giving the right context, and reviewing what it builds.',
       lessons: promptEngineeringLessons,
+    },
+  ],
+  html: [
+    {
+      title: 'HTML Foundations',
+      description: 'The building blocks of every website: structure, semantics, forms, and accessibility with HTML.',
+      lessons: htmlLessons,
+    },
+  ],
+  css: [
+    {
+      title: 'CSS Foundations',
+      description: 'Style and lay out the web: the box model, Flexbox, Grid, responsive design, and animation with CSS.',
+      lessons: cssLessons,
+    },
+  ],
+  lua: [
+    {
+      title: 'Lua Fundamentals',
+      description: 'A lightweight, embeddable scripting language: variables, tables, functions, and metatables, from your first script to a text adventure.',
+      lessons: luaLessons,
     },
   ],
 };
