@@ -49,7 +49,7 @@ export function Landing() {
       <section className="mx-auto max-w-6xl px-4 pb-20">
         <h2 className="mb-8 text-center text-2xl font-bold">Välj din stig</h2>
 
-        <div className="flex flex-wrap items-start justify-center gap-x-10 gap-y-6 sm:gap-x-14">
+        <div className="mx-auto flex max-w-[600px] flex-wrap justify-center gap-x-10 gap-y-8">
           {paths.map((p) => (
             <div key={p.slug} className="flex w-20 flex-col items-center gap-2.5">
               <img
