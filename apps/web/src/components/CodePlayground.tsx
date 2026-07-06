@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Editor from 'react-simple-code-editor';
 import { isLuaLoading, isPyodideLoading, normalizeLang, runJs, runLua, runPython, type RunnableLang } from '../lib/sandbox';
-import { highlight } from '../lib/prism';
+import { highlight, type PrismLang } from '../lib/prism';
 
 export { normalizeLang, type RunnableLang };
 
@@ -10,6 +10,18 @@ const labels: Record<RunnableLang, string> = {
   javascript: 'JavaScript',
   typescript: 'TypeScript',
   lua: 'Lua',
+  html: 'HTML',
+};
+
+// LessonMarkdown intercepts html/htm fences into HtmlPreview before they ever reach this
+// component, but RunnableLang includes 'html' for the challenge-solving side of the sandbox, so
+// this map still needs to be exhaustive.
+const highlightLangByRunnable: Record<RunnableLang, PrismLang> = {
+  python: 'python',
+  javascript: 'javascript',
+  typescript: 'typescript',
+  lua: 'lua',
+  html: 'markup',
 };
 
 export function CodePlayground({ language, initialCode }: { language: RunnableLang; initialCode: string }) {
@@ -83,7 +95,7 @@ export function CodePlayground({ language, initialCode }: { language: RunnableLa
         <Editor
           value={code}
           onValueChange={setCode}
-          highlight={(c) => highlight(c, language)}
+          highlight={(c) => highlight(c, highlightLangByRunnable[language])}
           padding={16}
           textareaClassName="focus:outline-none"
           style={{

@@ -10,7 +10,6 @@ import { Landing } from './pages/Landing';
 import { About } from './pages/About';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
-import { ChoosePaths } from './pages/ChoosePaths';
 import { Dashboard } from './pages/Dashboard';
 import { Courses } from './pages/Courses';
 import { CourseDetail } from './pages/CourseDetail';
@@ -54,7 +53,6 @@ export function App() {
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/verify/:code" element={<VerifyCertificate />} />
               <Route element={<ProtectedRoute />}>
-                <Route path="/paths" element={<ChoosePaths />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/courses" element={<Courses />} />
                 <Route path="/courses/:id" element={<CourseDetail />} />

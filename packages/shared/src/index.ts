@@ -289,7 +289,7 @@ export interface AdminCourseDto {
 
 export type ChallengeDifficulty = 'EASY' | 'MEDIUM' | 'HARD';
 
-export type ChallengeLanguage = 'PYTHON' | 'JAVASCRIPT' | 'TYPESCRIPT' | 'LUA';
+export type ChallengeLanguage = 'PYTHON' | 'JAVASCRIPT' | 'TYPESCRIPT' | 'LUA' | 'HTML';
 
 export interface ChallengeSummaryDto {
   id: string;
@@ -314,7 +314,7 @@ export interface ChallengeTestCaseInputDto {
 export interface ChallengeDetailDto extends ChallengeSummaryDto {
   prompt: string;
   entryPoint: string;
-  starterCode: Partial<Record<'python' | 'javascript' | 'typescript' | 'lua', string>>;
+  starterCode: Partial<Record<'python' | 'javascript' | 'typescript' | 'lua' | 'html', string>>;
   examples: ChallengeExampleDto[];
   testCases: ChallengeTestCaseInputDto[];
 }
@@ -360,7 +360,7 @@ export interface ChallengeTestCaseEditDto {
 export interface TeachChallengeDetailDto extends TeachChallengeSummaryDto {
   prompt: string;
   entryPoint: string;
-  starterCode: Partial<Record<'python' | 'javascript' | 'typescript' | 'lua', string>>;
+  starterCode: Partial<Record<'python' | 'javascript' | 'typescript' | 'lua' | 'html', string>>;
   testCases: ChallengeTestCaseEditDto[];
 }
 

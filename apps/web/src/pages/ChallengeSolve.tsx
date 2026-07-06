@@ -6,13 +6,14 @@ import { api, errorMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { LessonMarkdown } from '../components/LessonMarkdown';
 import { runTestCase, type RunnableLang } from '../lib/sandbox';
-import { highlight } from '../lib/prism';
+import { highlight, type PrismLang } from '../lib/prism';
 
 const langToRunnable: Record<ChallengeLanguage, RunnableLang> = {
   PYTHON: 'python',
   JAVASCRIPT: 'javascript',
   TYPESCRIPT: 'typescript',
   LUA: 'lua',
+  HTML: 'html',
 };
 
 const langLabels: Record<ChallengeLanguage, string> = {
@@ -20,13 +21,25 @@ const langLabels: Record<ChallengeLanguage, string> = {
   JAVASCRIPT: 'JavaScript',
   TYPESCRIPT: 'TypeScript',
   LUA: 'Lua',
+  HTML: 'HTML',
 };
 
-const starterKeyByLang: Record<ChallengeLanguage, 'python' | 'javascript' | 'typescript' | 'lua'> = {
+const starterKeyByLang: Record<ChallengeLanguage, 'python' | 'javascript' | 'typescript' | 'lua' | 'html'> = {
   PYTHON: 'python',
   JAVASCRIPT: 'javascript',
   TYPESCRIPT: 'typescript',
   LUA: 'lua',
+  HTML: 'html',
+};
+
+// react-simple-code-editor's highlighter takes a Prism grammar name, not a RunnableLang - HTML has
+// no "html" grammar in Prism, it's called "markup".
+const highlightLangByRunnable: Record<RunnableLang, PrismLang> = {
+  python: 'python',
+  javascript: 'javascript',
+  typescript: 'typescript',
+  lua: 'lua',
+  html: 'markup',
 };
 
 export function ChallengeSolve() {
@@ -118,7 +131,21 @@ export function ChallengeSolve() {
           <ul className="mt-2 space-y-1 font-mono text-sm text-slate-300">
             {challenge.examples.map((ex, i) => (
               <li key={i}>
-                solve({ex.input.map((v) => JSON.stringify(v)).join(', ')}) → {JSON.stringify(ex.expectedOutput)}
+                {language === 'HTML' ? (
+                  (() => {
+                    const a = ex.input[0] as { selector: string; extract: string; attr?: string };
+                    return (
+                      <>
+                        {a.selector} → {a.extract}
+                        {a.attr ? `(${a.attr})` : ''} → {JSON.stringify(ex.expectedOutput)}
+                      </>
+                    );
+                  })()
+                ) : (
+                  <>
+                    solve({ex.input.map((v) => JSON.stringify(v)).join(', ')}) → {JSON.stringify(ex.expectedOutput)}
+                  </>
+                )}
               </li>
             ))}
           </ul>
@@ -155,7 +182,7 @@ export function ChallengeSolve() {
           <Editor
             value={code}
             onValueChange={setCode}
-            highlight={(c) => highlight(c, langToRunnable[language])}
+            highlight={(c) => highlight(c, highlightLangByRunnable[langToRunnable[language]])}
             padding={16}
             textareaClassName="focus:outline-none"
             style={{

@@ -17,7 +17,7 @@ export function Dashboard() {
   if (failed) return <main className="p-12 text-center text-red-400">Could not load your dashboard.</main>;
   if (!data) return <main className="p-12 text-center text-slate-400">Loading your dashboard…</main>;
 
-  const { user, enrollments, recentLessons, paths } = data;
+  const { user, enrollments, recentLessons } = data;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
@@ -95,56 +95,24 @@ export function Dashboard() {
         </section>
       )}
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-2">
-        <section>
-          <h2 className="text-xl font-bold">Recent activity</h2>
-          {recentLessons.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-500">Complete your first lesson to see activity here.</p>
-          ) : (
-            <ul className="mt-4 space-y-2">
-              {recentLessons.map((l) => (
-                <li key={l.lessonId} className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm">
-                  <span className="text-emerald-400">✓</span>{' '}
-                  <Link to={`/lessons/${l.lessonId}`} className="font-medium hover:underline">
-                    {l.lessonTitle}
-                  </Link>
-                  <span className="text-slate-500">, {l.courseTitle}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section>
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Your paths</h2>
-            <Link to="/paths" className="text-sm text-forge-500 hover:underline">
-              Edit →
-            </Link>
-          </div>
-          {paths.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-500">
-              No learning paths selected.{' '}
-              <Link to="/paths" className="text-forge-500 hover:underline">
-                Choose yours
-              </Link>
-            </p>
-          ) : (
-            <ul className="mt-4 space-y-2">
-              {paths.map((p) => (
-                <li key={p.id} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm">
-                  <span>
-                    {p.icon} <span className="ml-1 font-medium">{p.name}</span>
-                  </span>
-                  <Link to={`/courses?path=${p.slug}`} className="text-forge-500 hover:underline">
-                    View courses
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
+      <section className="mt-10">
+        <h2 className="text-xl font-bold">Recent activity</h2>
+        {recentLessons.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-500">Complete your first lesson to see activity here.</p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {recentLessons.map((l) => (
+              <li key={l.lessonId} className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm">
+                <span className="text-emerald-400">✓</span>{' '}
+                <Link to={`/lessons/${l.lessonId}`} className="font-medium hover:underline">
+                  {l.lessonTitle}
+                </Link>
+                <span className="text-slate-500">, {l.courseTitle}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </main>
   );
 }

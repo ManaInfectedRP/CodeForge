@@ -10,18 +10,20 @@ import { LessonMarkdown } from '../components/LessonMarkdown';
 import { StatusBadge } from '../components/StatusBadge';
 import { api, errorMessage } from '../lib/api';
 
-const allLanguages: ChallengeLanguage[] = ['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA'];
+const allLanguages: ChallengeLanguage[] = ['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA', 'HTML'];
 const languageLabels: Record<ChallengeLanguage, string> = {
   PYTHON: 'Python',
   JAVASCRIPT: 'JavaScript',
   TYPESCRIPT: 'TypeScript',
   LUA: 'Lua',
+  HTML: 'HTML',
 };
-const starterKeyByLang: Record<ChallengeLanguage, 'python' | 'javascript' | 'typescript' | 'lua'> = {
+const starterKeyByLang: Record<ChallengeLanguage, 'python' | 'javascript' | 'typescript' | 'lua' | 'html'> = {
   PYTHON: 'python',
   JAVASCRIPT: 'javascript',
   TYPESCRIPT: 'typescript',
   LUA: 'lua',
+  HTML: 'html',
 };
 
 interface TestCaseRow {
@@ -49,11 +51,12 @@ export function TeachChallengeEditor() {
   const [prompt, setPrompt] = useState('');
   const [preview, setPreview] = useState(false);
   const [entryPoint, setEntryPoint] = useState('solve');
-  const [starterCode, setStarterCode] = useState<Record<'python' | 'javascript' | 'typescript' | 'lua', string>>({
+  const [starterCode, setStarterCode] = useState<Record<'python' | 'javascript' | 'typescript' | 'lua' | 'html', string>>({
     python: '',
     javascript: '',
     typescript: '',
     lua: '',
+    html: '',
   });
   const [rows, setRows] = useState<TestCaseRow[]>([]);
   const [rowErrors, setRowErrors] = useState<Record<number, string>>({});
@@ -77,6 +80,7 @@ export function TeachChallengeEditor() {
           javascript: c.starterCode.javascript ?? '',
           typescript: c.starterCode.typescript ?? '',
           lua: c.starterCode.lua ?? '',
+          html: c.starterCode.html ?? '',
         });
         setRows(c.testCases.map(rowFromDto));
       })

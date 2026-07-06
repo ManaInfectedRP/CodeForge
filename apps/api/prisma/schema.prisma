@@ -36,6 +36,7 @@ enum ChallengeLanguage {
   JAVASCRIPT
   TYPESCRIPT
   LUA
+  HTML
 }
 
 enum AchievementMetric {
