@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Editor from 'react-simple-code-editor';
-import { isPyodideLoading, normalizeLang, runJs, runPython, type RunnableLang } from '../lib/sandbox';
+import { isLuaLoading, isPyodideLoading, normalizeLang, runJs, runLua, runPython, type RunnableLang } from '../lib/sandbox';
 import { highlight } from '../lib/prism';
 
 export { normalizeLang, type RunnableLang };
@@ -9,6 +9,7 @@ const labels: Record<RunnableLang, string> = {
   python: 'Python',
   javascript: 'JavaScript',
   typescript: 'TypeScript',
+  lua: 'Lua',
 };
 
 export function CodePlayground({ language, initialCode }: { language: RunnableLang; initialCode: string }) {
@@ -27,6 +28,9 @@ export function CodePlayground({ language, initialCode }: { language: RunnableLa
       if (language === 'python') {
         if (isPyodideLoading()) setStatus('Loading Python runtime… (first run only, ~10 MB)');
         result = await runPython(code);
+      } else if (language === 'lua') {
+        if (isLuaLoading()) setStatus('Loading Lua runtime… (first run only)');
+        result = await runLua(code);
       } else {
         let js = code;
         if (language === 'typescript') {
