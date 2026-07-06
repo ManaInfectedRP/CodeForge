@@ -203,7 +203,7 @@ const nodeLessons: SeedLesson[] = [
     title: 'Variables and Data Types',
     content: lessonContent(
       'Variables and Data Types',
-      `JavaScript in Node.js supports \`let\`, \`const\`, and (legacy) \`var\`.\n\n\`\`\`js\nconst name = 'CodeForge';   // cannot be reassigned\nlet xp = 0;                 // can be reassigned\nxp += 10;\n\nconsole.log(name, 'has', xp, 'XP');\nconsole.log('typeof name:', typeof name);\n\`\`\`\n\n## Core types\n\n| Type | Example |\n|------|---------|\n| string | \`'hello'\` |\n| number | \`42\`, \`3.14\` |\n| boolean | \`true\` |\n| object | \`{ id: 1 }\` |\n| array | \`[1, 2, 3]\` |\n| null / undefined | absence of value |\n\nPrefer \`const\` by default; use \`let\` only when you need to reassign.`
+      `JavaScript in Node.js supports \`let\`, \`const\`, and (legacy) \`var\`.\n\n\`\`\`js\nconst name = 'Kodstigen';   // cannot be reassigned\nlet xp = 0;                 // can be reassigned\nxp += 10;\n\nconsole.log(name, 'has', xp, 'XP');\nconsole.log('typeof name:', typeof name);\n\`\`\`\n\n## Core types\n\n| Type | Example |\n|------|---------|\n| string | \`'hello'\` |\n| number | \`42\`, \`3.14\` |\n| boolean | \`true\` |\n| object | \`{ id: 1 }\` |\n| array | \`[1, 2, 3]\` |\n| null / undefined | absence of value |\n\nPrefer \`const\` by default; use \`let\` only when you need to reassign.`
     ),
     quiz: {
       title: 'Variables Quiz',
@@ -1250,7 +1250,7 @@ const reactLessons: SeedLesson[] = [
     title: 'Introduction to React and JSX',
     content: lessonContent(
       'Introduction to React and JSX',
-      `React is a JavaScript library for building user interfaces out of small, reusable **components**. Instead of manually updating the page, you describe what the UI should look like for a given state, and React handles the updates.\n\n## Your first component\n\nA component is just a JavaScript function that returns **JSX**, an HTML-like syntax that compiles down to regular JavaScript.\n\n\`\`\`\nfunction Welcome() {\n  return <h1>Hello, CodeForge!</h1>;\n}\n\`\`\`\n\n*JSX needs a React app (and a build step) to render, so it's read-only here, every example in this course uses this style, you'll run real components in the final project.*\n\n## Embedding JavaScript in JSX\n\nCurly braces \`{ }\` let you drop any JavaScript expression into your markup:\n\n\`\`\`\nfunction Greeting() {\n  const name = 'Ada';\n  return <h1>Hello, {name}!</h1>;\n}\n\`\`\`\n\n## One rule to remember\n\nA component must return a **single root element**. To return multiple sibling elements without adding an extra \`<div>\`, wrap them in a Fragment: \`<>...</>\`.`
+      `React is a JavaScript library for building user interfaces out of small, reusable **components**. Instead of manually updating the page, you describe what the UI should look like for a given state, and React handles the updates.\n\n## Your first component\n\nA component is just a JavaScript function that returns **JSX**, an HTML-like syntax that compiles down to regular JavaScript.\n\n\`\`\`\nfunction Welcome() {\n  return <h1>Hello, Kodstigen!</h1>;\n}\n\`\`\`\n\n*JSX needs a React app (and a build step) to render, so it's read-only here, every example in this course uses this style, you'll run real components in the final project.*\n\n## Embedding JavaScript in JSX\n\nCurly braces \`{ }\` let you drop any JavaScript expression into your markup:\n\n\`\`\`\nfunction Greeting() {\n  const name = 'Ada';\n  return <h1>Hello, {name}!</h1>;\n}\n\`\`\`\n\n## One rule to remember\n\nA component must return a **single root element**. To return multiple sibling elements without adding an extra \`<div>\`, wrap them in a Fragment: \`<>...</>\`.`
     ),
     quiz: {
       title: 'React Basics Quiz',
@@ -1426,7 +1426,7 @@ const csharpLessons: SeedLesson[] = [
     title: 'Hello, C#',
     content: lessonContent(
       'Hello, C#',
-      `C# (pronounced "C sharp") is a statically-typed, object-oriented language built by Microsoft for the .NET platform. It's used for everything from web APIs (ASP.NET) to desktop apps to game development (Unity).\n\n\`\`\`csharp\nusing System;\n\nclass Program\n{\n    static void Main()\n    {\n        Console.WriteLine("Hello, CodeForge!");\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`using System;\` imports the namespace that contains \`Console\` and other common types.\n- Every C# program needs an entry point method called \`Main\`, that's where execution starts.\n- \`Console.WriteLine(...)\` prints a line of text to the terminal.\n\nCompile and run a C# project with the .NET CLI:\n\n\`\`\`bash\ndotnet run\n\`\`\``
+      `C# (pronounced "C sharp") is a statically-typed, object-oriented language built by Microsoft for the .NET platform. It's used for everything from web APIs (ASP.NET) to desktop apps to game development (Unity).\n\n\`\`\`csharp\nusing System;\n\nclass Program\n{\n    static void Main()\n    {\n        Console.WriteLine("Hello, Kodstigen!");\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`using System;\` imports the namespace that contains \`Console\` and other common types.\n- Every C# program needs an entry point method called \`Main\`, that's where execution starts.\n- \`Console.WriteLine(...)\` prints a line of text to the terminal.\n\nCompile and run a C# project with the .NET CLI:\n\n\`\`\`bash\ndotnet run\n\`\`\``
     ),
     quiz: {
       title: 'C# Basics Quiz',
@@ -2704,7 +2704,7 @@ const htmlLessons: SeedLesson[] = [
     title: 'Text Content: Headings, Paragraphs, and Lists',
     content: lessonContent(
       'Text Content: Headings, Paragraphs, and Lists',
-      `Most of a web page is text, and HTML gives you a small set of elements to describe what kind of text it is.\n\n## Headings and paragraphs\n\n\`\`\`html\n<h1>CodeForge</h1>\n<h2>Learn to Code</h2>\n<p>CodeForge is a platform for learning to code through interactive lessons and projects.</p>\n\`\`\`\n\nThere are six heading levels, \`<h1>\` through \`<h6>\`, from most to least important. Use exactly one \`<h1>\` per page, it's the page's main title, and don't skip levels just to make text smaller, that's what CSS is for.\n\n## Lists\n\n\`\`\`html\n<ul>\n  <li>HTML</li>\n  <li>CSS</li>\n  <li>JavaScript</li>\n</ul>\n\n<ol>\n  <li>Write the HTML</li>\n  <li>Style it with CSS</li>\n  <li>Add behavior with JavaScript</li>\n</ol>\n\`\`\`\n\n- \`<ul>\` is an **unordered list** (bullets), use it when order doesn't matter.\n- \`<ol>\` is an **ordered list** (numbers), use it when sequence matters, like steps in a recipe.\n- Every item in either list goes inside an \`<li>\` (list item).\n\n## Inline emphasis\n\n\`\`\`html\n<p>This is <strong>very important</strong> and this is <em>subtly emphasized</em>.</p>\n\`\`\`\n\n\`<strong>\` and \`<em>\` carry real semantic meaning (importance and emphasis) that screen readers announce differently, they're not just "bold" and "italic". The purely visual tags \`<b>\` and \`<i>\` still exist but should be reserved for cases with no semantic meaning at all.`
+      `Most of a web page is text, and HTML gives you a small set of elements to describe what kind of text it is.\n\n## Headings and paragraphs\n\n\`\`\`html\n<h1>Kodstigen</h1>\n<h2>Learn to Code</h2>\n<p>Kodstigen is a platform for learning to code through interactive lessons and projects.</p>\n\`\`\`\n\nThere are six heading levels, \`<h1>\` through \`<h6>\`, from most to least important. Use exactly one \`<h1>\` per page, it's the page's main title, and don't skip levels just to make text smaller, that's what CSS is for.\n\n## Lists\n\n\`\`\`html\n<ul>\n  <li>HTML</li>\n  <li>CSS</li>\n  <li>JavaScript</li>\n</ul>\n\n<ol>\n  <li>Write the HTML</li>\n  <li>Style it with CSS</li>\n  <li>Add behavior with JavaScript</li>\n</ol>\n\`\`\`\n\n- \`<ul>\` is an **unordered list** (bullets), use it when order doesn't matter.\n- \`<ol>\` is an **ordered list** (numbers), use it when sequence matters, like steps in a recipe.\n- Every item in either list goes inside an \`<li>\` (list item).\n\n## Inline emphasis\n\n\`\`\`html\n<p>This is <strong>very important</strong> and this is <em>subtly emphasized</em>.</p>\n\`\`\`\n\n\`<strong>\` and \`<em>\` carry real semantic meaning (importance and emphasis) that screen readers announce differently, they're not just "bold" and "italic". The purely visual tags \`<b>\` and \`<i>\` still exist but should be reserved for cases with no semantic meaning at all.`
     ),
     quiz: {
       title: 'Text Content Quiz',
@@ -2735,7 +2735,7 @@ const htmlLessons: SeedLesson[] = [
     title: 'Links, Images, and Semantic Elements',
     content: lessonContent(
       'Links, Images, and Semantic Elements',
-      `## Links\n\n\`\`\`html\n<a href="https://example.com">Visit Example</a>\n<a href="/about.html">About page (relative link)</a>\n<a href="https://example.com" target="_blank" rel="noopener">Opens in a new tab</a>\n\`\`\`\n\nThe \`href\` attribute is where the link goes. Links can point to other sites (absolute URLs) or other pages on your own site (relative URLs). \`target="_blank"\` opens a new tab, and should be paired with \`rel="noopener"\` so the new page can't control the original tab.\n\n## Images\n\n\`\`\`html\n<img src="logo.png" alt="CodeForge logo" width="120" height="120" />\n\`\`\`\n\n\`alt\` text is not optional, it's read aloud by screen readers and shown if the image fails to load. A decorative image with no informational value can use \`alt=""\`, but never omit the attribute entirely.\n\n## Semantic layout elements\n\nInstead of wrapping everything in generic \`<div>\`s, HTML5 gives you elements that describe a section's *role* on the page:\n\n| Element | Role |\n|---|---|\n| \`<header>\` | Introductory content, often a logo and navigation. |\n| \`<nav>\` | A block of navigation links. |\n| \`<main>\` | The primary content, unique to this page, one per page. |\n| \`<section>\` | A thematic grouping of content, usually with its own heading. |\n| \`<article>\` | Self-contained content that would make sense on its own (a blog post, a product card). |\n| \`<footer>\` | Closing content, like copyright or contact links. |\n\n\`\`\`html\n<header>\n  <h1>CodeForge</h1>\n  <nav>\n    <a href="/">Home</a>\n    <a href="/courses">Courses</a>\n  </nav>\n</header>\n<main>\n  <article>\n    <h2>Why Learn to Code?</h2>\n    <p>...</p>\n  </article>\n</main>\n<footer>\n  <p>&copy; 2026 CodeForge</p>\n</footer>\n\`\`\`\n\n> [!TIP]\n> Semantic elements look identical to a \`<div>\` by default, their real value is meaning: screen readers, browsers, and search engines all use them to understand your page's structure.`
+      `## Links\n\n\`\`\`html\n<a href="https://example.com">Visit Example</a>\n<a href="/about.html">About page (relative link)</a>\n<a href="https://example.com" target="_blank" rel="noopener">Opens in a new tab</a>\n\`\`\`\n\nThe \`href\` attribute is where the link goes. Links can point to other sites (absolute URLs) or other pages on your own site (relative URLs). \`target="_blank"\` opens a new tab, and should be paired with \`rel="noopener"\` so the new page can't control the original tab.\n\n## Images\n\n\`\`\`html\n<img src="logo.png" alt="Kodstigen logo" width="120" height="120" />\n\`\`\`\n\n\`alt\` text is not optional, it's read aloud by screen readers and shown if the image fails to load. A decorative image with no informational value can use \`alt=""\`, but never omit the attribute entirely.\n\n## Semantic layout elements\n\nInstead of wrapping everything in generic \`<div>\`s, HTML5 gives you elements that describe a section's *role* on the page:\n\n| Element | Role |\n|---|---|\n| \`<header>\` | Introductory content, often a logo and navigation. |\n| \`<nav>\` | A block of navigation links. |\n| \`<main>\` | The primary content, unique to this page, one per page. |\n| \`<section>\` | A thematic grouping of content, usually with its own heading. |\n| \`<article>\` | Self-contained content that would make sense on its own (a blog post, a product card). |\n| \`<footer>\` | Closing content, like copyright or contact links. |\n\n\`\`\`html\n<header>\n  <h1>Kodstigen</h1>\n  <nav>\n    <a href="/">Home</a>\n    <a href="/courses">Courses</a>\n  </nav>\n</header>\n<main>\n  <article>\n    <h2>Why Learn to Code?</h2>\n    <p>...</p>\n  </article>\n</main>\n<footer>\n  <p>&copy; 2026 Kodstigen</p>\n</footer>\n\`\`\`\n\n> [!TIP]\n> Semantic elements look identical to a \`<div>\` by default, their real value is meaning: screen readers, browsers, and search engines all use them to understand your page's structure.`
     ),
     quiz: {
       title: 'Links & Semantics Quiz',
@@ -3020,7 +3020,7 @@ const luaLessons: SeedLesson[] = [
     title: 'Why Lua? Getting Started',
     content: lessonContent(
       'Why Lua? Getting Started',
-      `Lua is a small, fast, embeddable scripting language. You'll rarely run a "Lua application" on its own, instead, Lua gets embedded inside something bigger: game engines (Roblox, Love2D, World of Warcraft addons), Neovim configuration, and even network appliances.\n\n## Why it's popular for embedding\n\n- **Tiny and fast**, the reference interpreter is a few hundred KB and famously quick for a dynamic language.\n- **Simple to embed**, a C program can create a Lua interpreter, hand it data, and call Lua functions in only a few lines.\n- **Small core language**, few keywords, one data structure (the table) that does almost everything.\n\n## Your first script\n\n\`\`\`lua\nprint("Hello from Lua!")\n\nlocal name = "CodeForge"\nprint("Welcome to " .. name)\n\`\`\`\n\nRun it with:\n\n\`\`\`bash\nlua hello.lua\n\`\`\`\n\n- \`print\` writes a line to standard output.\n- \`local\` declares a variable scoped to the current block, without it, a variable is **global** by default, almost always a mistake.\n- \`..\` is the string concatenation operator (Lua does not overload \`+\` for strings the way JavaScript does).\n\n> [!NOTE]\n> Lua array/table indices start at **1**, not 0. This trips up almost everyone coming from C-family languages, and it's worth committing to memory right now.`
+      `Lua is a small, fast, embeddable scripting language. You'll rarely run a "Lua application" on its own, instead, Lua gets embedded inside something bigger: game engines (Roblox, Love2D, World of Warcraft addons), Neovim configuration, and even network appliances.\n\n## Why it's popular for embedding\n\n- **Tiny and fast**, the reference interpreter is a few hundred KB and famously quick for a dynamic language.\n- **Simple to embed**, a C program can create a Lua interpreter, hand it data, and call Lua functions in only a few lines.\n- **Small core language**, few keywords, one data structure (the table) that does almost everything.\n\n## Your first script\n\n\`\`\`lua\nprint("Hello from Lua!")\n\nlocal name = "Kodstigen"\nprint("Welcome to " .. name)\n\`\`\`\n\nRun it with:\n\n\`\`\`bash\nlua hello.lua\n\`\`\`\n\n- \`print\` writes a line to standard output.\n- \`local\` declares a variable scoped to the current block, without it, a variable is **global** by default, almost always a mistake.\n- \`..\` is the string concatenation operator (Lua does not overload \`+\` for strings the way JavaScript does).\n\n> [!NOTE]\n> Lua array/table indices start at **1**, not 0. This trips up almost everyone coming from C-family languages, and it's worth committing to memory right now.`
     ),
     quiz: {
       title: 'Lua Basics Quiz',
@@ -3357,7 +3357,7 @@ const challenges: SeedChallenge[] = [
     testCases: [
       { input: ['hello'], expectedOutput: 'olleh', isHidden: false },
       { input: ['a'], expectedOutput: 'a', isHidden: false },
-      { input: ['CodeForge'], expectedOutput: 'egroFedoC', isHidden: true },
+      { input: ['Kodstigen'], expectedOutput: 'negitsdoK', isHidden: true },
     ],
   },
   {
@@ -3597,11 +3597,11 @@ async function main() {
   ]);
 
   const instructor = await prisma.user.upsert({
-    where: { email: 'instructor@codeforge.dev' },
+    where: { email: 'instructor@kodstigen.dev' },
     update: { emailVerified: true },
     create: {
       username: 'ada_instructor',
-      email: 'instructor@codeforge.dev',
+      email: 'instructor@kodstigen.dev',
       passwordHash: instructorPass,
       role: 'INSTRUCTOR',
       bio: 'Senior engineer teaching backend development.',
@@ -3610,11 +3610,11 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: 'admin@codeforge.dev' },
+    where: { email: 'admin@kodstigen.dev' },
     update: { emailVerified: true },
     create: {
       username: 'admin',
-      email: 'admin@codeforge.dev',
+      email: 'admin@kodstigen.dev',
       passwordHash: adminPass,
       role: 'ADMIN',
       emailVerified: true,
@@ -3622,11 +3622,11 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: 'student@codeforge.dev' },
+    where: { email: 'student@kodstigen.dev' },
     update: { emailVerified: true },
     create: {
       username: 'demo_student',
-      email: 'student@codeforge.dev',
+      email: 'student@kodstigen.dev',
       passwordHash: studentPass,
       role: 'STUDENT',
       emailVerified: true,
@@ -3735,12 +3735,12 @@ async function main() {
   const chatCount = await prisma.chatMessage.count();
   if (chatCount === 0) {
     const [admin, student] = await Promise.all([
-      prisma.user.findUniqueOrThrow({ where: { email: 'admin@codeforge.dev' } }),
-      prisma.user.findUniqueOrThrow({ where: { email: 'student@codeforge.dev' } }),
+      prisma.user.findUniqueOrThrow({ where: { email: 'admin@kodstigen.dev' } }),
+      prisma.user.findUniqueOrThrow({ where: { email: 'student@kodstigen.dev' } }),
     ]);
     await prisma.chatMessage.createMany({
       data: [
-        { room: 'general', userId: admin.id, content: 'Welcome to the CodeForge community chat! 👋 Be kind, help each other, and keep it friendly.' },
+        { room: 'general', userId: admin.id, content: 'Welcome to the Kodstigen community chat! 👋 Be kind, help each other, and keep it friendly.' },
         { room: 'general', userId: instructor.id, content: 'Hi everyone! I teach the backend courses here, ask me anything about Node.js or Express.' },
         { room: 'general', userId: student.id, content: 'Just passed my first Python quiz 🐍🔥' },
         { room: 'help', userId: instructor.id, content: 'Stuck on a lesson or challenge? Post it here with the error message and someone will help.' },
@@ -3751,7 +3751,7 @@ async function main() {
   }
 
   console.log('Seed complete.');
-  console.log('Demo accounts: student@codeforge.dev / student123, instructor@codeforge.dev / instructor123, admin@codeforge.dev / admin123');
+  console.log('Demo accounts: student@kodstigen.dev / student123, instructor@kodstigen.dev / instructor123, admin@kodstigen.dev / admin123');
 }
 
 main()
