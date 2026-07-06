@@ -1,4 +1,4 @@
-export type RunnableLang = 'python' | 'javascript' | 'typescript';
+export type RunnableLang = 'python' | 'javascript' | 'typescript' | 'lua';
 
 export function normalizeLang(lang: string): RunnableLang | null {
   switch (lang.toLowerCase()) {
@@ -11,6 +11,8 @@ export function normalizeLang(lang: string): RunnableLang | null {
     case 'typescript':
     case 'ts':
       return 'typescript';
+    case 'lua':
+      return 'lua';
     default:
       return null;
   }
@@ -73,6 +75,59 @@ export async function runPython(code: string): Promise<{ output: string; error: 
     return { output, error: err instanceof Error ? err.message : String(err) };
   } finally {
     namespace.destroy();
+  }
+}
+
+// --- Lua via wasmoon (Lua 5.4 compiled to WebAssembly, loaded once per page) ---
+
+const LUA_WASM_URL = 'https://cdn.jsdelivr.net/npm/wasmoon@1.16.0/dist/glue.wasm';
+
+let luaFactoryPromise: Promise<import('wasmoon').LuaFactory> | null = null;
+
+export function isLuaLoading(): boolean {
+  return luaFactoryPromise === null;
+}
+
+function getLuaFactory(): Promise<import('wasmoon').LuaFactory> {
+  if (!luaFactoryPromise) {
+    luaFactoryPromise = import('wasmoon')
+      .then(({ LuaFactory }) => new LuaFactory(LUA_WASM_URL))
+      .catch((err) => {
+        luaFactoryPromise = null; // allow retry after a network failure
+        throw err;
+      });
+  }
+  return luaFactoryPromise;
+}
+
+function luaValueToString(value: unknown): string {
+  if (value === undefined || value === null) return 'nil';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
+export async function runLua(code: string): Promise<{ output: string; error: string | null }> {
+  const factory = await getLuaFactory();
+  // fresh engine per run so lessons don't leak globals into each other
+  const engine = await factory.createEngine();
+  let output = '';
+  engine.global.set('print', (...args: unknown[]) => {
+    output += args.map(luaValueToString).join('\t') + '\n';
+  });
+  try {
+    await engine.doString(code);
+    return { output, error: null };
+  } catch (err) {
+    return { output, error: err instanceof Error ? err.message : String(err) };
+  } finally {
+    engine.global.close();
   }
 }
 

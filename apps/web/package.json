@@ -23,7 +23,8 @@
     "remark-gfm": "^4.0.1",
     "remark-github-blockquote-alert": "^2.1.0",
     "socket.io-client": "^4.8.3",
-    "sucrase": "^3.35.1"
+    "sucrase": "^3.35.1",
+    "wasmoon": "^1.16.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.15",
