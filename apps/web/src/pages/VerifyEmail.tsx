@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { api, errorMessage, getToken } from '../lib/api';
+import { api, errorMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
 export function VerifyEmail() {
@@ -23,7 +23,7 @@ export function VerifyEmail() {
     api
       .post('/auth/verify-email', { token })
       .then(async () => {
-        if (getToken()) await refreshUser().catch(() => {});
+        await refreshUser().catch(() => {});
         setState('success');
       })
       .catch((err) => {

@@ -2,14 +2,14 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "codeforge-web",
+      "name": "kodstigen-web",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "-w", "apps/web"],
       "port": 5173,
       "autoPort": true
     },
     {
-      "name": "codeforge-api",
+      "name": "kodstigen-api",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "-w", "apps/api"],
       "port": 4000

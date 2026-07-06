@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { authRouter } from './routes/auth.ts';
 import { pathsRouter } from './routes/paths.ts';
 import { coursesRouter } from './routes/courses.ts';
@@ -23,7 +25,13 @@ import fs from 'node:fs';
 export function createApp() {
   const app = express();
 
-  app.use(cors());
+  // CSP is left off: Pyodide/wasmoon load their runtimes from a CDN via injected <script>
+  // tags and the JS sandbox runs code via a Blob-sourced worker + eval, so a correct policy
+  // needs careful script-src/worker-src allowances that are easy to get wrong and would
+  // silently break the code playgrounds. The other headers below are safe defaults.
+  app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(cors({ origin: true, credentials: true }));
+  app.use(cookieParser());
   app.use(express.json());
   app.use('/uploads', express.static(UPLOADS_DIR));
 

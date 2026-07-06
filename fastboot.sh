@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CodeForge Academy, one-command boot.
+# Kodstigen, one-command boot.
 # Usage: ./fastboot.sh [--fresh]
 #   --fresh   wipe and recreate the database before starting
 set -euo pipefail
@@ -16,7 +16,7 @@ done
 step() { printf '\n\033[1;34m▸ %s\033[0m\n' "$1"; }
 
 if curl -sf http://localhost:4000/api/health >/dev/null 2>&1; then
-  echo "CodeForge is already running on http://localhost:4000, stop it before rebooting." >&2
+  echo "Kodstigen is already running on http://localhost:4000, stop it before rebooting." >&2
   exit 1
 fi
 
@@ -59,7 +59,7 @@ fi
 step "Seeding (idempotent)"
 npm run db:seed -w apps/api
 
-step "Starting CodeForge Academy"
+step "Starting Kodstigen"
 echo "API:  http://localhost:4000"
 echo "Web:  http://localhost:5173"
 npm run dev

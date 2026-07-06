@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Force-stop CodeForge's dev servers.
+# Force-stop Kodstigen's dev servers.
 #
 # On Windows, Ctrl+C on ./fastboot.sh often doesn't reach the actual server
 # process: it's spawned several layers deep (bash -> npm.cmd -> concurrently

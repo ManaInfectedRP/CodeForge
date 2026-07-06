@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { AuthResponseDto, UserDto } from '@codeforge/shared';
-import { api, getToken, setToken } from '../lib/api';
+import type { UserDto } from '@codeforge/shared';
+import { api } from '../lib/api';
 import { disconnectChatSocket } from '../lib/socket';
 
 interface AuthContextValue {
@@ -8,7 +8,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<UserDto>;
   register: (username: string, email: string, password: string) => Promise<UserDto>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -19,33 +19,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!getToken()) {
-      setLoading(false);
-      return;
-    }
+    // the auth cookie (if any) is sent automatically; a 401 just means logged-out
     api
       .get<UserDto>('/auth/me')
       .then((res) => setUser(res.data))
-      .catch(() => setToken(null))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   async function login(email: string, password: string) {
-    const { data } = await api.post<AuthResponseDto>('/auth/login', { email, password });
-    setToken(data.token);
-    setUser(data.user);
-    return data.user;
+    const { data } = await api.post<UserDto>('/auth/login', { email, password });
+    setUser(data);
+    return data;
   }
 
   async function register(username: string, email: string, password: string) {
-    const { data } = await api.post<AuthResponseDto>('/auth/register', { username, email, password });
-    setToken(data.token);
-    setUser(data.user);
-    return data.user;
+    const { data } = await api.post<UserDto>('/auth/register', { username, email, password });
+    setUser(data);
+    return data;
   }
 
-  function logout() {
-    setToken(null);
+  async function logout() {
+    await api.post('/auth/logout').catch(() => {});
     setUser(null);
     disconnectChatSocket();
   }

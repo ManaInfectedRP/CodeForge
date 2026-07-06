@@ -1,7 +1,8 @@
 import type { Server, Socket } from 'socket.io';
+import { parse as parseCookie } from 'cookie';
 import type { ChatMessageDto } from '@codeforge/shared';
 import { prisma } from '../lib/prisma.ts';
-import { verifyToken, type TokenPayload } from '../lib/jwt.ts';
+import { AUTH_COOKIE, verifyToken, type TokenPayload } from '../lib/jwt.ts';
 
 export const CHAT_ROOMS = ['general', 'help', 'random', 'showcase'] as const;
 export type ChatRoom = (typeof CHAT_ROOMS)[number];
@@ -23,7 +24,8 @@ function onlineCount(io: Server, room: string): number {
 export function setupChat(io: Server) {
   io.use(async (socket: ChatSocket, next) => {
     try {
-      const token = socket.handshake.auth?.token;
+      const cookies = parseCookie(socket.handshake.headers.cookie ?? '');
+      const token = cookies[AUTH_COOKIE];
       if (typeof token !== 'string') throw new Error('missing token');
       const payload = verifyToken(token);
       const user = await prisma.user.findUnique({

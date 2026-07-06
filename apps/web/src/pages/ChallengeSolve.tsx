@@ -12,18 +12,21 @@ const langToRunnable: Record<ChallengeLanguage, RunnableLang> = {
   PYTHON: 'python',
   JAVASCRIPT: 'javascript',
   TYPESCRIPT: 'typescript',
+  LUA: 'lua',
 };
 
 const langLabels: Record<ChallengeLanguage, string> = {
   PYTHON: 'Python',
   JAVASCRIPT: 'JavaScript',
   TYPESCRIPT: 'TypeScript',
+  LUA: 'Lua',
 };
 
-const starterKeyByLang: Record<ChallengeLanguage, 'python' | 'javascript' | 'typescript'> = {
+const starterKeyByLang: Record<ChallengeLanguage, 'python' | 'javascript' | 'typescript' | 'lua'> = {
   PYTHON: 'python',
   JAVASCRIPT: 'javascript',
   TYPESCRIPT: 'typescript',
+  LUA: 'lua',
 };
 
 export function ChallengeSolve() {

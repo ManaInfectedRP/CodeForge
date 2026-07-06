@@ -43,10 +43,10 @@ On Windows, run it from Git Bash: `bash fastboot.sh`.
 npm install
 
 # 2. Configure the database connection
-#    Edit apps/api/.env, default is postgres:postgres@localhost:5432/codeforge
+#    Edit apps/api/.env, default is postgres:postgres@localhost:5432/kodstigen
 
 # 3. Create the schema and seed demo data
-npm run db:migrate      # runs prisma migrate dev (creates the codeforge DB schema)
+npm run db:migrate      # runs prisma migrate dev (creates the kodstigen DB schema)
 npm run db:seed         # 5 learning paths, 5 courses, lessons, quizzes, 10 coding challenges, 12 achievements, demo accounts
 
 # 4. Run both apps
@@ -59,9 +59,9 @@ Open http://localhost:5173.
 
 | Role | Email | Password |
 |------|-------|----------|
-| Student | student@codeforge.dev | student123 |
-| Instructor | instructor@codeforge.dev | instructor123 |
-| Admin | admin@codeforge.dev | admin123 |
+| Student | student@kodstigen.dev | student123 |
+| Instructor | instructor@kodstigen.dev | instructor123 |
+| Admin | admin@kodstigen.dev | admin123 |
 
 ## What's implemented (v0.1, core slice)
 

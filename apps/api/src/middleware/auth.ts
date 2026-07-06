@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { Role } from '@codeforge/shared';
-import { verifyToken, type TokenPayload } from '../lib/jwt.ts';
+import { AUTH_COOKIE, verifyToken, type TokenPayload } from '../lib/jwt.ts';
 import { HttpError } from './errors.ts';
 import { prisma } from '../lib/prisma.ts';
 
@@ -13,11 +13,11 @@ declare global {
 }
 
 export function requireAuth(req: Request, _res: Response, next: NextFunction) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) throw new HttpError(401, 'Authentication required');
+  const token = req.cookies?.[AUTH_COOKIE];
+  if (typeof token !== 'string') throw new HttpError(401, 'Authentication required');
   let payload: TokenPayload;
   try {
-    payload = verifyToken(header.slice('Bearer '.length));
+    payload = verifyToken(token);
   } catch {
     throw new HttpError(401, 'Invalid or expired token');
   }
@@ -36,10 +36,10 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
 
 /** Attaches req.auth when a valid token is present, but never rejects. */
 export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
-  const header = req.headers.authorization;
-  if (header?.startsWith('Bearer ')) {
+  const token = req.cookies?.[AUTH_COOKIE];
+  if (typeof token === 'string') {
     try {
-      req.auth = verifyToken(header.slice('Bearer '.length));
+      req.auth = verifyToken(token);
     } catch {
       // anonymous access is fine
     }

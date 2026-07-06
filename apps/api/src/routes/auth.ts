@@ -2,12 +2,12 @@ import { Router } from 'express';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import type { AuthResponseDto } from '@codeforge/shared';
 import { prisma } from '../lib/prisma.ts';
-import { signToken } from '../lib/jwt.ts';
+import { AUTH_COOKIE, cookieOptions, signToken } from '../lib/jwt.ts';
 import { h, toUserDto } from '../lib/helpers.ts';
 import { HttpError } from '../middleware/errors.ts';
 import { requireAuth } from '../middleware/auth.ts';
+import { authLimiter } from '../middleware/rateLimit.ts';
 import { isMailerConfigured, sendVerificationEmail } from '../lib/mailer.ts';
 
 const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
@@ -38,6 +38,7 @@ export const authRouter = Router();
 
 authRouter.post(
   '/register',
+  authLimiter,
   h(async (req, res) => {
     const { username, email, password } = registerSchema.parse(req.body);
 
@@ -66,11 +67,8 @@ authRouter.post(
       );
     }
 
-    const body: AuthResponseDto = {
-      token: signToken({ sub: user.id, role: user.role }),
-      user: toUserDto(user),
-    };
-    res.status(201).json(body);
+    res.cookie(AUTH_COOKIE, signToken({ sub: user.id, role: user.role }), cookieOptions());
+    res.status(201).json(toUserDto(user));
   })
 );
 
@@ -111,6 +109,7 @@ authRouter.post(
 
 authRouter.post(
   '/login',
+  authLimiter,
   h(async (req, res) => {
     const { email, password } = loginSchema.parse(req.body);
 
@@ -120,11 +119,16 @@ authRouter.post(
     }
     if (user.bannedAt) throw new HttpError(403, 'Your account has been banned');
 
-    const body: AuthResponseDto = {
-      token: signToken({ sub: user.id, role: user.role }),
-      user: toUserDto(user),
-    };
-    res.json(body);
+    res.cookie(AUTH_COOKIE, signToken({ sub: user.id, role: user.role }), cookieOptions());
+    res.json(toUserDto(user));
+  })
+);
+
+authRouter.post(
+  '/logout',
+  h(async (_req, res) => {
+    res.clearCookie(AUTH_COOKIE, cookieOptions());
+    res.json({ loggedOut: true });
   })
 );
 

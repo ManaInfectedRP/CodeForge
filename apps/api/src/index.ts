@@ -7,7 +7,7 @@ import { setupChat } from './chat/socket.ts';
 const port = Number(process.env.PORT ?? 4000);
 
 const httpServer = createServer(createApp());
-const io = new Server(httpServer, { cors: { origin: true } });
+const io = new Server(httpServer, { cors: { origin: true, credentials: true } });
 setupChat(io);
 
 httpServer.listen(port, () => {
