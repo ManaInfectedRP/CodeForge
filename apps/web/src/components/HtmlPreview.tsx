@@ -55,7 +55,7 @@ export function HtmlPreview({ initialCode }: { initialCode: string }) {
           <iframe
             title="HTML preview"
             srcDoc={preview}
-            sandbox=""
+            sandbox="allow-scripts"
             className="h-64 w-full rounded-lg border border-slate-800 bg-white"
           />
         </div>

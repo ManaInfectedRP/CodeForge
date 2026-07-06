@@ -9,11 +9,12 @@ const teachTabClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-forge-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
   }`;
 
-const allLanguages: ChallengeLanguage[] = ['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT'];
+const allLanguages: ChallengeLanguage[] = ['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA'];
 const languageLabels: Record<ChallengeLanguage, string> = {
   PYTHON: 'Python',
   JAVASCRIPT: 'JavaScript',
   TYPESCRIPT: 'TypeScript',
+  LUA: 'Lua',
 };
 
 export function TeachChallenges() {
@@ -22,7 +23,7 @@ export function TeachChallenges() {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [difficulty, setDifficulty] = useState<ChallengeDifficulty>('EASY');
-  const [languages, setLanguages] = useState<ChallengeLanguage[]>(['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT']);
+  const [languages, setLanguages] = useState<ChallengeLanguage[]>(['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA']);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 

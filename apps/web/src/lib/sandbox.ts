@@ -78,57 +78,46 @@ export async function runPython(code: string): Promise<{ output: string; error: 
   }
 }
 
-// --- Lua via wasmoon (Lua 5.4 compiled to WebAssembly, loaded once per page) ---
+// --- Lua via wasmoon (Lua 5.4 compiled to WebAssembly), run in a Worker so a runaway
+// script (e.g. an infinite loop) can be forcibly terminated the same way the JS sandbox
+// below handles it - a synchronous WASM call on the main thread can't be interrupted by
+// a timer, but Worker.terminate() kills the thread outright regardless of what it's doing. ---
 
-const LUA_WASM_URL = 'https://cdn.jsdelivr.net/npm/wasmoon@1.16.0/dist/glue.wasm';
+const LUA_TIMEOUT_MS = 5000;
 
-let luaFactoryPromise: Promise<import('wasmoon').LuaFactory> | null = null;
+let luaWorker: Worker | null = null;
 
 export function isLuaLoading(): boolean {
-  return luaFactoryPromise === null;
+  return luaWorker === null;
 }
 
-function getLuaFactory(): Promise<import('wasmoon').LuaFactory> {
-  if (!luaFactoryPromise) {
-    luaFactoryPromise = import('wasmoon')
-      .then(({ LuaFactory }) => new LuaFactory(LUA_WASM_URL))
-      .catch((err) => {
-        luaFactoryPromise = null; // allow retry after a network failure
-        throw err;
-      });
+function getLuaWorker(): Worker {
+  if (!luaWorker) {
+    luaWorker = new Worker(new URL('./luaWorker.ts', import.meta.url), { type: 'module' });
   }
-  return luaFactoryPromise;
+  return luaWorker;
 }
 
-function luaValueToString(value: unknown): string {
-  if (value === undefined || value === null) return 'nil';
-  if (typeof value === 'boolean') return value ? 'true' : 'false';
-  if (typeof value === 'object') {
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-  return String(value);
-}
-
-export async function runLua(code: string): Promise<{ output: string; error: string | null }> {
-  const factory = await getLuaFactory();
-  // fresh engine per run so lessons don't leak globals into each other
-  const engine = await factory.createEngine();
-  let output = '';
-  engine.global.set('print', (...args: unknown[]) => {
-    output += args.map(luaValueToString).join('\t') + '\n';
+export function runLua(code: string): Promise<{ output: string; error: string | null }> {
+  return new Promise((resolve) => {
+    const worker = getLuaWorker();
+    const timer = setTimeout(() => {
+      worker.terminate();
+      luaWorker = null; // next run gets a fresh worker (and pays the load cost again)
+      resolve({ output: '', error: `Execution timed out after ${LUA_TIMEOUT_MS / 1000}s (infinite loop?)` });
+    }, LUA_TIMEOUT_MS);
+    worker.onmessage = (e) => {
+      clearTimeout(timer);
+      resolve(e.data as { output: string; error: string | null });
+    };
+    worker.onerror = (e) => {
+      clearTimeout(timer);
+      worker.terminate();
+      luaWorker = null;
+      resolve({ output: '', error: e.message || 'The Lua runtime crashed, try running again.' });
+    };
+    worker.postMessage(code);
   });
-  try {
-    await engine.doString(code);
-    return { output, error: null };
-  } catch (err) {
-    return { output, error: err instanceof Error ? err.message : String(err) };
-  } finally {
-    engine.global.close();
-  }
 }
 
 // --- JavaScript / TypeScript in a sandboxed Web Worker with a hard timeout ---
@@ -244,6 +233,84 @@ function buildJsHarness(studentCode: string, entryPoint: string, input: unknown[
   ].join('\n');
 }
 
+function luaStringLiteral(s: string): string {
+  const escaped = s
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+  return `"${escaped}"`;
+}
+
+/** Renders a JSON-ish value as a Lua literal, so args can be inlined directly as Lua syntax
+ * instead of needing a Lua-side JSON decoder (Lua's stdlib has none). */
+function jsValueToLuaLiteral(value: unknown): string {
+  if (value === null || value === undefined) return 'nil';
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'string') return luaStringLiteral(value);
+  if (Array.isArray(value)) return `{${value.map(jsValueToLuaLiteral).join(', ')}}`;
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>);
+    return `{${entries.map(([k, v]) => `[${luaStringLiteral(k)}] = ${jsValueToLuaLiteral(v)}`).join(', ')}}`;
+  }
+  throw new Error(`Cannot encode ${typeof value} as a Lua literal`);
+}
+
+// Lua's stdlib has no JSON support, so the harness carries its own minimal encoder to send the
+// student's return value back through the same print-based sentinel protocol as the other
+// languages. Empty tables encode as [] since Lua can't distinguish an empty array from an
+// empty object.
+const LUA_JSON_ENCODER = `
+local function __cf_json_encode(v)
+  local t = type(v)
+  if v == nil then return 'null' end
+  if t == 'boolean' then return v and 'true' or 'false' end
+  if t == 'number' then return tostring(v) end
+  if t == 'string' then
+    local escaped = v:gsub('[\\\\"\\n\\r\\t]', {
+      ['\\\\'] = '\\\\\\\\', ['"'] = '\\\\"', ['\\n'] = '\\\\n', ['\\r'] = '\\\\r', ['\\t'] = '\\\\t',
+    })
+    return '"' .. escaped .. '"'
+  end
+  if t == 'table' then
+    local n = 0
+    for _ in pairs(v) do n = n + 1 end
+    local isArray = n == 0
+    if not isArray then
+      isArray = true
+      for i = 1, n do if v[i] == nil then isArray = false break end end
+    end
+    local parts = {}
+    if isArray then
+      for i = 1, n do parts[#parts + 1] = __cf_json_encode(v[i]) end
+      return '[' .. table.concat(parts, ',') .. ']'
+    end
+    for k, val in pairs(v) do
+      parts[#parts + 1] = __cf_json_encode(tostring(k)) .. ':' .. __cf_json_encode(val)
+    end
+    return '{' .. table.concat(parts, ',') .. '}'
+  end
+  error('cannot encode value of type ' .. t)
+end
+`;
+
+function buildLuaHarness(studentCode: string, entryPoint: string, input: unknown[]): string {
+  const argsLiteral = input.map(jsValueToLuaLiteral).join(', ');
+  return [
+    studentCode,
+    '',
+    LUA_JSON_ENCODER,
+    `local __cf_ok, __cf_result = pcall(function() return ${entryPoint}(${argsLiteral}) end)`,
+    'if __cf_ok then',
+    `  print(${JSON.stringify(RESULT_PREFIX)} .. __cf_json_encode(__cf_result))`,
+    'else',
+    `  print(${JSON.stringify(ERROR_PREFIX)} .. tostring(__cf_result))`,
+    'end',
+  ].join('\n');
+}
+
 /** Runs the student's function once against one test case's input, inside the existing sandbox. */
 export async function runTestCase(
   lang: RunnableLang,
@@ -253,6 +320,11 @@ export async function runTestCase(
 ): Promise<TestCaseRunResult> {
   if (lang === 'python') {
     const { output, error } = await runPython(buildPythonHarness(studentCode, entryPoint, input));
+    if (error) return { actualOutput: null, errored: true, errorMessage: error };
+    return extractSentinel(output);
+  }
+  if (lang === 'lua') {
+    const { output, error } = await runLua(buildLuaHarness(studentCode, entryPoint, input));
     if (error) return { actualOutput: null, errored: true, errorMessage: error };
     return extractSentinel(output);
   }
