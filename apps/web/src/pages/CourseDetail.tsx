@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { CourseDetailDto } from '@codeforge/shared';
 import { api, errorMessage } from '../lib/api';
@@ -10,16 +10,41 @@ export function CourseDetail() {
   const [error, setError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewBody, setReviewBody] = useState('');
+  const [savingReview, setSavingReview] = useState(false);
+  const [reviewSaved, setReviewSaved] = useState(false);
   const navigate = useNavigate();
 
   const load = useCallback(() => {
     api
       .get<CourseDetailDto>(`/courses/${id}`)
-      .then((res) => setCourse(res.data))
+      .then((res) => {
+        setCourse(res.data);
+        if (res.data.myReview) {
+          setReviewRating(res.data.myReview.rating);
+          setReviewBody(res.data.myReview.body);
+        }
+      })
       .catch((err) => setError(errorMessage(err)));
   }, [id]);
 
   useEffect(load, [load]);
+
+  async function submitReview(e: FormEvent) {
+    e.preventDefault();
+    setSavingReview(true);
+    setError(null);
+    setReviewSaved(false);
+    try {
+      await api.post('/reviews', { courseId: id, rating: reviewRating, body: reviewBody });
+      setReviewSaved(true);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSavingReview(false);
+    }
+  }
 
   async function enroll() {
     setEnrolling(true);
@@ -95,7 +120,48 @@ export function CourseDetail() {
           )}
           {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
         </div>
-      ) : (
+      ) : null}
+
+      {course.certificateId && (
+        <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+          <h2 className="font-semibold">{course.myReview ? 'Your review' : 'Leave a review'}</h2>
+          <form onSubmit={submitReview} className="mt-3 space-y-3">
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setReviewRating(n)}
+                  aria-label={`${n} star${n === 1 ? '' : 's'}`}
+                  className={`text-2xl leading-none ${n <= reviewRating ? 'text-amber-400' : 'text-slate-700'}`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={reviewBody}
+              onChange={(e) => setReviewBody(e.target.value)}
+              minLength={10}
+              maxLength={2000}
+              rows={4}
+              required
+              placeholder="What did you think of this course?"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm focus:border-forge-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={savingReview || reviewRating === 0}
+              className="rounded-lg bg-forge-600 px-6 py-2 text-sm font-semibold text-white hover:bg-forge-500 disabled:opacity-50"
+            >
+              {savingReview ? 'Saving…' : course.myReview ? 'Update review' : 'Submit review'}
+            </button>
+            {reviewSaved && <span className="ml-3 text-sm text-emerald-400">Thanks for the review!</span>}
+          </form>
+        </section>
+      )}
+
+      {!course.enrolled && (
         <button
           onClick={enroll}
           disabled={enrolling}

@@ -80,8 +80,15 @@ coursesRouter.get(
         })
       : null;
 
+    const myReview = req.auth
+      ? await prisma.courseReview.findUnique({
+          where: { courseId_userId: { courseId: course.id, userId: req.auth.sub } },
+        })
+      : null;
+
     const body: CourseDetailDto = {
       certificateId: certificate?.id ?? null,
+      myReview: myReview ? { rating: myReview.rating, body: myReview.body } : null,
       id: course.id,
       title: course.title,
       description: course.description,

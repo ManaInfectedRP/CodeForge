@@ -98,10 +98,27 @@ export interface LessonSummaryDto {
   unlocked: boolean;
 }
 
+export interface MyCourseReviewDto {
+  rating: number; // 1-5
+  body: string;
+}
+
 export interface CourseDetailDto extends CourseSummaryDto {
   lessons: LessonSummaryDto[];
   /** set when the viewer has earned a certificate for this course */
   certificateId?: string | null;
+  /** the viewer's own review of this course, if they've left one. Only reviewable once certificateId is set. */
+  myReview?: MyCourseReviewDto | null;
+}
+
+export interface FeaturedReviewDto {
+  id: string;
+  rating: number;
+  body: string;
+  username: string;
+  avatarUrl: string | null;
+  courseTitle: string;
+  createdAt: string;
 }
 
 export interface QuizQuestionDto {

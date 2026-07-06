@@ -22,9 +22,13 @@ function newVerifyToken() {
 const registerSchema = z.object({
   username: z
     .string()
+    .trim()
     .min(3, 'Username must be at least 3 characters')
     .max(30, 'Username must be at most 30 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username may only contain letters, numbers, and underscores'),
+    .regex(
+      /^[a-zA-Z0-9_]+(?: [a-zA-Z0-9_]+)*$/,
+      'Username may only contain letters, numbers, underscores, and single spaces between words'
+    ),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
