@@ -84,6 +84,17 @@ export function Landing() {
         </p>
       </section>
 
+      {reviews.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pb-20">
+          <h2 className="mb-8 text-center text-2xl font-bold">Vad våra studenter säger</h2>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {reviews.map((r) => (
+              <ReviewCard key={r.id} review={r} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="mx-auto max-w-6xl px-4 pb-20">
         <h2 className="mb-8 text-center text-2xl font-bold">Välj din stig</h2>
 
@@ -100,17 +111,6 @@ export function Landing() {
           ))}
         </div>
       </section>
-
-      {reviews.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-20">
-          <h2 className="mb-8 text-center text-2xl font-bold">Vad våra studenter säger</h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {reviews.map((r) => (
-              <ReviewCard key={r.id} review={r} />
-            ))}
-          </div>
-        </section>
-      )}
     </main>
   );
 }
