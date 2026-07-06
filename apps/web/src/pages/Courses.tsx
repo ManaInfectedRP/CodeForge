@@ -2,49 +2,63 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { CourseSummaryDto, LearningPathDto } from '@codeforge/shared';
 import { api } from '../lib/api';
+import { PathCard } from '../components/PathCard';
 
 export function Courses() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activePath = searchParams.get('path') ?? '';
   const [courses, setCourses] = useState<CourseSummaryDto[] | null>(null);
-  const [paths, setPaths] = useState<LearningPathDto[]>([]);
+  const [paths, setPaths] = useState<LearningPathDto[] | null>(null);
 
   useEffect(() => {
     api.get<LearningPathDto[]>('/paths').then((res) => setPaths(res.data));
   }, []);
 
   useEffect(() => {
+    if (!activePath) {
+      setCourses(null);
+      return;
+    }
     setCourses(null);
-    api
-      .get<CourseSummaryDto[]>('/courses', { params: activePath ? { path: activePath } : {} })
-      .then((res) => setCourses(res.data));
+    api.get<CourseSummaryDto[]>('/courses', { params: { path: activePath } }).then((res) => setCourses(res.data));
   }, [activePath]);
+
+  if (!activePath) {
+    return (
+      <main className="mx-auto max-w-6xl px-4 py-10">
+        <h1 className="text-3xl font-bold">Pick a learning path</h1>
+        <p className="mt-2 text-slate-400">
+          Choose a language or technology to see its course roadmap, from beginner to job-ready.
+        </p>
+
+        {paths === null ? (
+          <p className="mt-10 text-slate-400">Loading paths…</p>
+        ) : (
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {paths.map((p) => (
+              <PathCard key={p.id} path={p} onClick={() => setSearchParams({ path: p.slug })} />
+            ))}
+          </div>
+        )}
+      </main>
+    );
+  }
+
+  const currentPath = paths?.find((p) => p.slug === activePath);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-3xl font-bold">Course catalog</h1>
+      <button
+        onClick={() => setSearchParams({})}
+        className="text-sm text-slate-400 hover:text-white"
+      >
+        ← All paths
+      </button>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        <button
-          onClick={() => setSearchParams({})}
-          className={`rounded-full px-4 py-1.5 text-sm font-medium ${
-            activePath === '' ? 'bg-forge-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-          }`}
-        >
-          All
-        </button>
-        {paths.map((p) => (
-          <button
-            key={p.slug}
-            onClick={() => setSearchParams({ path: p.slug })}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium ${
-              activePath === p.slug ? 'bg-forge-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            {p.icon} {p.name}
-          </button>
-        ))}
-      </div>
+      <h1 className="mt-4 text-3xl font-bold">
+        {currentPath ? `${currentPath.icon} ${currentPath.name}` : 'Courses'}
+      </h1>
+      {currentPath && <p className="mt-2 text-slate-400">{currentPath.description}</p>}
 
       {courses === null ? (
         <p className="mt-10 text-slate-400">Loading courses…</p>

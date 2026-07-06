@@ -1,4 +1,4 @@
-export type RunnableLang = 'python' | 'javascript' | 'typescript' | 'lua';
+export type RunnableLang = 'python' | 'javascript' | 'typescript' | 'lua' | 'html';
 
 export function normalizeLang(lang: string): RunnableLang | null {
   switch (lang.toLowerCase()) {
@@ -13,6 +13,9 @@ export function normalizeLang(lang: string): RunnableLang | null {
       return 'typescript';
     case 'lua':
       return 'lua';
+    case 'html':
+    case 'htm':
+      return 'html';
     default:
       return null;
   }
@@ -311,6 +314,91 @@ function buildLuaHarness(studentCode: string, entryPoint: string, input: unknown
   ].join('\n');
 }
 
+// --- HTML via a sandboxed iframe + postMessage ---
+//
+// HTML challenges have no entry-point function to call, so grading works differently: each test
+// case's `input` is a one-element array holding a DOM assertion `{ selector, extract, attr? }`,
+// and `expectedOutput` is the value that assertion should extract once the student's markup is
+// rendered. The iframe uses the same trust model as HtmlPreview (`sandbox="allow-scripts"`, no
+// `allow-same-origin`) so the student's page cannot reach the parent's DOM or origin - it can only
+// report back through postMessage. As with the Lua/JS workers, a hard timeout guards against a
+// student <script> that hangs (e.g. an infinite loop); unlike a Worker, an iframe can't be forcibly
+// killed mid-synchronous-loop, so the timeout removes the iframe rather than truly interrupting it.
+
+const HTML_TIMEOUT_MS = 5000;
+const HTML_RESULT_TYPE = '__cf_html_result__';
+
+export interface HtmlAssertion {
+  selector: string;
+  extract: 'exists' | 'count' | 'text' | 'html' | 'tag' | 'attr';
+  attr?: string;
+}
+
+function buildHtmlAssertionScript(assertion: HtmlAssertion): string {
+  return `
+<script>
+(function () {
+  function post(msg) {
+    parent.postMessage(Object.assign({ type: ${JSON.stringify(HTML_RESULT_TYPE)} }, msg), '*');
+  }
+  try {
+    var assertion = ${JSON.stringify(assertion)};
+    var els = document.querySelectorAll(assertion.selector);
+    var first = els[0];
+    var result;
+    switch (assertion.extract) {
+      case 'exists': result = els.length > 0; break;
+      case 'count': result = els.length; break;
+      case 'text': result = first ? first.textContent.trim() : null; break;
+      case 'html': result = first ? first.innerHTML.trim() : null; break;
+      case 'tag': result = first ? first.tagName.toLowerCase() : null; break;
+      case 'attr': result = first ? first.getAttribute(assertion.attr || '') : null; break;
+      default: throw new Error('Unknown assertion type: ' + assertion.extract);
+    }
+    post({ ok: true, result: result });
+  } catch (err) {
+    post({ ok: false, error: err && err.message ? err.message : String(err) });
+  }
+})();
+</script>`;
+}
+
+function runHtmlAssertion(studentHtml: string, assertion: HtmlAssertion): Promise<TestCaseRunResult> {
+  return new Promise((resolve) => {
+    const iframe = document.createElement('iframe');
+    iframe.sandbox.add('allow-scripts');
+    iframe.style.display = 'none';
+
+    let settled = false;
+    const finish = (result: TestCaseRunResult) => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener('message', onMessage);
+      clearTimeout(timer);
+      iframe.remove();
+      resolve(result);
+    };
+
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== iframe.contentWindow || !e.data || e.data.type !== HTML_RESULT_TYPE) return;
+      if (e.data.ok) finish({ actualOutput: e.data.result, errored: false, errorMessage: null });
+      else finish({ actualOutput: null, errored: true, errorMessage: e.data.error });
+    };
+    window.addEventListener('message', onMessage);
+
+    const timer = setTimeout(() => {
+      finish({
+        actualOutput: null,
+        errored: true,
+        errorMessage: `Execution timed out after ${HTML_TIMEOUT_MS / 1000}s (infinite loop in a <script> tag?)`,
+      });
+    }, HTML_TIMEOUT_MS);
+
+    iframe.srcdoc = studentHtml + buildHtmlAssertionScript(assertion);
+    document.body.appendChild(iframe);
+  });
+}
+
 /** Runs the student's function once against one test case's input, inside the existing sandbox. */
 export async function runTestCase(
   lang: RunnableLang,
@@ -327,6 +415,9 @@ export async function runTestCase(
     const { output, error } = await runLua(buildLuaHarness(studentCode, entryPoint, input));
     if (error) return { actualOutput: null, errored: true, errorMessage: error };
     return extractSentinel(output);
+  }
+  if (lang === 'html') {
+    return runHtmlAssertion(studentCode, input[0] as HtmlAssertion);
   }
   let js = studentCode;
   if (lang === 'typescript') {

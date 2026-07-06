@@ -67,7 +67,7 @@ challengesRouter.get(
       solved,
       prompt: challenge.prompt,
       entryPoint: challenge.entryPoint,
-      starterCode: challenge.starterCode as Partial<Record<'python' | 'javascript' | 'typescript' | 'lua', string>>,
+      starterCode: challenge.starterCode as Partial<Record<'python' | 'javascript' | 'typescript' | 'lua' | 'html', string>>,
       examples: challenge.testCases
         .filter((t) => !t.isHidden)
         .map((t) => ({ input: t.input as unknown[], expectedOutput: t.expectedOutput })),
@@ -78,7 +78,7 @@ challengesRouter.get(
 );
 
 const submitSchema = z.object({
-  language: z.enum(['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA']),
+  language: z.enum(['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA', 'HTML']),
   results: z.array(
     z.object({
       testCaseId: z.string(),

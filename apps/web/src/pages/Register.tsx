@@ -18,7 +18,7 @@ export function Register() {
     setError(null);
     try {
       await register(username, email, password);
-      navigate('/paths'); // onboarding: pick learning paths first
+      navigate('/courses'); // onboarding: pick a course to start with
     } catch (err) {
       setError(errorMessage(err));
     } finally {

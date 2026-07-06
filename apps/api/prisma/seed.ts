@@ -634,6 +634,223 @@ const mongoFastApiLessons: SeedLesson[] = [
   },
 ];
 
+const pygameAsteroidsLessons: SeedLesson[] = [
+  {
+    title: 'Pygame: Setup and Installation',
+    content: lessonContent(
+      'Pygame: Setup and Installation',
+      `Pygame is a popular Python library for building 2D games, handling graphics, sound, input, and timing so you don't have to write that from scratch. In this project, you'll build a clone of the classic arcade game **Asteroids**: a ship that rotates and thrusts through space, dodging (and eventually destroying) asteroids drifting across the screen.\n\n## Installing Pygame\n\nPygame doesn't run inside this course's browser sandbox (it needs a real window to draw into), so for this project you'll write and run code locally with a real Python install.\n\n\`\`\`bash\npip install pygame\n\`\`\`\n\nVerify it installed correctly:\n\n\`\`\`\nimport pygame\nprint(pygame.ver)\n\`\`\`\n\n## Opening a window\n\nEvery Pygame program starts the same way: initialize the library, create a window (called a **surface**), and give it a title.\n\n\`\`\`\nimport pygame\n\npygame.init()\n\nWIDTH, HEIGHT = 800, 600\nscreen = pygame.display.set_mode((WIDTH, HEIGHT))\npygame.display.set_caption("Asteroids")\n\`\`\`\n\n- \`pygame.init()\` sets up every Pygame subsystem (display, sound, input) in one call.\n- \`pygame.display.set_mode((width, height))\` creates the actual window and returns a \`Surface\` you'll draw everything onto.\n- Nothing shows up yet, and the window will look "frozen"/unresponsive, that's because there's no loop keeping it open and processing events, which is exactly what the next lesson builds.\n\n> [!NOTE]\n> Running this script as-is will open a window and then immediately close it (or hang, depending on your OS), that's expected. A real window needs a **game loop** to stay open and respond to events, covered next.`
+    ),
+    quiz: {
+      title: 'Pygame Setup Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which function creates the actual game window in Pygame?',
+          options: ['pygame.init()', 'pygame.display.set_mode()', 'pygame.window.create()', 'pygame.new_screen()'],
+          answer: 'pygame.display.set_mode()',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'pygame.init() must be called before using most other Pygame features.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'pygame.display.set_mode() returns a ____ that you draw everything onto.',
+          options: [],
+          answer: 'surface',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The Game Loop',
+    content: lessonContent(
+      'The Game Loop',
+      `Every real-time game (not just Asteroids) is built around one core idea: the **game loop**, an endless cycle that processes input, updates state, and draws the next frame, over and over, many times per second.\n\n## The three phases\n\n\`\`\`\nimport pygame\n\npygame.init()\nscreen = pygame.display.set_mode((800, 600))\nclock = pygame.time.Clock()\n\nrunning = True\nwhile running:\n    # 1. Handle input/events\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            running = False\n\n    # 2. Update game state\n    # (nothing to update yet)\n\n    # 3. Draw the frame\n    screen.fill((10, 10, 30))  # dark space background\n    pygame.display.flip()\n\n    clock.tick(60)  # cap the loop at 60 frames per second\n\npygame.quit()\n\`\`\`\n\n- **Handle events**: \`pygame.event.get()\` drains the queue of everything that happened since the last frame (key presses, window close, etc). Without checking for \`pygame.QUIT\`, clicking the window's close button would do nothing.\n- **Update**: where you'll move the player, move asteroids, check collisions, this lesson's loop doesn't update anything yet, but the slot is there.\n- **Draw**: \`screen.fill(...)\` clears the previous frame to a solid color, then \`pygame.display.flip()\` actually shows everything you've drawn since the last flip, nothing is visible on screen until you call it.\n\n## Why clock.tick(60)?\n\n\`\`\`\nclock = pygame.time.Clock()\n# ... inside the loop:\nclock.tick(60)\n\`\`\`\n\n\`clock.tick(60)\` pauses just long enough to cap the loop at 60 iterations per second. Without it, the loop would run as fast as the CPU allows, hundreds or thousands of times per second, burning a full CPU core and making movement speed depend on how fast the computer happens to be. Capping the frame rate keeps the game's speed consistent across different machines.\n\n> [!WARNING]\n> Forgetting to call \`pygame.event.get()\` at all (not just skipping the QUIT check) makes the OS think the program has hung, since it isn't responding. Always drain the event queue every frame, even if you don't care about most of the events in it.`
+    ),
+    quiz: {
+      title: 'Game Loop Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does clock.tick(60) do?',
+          options: [
+            'Draws 60 asteroids',
+            'Caps the loop at 60 iterations per second',
+            'Waits 60 seconds before starting',
+            "Counts the player's score",
+          ],
+          answer: 'Caps the loop at 60 iterations per second',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'pygame.display.flip() must be called for anything drawn that frame to actually appear on screen.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____.event.get() drains the queue of input/window events since the last frame.',
+          options: [],
+          answer: 'pygame',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The Player Class',
+    content: lessonContent(
+      'The Player Class',
+      `With the loop running, it's time to put something on screen: the player's ship. This is also where **object-oriented programming** starts paying off, every asteroid and bullet you add later will follow the same pattern as this \`Player\` class.\n\n## Defining the class\n\n\`\`\`\nimport math\nimport pygame\n\nclass Player:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n        self.angle = 0          # degrees, 0 = facing up\n        self.speed = 0\n        self.radius = 15\n\n    def rotate(self, direction):\n        self.angle += direction * 4  # degrees per frame\n\n    def thrust(self):\n        self.speed = min(self.speed + 0.15, 6)  # accelerate, capped at a max speed\n\n    def update(self):\n        radians = math.radians(self.angle)\n        self.x += -math.sin(radians) * self.speed\n        self.y += math.cos(radians) * self.speed\n        self.speed *= 0.99  # gentle drag, so the ship coasts to a stop instead of forever\n\n    def draw(self, screen):\n        radians = math.radians(self.angle)\n        tip = (self.x + math.sin(radians) * self.radius, self.y - math.cos(radians) * self.radius)\n        left = (self.x - math.cos(radians) * self.radius * 0.6, self.y - math.sin(radians) * self.radius * 0.6)\n        right = (self.x + math.cos(radians) * self.radius * 0.6, self.y + math.sin(radians) * self.radius * 0.6)\n        pygame.draw.polygon(screen, (255, 255, 255), [tip, left, right])\n\`\`\`\n\n- \`__init__\` stores the ship's position (\`x\`, \`y\`), facing \`angle\`, current \`speed\`, and a \`radius\` you'll reuse for collision checks later.\n- \`rotate\` and \`thrust\` don't move the ship directly, they just change its angle/speed, \`update\` is what actually applies that to the position every frame, using basic trigonometry to convert an angle into an x/y direction.\n- \`draw\` computes three points (nose and two rear corners) from the ship's angle and position, then hands them to \`pygame.draw.polygon\` to render a simple triangle ship, classic Asteroids style.\n\n## Wiring it into the loop\n\n\`\`\`\nplayer = Player(400, 300)\n\nrunning = True\nwhile running:\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            running = False\n\n    keys = pygame.key.get_pressed()\n    if keys[pygame.K_LEFT]:\n        player.rotate(-1)\n    if keys[pygame.K_RIGHT]:\n        player.rotate(1)\n    if keys[pygame.K_UP]:\n        player.thrust()\n\n    player.update()\n\n    screen.fill((10, 10, 30))\n    player.draw(screen)\n    pygame.display.flip()\n    clock.tick(60)\n\`\`\`\n\n\`pygame.key.get_pressed()\` returns the state of *every* key as a list-like object, checking \`keys[pygame.K_LEFT]\` each frame (rather than only reacting to individual key-down events) is what gives you smooth, held-down rotation and thrust instead of one press = one tiny nudge.\n\n> [!TIP]\n> Notice \`rotate\`/\`thrust\` only change \`angle\`/\`speed\`, while \`update\` is the only method that touches \`x\`/\`y\`. Separating "what changed" from "apply the change" like this makes it much easier to add things like screen-wrap or drag later without touching your input-handling code.`
+    ),
+    quiz: {
+      title: 'Player Class Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which function lets you check every frame whether a key is currently held down?',
+          options: ['pygame.event.get()', 'pygame.key.get_pressed()', 'pygame.key.was_pressed()', 'pygame.QUIT'],
+          answer: 'pygame.key.get_pressed()',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "In the Player class, the rotate() and thrust() methods directly change the ship's x and y position.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'pygame.draw.____(screen, color, points) draws a shape from a list of (x, y) points, used here for the ship.',
+          options: [],
+          answer: 'polygon',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Asteroids',
+    content: lessonContent(
+      'Asteroids',
+      `A ship with nothing to dodge isn't much of a game. This lesson adds the asteroids themselves, and a screen-wrapping trick that both the ship and asteroids will share.\n\n## An Asteroid class\n\n\`\`\`\nimport random\nimport pygame\n\nclass Asteroid:\n    def __init__(self, x, y, size=40):\n        self.x = x\n        self.y = y\n        self.size = size\n        self.dx = random.uniform(-2, 2)\n        self.dy = random.uniform(-2, 2)\n\n    def update(self, width, height):\n        self.x = (self.x + self.dx) % width   # wrap around the left/right edges\n        self.y = (self.y + self.dy) % height  # wrap around the top/bottom edges\n\n    def draw(self, screen):\n        pygame.draw.circle(screen, (160, 160, 160), (int(self.x), int(self.y)), self.size, width=2)\n\`\`\`\n\n\`self.x % width\` is the key trick: Python's modulo operator wraps a value that goes past \`width\` back around to \`0\`, and a negative value back around to just under \`width\`. Applying it to both \`x\` and \`y\` every frame gives you the classic Asteroids screen-wrap for free, drift off the right edge, and you reappear on the left.\n\n## Spawning a field of them\n\n\`\`\`\ndef spawn_asteroids(count, width, height):\n    asteroids = []\n    for _ in range(count):\n        x = random.uniform(0, width)\n        y = random.uniform(0, height)\n        asteroids.append(Asteroid(x, y))\n    return asteroids\n\nasteroids = spawn_asteroids(5, 800, 600)\n\`\`\`\n\n## Updating and drawing all of them\n\n\`\`\`\nrunning = True\nwhile running:\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            running = False\n\n    # ... player input handling from the previous lesson ...\n    player.update()\n\n    for asteroid in asteroids:\n        asteroid.update(800, 600)\n\n    screen.fill((10, 10, 30))\n    player.draw(screen)\n    for asteroid in asteroids:\n        asteroid.draw(screen)\n    pygame.display.flip()\n    clock.tick(60)\n\`\`\`\n\nLooping over \`asteroids\` twice, once to \`update()\` and once to \`draw()\`, is deliberate: every asteroid's position should be fully updated *before* any of them are drawn, otherwise you'd occasionally draw a half-updated frame (some asteroids moved, some not yet), causing visible stutter.\n\n> [!NOTE]\n> Right now the ship can fly straight through an asteroid with nothing happening, that's intentional for this lesson. Collision detection comes in a later lesson, once there's also something (a bullet) to collide with.`
+    ),
+    quiz: {
+      title: 'Asteroids Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does self.x % width accomplish in Asteroid.update?',
+          options: [
+            'Slows the asteroid down over time',
+            'Wraps the position back on-screen when it goes past an edge',
+            'Rotates the asteroid',
+            'Deletes the asteroid',
+          ],
+          answer: 'Wraps the position back on-screen when it goes past an edge',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "The example loop updates every asteroid's position before drawing any of them, rather than updating and drawing one at a time.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'random.____(-2, 2) returns a random floating-point number between -2 and 2, used for each asteroid\'s drift speed.',
+          options: [],
+          answer: 'uniform',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Shooting Bullets',
+    content: lessonContent(
+      'Shooting Bullets',
+      `Dodging is only half of Asteroids, next you'll give the ship a way to fight back.\n\n## A Bullet class\n\n\`\`\`\nimport math\nimport pygame\n\nclass Bullet:\n    def __init__(self, x, y, angle):\n        self.x = x\n        self.y = y\n        radians = math.radians(angle)\n        self.dx = -math.sin(radians) * 10\n        self.dy = math.cos(radians) * -10\n        self.life = 60  # frames until it disappears, about 1 second at 60 FPS\n\n    def update(self):\n        self.x += self.dx\n        self.y += self.dy\n        self.life -= 1\n\n    def is_dead(self):\n        return self.life <= 0\n\n    def draw(self, screen):\n        pygame.draw.circle(screen, (255, 220, 100), (int(self.x), int(self.y)), 3)\n\`\`\`\n\nA bullet reuses the same angle-to-direction math as the ship's \`update\`, fired at a fixed speed (\`10\`) in whatever direction the ship was facing at the moment it fired. The \`life\` counter, decremented every frame, is what makes bullets disappear on their own instead of flying forever, \`is_dead()\` gives the rest of the code a clean way to ask "should this be removed yet?".\n\n## Firing on spacebar, with a cooldown\n\n\`\`\`\nbullets = []\ncooldown = 0\n\nrunning = True\nwhile running:\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            running = False\n\n    keys = pygame.key.get_pressed()\n    if keys[pygame.K_SPACE] and cooldown == 0:\n        bullets.append(Bullet(player.x, player.y, player.angle))\n        cooldown = 15  # frames before you can fire again\n\n    if cooldown > 0:\n        cooldown -= 1\n\n    for bullet in bullets:\n        bullet.update()\n    bullets = [b for b in bullets if not b.is_dead()]\n\n    # ... player and asteroid updates from earlier lessons ...\n\n    screen.fill((10, 10, 30))\n    for bullet in bullets:\n        bullet.draw(screen)\n    pygame.display.flip()\n    clock.tick(60)\n\`\`\`\n\nTwo details are doing the real work here:\n\n- **The cooldown counter** stops holding spacebar from firing a new bullet every single frame (60 a second!), a fixed delay between shots is what makes it feel like a weapon instead of a hose.\n- **The list comprehension** \`[b for b in bullets if not b.is_dead()]\` rebuilds the \`bullets\` list containing only the ones still alive, this is the standard Python idiom for "remove items matching a condition" from a list, since you can't safely remove items from a list while iterating over it directly.\n\n> [!TIP]\n> This same "append when spawned, filter out when dead" pattern is exactly how you'll manage destroyed asteroids in the next lesson too, it's worth getting comfortable with here first.`
+    ),
+    quiz: {
+      title: 'Bullets Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does the bullet-firing code track a cooldown counter?',
+          options: [
+            'To make bullets fly faster',
+            'To prevent firing a new bullet on every single frame while spacebar is held',
+            "To count the player's score",
+            'To slow down the asteroids',
+          ],
+          answer: 'To prevent firing a new bullet on every single frame while spacebar is held',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: '[b for b in bullets if not b.is_dead()] creates a new list containing only the bullets that are still alive.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "A bullet's ____ counter decreases by one every frame and determines when it disappears.",
+          options: [],
+          answer: 'life',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Collisions, Score, and Game Over',
+    content: lessonContent(
+      'Collisions, Score, and Game Over',
+      `With bullets and asteroids both on screen, it's time to make them actually interact: destroy asteroids you shoot, and end the game if one hits your ship.\n\n## Distance-based collision detection\n\n\`\`\`\nimport math\n\ndef distance(a, b):\n    return math.hypot(a.x - b.x, a.y - b.y)\n\`\`\`\n\nFor circular objects (ships, asteroids, bullets all drawn as circles/triangles with a \`radius\`), you don't need pixel-perfect collision, just check whether the distance between two centers is less than the sum of their radii:\n\n\`\`\`\ndef circles_collide(a, b):\n    return distance(a, b) < (a.radius + b.radius)\n\`\`\`\n\n## Bullets destroying asteroids\n\n\`\`\`\nscore = 0\n\nfor bullet in bullets:\n    for asteroid in asteroids:\n        if distance(bullet, asteroid) < asteroid.size:\n            bullet.life = 0        # mark the bullet dead so it gets filtered out\n            asteroid.hit = True    # mark this asteroid for removal\n            score += 100\n\nasteroids = [a for a in asteroids if not getattr(a, 'hit', False)]\nbullets = [b for b in bullets if not b.is_dead()]\n\`\`\`\n\nRather than removing items from \`asteroids\`/\`bullets\` in the middle of the nested loop (which corrupts the loop you're iterating over), the pattern is the same as the bullet-cleanup from the last lesson: mark things as "should be removed" first, then filter both lists once, after the collision checks are done.\n\n## Ending the game\n\n\`\`\`\ngame_over = False\n\nfor asteroid in asteroids:\n    if circles_collide(player, asteroid):\n        game_over = True\n\nif game_over:\n    font = pygame.font.SysFont(None, 64)\n    text = font.render("GAME OVER", True, (255, 60, 60))\n    screen.blit(text, (250, 260))\n\`\`\`\n\n\`pygame.font.SysFont(None, 64)\` loads the operating system's default font at size 64, \`.render(text, antialias, color)\` turns a string into a drawable \`Surface\`, and \`screen.blit(surface, position)\` is how you draw *any* image or rendered text onto the screen, it's the same function you'd use to draw a sprite image.\n\n> [!WARNING]\n> Once \`game_over\` is \`True\`, this snippet still keeps calling \`player.update()\`/\`asteroid.update()\` every frame unless you guard those calls too, remember to stop updating gameplay (but keep the event loop and drawing running) once the game has ended, otherwise the ship and asteroids keep moving invisibly under your "GAME OVER" text.`
+    ),
+    quiz: {
+      title: 'Collisions & Game Over Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does screen.blit(surface, position) do?',
+          options: [
+            'Deletes a surface',
+            'Draws one surface (an image or rendered text) onto another at a position',
+            'Creates a new window',
+            'Detects a collision',
+          ],
+          answer: 'Draws one surface (an image or rendered text) onto another at a position',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Two circular objects are considered colliding when the distance between their centers is less than the sum of their radii.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'math.____(dx, dy) computes the straight-line distance between two points from their x and y differences.',
+          options: [],
+          answer: 'hypot',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Finish Your Asteroids Game',
+    content: lessonContent(
+      'Final Project: Finish Your Asteroids Game',
+      `You now have every piece: a ship that rotates and thrusts, asteroids that drift and wrap around the screen, bullets with a cooldown, and collision detection that awards score and ends the game. Put it all together into a complete, playable game.\n\n## Requirements\n\n1. Combine the \`Player\`, \`Asteroid\`, and \`Bullet\` classes from earlier lessons into a single game with one game loop running at 60 FPS.\n2. Display the current score on screen every frame (reuse the \`pygame.font\`/\`screen.blit\` approach from the Collisions lesson).\n3. When an asteroid is destroyed by a bullet, split it into two smaller asteroids (half the \`size\`, each with a new random \`dx\`/\`dy\`) if it's above some minimum size, instead of just disappearing, this is the classic Asteroids "splitting" mechanic.\n4. Track a \`lives\` count (start at 3). When the player's ship collides with an asteroid, lose a life and respawn the ship at the center of the screen instead of ending immediately, only show "GAME OVER" once lives reach 0.\n5. Add a simple start screen ("Press SPACE to start") shown before the game loop begins updating gameplay.\n\n## Stretch goals\n\n- Make the ship briefly invulnerable (and visually flash) for a second after respawning, so it can't immediately lose another life to an asteroid it spawned on top of.\n- Add a basic sound effect for firing and for an asteroid being destroyed with \`pygame.mixer\`.\n- Increase difficulty over time by spawning additional asteroids the longer the player survives.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const jsLessons: SeedLesson[] = [
   {
     title: 'JavaScript in the Browser',
@@ -3186,6 +3403,291 @@ const luaLessons: SeedLesson[] = [
   },
 ];
 
+const luaIntermediateLessons: SeedLesson[] = [
+  {
+    title: 'Closures and Upvalues',
+    content: lessonContent(
+      'Closures and Upvalues',
+      `Lua functions can reference variables from an enclosing scope even after that scope has returned, this is a **closure**. The captured variable is called an **upvalue**.\n\n## A closure example\n\n\`\`\`lua\nlocal function makeCounter()\n  local count = 0\n  return function()\n    count = count + 1\n    return count\n  end\nend\n\nlocal counter1 = makeCounter()\nlocal counter2 = makeCounter()\n\nprint(counter1()) -- 1\nprint(counter1()) -- 2\nprint(counter2()) -- 1, a separate count upvalue from counter1's\n\`\`\`\n\nEach call to \`makeCounter\` creates a **fresh** \`count\` variable, the inner function closes over that specific instance, not a shared global. \`counter1\` and \`counter2\` don't interfere with each other.\n\n## Why this matters\n\nClosures are how you build private state without a class: \`count\` isn't reachable from outside the returned function, there's no way to read or reset it except by calling \`counter1()\` again. This pattern shows up constantly, for example a memoized/cached computation.\n\n\`\`\`lua\nlocal function memoize(fn)\n  local cache = {}\n  return function(n)\n    if cache[n] == nil then\n      cache[n] = fn(n)\n    end\n    return cache[n]\n  end\nend\n\nlocal slowSquare = function(n) return n * n end\nlocal fastSquare = memoize(slowSquare)\n\nprint(fastSquare(5)) -- computes and caches\nprint(fastSquare(5)) -- returns the cached value\n\`\`\`\n\n> [!NOTE]\n> An upvalue is shared by reference, not copied. If two closures created in the *same* call to \`makeCounter\` both capture the same \`count\`, calling one will affect what the other sees. Each *separate call* to \`makeCounter\`, though, creates a brand-new \`count\`.`
+    ),
+    quiz: {
+      title: 'Closures Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the name for a variable an inner function captures from its enclosing scope?',
+          options: ['A global', 'An upvalue', 'A metatable', 'A vararg'],
+          answer: 'An upvalue',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Two separate calls to the same closure-returning function share the exact same captured variable.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A function that captures variables from its enclosing scope is called a ____.',
+          options: [],
+          answer: 'closure',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Object-Oriented Lua: Classes and Inheritance',
+    content: lessonContent(
+      'Object-Oriented Lua: Classes and Inheritance',
+      `The Fundamentals course showed how \`setmetatable\` and \`__index\` turn a plain table into something like an instance. Here we build a full **class hierarchy** with inheritance.\n\n## A base class\n\n\`\`\`lua\nlocal Animal = {}\nAnimal.__index = Animal\n\nfunction Animal.new(name)\n  return setmetatable({ name = name }, Animal)\nend\n\nfunction Animal:speak()\n  return self.name .. " makes a sound."\nend\n\`\`\`\n\n## Inheriting from it\n\n\`\`\`lua\nlocal Dog = setmetatable({}, { __index = Animal }) -- Dog falls back to Animal\nDog.__index = Dog\n\nfunction Dog.new(name)\n  local self = Animal.new(name)   -- reuse the base constructor\n  return setmetatable(self, Dog)   -- but tag the instance as a Dog\nend\n\nfunction Dog:speak() -- overrides Animal:speak\n  return self.name .. " says woof!"\nend\n\nlocal generic = Animal.new("Creature")\nlocal rex = Dog.new("Rex")\n\nprint(generic:speak()) -- Creature makes a sound.\nprint(rex:speak())      -- Rex says woof!\n\`\`\`\n\nTwo \`__index\` links are at work: \`Dog\`'s metatable points \`__index\` at \`Animal\`, so a \`Dog\` instance whose class table (\`Dog\`) doesn't have a method falls through to \`Animal\`. Because \`Dog:speak\` *is* defined, it wins over \`Animal:speak\`, this is how overriding works.\n\n## Calling the parent's method\n\n\`\`\`lua\nfunction Dog:speak()\n  return Animal.speak(self) .. " (a very good boy)"\nend\n\`\`\`\n\nCalling \`Animal.speak(self)\` directly (dot syntax, explicit \`self\`) is how Lua does "super.method()" calls, there's no dedicated \`super\` keyword.\n\n> [!TIP]\n> This two-metatable pattern (class table linked to a parent class table, instances linked to their class table) is the idiomatic way OOP frameworks implement inheritance under the hood, now you know exactly what they're doing for you.`
+    ),
+    quiz: {
+      title: 'OOP & Inheritance Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "To call a parent class's overridden method from a subclass, you...",
+          options: [
+            'Use the super keyword',
+            'Call ParentClass.method(self, ...) directly',
+            'Lua does this automatically',
+            'It is not possible',
+          ],
+          answer: 'Call ParentClass.method(self, ...) directly',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Overriding Animal:speak with Dog:speak means Dog instances no longer have access to Animal's version unless explicitly called.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The metamethod that makes a missing method lookup fall back to another table is ____.",
+          options: [],
+          answer: '__index',
+        },
+      ],
+    },
+  },
+  {
+    title: 'String Patterns Deep Dive',
+    content: lessonContent(
+      'String Patterns Deep Dive',
+      `Lua doesn't have full regular expressions, instead it has a lighter-weight **pattern** system built into \`string.find\`, \`string.match\`, \`string.gmatch\`, and \`string.gsub\`. Patterns cover the vast majority of real-world text processing without needing a heavyweight regex engine.\n\n## Character classes\n\n| Class | Matches |\n|---|---|\n| \`%a\` | a letter |\n| \`%d\` | a digit |\n| \`%s\` | whitespace |\n| \`%w\` | a letter or digit |\n| \`%p\` | punctuation |\n| \`.\`  | any character |\n\nUppercase versions (\`%A\`, \`%D\`, ...) match the *complement*. Quantifiers \`*\`, \`+\`, \`-\`, and \`?\` work similarly to regex, though \`-\` is a **lazy** (shortest) repeat, unlike \`*\`'s greedy repeat.\n\n## Capturing groups\n\n\`\`\`lua\nlocal date = "2026-07-06"\nlocal year, month, day = date:match("(%d+)-(%d+)-(%d+)")\nprint(year, month, day) -- 2026  07  06\n\`\`\`\n\nParentheses in a pattern create a **capture**, \`string.match\` returns one value per capture (or the whole match if there are none).\n\n## Iterating all matches with gmatch\n\n\`\`\`lua\nlocal text = "cat, dog, bird"\nfor word in text:gmatch("%a+") do\n  print(word)\nend\n-- cat\n-- dog\n-- bird\n\`\`\`\n\n## Search-and-replace with gsub\n\n\`\`\`lua\nlocal sentence = "Lua is great, Lua is fast"\nlocal replaced, count = sentence:gsub("Lua", "Kodstigen")\nprint(replaced) -- Kodstigen is great, Kodstigen is fast\nprint(count)    -- 2\n\n-- gsub can also take a function to compute each replacement\nlocal upper = sentence:gsub("%a+", function(word) return word:upper() end)\nprint(upper) -- LUA IS GREAT, LUA IS FAST\n\`\`\`\n\n\`gsub\` returns **two** values: the new string, and how many replacements were made, don't forget the second one if you only want the string.\n\n> [!WARNING]\n> Lua patterns are not regular expressions, features like alternation (\`a|b\`), non-capturing groups, and lookahead don't exist. For genuinely complex text processing, projects typically reach for a dedicated regex library instead of stretching patterns past what they're good at.`
+    ),
+    quiz: {
+      title: 'String Patterns Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which character class matches a single digit in a Lua pattern?',
+          options: ['%a', '%d', '%s', '%w'],
+          answer: '%d',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'string.gsub returns only the new string, never a replacement count.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Parentheses in a Lua pattern create a ____, which string.match returns as a separate value.',
+          options: [],
+          answer: 'capture',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Error Handling: pcall, xpcall, and error',
+    content: lessonContent(
+      'Error Handling: pcall, xpcall, and error',
+      `Lua doesn't have try/catch, instead errors are handled with the built-in functions \`pcall\`, \`xpcall\`, \`error\`, and \`assert\`.\n\n## Raising errors\n\n\`\`\`lua\nlocal function withdraw(balance, amount)\n  if amount > balance then\n    error("insufficient funds")\n  end\n  return balance - amount\nend\n\`\`\`\n\nCalling \`error(message)\` immediately stops execution and unwinds the call stack, exactly like \`throw\` in other languages, except the "catch" is a separate function call rather than a block.\n\n## Catching errors with pcall\n\n\`\`\`lua\nlocal ok, result = pcall(withdraw, 100, 150)\n\nif ok then\n  print("New balance: " .. result)\nelse\n  print("Failed: " .. result) -- result holds the error message here\nend\n\`\`\`\n\n\`pcall\` ("protected call") runs a function and catches any error it raises. It always returns a boolean first (\`true\` if no error, \`false\` if one occurred), followed by either the function's return value(s), or the error message.\n\n## assert: a shortcut for a common check\n\n\`\`\`lua\nlocal function withdraw(balance, amount)\n  assert(amount <= balance, "insufficient funds")\n  return balance - amount\nend\n\`\`\`\n\n\`assert(condition, message)\` is sugar for "if condition is falsy, error(message)", used constantly to validate function arguments up front.\n\n## xpcall: catching errors with a custom handler\n\n\`\`\`lua\nlocal function riskyOperation()\n  error({ code = 42, reason = "something broke" }) -- errors can be any value, not just strings\nend\n\nlocal ok, err = xpcall(riskyOperation, function(e)\n  if type(e) == "table" then\n    return "Error " .. e.code .. ": " .. e.reason\n  end\n  return tostring(e)\nend)\n\nprint(err) -- Error 42: something broke\n\`\`\`\n\n\`xpcall\` is like \`pcall\` but takes a second argument, a **message handler** that runs while the stack is still unwound (useful for attaching a stack trace, or normalizing non-string error values like the table above).\n\n> [!TIP]\n> Reach for \`assert\` for "this should never happen if the caller used the API correctly" checks, and reserve \`error\` + \`pcall\` for situations the caller is expected to actually handle, like a failed network request or invalid user input.`
+    ),
+    quiz: {
+      title: 'Error Handling Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does pcall return first, before any of the wrapped function's own results?",
+          options: ['The error message', 'A boolean success flag', 'Nothing', 'The function itself'],
+          answer: 'A boolean success flag',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In Lua, error() can only be called with a string message.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____(condition, message) raises an error with the given message if condition is falsy.',
+          options: [],
+          answer: 'assert',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Contact Book with Validated Errors',
+    content: lessonContent(
+      'Final Project: Build a Contact Book with Validated Errors',
+      `Combine closures, OOP, patterns, and error handling into one small but real program: a contact book.\n\n## Requirements\n\n1. Model a \`ContactBook\` "class" (metatable + \`__index\`, like the Object-Oriented lesson) with methods to add, remove, and list contacts.\n2. Each contact needs a name and an email; validate the email with a string pattern (at minimum, requires an \`@\` and at least one \`.\` after it) and \`error()\`/\`assert()\` if it's invalid.\n3. Wrap every call that adds a contact in \`pcall\`, so a bad email prints a friendly error message instead of crashing the whole program.\n4. Add a \`search(term)\` method that uses \`string.find\` or \`gmatch\` to return every contact whose name contains \`term\` (case-insensitive).\n5. Use a closure to track how many contacts have ever been added in total (including ones later removed), exposed through a \`ContactBook:totalEverAdded()\` method, without storing it as a plain field on the instance.\n\n## Stretch goals\n\n- Support multiple emails per contact (a table of emails instead of one string).\n- Add an \`export()\` method that returns a single formatted string listing every contact, built with \`table.concat\`.\n- Persist contacts to a file with Lua's \`io\` library and reload them on startup (only relevant if you're running outside this course's browser sandbox).\n\nSubmit a link to your finished script (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const luaAdvancedLessons: SeedLesson[] = [
+  {
+    title: 'Coroutines: Cooperative Multitasking',
+    content: lessonContent(
+      'Coroutines: Cooperative Multitasking',
+      `A **coroutine** is an independent thread of execution that you can pause and resume by hand, unlike OS threads, only one coroutine (or the main program) ever runs at a time, so there's no race condition to worry about.\n\n## Creating and resuming a coroutine\n\n\`\`\`lua\nlocal co = coroutine.create(function(a, b)\n  print("start", a, b)\n  local c = coroutine.yield(a + b) -- pauses here, returns a + b to the resumer\n  print("resumed with", c)\n  return "done"\nend)\n\nprint(coroutine.resume(co, 1, 2)) -- true  3   (prints "start 1  2" first)\nprint(coroutine.resume(co, 10))    -- true  done  (prints "resumed with  10" first)\nprint(coroutine.status(co))         -- dead\n\`\`\`\n\n- \`coroutine.create(fn)\` builds a coroutine **without** running it yet.\n- \`coroutine.resume(co, ...)\` starts/continues it, passing \`...\` in as arguments (either to the function itself, the first time, or as \`coroutine.yield\`'s return value on later resumes).\n- \`coroutine.yield(...)\` pauses the coroutine and hands \`...\` back to whoever called \`resume\`.\n- \`coroutine.status(co)\` reports \`"suspended"\`, \`"running"\`, \`"normal"\`, or \`"dead"\`.\n\n## A generator built on coroutines\n\n\`\`\`lua\nlocal function numberGenerator(limit)\n  return coroutine.wrap(function()\n    for i = 1, limit do\n      coroutine.yield(i)\n    end\n  end)\nend\n\nfor n in numberGenerator(5) do\n  print(n) -- 1 2 3 4 5, one per iteration\nend\n\`\`\`\n\n\`coroutine.wrap\` is \`coroutine.create\` plus automatic \`resume\` calls, wrapped in a plain function you can call directly (or use in a \`for ... in\` loop), it's the idiomatic way to build a lazy generator/iterator in Lua.\n\n> [!WARNING]\n> Unlike \`pcall\`, an error raised inside a coroutine created with \`coroutine.wrap\` propagates as a normal Lua error to the caller of the wrapped function. A coroutine made with plain \`coroutine.create\`, by contrast, reports the error as its second \`resume\` return value instead of raising it, check \`coroutine.resume\`'s boolean result if you use \`create\` directly.`
+    ),
+    quiz: {
+      title: 'Coroutines Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does coroutine.yield do?',
+          options: [
+            'Terminates the coroutine permanently',
+            'Pauses the coroutine and returns values to the resumer',
+            'Creates a new coroutine',
+            'Raises an error',
+          ],
+          answer: 'Pauses the coroutine and returns values to the resumer',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Two Lua coroutines can execute simultaneously on separate CPU cores.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____.wrap(fn) returns a plain callable function that automatically resumes the coroutine each call, ideal for building generators.',
+          options: [],
+          answer: 'coroutine',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Advanced Metatables: Operator Overloading & __call',
+    content: lessonContent(
+      'Advanced Metatables: Operator Overloading & __call',
+      `Fundamentals covered \`__index\` for method lookup. Metatables support many more **metamethods** that let a table respond to operators, comparisons, \`tostring\`, and even being called like a function.\n\n## Operator overloading\n\n\`\`\`lua\nlocal Vector = {}\nVector.__index = Vector\n\nfunction Vector.new(x, y)\n  return setmetatable({ x = x, y = y }, Vector)\nend\n\nVector.__add = function(a, b)\n  return Vector.new(a.x + b.x, a.y + b.y)\nend\n\nVector.__tostring = function(v)\n  return string.format("(%g, %g)", v.x, v.y)\nend\n\nVector.__eq = function(a, b)\n  return a.x == b.x and a.y == b.y\nend\n\nlocal v1 = Vector.new(1, 2)\nlocal v2 = Vector.new(3, 4)\n\nprint(v1 + v2)          -- (4, 6), uses __add, then __tostring for print\nprint(v1 == Vector.new(1, 2)) -- true, uses __eq\n\`\`\`\n\n\`print(v1 + v2)\` runs \`__add\` to build a new \`Vector\`, then \`print\` calls \`tostring\` on it, which invokes \`__tostring\`. Without \`__tostring\`, printing a table falls back to Lua's default \`table: 0x...\` representation.\n\n## __call: making a table callable\n\n\`\`\`lua\nlocal Multiplier = setmetatable({ factor = 3 }, {\n  __call = function(self, n)\n    return n * self.factor\n  end,\n})\n\nprint(Multiplier(10)) -- 30, calling the table like a function\n\`\`\`\n\n\`__call\` is what lets some libraries expose an object that's both a table of methods/config **and** directly invokable.\n\n## __newindex: intercepting new keys\n\n\`\`\`lua\nlocal readOnly = setmetatable({ pi = 3.14159 }, {\n  __newindex = function(_, key, _)\n    error("cannot set '" .. key .. "', this table is read-only")\n  end,\n})\n\nprint(readOnly.pi) -- 3.14159, ordinary reads still work\nreadOnly.pi = 4     -- errors: cannot set 'pi', this table is read-only\n\`\`\`\n\n\`__newindex\` only fires when you assign to a key that **doesn't already exist** in the table, it's the standard trick for building read-only tables, or a proxy that validates/logs writes.\n\n> [!NOTE]\n> There's a matching, easy-to-miss rule: \`__index\` (as a function) only fires on a **missing-key read**, and \`__newindex\` only fires on a **missing-key write**. Once a key genuinely exists on the table itself, both metamethods are bypassed entirely for that key.`
+    ),
+    quiz: {
+      title: 'Advanced Metatables Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which metamethod lets a table be invoked like a function, e.g. myTable(10)?',
+          options: ['__index', '__call', '__newindex', '__tostring'],
+          answer: '__call',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: '__newindex fires every time you assign to any key on a table, even one that already exists.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Overloading the + operator for a custom table is done by defining the ____ metamethod.',
+          options: [],
+          answer: '__add',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Variadic Functions and table.pack/unpack',
+    content: lessonContent(
+      'Variadic Functions and table.pack/unpack',
+      `Lua functions can accept a variable number of arguments using \`...\` (the **vararg expression**), and tables can be converted to and from argument lists with \`table.pack\`/\`table.unpack\`.\n\n## Accepting any number of arguments\n\n\`\`\`lua\nlocal function sum(...)\n  local total = 0\n  for _, n in ipairs({...}) do\n    total = total + n\n  end\n  return total\nend\n\nprint(sum(1, 2, 3))        -- 6\nprint(sum(10, 20, 30, 40)) -- 100\n\`\`\`\n\n\`{...}\` packs all the varargs into a plain table, from there \`ipairs\` works as usual. This breaks down if any argument is \`nil\`, though, since \`ipairs\` stops at the first \`nil\`.\n\n## select: inspecting varargs directly\n\n\`\`\`lua\nlocal function describe(...)\n  print("got " .. select("#", ...) .. " arguments")\n  print(select(2, ...)) -- every argument from position 2 onward\nend\n\ndescribe("a", "b", "c") -- got 3 arguments  /  b  c\n\`\`\`\n\n\`select("#", ...)\` returns the exact argument count, **including trailing nils**, unlike \`#{...}\` which can undercount if a \`nil\` is in the middle or at the end. \`select(n, ...)\` returns every argument from position \`n\` onward.\n\n## table.pack and table.unpack\n\n\`\`\`lua\nlocal function packed(...)\n  return table.pack(...) -- { n = 3, 1, 2, 3 } for example\nend\n\nlocal args = packed(1, 2, 3)\nprint(args.n, args[1], args[2], args[3]) -- 3  1  2  3\n\nprint(table.unpack({10, 20, 30})) -- 10  20  30, spreads a table back into multiple values\n\`\`\`\n\n\`table.pack(...)\` is exactly \`{...}\` plus a reliable \`n\` field for the true count (nil-safe, unlike \`#\`). \`table.unpack(t)\` does the reverse, spreading a table's elements out as individual values, handy for forwarding a captured argument list to another function: \`someFn(table.unpack(args))\`.\n\n> [!TIP]\n> A common pattern is combining both: capture arguments now with \`table.pack\`, and call a function with them later using \`table.unpack\`, effectively deferring a function call, exactly what you'd reach for spread syntax for in JavaScript.`
+    ),
+    quiz: {
+      title: 'Varargs Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which expression reliably returns the exact count of varargs, including trailing nils?',
+          options: ['#{...}', 'select("#", ...)', '#select(...)', 'table.count(...)'],
+          answer: 'select("#", ...)',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "table.unpack takes a table and spreads its elements out as individual return values.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "Lua's ____ expression (three dots) lets a function accept any number of arguments, e.g. function f(...).",
+          options: [],
+          answer: '...',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Garbage Collection & Weak Tables',
+    content: lessonContent(
+      'Garbage Collection & Weak Tables',
+      `Lua manages memory automatically with a garbage collector (GC), you never manually free a table, but understanding roughly how the GC decides what's collectible helps you avoid subtle memory leaks in long-running programs (like a game server that stays up for days).\n\n## How collection works, briefly\n\nLua's GC is a **tracing** collector: starting from a set of "roots" (globals, the currently running stack, etc.), it walks every reachable table/value and keeps them, anything unreachable gets freed. This means a table is eligible for collection the moment *nothing* still holds a reference to it, you don't need to null it out explicitly the way you might in a manual-memory language, though setting a local to \`nil\` when you're done with a large table can help it get collected sooner rather than later.\n\n\`\`\`lua\ncollectgarbage("collect") -- forces a full garbage collection cycle\nprint(collectgarbage("count")) -- current memory use, in kilobytes\n\`\`\`\n\n\`collectgarbage\` is rarely called manually in normal code, Lua runs the collector incrementally on its own, but it's useful when profiling memory use or right before measuring memory in a benchmark.\n\n## The leak you don't expect: caches\n\n\`\`\`lua\nlocal cache = {}\n\nlocal function getUser(id, fetchFn)\n  if not cache[id] then\n    cache[id] = fetchFn(id)\n  end\n  return cache[id]\nend\n\`\`\`\n\nThis looks harmless, but \`cache\` holds a **strong reference** to every entry forever, even after nothing else in the program cares about that user anymore. In a long-running process, this cache only grows.\n\n## Weak tables\n\n\`\`\`lua\nlocal cache = setmetatable({}, { __mode = "v" }) -- weak values\n\nlocal function getUser(id, fetchFn)\n  if not cache[id] then\n    cache[id] = fetchFn(id)\n  end\n  return cache[id]\nend\n\`\`\`\n\n\`__mode = "v"\` makes the table's **values** weak references, if nothing else in the program still holds a strong reference to a cached value, the garbage collector is free to remove that entry from \`cache\` automatically on its next pass. \`__mode = "k"\` does the same for keys, and \`__mode = "kv"\` makes both weak, useful for building a side-table that attaches extra data to objects without preventing those objects from ever being collected.\n\n> [!WARNING]\n> Weak tables only help if the *values themselves* are collectible tables/userdata elsewhere, numbers and strings are never weakly held the way you might expect (small numbers and short strings in particular are effectively "immortal" values in Lua's implementation), so \`__mode = "v"\` won't shrink a cache whose values are plain numbers.`
+    ),
+    quiz: {
+      title: 'GC & Weak Tables Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Setting __mode = 'v' on a table's metatable makes...",
+          options: [
+            'Its keys weak references',
+            'Its values weak references',
+            'The whole table immutable',
+            'It stop participating in garbage collection entirely',
+          ],
+          answer: 'Its values weak references',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A table becomes eligible for garbage collection only once nothing in the program still holds a reference to it.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____("collect") forces Lua to run a full garbage collection cycle immediately.',
+          options: [],
+          answer: 'collectgarbage',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Tiny Event Emitter with Coroutines',
+    content: lessonContent(
+      'Final Project: Build a Tiny Event Emitter with Coroutines',
+      `Combine coroutines, metatables, and varargs into a small pub/sub event emitter, a pattern used constantly in game engines and GUI frameworks.\n\n## Requirements\n\n1. Build an \`EventEmitter\` "class" (metatable-based, like earlier OOP lessons) with \`on(event, handler)\`, \`off(event, handler)\`, and \`emit(event, ...)\` methods. \`emit\` should forward any extra arguments straight to every registered handler using varargs.\n2. Support **multiple handlers** per event name, stored in a table keyed by event name, each holding a list of handler functions.\n3. Wrap each handler call in \`pcall\` inside \`emit\`, so one broken handler doesn't stop the rest of that event's handlers from running, log a warning for the failing one instead.\n4. Add an \`onceAsync(event)\` method that returns a coroutine-based helper: calling it pauses (via \`coroutine.yield\`) until the named event next fires, then resumes with that event's arguments, essentially turning a callback-style event into something you can "await" step by step.\n5. Use a weak table (\`__mode = "k"\`) to track any per-listener metadata you add (e.g. a registration timestamp) so that metadata doesn't keep a removed handler function alive forever.\n\n## Stretch goals\n\n- Add wildcard subscriptions (\`emitter:on("*", handler)\` fires on every event).\n- Add a \`once(event, handler)\` convenience method that automatically calls \`off\` after the handler's first invocation.\n- Benchmark emitting 10,000 events with \`os.clock()\` before and after switching a hot path from \`pairs\` to \`ipairs\` where applicable, and note the difference.\n\nSubmit a link to your finished script (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
   nodejs: [
     {
@@ -3205,6 +3707,12 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       description:
         'Build a real, async REST API with FastAPI and MongoDB: Pydantic models, CRUD with Motor, and a full backend project.',
       lessons: mongoFastApiLessons,
+    },
+    {
+      title: 'Build Asteroids using Python and Pygame',
+      description:
+        "Build a clone of the classic Asteroids game using Pygame and object-oriented programming concepts. This guided project will help you understand how to use Pygame to create a game loop, handle user input, and manage game state. You'll also learn how to use object-oriented programming to create game objects and manage their interactions.",
+      lessons: pygameAsteroidsLessons,
     },
   ],
   javascript: [
@@ -3305,6 +3813,16 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       description: 'A lightweight, embeddable scripting language: variables, tables, functions, and metatables, from your first script to a text adventure.',
       lessons: luaLessons,
     },
+    {
+      title: 'Lua Intermediate: OOP, Closures & Patterns',
+      description: 'Go beyond the basics: closures and private state, full class hierarchies with inheritance, Lua string patterns, and proper error handling with pcall/xpcall.',
+      lessons: luaIntermediateLessons,
+    },
+    {
+      title: 'Lua Advanced: Coroutines, Metamethods & Performance',
+      description: 'Cooperative multitasking with coroutines, operator overloading and __call/__newindex, variadic functions, and garbage collection with weak tables.',
+      lessons: luaAdvancedLessons,
+    },
   ],
 };
 
@@ -3317,8 +3835,10 @@ type SeedChallenge = {
   languages: ChallengeLanguage[];
   prompt: string;
   entryPoint: string;
-  starterCode: Partial<Record<'python' | 'javascript' | 'typescript', string>>;
+  starterCode: Partial<Record<'python' | 'javascript' | 'typescript' | 'lua' | 'html', string>>;
   testCases: SeedTestCase[];
+  /** true = attributed to the demo instructor account instead of being a built-in challenge */
+  instructorAuthored?: boolean;
 };
 
 const ALL_LANGS: ChallengeLanguage[] = ['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT'];
@@ -3512,6 +4032,77 @@ const challenges: SeedChallenge[] = [
       { input: [[2, 4, 6, 8, 10, 12], 12], expectedOutput: 5, isHidden: true },
     ],
   },
+  {
+    slug: 'lua-table-sum',
+    title: 'Lua: Table Sum',
+    difficulty: 'EASY',
+    languages: ['LUA'],
+    prompt: 'Write `solve(nums)` that returns the sum of all numbers in the Lua table `nums`.',
+    entryPoint: 'solve',
+    starterCode: {
+      lua: 'function solve(nums)\n  \nend\n',
+    },
+    testCases: [
+      { input: [[1, 2, 3]], expectedOutput: 6, isHidden: false },
+      { input: [[10, -2, 5]], expectedOutput: 13, isHidden: false },
+      { input: [[100, 250, -50]], expectedOutput: 300, isHidden: true },
+    ],
+    instructorAuthored: true,
+  },
+  {
+    slug: 'lua-word-count',
+    title: 'Lua: Word Count',
+    difficulty: 'MEDIUM',
+    languages: ['LUA'],
+    prompt:
+      'Write `solve(s)` that returns the number of whitespace-separated words in the string `s`. Use a Lua pattern with `gmatch` rather than splitting on a single space, so runs of extra whitespace don\'t produce empty "words".',
+    entryPoint: 'solve',
+    starterCode: {
+      lua: 'function solve(s)\n  \nend\n',
+    },
+    testCases: [
+      { input: ['hello world'], expectedOutput: 2, isHidden: false },
+      { input: ['Lua is fun'], expectedOutput: 3, isHidden: false },
+      { input: ['   spaced   out   '], expectedOutput: 2, isHidden: true },
+    ],
+    instructorAuthored: true,
+  },
+  {
+    slug: 'html-build-a-heading',
+    title: 'HTML: Build a Heading',
+    difficulty: 'EASY',
+    languages: ['HTML'],
+    prompt:
+      'Write HTML markup containing a single `<h1>` element whose text is exactly "Hello, Kodstigen!".\n\nHTML challenges aren\'t graded by calling a function - each test case checks something about the rendered markup instead (does an element exist, what text does it contain, how many are there).',
+    entryPoint: 'render',
+    starterCode: {
+      html: '<!-- Write your HTML here -->\n<h1></h1>\n',
+    },
+    testCases: [
+      { input: [{ selector: 'h1', extract: 'exists' }], expectedOutput: true, isHidden: false },
+      { input: [{ selector: 'h1', extract: 'text' }], expectedOutput: 'Hello, Kodstigen!', isHidden: false },
+      { input: [{ selector: 'h1', extract: 'count' }], expectedOutput: 1, isHidden: true },
+    ],
+    instructorAuthored: true,
+  },
+  {
+    slug: 'html-build-a-nav-list',
+    title: 'HTML: Build a Nav List',
+    difficulty: 'MEDIUM',
+    languages: ['HTML'],
+    prompt:
+      'Write HTML markup for a navigation list: a `<ul class="nav-list">` containing exactly 3 `<li>` elements, each wrapping an `<a>` link.',
+    entryPoint: 'render',
+    starterCode: {
+      html: '<!-- Build your nav list here -->\n',
+    },
+    testCases: [
+      { input: [{ selector: 'ul.nav-list', extract: 'exists' }], expectedOutput: true, isHidden: false },
+      { input: [{ selector: 'ul.nav-list li', extract: 'count' }], expectedOutput: 3, isHidden: false },
+      { input: [{ selector: 'ul.nav-list li a', extract: 'count' }], expectedOutput: 3, isHidden: true },
+    ],
+    instructorAuthored: true,
+  },
 ];
 
 const achievements: {
@@ -3536,8 +4127,9 @@ const achievements: {
   { key: 'streak_7', name: 'Unstoppable', description: 'Reach a 7-day streak.', icon: '🔥', metric: 'STREAK', threshold: 7 },
 ];
 
-async function seedChallenges() {
+async function seedChallenges(instructorId: string) {
   for (const [i, c] of challenges.entries()) {
+    const owner = c.instructorAuthored ? instructorId : null;
     const existing = await prisma.challenge.findUnique({ where: { slug: c.slug } });
     if (existing) {
       await prisma.challenge.update({
@@ -3549,7 +4141,7 @@ async function seedChallenges() {
           prompt: c.prompt,
           order: i,
           status: 'PUBLISHED',
-          instructorId: null,
+          instructorId: owner,
         },
       });
       continue;
@@ -3565,7 +4157,7 @@ async function seedChallenges() {
         starterCode: c.starterCode,
         order: i,
         status: 'PUBLISHED',
-        instructorId: null,
+        instructorId: owner,
         testCases: {
           create: c.testCases.map((tc, ti) => ({
             input: tc.input as Prisma.InputJsonValue,
@@ -3597,11 +4189,11 @@ async function main() {
   ]);
 
   const instructor = await prisma.user.upsert({
-    where: { email: 'instructor@kodstigen.dev' },
+    where: { email: 'instructor@codeforge.dev' },
     update: { emailVerified: true },
     create: {
       username: 'ada_instructor',
-      email: 'instructor@kodstigen.dev',
+      email: 'instructor@codeforge.dev',
       passwordHash: instructorPass,
       role: 'INSTRUCTOR',
       bio: 'Senior engineer teaching backend development.',
@@ -3610,11 +4202,11 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: 'admin@kodstigen.dev' },
+    where: { email: 'admin@codeforge.dev' },
     update: { emailVerified: true },
     create: {
       username: 'admin',
-      email: 'admin@kodstigen.dev',
+      email: 'admin@codeforge.dev',
       passwordHash: adminPass,
       role: 'ADMIN',
       emailVerified: true,
@@ -3622,11 +4214,11 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: 'student@kodstigen.dev' },
+    where: { email: 'student@codeforge.dev' },
     update: { emailVerified: true },
     create: {
       username: 'demo_student',
-      email: 'student@kodstigen.dev',
+      email: 'student@codeforge.dev',
       passwordHash: studentPass,
       role: 'STUDENT',
       emailVerified: true,
@@ -3729,14 +4321,14 @@ async function main() {
     }
   }
 
-  await seedChallenges();
+  await seedChallenges(instructor.id);
   await seedAchievements();
 
   const chatCount = await prisma.chatMessage.count();
   if (chatCount === 0) {
     const [admin, student] = await Promise.all([
-      prisma.user.findUniqueOrThrow({ where: { email: 'admin@kodstigen.dev' } }),
-      prisma.user.findUniqueOrThrow({ where: { email: 'student@kodstigen.dev' } }),
+      prisma.user.findUniqueOrThrow({ where: { email: 'admin@codeforge.dev' } }),
+      prisma.user.findUniqueOrThrow({ where: { email: 'student@codeforge.dev' } }),
     ]);
     await prisma.chatMessage.createMany({
       data: [
@@ -3751,7 +4343,7 @@ async function main() {
   }
 
   console.log('Seed complete.');
-  console.log('Demo accounts: student@kodstigen.dev / student123, instructor@kodstigen.dev / instructor123, admin@kodstigen.dev / admin123');
+  console.log('Demo accounts: student@codeforge.dev / student123, instructor@codeforge.dev / instructor123, admin@codeforge.dev / admin123');
 }
 
 main()

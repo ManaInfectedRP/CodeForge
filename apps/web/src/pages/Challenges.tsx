@@ -13,11 +13,19 @@ const languageLabels: Record<string, string> = {
   PYTHON: 'Python',
   JAVASCRIPT: 'JavaScript',
   TYPESCRIPT: 'TypeScript',
+  LUA: 'Lua',
+  HTML: 'HTML',
 };
+
+const difficultyRank: Record<ChallengeDifficulty, number> = { EASY: 0, MEDIUM: 1, HARD: 2 };
+
+type DifficultySort = 'default' | 'easiest' | 'hardest';
 
 export function Challenges() {
   const [challenges, setChallenges] = useState<ChallengeSummaryDto[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [difficultySort, setDifficultySort] = useState<DifficultySort>('default');
+  const [languageQuery, setLanguageQuery] = useState('');
 
   useEffect(() => {
     api
@@ -29,13 +37,45 @@ export function Challenges() {
   if (error) return <main className="p-12 text-center text-red-400">{error}</main>;
   if (!challenges) return <main className="p-12 text-center text-slate-400">Loading challenges…</main>;
 
+  const query = languageQuery.trim().toLowerCase();
+  const visible = challenges
+    .filter((c) => !query || c.languages.some((lang) => (languageLabels[lang] ?? lang).toLowerCase().includes(query)))
+    .sort((a, b) => {
+      if (difficultySort === 'easiest') return difficultyRank[a.difficulty] - difficultyRank[b.difficulty];
+      if (difficultySort === 'hardest') return difficultyRank[b.difficulty] - difficultyRank[a.difficulty];
+      return 0;
+    });
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       <h1 className="text-3xl font-bold">💻 Coding Challenges</h1>
       <p className="mt-2 text-slate-400">Solve problems, earn XP, and climb the leaderboard.</p>
 
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <input
+          type="search"
+          value={languageQuery}
+          onChange={(e) => setLanguageQuery(e.target.value)}
+          placeholder="Search by language… (e.g. Lua, Python)"
+          className="w-full max-w-xs rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2 text-sm focus:border-forge-500 focus:outline-none"
+        />
+        <select
+          value={difficultySort}
+          onChange={(e) => setDifficultySort(e.target.value as DifficultySort)}
+          className="rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2 text-sm focus:border-forge-500 focus:outline-none"
+        >
+          <option value="default">Sort: Default</option>
+          <option value="easiest">Sort: Easiest first</option>
+          <option value="hardest">Sort: Hardest first</option>
+        </select>
+      </div>
+
+      {visible.length === 0 && (
+        <p className="mt-8 text-slate-400">No challenges match "{languageQuery}".</p>
+      )}
+
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {challenges.map((c) => (
+        {visible.map((c) => (
           <Link
             key={c.id}
             to={`/challenges/${c.id}`}
