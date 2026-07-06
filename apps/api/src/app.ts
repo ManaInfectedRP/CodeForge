@@ -15,6 +15,7 @@ import { challengesRouter } from './routes/challenges.ts';
 import { leaderboardRouter } from './routes/leaderboard.ts';
 import { achievementsRouter } from './routes/achievements.ts';
 import { certificatesRouter } from './routes/certificates.ts';
+import { reviewsRouter } from './routes/reviews.ts';
 import { chatRouter } from './routes/chat.ts';
 import { analyticsRouter } from './routes/analytics.ts';
 import { errorHandler } from './middleware/errors.ts';
@@ -50,6 +51,7 @@ export function createApp() {
   app.use('/api/leaderboard', leaderboardRouter);
   app.use('/api/achievements', achievementsRouter);
   app.use('/api/certificates', certificatesRouter);
+  app.use('/api/reviews', reviewsRouter);
   app.use('/api/chat', chatRouter);
   app.use('/api/analytics', analyticsRouter);
 

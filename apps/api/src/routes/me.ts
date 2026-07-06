@@ -15,9 +15,13 @@ const selectPathsSchema = z.object({
 const profileSchema = z.object({
   username: z
     .string()
+    .trim()
     .min(3, 'Username must be at least 3 characters')
     .max(30, 'Username must be at most 30 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Username may only contain letters, numbers, and underscores'),
+    .regex(
+      /^[a-zA-Z0-9_]+(?: [a-zA-Z0-9_]+)*$/,
+      'Username may only contain letters, numbers, underscores, and single spaces between words'
+    ),
   bio: z.string().max(500, 'Bio must be at most 500 characters').nullable(),
 });
 
