@@ -1638,6 +1638,285 @@ const reactLessons: SeedLesson[] = [
   },
 ];
 
+const expoLessons: SeedLesson[] = [
+  {
+    title: 'Why Expo? Setup and Your First App',
+    content: lessonContent(
+      'Why Expo? Setup and Your First App',
+      `**Expo** is a framework and set of tools built on top of React Native that makes building mobile apps with React dramatically simpler: no need to install Xcode or Android Studio to get started, a huge library of pre-built native modules (camera, location, notifications...), and a companion app (**Expo Go**) that runs your app on a real phone instantly, no cables required.\n\n## Bare React Native vs. Expo\n\n| | Bare React Native | Expo |\n|---|---|---|\n| Native project setup | Manual (Xcode/Android Studio) | Handled for you |\n| Native modules | Install & link manually | Huge built-in library (\`expo-camera\`, \`expo-location\`, ...) |\n| Running on a device | Cable + native build | Scan a QR code with Expo Go |\n| Ejecting to bare native code | N/A | Possible any time (\`expo prebuild\`) |\n\nExpo isn't a separate language, you're still writing React and JavaScript/TypeScript, just with a much smoother toolchain around it.\n\n## Creating your first app\n\n\`\`\`bash\nnpx create-expo-app my-app\ncd my-app\nnpx expo start\n\`\`\`\n\n\`npx expo start\` boots a development server and shows a QR code, scan it with the **Expo Go** app (iOS/Android) to run your app on a real device, or press \`i\`/\`a\` in the terminal to launch an iOS/Android simulator if you have one installed.\n\n## Project structure\n\n\`\`\`\nmy-app/\n  app/            # every file here is a screen (file-based routing, next lesson)\n    index.tsx\n    _layout.tsx\n  assets/         # images, fonts\n  app.json        # app name, icon, splash screen, permissions\n  package.json\n\`\`\`\n\n> [!NOTE]\n> Expo apps are still "just React", the core differences from web React are which **components** you use (\`<View>\` instead of \`<div>\`, \`<Text>\` instead of a raw string) and that there's no browser DOM underneath, everything renders to native platform views.`
+    ),
+    quiz: {
+      title: 'Expo Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does Expo Go let you do?',
+          options: [
+            'Compile apps in the cloud only',
+            'Run your app on a real device instantly by scanning a QR code',
+            'Replace React with a different language',
+            'Deploy directly to the app stores without review',
+          ],
+          answer: 'Run your app on a real device instantly by scanning a QR code',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Expo apps are written in a completely different language from web React.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Running npx expo ____ boots the development server and shows a QR code to scan.',
+          options: [],
+          answer: 'start',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Navigation with Expo Router',
+    content: lessonContent(
+      'Navigation with Expo Router',
+      `Modern Expo apps use **Expo Router**, a file-based routing system: the folder structure inside \`app/\` directly determines your app's screens and URLs, the same idea as Next.js, applied to mobile.\n\n## Basic routes\n\n\`\`\`\napp/\n  index.tsx        # the "/" screen (home)\n  profile.tsx       # the "/profile" screen\n  settings.tsx       # the "/settings" screen\n\`\`\`\n\n\`\`\`\n// app/profile.tsx\nimport { View, Text } from 'react-native';\n\nexport default function ProfileScreen() {\n  return (\n    <View>\n      <Text>Your profile</Text>\n    </View>\n  );\n}\n\`\`\`\n\nEach file just needs a default-exported component, Expo Router wires up the screen and navigation automatically, no manual route configuration.\n\n## Navigating between screens\n\n\`\`\`\nimport { Link, useRouter } from 'expo-router';\n\nexport default function HomeScreen() {\n  const router = useRouter();\n\n  return (\n    <View>\n      <Link href="/profile">Go to profile</Link>\n      <Button title="Go to settings" onPress={() => router.push('/settings')} />\n    </View>\n  );\n}\n\`\`\`\n\n\`<Link>\` works like an anchor tag, declarative navigation right in your JSX. \`useRouter()\` gives you an imperative API (\`router.push\`, \`router.back\`, \`router.replace\`) for navigating in response to code, like after a form submits successfully.\n\n## Dynamic routes\n\n\`\`\`\napp/\n  courses/\n    [id].tsx      # matches /courses/123, /courses/anything\n\`\`\`\n\n\`\`\`\n// app/courses/[id].tsx\nimport { useLocalSearchParams } from 'expo-router';\n\nexport default function CourseScreen() {\n  const { id } = useLocalSearchParams();\n  return <Text>Course {id}</Text>;\n}\n\`\`\`\n\nSquare brackets in a filename, \`[id].tsx\`, create a **dynamic segment**, \`useLocalSearchParams()\` reads whatever value matched that segment out of the current URL.\n\n## Layouts\n\nA special \`_layout.tsx\` file wraps every screen in the same folder, this is where you'd add a shared tab bar, header, or navigation container:\n\n\`\`\`\n// app/_layout.tsx\nimport { Stack } from 'expo-router';\n\nexport default function RootLayout() {\n  return <Stack />;\n}\n\`\`\``
+    ),
+    quiz: {
+      title: 'Expo Router Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "In Expo Router, what determines your app's screens?",
+          options: [
+            'A central routes.js config file',
+            'The folder/file structure inside app/',
+            'XML navigation files',
+            'Manually calling registerScreen()',
+          ],
+          answer: 'The folder/file structure inside app/',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A filename like ____.tsx (with square brackets around the name) creates a dynamic route segment.',
+          options: [],
+          answer: '[id]',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A special _layout.tsx file lets every screen in that folder share the same wrapper, like a tab bar or header.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Styling with StyleSheet and Flexbox',
+    content: lessonContent(
+      'Styling with StyleSheet and Flexbox',
+      `React Native has no CSS files or class names, styles are plain JavaScript objects, usually created with \`StyleSheet.create\`.\n\n## StyleSheet basics\n\n\`\`\`\nimport { View, Text, StyleSheet } from 'react-native';\n\nexport default function Card() {\n  return (\n    <View style={styles.card}>\n      <Text style={styles.title}>Kodstigen</Text>\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  card: {\n    padding: 16,\n    borderRadius: 12,\n    backgroundColor: '#1e293b',\n  },\n  title: {\n    fontSize: 20,\n    fontWeight: 'bold',\n    color: 'white',\n  },\n});\n\`\`\`\n\n\`StyleSheet.create\` doesn't do anything magical at runtime, mainly it validates your style objects and lets React Native optimize how they're referenced, but functionally you can pass a plain object to \`style\` too.\n\n## Flexbox is the default layout system\n\nUnlike the web, where \`display: flex\` is opt-in, **every \`<View>\` in React Native lays out its children with Flexbox by default**, and \`flexDirection\` defaults to \`'column'\` (the opposite of the web's \`'row'\` default).\n\n\`\`\`\nconst styles = StyleSheet.create({\n  row: {\n    flexDirection: 'row',\n    justifyContent: 'space-between',\n    alignItems: 'center',\n    padding: 12,\n  },\n});\n\`\`\`\n\n## Combining and conditionally applying styles\n\nThe \`style\` prop accepts an **array** of styles, later ones override earlier ones, this is the standard way to conditionally apply an extra style:\n\n\`\`\`\n<View style={[styles.card, isActive && styles.cardActive]} />\n\`\`\`\n\n> [!TIP]\n> There's no CSS cascade or specificity to fight with, a component only ever gets the styles you explicitly pass to it, nothing leaks in from a parent or a global stylesheet.`
+    ),
+    quiz: {
+      title: 'Styling & Flexbox Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the default flexDirection for a View in React Native?',
+          options: ['row', 'column', 'row-reverse', 'none'],
+          answer: 'column',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'You must explicitly enable Flexbox with display: flex on every View, like on the web.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Passing an ____ of styles to the style prop lets later styles override earlier ones, useful for conditional styling.',
+          options: [],
+          answer: 'array',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Handling User Input and State',
+    content: lessonContent(
+      'Handling User Input and State',
+      `State management works exactly the same as web React (\`useState\`, \`useReducer\`), what changes are the native components you use to capture input.\n\n## Text input\n\n\`\`\`\nimport { useState } from 'react';\nimport { TextInput, View } from 'react-native';\n\nexport default function SearchBox() {\n  const [query, setQuery] = useState('');\n\n  return (\n    <View>\n      <TextInput\n        value={query}\n        onChangeText={setQuery}\n        placeholder="Search courses..."\n        style={{ borderWidth: 1, borderRadius: 8, padding: 10 }}\n      />\n    </View>\n  );\n}\n\`\`\`\n\nNote \`onChangeText\`, not \`onChange\`, React Native's \`TextInput\` hands your callback the new string directly, there's no \`event.target.value\` to unwrap like on the web.\n\n## Buttons and touchables\n\n\`\`\`\nimport { Pressable, Text } from 'react-native';\n\nfunction LikeButton({ onPress }) {\n  return (\n    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>\n      <Text>❤️ Like</Text>\n    </Pressable>\n  );\n}\n\`\`\`\n\n\`Pressable\` is the modern, flexible way to make anything tappable, \`style\` can be a function that receives the current interaction state (\`pressed\`, \`hovered\` on web), letting you add feedback like a subtle opacity change without any extra state of your own.\n\n## Forms are just state\n\nThere's no \`<form onSubmit>\` on mobile, a "form" is just a collection of state variables and a button that reads them when pressed:\n\n\`\`\`\nfunction LoginForm() {\n  const [email, setEmail] = useState('');\n  const [password, setPassword] = useState('');\n\n  function handleSubmit() {\n    console.log('logging in with', email, password);\n  }\n\n  return (\n    <View>\n      <TextInput value={email} onChangeText={setEmail} placeholder="Email" />\n      <TextInput value={password} onChangeText={setPassword} placeholder="Password" secureTextEntry />\n      <Pressable onPress={handleSubmit}><Text>Log in</Text></Pressable>\n    </View>\n  );\n}\n\`\`\`\n\n\`secureTextEntry\` masks the input, the native equivalent of \`type="password"\`.`
+    ),
+    quiz: {
+      title: 'Input & State Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which prop does TextInput use to react to typing, instead of onChange?',
+          options: ['onInput', 'onChangeText', 'onKeyPress', 'onTextUpdate'],
+          answer: 'onChangeText',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "TextInput's change handler receives the raw event object, and you must read event.target.value from it.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Setting ____ to true on a TextInput masks the typed characters, like a password field.',
+          options: [],
+          answer: 'secureTextEntry',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Working with Lists: FlatList',
+    content: lessonContent(
+      'Working with Lists: FlatList',
+      `You could render a list with \`.map()\` like on the web, but for anything beyond a handful of items, React Native gives you \`FlatList\`, a component built specifically for large, scrollable lists.\n\n## Why not just .map()?\n\n\`\`\`\n<ScrollView>\n  {courses.map((c) => <CourseRow key={c.id} course={c} />)}\n</ScrollView>\n\`\`\`\n\nThis renders **every single item immediately**, for a list of 5 that's fine, for a list of 5,000 it tanks performance and memory. \`FlatList\` only renders what's currently visible on screen (plus a small buffer), recycling views as the user scrolls.\n\n## Basic usage\n\n\`\`\`\nimport { FlatList, Text, View } from 'react-native';\n\nfunction CourseList({ courses }) {\n  return (\n    <FlatList\n      data={courses}\n      keyExtractor={(item) => item.id}\n      renderItem={({ item }) => (\n        <View style={{ padding: 12 }}>\n          <Text>{item.title}</Text>\n        </View>\n      )}\n    />\n  );\n}\n\`\`\`\n\n- \`data\` is the array to render.\n- \`keyExtractor\` is FlatList's equivalent of the \`key\` prop, a function returning a unique string id per item.\n- \`renderItem\` receives \`{ item, index }\` and returns the JSX for a single row.\n\n## Useful extras\n\n\`\`\`\n<FlatList\n  data={courses}\n  keyExtractor={(item) => item.id}\n  renderItem={renderCourse}\n  ListEmptyComponent={<Text>No courses yet.</Text>}\n  ListHeaderComponent={<Text>All Courses</Text>}\n  onEndReached={loadMoreCourses}\n  onEndReachedThreshold={0.5}\n  refreshing={isRefreshing}\n  onRefresh={reloadCourses}\n/>\n\`\`\`\n\n\`onEndReached\` fires when the user scrolls near the bottom, the standard hook for **infinite scroll**/pagination. \`refreshing\`/\`onRefresh\` wire up the native pull-to-refresh gesture for free.\n\n> [!WARNING]\n> Never nest a \`FlatList\` inside a \`ScrollView\` that scrolls in the same direction, both will try to own scrolling and you'll get janky, broken behavior. If you need multiple lists on one screen, give \`FlatList\` a fixed height or use \`ListHeaderComponent\`/\`ListFooterComponent\` to add content around a single list instead.`
+    ),
+    quiz: {
+      title: 'FlatList Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why prefer FlatList over .map() inside a ScrollView for a large dataset?',
+          options: [
+            'FlatList looks nicer by default',
+            'FlatList only renders visible items, saving memory and performance',
+            'map() does not work at all in React Native',
+            'FlatList is required for TypeScript support',
+          ],
+          answer: 'FlatList only renders visible items, saving memory and performance',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "FlatList's ____ prop is a function that returns a unique string id for each item, similar to a key.",
+          options: [],
+          answer: 'keyExtractor',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'It is safe to nest a FlatList inside a ScrollView that scrolls in the same direction.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Device APIs: Camera, Location, and Permissions',
+    content: lessonContent(
+      'Device APIs: Camera, Location, and Permissions',
+      `One of Expo's biggest advantages is instant access to native device features through simple JavaScript APIs, no native code required. Nearly all of them follow the same **permission pattern**.\n\n## The permission pattern\n\n\`\`\`\nimport * as Location from 'expo-location';\n\nasync function getCurrentLocation() {\n  const { status } = await Location.requestForegroundPermissionsAsync();\n  if (status !== 'granted') {\n    console.log('Permission denied');\n    return null;\n  }\n  const location = await Location.getCurrentPositionAsync({});\n  return location.coords;\n}\n\`\`\`\n\nEvery device API works the same way: **request permission** (the OS shows a native prompt the first time), **check the result**, then use the API only if granted. Never assume permission, always request and check.\n\n## Using the camera\n\n\`\`\`\nimport { CameraView, useCameraPermissions } from 'expo-camera';\n\nfunction ScannerScreen() {\n  const [permission, requestPermission] = useCameraPermissions();\n\n  if (!permission) return null; // still loading\n  if (!permission.granted) {\n    return <Button title="Grant camera access" onPress={requestPermission} />;\n  }\n\n  return <CameraView style={{ flex: 1 }} />;\n}\n\`\`\`\n\n\`useCameraPermissions()\` is a hook version of the same request/check pattern, common for APIs used directly inside a component.\n\n## Declaring permissions in app.json\n\nSome permissions (especially on iOS) also need a usage description declared in \`app.json\`, explaining *why* your app wants access, shown to the user in the native permission dialog:\n\n\`\`\`\n{\n  "expo": {\n    "ios": {\n      "infoPlist": {\n        "NSCameraUsageDescription": "This app uses the camera to scan QR codes."\n      }\n    }\n  }\n}\n\`\`\`\n\n> [!NOTE]\n> Most of Expo's device modules (\`expo-camera\`, \`expo-location\`, \`expo-notifications\`, \`expo-contacts\`, ...) are separate packages you install individually with \`npx expo install expo-camera\`, using \`expo install\` instead of plain \`npm install\` ensures you get a version compatible with your Expo SDK version.`
+    ),
+    quiz: {
+      title: 'Device APIs Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the correct pattern for using a device API like the camera or location?',
+          options: [
+            'Use it directly, permissions are automatic',
+            'Request permission, check the result, then use the API',
+            'Only request permission if the app crashes first',
+            'Permissions only apply to Android, not iOS',
+          ],
+          answer: 'Request permission, check the result, then use the API',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Use npx expo ____ (instead of plain npm install) to add a device API package compatible with your Expo SDK version.',
+          options: [],
+          answer: 'install',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'iOS usage-description strings for permissions like the camera are configured in app.json.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Data Persistence and Fetching',
+    content: lessonContent(
+      'Data Persistence and Fetching',
+      `Mobile apps need two different kinds of data handling: fetching from a remote API (same \`fetch\`/\`useEffect\` pattern as web React), and persisting small bits of data locally so they survive an app restart.\n\n## Fetching data\n\n\`\`\`\nimport { useEffect, useState } from 'react';\n\nfunction useCourses() {\n  const [courses, setCourses] = useState([]);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => {\n    fetch('https://api.example.com/courses')\n      .then((res) => res.json())\n      .then(setCourses)\n      .finally(() => setLoading(false));\n  }, []);\n\n  return { courses, loading };\n}\n\`\`\`\n\nThis is identical to fetching in web React, \`fetch\` and \`useEffect\` work exactly the same in React Native.\n\n## Persisting data with AsyncStorage\n\nThere's no browser \`localStorage\` on mobile, the equivalent is \`@react-native-async-storage/async-storage\`, an async key-value store.\n\n\`\`\`\nimport AsyncStorage from '@react-native-async-storage/async-storage';\n\nasync function saveDraft(text) {\n  await AsyncStorage.setItem('noteDraft', text);\n}\n\nasync function loadDraft() {\n  const value = await AsyncStorage.getItem('noteDraft');\n  return value ?? '';\n}\n\`\`\`\n\nEvery method is **async** and returns a Promise, unlike \`localStorage\`'s synchronous API, this matters when you're loading saved data on app startup, you'll typically do it inside a \`useEffect\` and show a loading state until it resolves.\n\n## Storing objects\n\n\`AsyncStorage\` only stores strings, so store objects as JSON:\n\n\`\`\`\nasync function saveTasks(tasks) {\n  await AsyncStorage.setItem('tasks', JSON.stringify(tasks));\n}\n\nasync function loadTasks() {\n  const raw = await AsyncStorage.getItem('tasks');\n  return raw ? JSON.parse(raw) : [];\n}\n\`\`\`\n\n> [!WARNING]\n> AsyncStorage is meant for small amounts of data (settings, drafts, a cached list), it is **not encrypted** and not meant for sensitive data like auth tokens, for those, use \`expo-secure-store\` instead, which stores values in the device's encrypted keychain.`
+    ),
+    quiz: {
+      title: 'Persistence & Fetching Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What is the mobile equivalent of the web's localStorage?",
+          options: ['sessionStorage', 'AsyncStorage', 'IndexedDB', 'cookies'],
+          answer: 'AsyncStorage',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'AsyncStorage methods are synchronous, just like localStorage.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Since AsyncStorage only stores strings, objects must be serialized with JSON.____ before saving.',
+          options: [],
+          answer: 'stringify',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Building and Publishing Your App',
+    content: lessonContent(
+      'Building and Publishing Your App',
+      `Once your app works in Expo Go, the final step is producing a real, installable build, and eventually shipping it to the App Store / Google Play.\n\n## EAS Build\n\n**EAS (Expo Application Services)** builds native app binaries in the cloud, so you don't need a Mac to build an iOS app.\n\n\`\`\`bash\nnpm install -g eas-cli\neas login\neas build:configure\neas build --platform ios\neas build --platform android\n\`\`\`\n\n\`eas build:configure\` sets up an \`eas.json\` with build profiles (e.g. \`development\`, \`preview\`, \`production\`), each can produce a different kind of build, a quick internal test build vs. a production, store-ready one.\n\n## App configuration\n\nYour app's name, icon, splash screen, version, and bundle identifier all live in \`app.json\` (or \`app.config.js\` for dynamic config):\n\n\`\`\`\n{\n  "expo": {\n    "name": "Kodstigen Notes",\n    "slug": "kodstigen-notes",\n    "version": "1.0.0",\n    "icon": "./assets/icon.png",\n    "ios": { "bundleIdentifier": "com.kodstigen.notes" },\n    "android": { "package": "com.kodstigen.notes" }\n  }\n}\n\`\`\`\n\n## Submitting to the stores\n\n\`\`\`bash\neas submit --platform ios\neas submit --platform android\n\`\`\`\n\n\`eas submit\` uploads your latest build directly to App Store Connect / the Google Play Console, from there it goes through each store's normal review process, exactly like an app built without Expo at all.\n\n## Over-the-air updates\n\nFor JavaScript-only changes (no new native code), **EAS Update** can push a new version directly to users who already installed your app, skipping the app store review entirely:\n\n\`\`\`bash\neas update --branch production --message "Fix login bug"\n\`\`\`\n\n> [!NOTE]\n> OTA updates can only ship JavaScript/asset changes, if you add a new native dependency (like a new device API package), that requires a full new build submitted through the store again.`
+    ),
+    quiz: {
+      title: 'Build & Publish Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does EAS Build let you do without owning a Mac?',
+          options: ['Write Swift code', 'Build an iOS app binary in the cloud', 'Design app icons', 'Test on physical Android devices'],
+          answer: 'Build an iOS app binary in the cloud',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'eas ____ uploads your latest build directly to the App Store or Google Play Console.',
+          options: [],
+          answer: 'submit',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An over-the-air (OTA) update can ship a brand-new native dependency without a new store submission.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Mobile Notes App with Expo',
+    content: lessonContent(
+      'Final Project: Build a Mobile Notes App with Expo',
+      `Combine everything from this course into one real, working mobile app: a simple notes app you can run on your own phone with Expo Go.\n\n## Requirements\n\n1. Set up a new Expo project with Expo Router and at least two screens: a notes list screen and a note detail/edit screen, connected with file-based routing (a dynamic \`[id]\` route for viewing/editing a single note).\n2. Let the user create a new note (title + body) through a controlled form.\n3. Render the list of notes with \`FlatList\`, not \`.map()\`.\n4. Persist notes to the device with \`AsyncStorage\`, so they're still there after fully closing and reopening the app.\n5. Let the user delete a note, with a confirmation step (e.g. a native \`Alert.alert\` confirm dialog) before it's removed.\n6. Style the app with \`StyleSheet\`, at minimum a card-style note list and a clean editing screen.\n\n## Stretch goals\n\n- Add a search bar that filters the notes list as you type.\n- Add a timestamp to each note (created/last edited) using \`Date\`.\n- Request camera permission and let the user attach a photo to a note with \`expo-image-picker\`.\n- Build it with \`eas build\` and install the real binary on your phone instead of only running it through Expo Go.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const csharpLessons: SeedLesson[] = [
   {
     title: 'Hello, C#',
@@ -3749,6 +4028,11 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       title: 'React Fundamentals',
       description: 'Component-based UI development with React, JSX, props, state, hooks, and building real interactive apps.',
       lessons: reactLessons,
+    },
+    {
+      title: 'React-Expo',
+      description: 'Take React from the browser to your phone: build real mobile apps with Expo, file-based navigation, native device APIs, and ship a build with EAS.',
+      lessons: expoLessons,
     },
   ],
   csharp: [
