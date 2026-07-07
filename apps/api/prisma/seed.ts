@@ -93,22 +93,13 @@ const paths = [
     description: 'Query, filter, join, and aggregate relational data with SQL, the language behind virtually every database-backed application.',
   },
   {
-    slug: 'docker',
-    name: 'Docker',
-    icon: '🐳',
-    difficulty: 3,
-    estimatedHours: 30,
-    projectCount: 8,
-    description: 'Package, ship, and run applications anywhere with containers, images, Dockerfiles, and Docker Compose.',
-  },
-  {
-    slug: 'azure',
-    name: 'Azure',
-    icon: '☁️',
-    difficulty: 3,
-    estimatedHours: 35,
-    projectCount: 8,
-    description: 'Deploy, host, and scale real applications in the cloud with Microsoft Azure.',
+    slug: 'devops',
+    name: 'DevOps',
+    icon: '🚀',
+    difficulty: 4,
+    estimatedHours: 150,
+    projectCount: 40,
+    description: 'Ship and run software reliably: containers, cloud infrastructure, CI/CD pipelines, Kubernetes, and observability.',
   },
   {
     slug: 'ai-coding',
@@ -2973,6 +2964,1322 @@ const azureLessons: SeedLesson[] = [
   },
 ];
 
+const kubernetesLessons: SeedLesson[] = [
+  {
+    title: 'Why Kubernetes? Pods and the Control Plane',
+    content: lessonContent(
+      'Why Kubernetes? Pods and the Control Plane',
+      `Docker gets a single container running reliably. **Kubernetes** (often shortened to "k8s") is what takes over once you have many containers, across many machines, that need to be scheduled, restarted when they crash, scaled up and down, and discovered by each other automatically.\n\n## The problem Kubernetes solves\n\nRunning a handful of containers by hand with \`docker run\` works fine on one machine. It falls apart once you have:\n- Multiple machines (a **cluster**) to spread containers across.\n- Containers that need to be automatically restarted if they crash or a machine dies.\n- A need to scale a service from 2 replicas to 20 during a traffic spike.\n- Services that need to find and talk to each other without hardcoded IP addresses.\n\nKubernetes is a **container orchestrator**: you declare the desired state ("I want 3 replicas of this container running"), and Kubernetes continuously works to make reality match that declaration.\n\n## The control plane and nodes\n\nA cluster has two kinds of machines:\n\n| | Control plane | Worker nodes |\n|---|---|---|\n| Job | Decides *what* should run *where* | Actually runs the containers |\n| Key components | API server, scheduler, controller manager, etcd | kubelet, kube-proxy, container runtime |\n\n- The **API server** is the front door, every \`kubectl\` command and every internal component talks to Kubernetes through it.\n- **etcd** is the cluster's database, the single source of truth for the desired state.\n- The **scheduler** decides which node a new Pod should run on (based on available resources, constraints, etc).\n- The **kubelet** runs on every worker node and makes sure the containers the control plane assigned to that node are actually running.\n\n## Pods: the smallest deployable unit\n\nYou don't deploy a container directly in Kubernetes, you deploy a **Pod**, a wrapper around one or more containers that always run together on the same node and share networking/storage.\n\n\`\`\`yaml\napiVersion: v1\nkind: Pod\nmetadata:\n  name: hello-pod\nspec:\n  containers:\n    - name: hello\n      image: nginx:latest\n      ports:\n        - containerPort: 80\n\`\`\`\n\nMost Pods run exactly one container, the "multiple containers" case is for tightly-coupled helpers (like a logging sidecar) that genuinely need to share a network namespace and disk with the main container.\n\n> [!NOTE]\n> You'll rarely create a bare Pod directly in a real project, almost everything is managed through a **Deployment** (next lesson), which creates and manages Pods for you and handles restarts, scaling, and rollouts.`
+    ),
+    quiz: {
+      title: 'Kubernetes Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is a Pod in Kubernetes?',
+          options: [
+            'A single physical machine',
+            'The smallest deployable unit, wrapping one or more containers',
+            "A backup of the cluster's database",
+            'A type of load balancer',
+          ],
+          answer: 'The smallest deployable unit, wrapping one or more containers',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Which control plane component is the single source of truth for the cluster's desired state?",
+          options: ['kubelet', 'etcd', 'kube-proxy', 'Docker'],
+          answer: 'etcd',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every kubectl command and internal component talks to the cluster through the API server.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The control plane component responsible for deciding which node a new Pod runs on is the ____.",
+          options: [],
+          answer: 'scheduler',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In a real project, you should almost always create bare Pods directly instead of using a Deployment.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The component that runs on every worker node and ensures its assigned containers are actually running is the ____.',
+          options: [],
+          answer: 'kubelet',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Deployments and ReplicaSets',
+    content: lessonContent(
+      'Deployments and ReplicaSets',
+      `Bare Pods have no self-healing: if a Pod's node dies, that Pod is gone for good. A **Deployment** is the standard way to run and manage Pods in practice, it describes a desired state and Kubernetes continuously reconciles reality to match it.\n\n## Declaring a Deployment\n\n\`\`\`yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: web\n  template:\n    metadata:\n      labels:\n        app: web\n    spec:\n      containers:\n        - name: web\n          image: myregistry/web:1.4.0\n          ports:\n            - containerPort: 8080\n\`\`\`\n\n- \`replicas: 3\` declares you always want 3 copies of this Pod running.\n- \`selector\`/\`template.metadata.labels\` must match, this is how the Deployment knows which Pods belong to it.\n- \`template\` is effectively a Pod spec, the Deployment stamps out Pods from this template.\n\n## ReplicaSets: the mechanism underneath\n\nA Deployment doesn't manage Pods directly, it manages a **ReplicaSet**, which is the thing that actually watches the Pod count and creates/deletes Pods to match \`replicas\`. You'll almost never create a ReplicaSet by hand, but understanding it explains what's happening when you list resources:\n\n\`\`\`bash\nkubectl get deployments\nkubectl get replicasets\nkubectl get pods\n\`\`\`\n\nEach layer exists for a reason: the Deployment adds **rollout history and rolling updates** on top of what a plain ReplicaSet can do.\n\n## Rolling updates\n\nChange the image tag and re-apply, and the Deployment performs a **rolling update** by default: it spins up new Pods with the new version, waits for them to become healthy, then terminates old Pods, a few at a time, so the service never has zero healthy replicas.\n\n\`\`\`bash\nkubectl set image deployment/web web=myregistry/web:1.5.0\nkubectl rollout status deployment/web\nkubectl rollout undo deployment/web   # roll back if something's wrong\n\`\`\`\n\n> [!TIP]\n> \`kubectl rollout undo\` is your emergency brake, it re-applies the previous ReplicaSet's Pod template immediately, no need to remember or re-type the old image tag.`
+    ),
+    quiz: {
+      title: 'Deployments Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does a Deployment actually manage under the hood?',
+          options: [
+            'Pods directly, with no intermediate resource',
+            'A ReplicaSet, which manages the Pods',
+            'Nodes',
+            'The API server',
+          ],
+          answer: 'A ReplicaSet, which manages the Pods',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The ____ field in a Deployment spec declares how many copies of the Pod should always be running.',
+          options: [],
+          answer: 'replicas',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'By default, a Deployment updates all Pods to a new image simultaneously, causing brief downtime.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which command rolls back a Deployment to its previous version?',
+          options: ['kubectl rollout undo', 'kubectl delete deployment', 'kubectl get rollback', 'kubectl apply --previous'],
+          answer: 'kubectl rollout undo',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "The selector and the Pod template's labels must match for a Deployment to know which Pods belong to it.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'kubectl rollout ____ deployment/web shows the live progress of an ongoing rollout.',
+          options: [],
+          answer: 'status',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Services and Networking',
+    content: lessonContent(
+      'Services and Networking',
+      `Pods are ephemeral, when one is replaced (a rollout, a crash, a rescheduled Pod), it gets a **brand new IP address**. Nothing that depends on a Pod's IP directly would survive that. A **Service** gives a stable network identity in front of a changing set of Pods.\n\n## Why you can't just use Pod IPs\n\n\`\`\`\nPod IP: 10.244.1.7  →  crashes, replaced  →  new Pod IP: 10.244.2.3\n\`\`\`\n\nAnything that hardcoded \`10.244.1.7\` breaks the moment that Pod is replaced. A Service solves this with a stable virtual IP and DNS name that automatically routes to whichever Pods currently match its selector.\n\n## Defining a Service\n\n\`\`\`yaml\napiVersion: v1\nkind: Service\nmetadata:\n  name: web\nspec:\n  selector:\n    app: web\n  ports:\n    - port: 80\n      targetPort: 8080\n\`\`\`\n\n\`selector: app: web\` means this Service load-balances traffic across every Pod carrying that label, exactly the same label used by the Deployment's template. Other Pods in the cluster can now reach this Service at the DNS name \`web\` (or \`web.<namespace>.svc.cluster.local\` in full).\n\n## Service types\n\n| Type | What it does |\n|---|---|\n| \`ClusterIP\` (default) | Only reachable from inside the cluster |\n| \`NodePort\` | Also exposes a fixed port on every node's IP |\n| \`LoadBalancer\` | Asks the cloud provider to provision an external load balancer |\n\nMost internal, service-to-service traffic uses \`ClusterIP\`, you only reach for \`LoadBalancer\` for something the outside world needs to hit directly, like a public-facing web frontend.\n\n## Labels and selectors tie it all together\n\nLabels are simple key-value pairs attached to any Kubernetes object, and selectors are how Deployments, Services, and other resources find the right Pods to act on:\n\n\`\`\`yaml\nlabels:\n  app: web\n  environment: production\n\`\`\`\n\n> [!WARNING]\n> A Service with a selector that doesn't match any Pod's labels silently "works" (it exists and has a DNS name), but routes traffic to nowhere, an extremely common, very confusing first Kubernetes bug. Always double check the label spelling matches exactly on both sides.`
+    ),
+    quiz: {
+      title: 'Services & Networking Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Why can't other parts of your app just rely on a Pod's IP address directly?",
+          options: [
+            'Pod IPs never change',
+            "A Pod's IP changes every time it's replaced",
+            "Pods don't have IP addresses",
+            'IP addresses are deprecated in Kubernetes',
+          ],
+          answer: "A Pod's IP changes every time it's replaced",
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which Service type is only reachable from inside the cluster?',
+          options: ['NodePort', 'LoadBalancer', 'ClusterIP', 'ExternalName'],
+          answer: 'ClusterIP',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A Service routes traffic to Pods based on matching labels via a selector.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A Service with a selector that matches no Pods will exist but route traffic to ____.',
+          options: [],
+          answer: 'nowhere',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which Service type asks the cloud provider to provision an external load balancer?',
+          options: ['ClusterIP', 'NodePort', 'LoadBalancer', 'Ingress'],
+          answer: 'LoadBalancer',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Labels are a Kubernetes field that only Services can use.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'ConfigMaps, Secrets, and Volumes',
+    content: lessonContent(
+      'ConfigMaps, Secrets, and Volumes',
+      `Hardcoding configuration (URLs, feature flags, credentials) directly into a container image means rebuilding the image every time a setting changes, and it means secrets end up baked into an image anyone with registry access can pull. Kubernetes externalizes this with **ConfigMaps**, **Secrets**, and **Volumes**.\n\n## ConfigMaps: non-sensitive configuration\n\n\`\`\`yaml\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: web-config\ndata:\n  LOG_LEVEL: 'info'\n  FEATURE_NEW_CHECKOUT: 'true'\n\`\`\`\n\n\`\`\`yaml\n# inside a Pod spec\ncontainers:\n  - name: web\n    image: myregistry/web:1.5.0\n    envFrom:\n      - configMapRef:\n          name: web-config\n\`\`\`\n\n\`envFrom\`/\`configMapRef\` injects every key in the ConfigMap as an environment variable, change the ConfigMap and restart the Pods, no image rebuild required.\n\n## Secrets: the same idea, for sensitive values\n\n\`\`\`yaml\napiVersion: v1\nkind: Secret\nmetadata:\n  name: db-credentials\ntype: Opaque\ndata:\n  password: cGFzc3dvcmQxMjM=   # base64-encoded, NOT encrypted\n\`\`\`\n\n> [!WARNING]\n> Secret values are **base64-encoded, not encrypted**, by default, anyone who can read the Secret object can trivially decode it. Real production clusters pair Secrets with encryption-at-rest and tools like a proper secrets manager (Vault, AWS Secrets Manager, sealed-secrets) rather than relying on the base64 encoding for actual protection.\n\n## Volumes: storage that outlives a container\n\nA container's own filesystem disappears the moment it restarts. A **Volume** attaches storage to a Pod that can persist across container restarts (or even be shared between containers in the same Pod).\n\n\`\`\`yaml\nspec:\n  containers:\n    - name: web\n      image: myregistry/web:1.5.0\n      volumeMounts:\n        - name: cache-data\n          mountPath: /var/cache/app\n  volumes:\n    - name: cache-data\n      emptyDir: {}\n\`\`\`\n\n\`emptyDir\` survives container restarts within the same Pod, but is deleted when the Pod itself is removed. For storage that must outlive the Pod entirely (a database's data directory), you'd use a **PersistentVolumeClaim** instead, which requests storage from the cluster that exists independently of any one Pod's lifecycle.`
+    ),
+    quiz: {
+      title: 'Config & Storage Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the main purpose of a ConfigMap?',
+          options: [
+            'Storing encrypted secrets',
+            'Storing non-sensitive configuration outside the container image',
+            'Scheduling Pods',
+            'Load balancing traffic',
+          ],
+          answer: 'Storing non-sensitive configuration outside the container image',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Kubernetes Secret values are encrypted by default, so anyone who can read the object can't see the real value.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Secret values are stored ____-encoded by default, which is not the same as encryption.',
+          options: [],
+          answer: 'base64',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What happens to an emptyDir volume's contents when its Pod is deleted?",
+          options: [
+            'They persist forever',
+            'They are deleted along with the Pod',
+            'They are automatically backed up to S3',
+            'Nothing, emptyDir cannot be deleted',
+          ],
+          answer: 'They are deleted along with the Pod',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Changing a ConfigMap's values requires rebuilding the container image.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "For storage that must outlive a Pod entirely, like a database's data directory, you'd use a Persistent Volume ____ instead of a plain volume.",
+          options: [],
+          answer: 'Claim',
+        },
+      ],
+    },
+  },
+  {
+    title: 'kubectl and Working with a Real Cluster',
+    content: lessonContent(
+      'kubectl and Working with a Real Cluster',
+      `Everything so far has been YAML in the abstract. This lesson is the hands-on toolkit: \`kubectl\`, the command-line tool for talking to a cluster, and how to get a real (if small) cluster running on your own machine.\n\n## Getting a local cluster\n\nYou don't need a cloud account to learn Kubernetes. Tools like **minikube** and **kind** (Kubernetes IN Docker) run a real, small cluster locally:\n\n\`\`\`bash\n# minikube\nminikube start\n\n# or kind\nkind create cluster\n\`\`\`\n\nBoth give you a fully functional \`kubectl\` context pointed at a local cluster in a couple of minutes.\n\n## Core kubectl commands\n\n\`\`\`bash\nkubectl apply -f deployment.yaml   # create or update a resource from a YAML file\nkubectl get pods                    # list resources\nkubectl get pods -o wide            # list with extra detail (node, IP)\nkubectl describe pod web-7d9f8      # detailed info + recent events, great for debugging\nkubectl logs web-7d9f8              # see a container's stdout/stderr\nkubectl logs web-7d9f8 -f            # follow logs live\nkubectl exec -it web-7d9f8 -- sh    # get an interactive shell inside a running container\nkubectl delete -f deployment.yaml   # tear down what that file created\n\`\`\`\n\n\`kubectl describe\` is usually the first thing to reach for when something isn't working, its **Events** section at the bottom often tells you exactly why a Pod won't schedule or start (out of resources, image pull failure, failed health check, etc).\n\n## Namespaces: dividing a cluster\n\nA **namespace** is a way to partition a single cluster into logical groups, commonly one per environment or team:\n\n\`\`\`bash\nkubectl create namespace staging\nkubectl apply -f deployment.yaml -n staging\nkubectl get pods -n staging\nkubectl get pods --all-namespaces\n\`\`\`\n\nResource names only need to be unique **within** a namespace, so \`staging\` and \`production\` can each have their own \`web\` Deployment without colliding.\n\n> [!TIP]\n> \`kubectl apply\` is declarative and safe to re-run, if nothing changed in the YAML, re-applying it is a no-op. This is why CI/CD pipelines for Kubernetes almost always just run \`kubectl apply -f .\` on every deploy rather than tracking what's "new" vs "changed" themselves.`
+    ),
+    quiz: {
+      title: 'kubectl Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which local tool lets you run a real Kubernetes cluster without a cloud account?',
+          options: ['kubectl', 'minikube or kind', 'Docker Compose', 'AWS CLI'],
+          answer: 'minikube or kind',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'kubectl ____ pod-name shows detailed info and recent events for a Pod, the best first stop when debugging.',
+          options: [],
+          answer: 'describe',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Resource names must be unique across the entire cluster, even across different namespaces.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which command gets you an interactive shell inside a running container?',
+          options: ['kubectl logs', 'kubectl describe', 'kubectl exec -it ... -- sh', 'kubectl get pods'],
+          answer: 'kubectl exec -it ... -- sh',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Re-running kubectl apply -f on an unchanged YAML file is safe and effectively a no-op.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'kubectl create ____ staging creates a new logical partition of the cluster for grouping resources.',
+          options: [],
+          answer: 'namespace',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Deploy a Multi-Tier App to Kubernetes',
+    content: lessonContent(
+      'Final Project: Deploy a Multi-Tier App to Kubernetes',
+      `Put every piece together: Deployments, Services, config, and real \`kubectl\` usage, applied to an actual multi-tier application.\n\n## Requirements\n\n1. Containerize a simple app with at least two tiers (e.g. a web/API service and a database, or a frontend and a backend), each with its own Dockerfile.\n2. Write a Deployment + Service for each tier, the backend/API's Service should be \`ClusterIP\` (internal only), the frontend's should be exposed (\`NodePort\` or \`LoadBalancer\`, depending on your cluster).\n3. Externalize at least one piece of configuration into a ConfigMap and one credential into a Secret, referenced by your Deployments rather than hardcoded.\n4. Deploy everything to a local cluster (minikube or kind) using \`kubectl apply -f\`, and confirm the frontend can actually reach the backend through its Service DNS name.\n5. Perform a rolling update, change something in your app, rebuild the image, bump the tag, and re-apply, then verify with \`kubectl rollout status\` that it completed without downtime.\n\n## Stretch goals\n\n- Add a liveness and readiness probe to at least one Deployment.\n- Use a PersistentVolumeClaim for the database tier's data directory so data survives a Pod restart.\n- Split your environment into two namespaces (e.g. \`staging\` and \`production\`) using the same YAML with different config.\n\nSubmit a link to your finished project (a repo with your YAML manifests, or a recording/write-up of it running) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const awsLessons: SeedLesson[] = [
+  {
+    title: 'Why AWS? Regions, Availability Zones, and IAM',
+    content: lessonContent(
+      'Why AWS? Regions, Availability Zones, and IAM',
+      `**AWS (Amazon Web Services)** rents out compute, storage, networking, and dozens of higher-level services on demand, instead of buying and racking your own servers, you provision what you need in minutes and pay for what you use.\n\n## Regions and Availability Zones\n\nAWS infrastructure is organized geographically:\n\n| Concept | What it is |\n|---|---|\n| **Region** | A geographic area (e.g. \`us-east-1\`, \`eu-north-1\`), fully independent of other regions |\n| **Availability Zone (AZ)** | One or more physically separate data centers within a region |\n\nA region typically has 3+ AZs. Spreading resources across multiple AZs is the standard way to survive a single data center failure without any downtime, if one AZ has a power outage, your app keeps running in the others.\n\n## IAM: Identity and Access Management\n\n**IAM** controls *who* (or *what*) can do *what* in your AWS account. Getting this right is one of the most important skills in AWS, misconfigured IAM is behind a huge share of real-world cloud security incidents.\n\n- **Users**: an identity for a person, with long-lived credentials.\n- **Roles**: a set of permissions that something can *assume* temporarily, EC2 instances, Lambda functions, and even users from another AWS account can assume a role instead of using long-lived credentials.\n- **Policies**: JSON documents that actually define permissions, attached to users, roles, or groups.\n\n\`\`\`json\n{\n  "Version": "2012-10-17",\n  "Statement": [\n    {\n      "Effect": "Allow",\n      "Action": "s3:GetObject",\n      "Resource": "arn:aws:s3:::my-bucket/*"\n    }\n  ]\n}\n\`\`\`\n\nThis policy allows reading objects from one specific S3 bucket, nothing else. This is the **principle of least privilege**: grant exactly the permissions something needs, and nothing more.\n\n> [!WARNING]\n> Never use your AWS account's root user for everyday work, and never hardcode long-lived access keys into application code. Create an IAM user (or better, a role) with only the permissions a task actually needs.`
+    ),
+    quiz: {
+      title: 'AWS Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is an Availability Zone?',
+          options: [
+            'A pricing tier',
+            'One or more physically separate data centers within a region',
+            'A type of IAM policy',
+            'A backup region on another continent',
+          ],
+          answer: 'One or more physically separate data centers within a region',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does an IAM Role let you do that a long-lived IAM user credential doesn't?",
+          options: [
+            'Nothing, they are identical',
+            'Be assumed temporarily by a service or another account without long-lived credentials',
+            'Automatically create S3 buckets',
+            'Bypass all billing',
+          ],
+          answer: 'Be assumed temporarily by a service or another account without long-lived credentials',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Spreading resources across multiple Availability Zones helps an app survive a single data center failure.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The principle of ____ privilege means granting exactly the permissions something needs, and nothing more.',
+          options: [],
+          answer: 'least',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "It's a recommended practice to use the AWS account's root user for everyday development work.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What actually defines the specific permissions granted to a user, role, or group?',
+          options: ['A Region', 'An Availability Zone', 'A Policy', 'A VPC'],
+          answer: 'A Policy',
+        },
+      ],
+    },
+  },
+  {
+    title: 'EC2: Virtual Servers in the Cloud',
+    content: lessonContent(
+      'EC2: Virtual Servers in the Cloud',
+      `**EC2 (Elastic Compute Cloud)** rents virtual machines, called **instances**, by the second. It's the most fundamental AWS compute service, and the one most other services are conceptually built on top of.\n\n## Launching an instance\n\nEvery EC2 instance starts from an **AMI (Amazon Machine Image)**, a template that includes an operating system and optionally pre-installed software. AWS provides official AMIs (Amazon Linux, Ubuntu, Windows Server), and you can create your own from a configured instance to reuse later.\n\nKey choices when launching an instance:\n- **Instance type** (e.g. \`t3.micro\`, \`m5.large\`), determines vCPUs, memory, and network performance. The letter is the family (general purpose, compute-optimized, memory-optimized...), the number is the generation, the suffix is the size.\n- **Key pair**, an SSH key you use to log in, AWS never stores your private key.\n- **Security group**, a virtual firewall controlling what traffic can reach the instance.\n\n## Security groups\n\n\`\`\`\nInbound rules:\n  - Port 22 (SSH)  from 203.0.113.4/32   (your IP only)\n  - Port 443 (HTTPS) from 0.0.0.0/0       (anyone)\n\nOutbound rules:\n  - All traffic to 0.0.0.0/0\n\`\`\`\n\nSecurity groups are **stateful**: if you allow inbound traffic on a port, the matching response traffic is automatically allowed out, you don't need a separate outbound rule for replies. They're also **allow-only**, you can't write an explicit "deny" rule, only choose what to allow.\n\n## Elastic IPs\n\nA regular EC2 instance's public IP changes if you stop and start it. An **Elastic IP** is a static public IP you allocate to your account and attach to an instance, giving you a stable address that survives stop/start cycles (though it costs a small amount if it's allocated but not attached to a running instance, to discourage hoarding unused addresses).\n\n> [!TIP]\n> For anything long-running and public-facing, put a load balancer in front of your EC2 instances instead of relying on a single instance's Elastic IP, that way you can add/replace instances without ever changing the address your users hit.`
+    ),
+    quiz: {
+      title: 'EC2 Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does an AMI provide when launching an EC2 instance?',
+          options: ['A security group', 'A template including an OS and optionally pre-installed software', 'A billing alert', 'A VPC'],
+          answer: 'A template including an OS and optionally pre-installed software',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Security groups require a separate outbound rule to allow response traffic for an allowed inbound connection.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A security group can only specify what traffic to ____, it has no explicit deny rules.',
+          options: [],
+          answer: 'allow',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What problem does an Elastic IP solve?',
+          options: [
+            "An instance's public IP normally changes on stop/start, an Elastic IP stays the same",
+            'It encrypts network traffic',
+            'It replaces the need for a security group',
+            'It automatically scales instances',
+          ],
+          answer: "An instance's public IP normally changes on stop/start, an Elastic IP stays the same",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "You should rely on a single EC2 instance's Elastic IP for a long-running, public-facing service instead of using a load balancer.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The AWS SSH credential used to log into an instance is called a ____ pair.',
+          options: [],
+          answer: 'key',
+        },
+      ],
+    },
+  },
+  {
+    title: 'S3: Object Storage',
+    content: lessonContent(
+      'S3: Object Storage',
+      `**S3 (Simple Storage Service)** stores files (called **objects**) inside **buckets**. It's not a filesystem or a database, it's built for storing and retrieving whole objects (images, backups, static files, logs) at massive scale and very high durability.\n\n## Buckets and objects\n\n\`\`\`bash\naws s3 mb s3://my-app-uploads\naws s3 cp photo.jpg s3://my-app-uploads/users/42/photo.jpg\naws s3 ls s3://my-app-uploads/users/42/\n\`\`\`\n\n- A **bucket** name must be globally unique across all of AWS, not just your account.\n- An **object key** (\`users/42/photo.jpg\`) looks like a file path, but S3 has no real folders, it's really just one flat namespace of keys that happens to use \`/\` as a visual separator in the console.\n\n## Storage classes\n\nNot all data needs to be equally fast to access. S3 offers multiple **storage classes** with different cost/retrieval-speed tradeoffs:\n\n| Class | Use case |\n|---|---|\n| Standard | Frequently accessed data |\n| Standard-IA (Infrequent Access) | Accessed rarely, but needs to be available instantly when it is |\n| Glacier | Long-term archives, retrieval takes minutes to hours, much cheaper storage |\n\nYou can set a **lifecycle rule** to automatically move objects to a cheaper class (or delete them) after a certain age, e.g. move logs to Glacier after 90 days.\n\n## Versioning and static website hosting\n\nEnabling **versioning** on a bucket keeps every version of an object instead of overwriting it, protecting against accidental deletes/overwrites (at the cost of storing every version).\n\nS3 can also serve static files directly as a website:\n\n\`\`\`bash\naws s3 website s3://my-site --index-document index.html --error-document 404.html\n\`\`\`\n\n## Bucket policies\n\nA **bucket policy** is a JSON document (using the same policy language as IAM) attached directly to a bucket, controlling who can access it:\n\n\`\`\`json\n{\n  "Version": "2012-10-17",\n  "Statement": [\n    {\n      "Effect": "Allow",\n      "Principal": "*",\n      "Action": "s3:GetObject",\n      "Resource": "arn:aws:s3:::my-site/*"\n    }\n  ]\n}\n\`\`\`\n\n> [!WARNING]\n> A bucket policy with \`"Principal": "*"\` and \`s3:GetObject\` makes every object in that bucket **publicly readable by anyone on the internet**, exactly what you want for a public website's assets, and exactly what you very much don't want for a bucket holding user data or backups. Misconfigured public buckets are one of the most common real-world AWS security incidents.`
+    ),
+    quiz: {
+      title: 'S3 Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What must be globally unique across all of AWS, not just your account?',
+          options: ['An object key', 'A bucket name', 'An IAM user', 'A security group'],
+          answer: 'A bucket name',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'S3 has real, nested folders, similar to a traditional filesystem.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'An S3 ____ rule can automatically move objects to a cheaper storage class or delete them after a certain age.',
+          options: [],
+          answer: 'lifecycle',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which storage class is meant for long-term archives with retrieval taking minutes to hours?',
+          options: ['Standard', 'Standard-IA', 'Glacier', 'ClusterIP'],
+          answer: 'Glacier',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Enabling versioning on a bucket keeps every version of an object instead of overwriting it.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does a bucket policy with Principal: * and s3:GetObject do?',
+          options: [
+            'Deletes the bucket',
+            'Makes every object in the bucket publicly readable by anyone',
+            'Encrypts all objects',
+            'Restricts access to your account only',
+          ],
+          answer: 'Makes every object in the bucket publicly readable by anyone',
+        },
+      ],
+    },
+  },
+  {
+    title: 'VPC: Networking Your Resources',
+    content: lessonContent(
+      'VPC: Networking Your Resources',
+      `A **VPC (Virtual Private Cloud)** is your own private, isolated slice of the AWS network, where you control IP ranges, subnets, and routing for everything you launch inside it.\n\n## Subnets: public vs. private\n\nA VPC is divided into **subnets**, and each subnet is either:\n- **Public**: has a route to an **Internet Gateway**, so resources in it can be reached from (and reach) the public internet directly.\n- **Private**: has no direct route to the internet, used for things that should never be directly reachable, like a database.\n\n\`\`\`\nVPC: 10.0.0.0/16\n  Public subnet:  10.0.1.0/24   (web servers, load balancers)\n  Private subnet: 10.0.2.0/24   (databases, internal services)\n\`\`\`\n\nA common, secure pattern: put your load balancer and web servers in a public subnet, and your database in a private subnet that's only reachable from inside the VPC.\n\n## Route tables and the Internet Gateway\n\nA **route table** is a set of rules deciding where network traffic from a subnet gets sent. What makes a subnet "public" isn't a special setting, it's simply that its route table sends \`0.0.0.0/0\` (all other traffic) to an **Internet Gateway** attached to the VPC:\n\n\`\`\`\nDestination      Target\n10.0.0.0/16       local\n0.0.0.0/0         igw-0123456789\n\`\`\`\n\n## NAT Gateway: outbound internet for private subnets\n\nResources in a private subnet still often need **outbound** internet access (to download OS updates, call an external API), without being directly reachable from the internet. A **NAT Gateway**, placed in a public subnet, provides exactly that: private-subnet resources route outbound traffic through it, but nothing from the internet can initiate a connection back in.\n\n\`\`\`\nPrivate subnet route table:\nDestination      Target\n10.0.0.0/16       local\n0.0.0.0/0         nat-0123456789\n\`\`\`\n\n> [!NOTE]\n> This public-subnet/private-subnet/NAT-gateway pattern is extremely common, it's the default shape of almost every "real" production VPC: internet-facing things sit in public subnets, everything else sits in private subnets with outbound-only access through a NAT Gateway.`
+    ),
+    quiz: {
+      title: 'VPC Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What makes a subnet 'public' in AWS?",
+          options: [
+            'Its name contains the word public',
+            'Its route table sends internet-bound traffic to an Internet Gateway',
+            'It has no security group',
+            'It is the first subnet created',
+          ],
+          answer: 'Its route table sends internet-bound traffic to an Internet Gateway',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A database should typically be placed in a public subnet so it is easy to reach.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A ____ Gateway lets resources in a private subnet make outbound internet connections without being directly reachable from the internet.',
+          options: [],
+          answer: 'NAT',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is a route table?',
+          options: [
+            'A firewall rule list',
+            "A set of rules deciding where a subnet's network traffic gets sent",
+            'An IAM policy',
+            'A DNS record',
+          ],
+          answer: "A set of rules deciding where a subnet's network traffic gets sent",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Traffic from the internet can freely initiate new connections into a private subnet through a NAT Gateway.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A VPC is your own private, isolated slice of the AWS ____, where you control IP ranges and routing.',
+          options: [],
+          answer: 'network',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Serverless with Lambda and API Gateway',
+    content: lessonContent(
+      'Serverless with Lambda and API Gateway',
+      `So far every service has meant managing a running server (EC2 instances, at minimum). **Lambda** flips that: you upload a function, and AWS runs it only when triggered, you never provision or manage a server at all.\n\n## Writing a Lambda function\n\n\`\`\`\nexports.handler = async (event) => {\n  const name = event.queryStringParameters?.name ?? 'world';\n  return {\n    statusCode: 200,\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ message: \`Hello, \${name}!\` }),\n  };\n};\n\`\`\`\n\nA Lambda function is just a handler function with a defined input (\`event\`) and output shape, AWS packages it, runs it in an isolated environment, and you're billed per invocation and per millisecond of execution time, nothing while it's idle.\n\n## Triggers\n\nLambda functions don't run on their own, something has to **invoke** them:\n\n| Trigger | Use case |\n|---|---|\n| API Gateway | Turn a function into an HTTP endpoint |\n| S3 event | Run a function whenever a file is uploaded to a bucket |\n| Scheduled (EventBridge) | Run a function on a cron-like schedule |\n| SQS queue | Process messages from a queue as they arrive |\n\n## API Gateway: HTTP in front of Lambda\n\n**API Gateway** is what turns a Lambda function into a real REST API with a public URL, handling routing, request validation, throttling, and API keys in front of your function.\n\n\`\`\`\nGET /hello  →  API Gateway  →  Lambda (handler above)  →  response\n\`\`\`\n\nYou define routes in API Gateway, each one maps to a Lambda function (or another backend), API Gateway handles the HTTP layer, your function just receives a plain JavaScript object describing the request.\n\n## Cold starts\n\nThe tradeoff for not managing servers: the **first** invocation after a period of inactivity has to initialize a fresh execution environment before running your code, called a **cold start**, adding noticeable latency (tens to hundreds of milliseconds, sometimes more for larger runtimes/dependencies). Subsequent invocations reuse a warm environment and are fast.\n\n> [!TIP]\n> If cold-start latency matters for your use case (a user-facing API with strict latency requirements), keep your function's dependencies small, and consider **provisioned concurrency**, which keeps a set number of execution environments pre-warmed at all times, for an additional cost.`
+    ),
+    quiz: {
+      title: 'Lambda & API Gateway Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What do you pay for with AWS Lambda?',
+          options: [
+            'A fixed monthly fee regardless of usage',
+            'Only invocations and execution time, nothing while idle',
+            'Only the size of the deployed code',
+            'A flat per-server cost like EC2',
+          ],
+          answer: 'Only invocations and execution time, nothing while idle',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does API Gateway do for a Lambda function?',
+          options: [
+            "Encrypts the function's code",
+            'Turns it into a real HTTP endpoint with routing, throttling, and more',
+            'Automatically writes the function for you',
+            'Replaces the need for IAM',
+          ],
+          answer: 'Turns it into a real HTTP endpoint with routing, throttling, and more',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A Lambda function can only be triggered by API Gateway, no other AWS service.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The extra latency on the first invocation after inactivity, while a fresh execution environment initializes, is called a ____ start.',
+          options: [],
+          answer: 'cold',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Provisioned concurrency keeps a set number of execution environments pre-warmed to reduce cold starts, at an additional cost.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which trigger would you use to run a Lambda function whenever a file is uploaded to a bucket?',
+          options: ['API Gateway', 'S3 event', 'SQS queue', 'EC2 instance'],
+          answer: 'S3 event',
+        },
+      ],
+    },
+  },
+  {
+    title: 'IAM Roles, Billing, and the Well-Architected Basics',
+    content: lessonContent(
+      'IAM Roles, Billing, and the Well-Architected Basics',
+      `Two last practical topics that matter on every real AWS project: giving your compute the right permissions without hardcoding credentials, and not getting an unpleasant billing surprise.\n\n## IAM roles for services, not just people\n\nThe single most important AWS security habit: an EC2 instance or Lambda function should be given an **IAM role**, not a hardcoded access key, to call other AWS services.\n\n\`\`\`\nLambda function → assumes an IAM Role → temporary credentials → calls S3, DynamoDB, etc.\n\`\`\`\n\nThe role is attached to the Lambda function (or EC2 instance) itself, AWS automatically provides temporary, auto-rotating credentials to your code, your application code never sees or stores a long-lived secret at all.\n\n\`\`\`\n{\n  "Effect": "Allow",\n  "Action": ["s3:GetObject", "s3:PutObject"],\n  "Resource": "arn:aws:s3:::my-app-uploads/*"\n}\n\`\`\`\n\nAttach this policy to the Lambda's execution role, and the function can read/write that one bucket, and nothing else, without a single access key in its code or environment variables.\n\n## Budgets and cost alerts\n\nAWS bills for exactly what you use, which is powerful but means an unexpected spike (a runaway loop calling an expensive API, a forgotten large instance) shows up on your bill, not before it happens. **AWS Budgets** lets you set a threshold and get alerted (or even trigger an action) before costs run away:\n\n\`\`\`\nBudget: $50/month\nAlert at: 80% ($40) and 100% ($50)\n\`\`\`\n\nSetting at least one budget alert on any real account, even a generous one, is a cheap insurance policy against a costly surprise.\n\n## The Well-Architected Framework, briefly\n\nAWS's **Well-Architected Framework** organizes best practices into six pillars:\n\n| Pillar | Cares about |\n|---|---|\n| Operational Excellence | Running and monitoring systems, learning from operations |\n| Security | Protecting data, systems, and assets |\n| Reliability | Recovering from failure, meeting demand |\n| Performance Efficiency | Using resources efficiently as demand changes |\n| Cost Optimization | Avoiding unnecessary spend |\n| Sustainability | Minimizing environmental impact |\n\nYou don't need to memorize the framework in depth this early, but recognizing the six pillars helps you understand *why* AWS documentation and architecture reviews keep bringing up the same handful of concerns.\n\n> [!NOTE]\n> Everything in this course so far, IAM roles over hardcoded keys, private subnets for databases, budgets, multi-AZ deployments, is really just the Security, Reliability, and Cost Optimization pillars in practice.`
+    ),
+    quiz: {
+      title: 'IAM Roles & Billing Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What should an EC2 instance or Lambda function use to call other AWS services, instead of a hardcoded access key?',
+          options: ['A public S3 bucket', 'An IAM role', 'A NAT Gateway', 'A security group'],
+          answer: 'An IAM role',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Credentials provided to a service through an IAM role are temporary and auto-rotating.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'AWS ____ lets you set a spending threshold and get alerted before costs run away.',
+          options: [],
+          answer: 'Budgets',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How many pillars does the AWS Well-Architected Framework have?',
+          options: ['3', '4', '5', '6'],
+          answer: '6',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'AWS bills a fixed amount regardless of how many resources you actually use.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Protecting data, systems, and assets is the concern of the ____ pillar in the Well-Architected Framework.',
+          options: [],
+          answer: 'Security',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Deploy a Serverless API on AWS',
+    content: lessonContent(
+      'Final Project: Deploy a Serverless API on AWS',
+      `Combine IAM, Lambda, API Gateway, and S3 into one real, working serverless API.\n\n## Requirements\n\n1. Write at least two Lambda functions (e.g. a \`GET /items\` and a \`POST /items\`) and expose them through API Gateway with real routes.\n2. Give each Lambda function's execution role only the specific permissions it needs (e.g. the write function gets \`s3:PutObject\`, the read function only gets \`s3:GetObject\`), not broad admin access.\n3. Store data in S3 (as JSON objects) or another AWS data store of your choice, read and written through your Lambda functions, not hardcoded.\n4. Set up at least one AWS Budget alert on the account you're using, even a small one, as practice for a real project.\n5. Document your architecture (which resources you created and how they connect) in a short README.\n\n## Stretch goals\n\n- Put your S3 bucket behind a bucket policy that blocks all public access, and confirm your Lambda functions can still read/write it via their IAM role.\n- Add a scheduled (EventBridge) Lambda function that runs on a timer, e.g. cleaning up old data.\n- Put your whole setup in a VPC with a private subnet, and give your Lambda functions VPC access to reach a resource that isn't publicly exposed.\n\nSubmit a link to your finished project (a repo, or a written architecture summary with screenshots of your working API) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const cicdLessons: SeedLesson[] = [
+  {
+    title: 'What is CI/CD? From Manual Deploys to Pipelines',
+    content: lessonContent(
+      'What is CI/CD? From Manual Deploys to Pipelines',
+      `Before CI/CD, shipping code usually meant someone manually running tests, building the app, and copying files to a server, slow, error-prone, and something only whoever "knows the deploy steps" can safely do. **CI/CD** automates that entire path from commit to running in production.\n\n## Continuous Integration (CI)\n\n**CI** means every change gets automatically built and tested the moment it's pushed, catching integration problems (two people's changes conflicting, a change breaking existing behavior) within minutes instead of days.\n\n\`\`\`\nPush code → CI server checks it out → installs deps → runs tests → reports pass/fail\n\`\`\`\n\nThe core promise of CI: nobody merges code that doesn't pass the automated checks, so \`main\` stays in a known-good state.\n\n## Continuous Delivery vs. Continuous Deployment\n\nThese two terms are often confused, and the difference matters:\n\n| Term | What happens after CI passes |\n|---|---|\n| **Continuous Delivery** | A deployable build is produced and ready to ship, a human clicks a button to actually release it |\n| **Continuous Deployment** | Every change that passes CI is deployed to production automatically, no human in the loop |\n\nBoth require the same underlying automation (build, test, package), Continuous Deployment just removes the manual approval step entirely, appropriate once you trust your test suite and rollback process enough.\n\n## Why automate this at all\n\n- **Speed**: changes reach users in minutes/hours instead of a scheduled weekly release.\n- **Consistency**: the exact same automated steps run every time, no "it worked on my machine" deploy.\n- **Confidence**: a broken build is caught immediately, by CI, not discovered by a user in production.\n- **Auditability**: every deploy has a record of exactly what changed, what tests ran, and who approved it.\n\n> [!NOTE]\n> "Pipeline" is the general term for the sequence of automated steps (build → test → package → deploy), and it's the central concept the rest of this course builds on, concretely, with GitHub Actions.`
+    ),
+    quiz: {
+      title: 'CI/CD Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the core promise of Continuous Integration?',
+          options: [
+            'Every deploy is manual',
+            'Nobody merges code that fails automated checks, keeping main in a known-good state',
+            'Tests are optional',
+            'Deploys happen once a month',
+          ],
+          answer: 'Nobody merges code that fails automated checks, keeping main in a known-good state',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the key difference between Continuous Delivery and Continuous Deployment?',
+          options: [
+            'There is no difference',
+            'Continuous Deployment removes the manual approval step before releasing to production',
+            'Continuous Delivery does not run tests',
+            'Continuous Deployment only works with Docker',
+          ],
+          answer: 'Continuous Deployment removes the manual approval step before releasing to production',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Continuous Delivery means every passing change is automatically deployed to production with no human approval.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The general term for the sequence of automated build/test/package/deploy steps is a ____.',
+          options: [],
+          answer: 'pipeline',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A key benefit of CI is that broken code is caught immediately by automation rather than discovered by a user in production.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which of these is NOT typically a benefit of automating CI/CD?',
+          options: ['Speed', 'Consistency', 'Auditability', 'Eliminating the need for any tests'],
+          answer: 'Eliminating the need for any tests',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Building a Pipeline with GitHub Actions',
+    content: lessonContent(
+      'Building a Pipeline with GitHub Actions',
+      `**GitHub Actions** is GitHub's built-in CI/CD system: workflows defined as YAML files living right in your repository, triggered automatically by events like a push or pull request.\n\n## Anatomy of a workflow\n\n\`\`\`yaml\n# .github/workflows/ci.yml\nname: CI\n\non:\n  push:\n    branches: [main]\n  pull_request:\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '20'\n      - run: npm ci\n      - run: npm test\n\`\`\`\n\n- \`on\` defines the **triggers**, here, every push to \`main\` and every pull request.\n- \`jobs\` is a set of independent units of work, each runs on a fresh **runner** (a temporary VM, \`ubuntu-latest\` here).\n- \`steps\` run in order within a job, each is either a shell command (\`run:\`) or a reusable **action** (\`uses:\`), a packaged, shareable step someone else already wrote.\n\n## Reusable actions\n\n\`actions/checkout@v4\` and \`actions/setup-node@v4\` are official actions maintained by GitHub, \`checkout\` clones your repo onto the runner (without it, the runner starts with an empty filesystem), \`setup-node\` installs a specific Node.js version. The GitHub Marketplace has thousands of community actions for almost anything (deploying to a cloud provider, sending a Slack notification, scanning for vulnerabilities).\n\n## Multiple jobs and dependencies\n\n\`\`\`yaml\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps: [...]\n\n  deploy:\n    needs: test\n    runs-on: ubuntu-latest\n    steps: [...]\n\`\`\`\n\n\`needs: test\` makes the \`deploy\` job wait for \`test\` to succeed first, and skips \`deploy\` entirely if \`test\` fails. Jobs without a \`needs\` relationship run in **parallel** by default, useful for running lint, unit tests, and type-checking simultaneously to get feedback faster.\n\n> [!TIP]\n> Keep your CI fast. A pipeline people are used to waiting 15 minutes for gets ignored or worked around, one that takes 90 seconds gets checked every time, run independent jobs in parallel, and cache dependencies (next lesson) wherever you can.`
+    ),
+    quiz: {
+      title: 'GitHub Actions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does the 'on' key in a GitHub Actions workflow define?",
+          options: ['Which runner to use', 'The events that trigger the workflow', 'The programming language', 'The deployment target'],
+          answer: 'The events that trigger the workflow',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The actions/____@v4 action clones your repository onto the runner, without it the runner starts with an empty filesystem.',
+          options: [],
+          answer: 'checkout',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Jobs in a workflow run in parallel by default unless one specifies needs to depend on another.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What happens to a job with needs: test if the test job fails?',
+          options: ['It runs anyway', 'It is skipped', 'It runs twice', 'It automatically fixes the test'],
+          answer: 'It is skipped',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A runner is a persistent, long-lived server that keeps state between workflow runs.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A packaged, reusable workflow step that someone else already wrote, referenced with uses:, is called an ____.',
+          options: [],
+          answer: 'action',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Automated Testing in the Pipeline',
+    content: lessonContent(
+      'Automated Testing in the Pipeline',
+      `A pipeline that doesn't run your test suite isn't really "CI", it's just automated building. This lesson covers making tests a real, fast, reliable gate in your pipeline.\n\n## Fail fast\n\n\`\`\`yaml\njobs:\n  ci:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with: { node-version: '20' }\n      - run: npm ci\n      - run: npm run lint\n      - run: npm run typecheck\n      - run: npm test\n\`\`\`\n\nSteps run in order and **stop at the first failure** by default, if \`npm run lint\` fails, \`npm test\` never runs, no point spending minutes running a full test suite against code that doesn't even pass linting.\n\n## Caching dependencies\n\nReinstalling every dependency from scratch on every single run wastes minutes per build, adding up fast across a busy repository. Caching the package manager's download cache (not \`node_modules\` itself, which can hide subtle bugs if reused stale) speeds this up significantly:\n\n\`\`\`yaml\n- uses: actions/setup-node@v4\n  with:\n    node-version: '20'\n    cache: 'npm'\n\`\`\`\n\n\`setup-node\`'s built-in \`cache: 'npm'\` option automatically caches and restores npm's download cache between runs, keyed on your lockfile, install still runs, but mostly from local cache instead of re-downloading everything.\n\n## Test matrices\n\nTo verify your code works across multiple versions or environments, define a **matrix**, GitHub Actions runs the job once per combination automatically:\n\n\`\`\`yaml\njobs:\n  test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        node-version: ['18', '20', '22']\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \${{ matrix.node-version }}\n      - run: npm ci && npm test\n\`\`\`\n\nThis runs the exact same job three times, once per Node version, in parallel, catching version-specific breakage before a user does.\n\n> [!WARNING]\n> A flaky test (one that sometimes fails for no code-related reason, a timing issue, a shared test database) is worse than a slow test, it trains your team to re-run failed pipelines out of habit instead of trusting red as "something is actually wrong". Fix or quarantine flaky tests aggressively.`
+    ),
+    quiz: {
+      title: 'Automated Testing Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'By default, if an earlier step in a job fails, later steps in that same job still run.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does setup-node's cache: 'npm' option do?",
+          options: [
+            'Caches node_modules directly',
+            "Caches npm's download cache, keyed on your lockfile",
+            'Skips running npm install entirely',
+            'Disables tests',
+          ],
+          answer: "Caches npm's download cache, keyed on your lockfile",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A strategy: ____ block runs the same job multiple times, once per combination of specified values (like Node versions).',
+          options: [],
+          answer: 'matrix',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Caching node_modules directly, rather than the package manager download cache, can hide subtle bugs if reused stale.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why is a flaky test considered worse than a slow one?',
+          options: ['It costs more money', 'It trains the team to distrust and ignore failures', 'It cannot be fixed', 'It only affects one branch'],
+          answer: 'It trains the team to distrust and ignore failures',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Running lint and typecheck before the full test suite, so a broken build fails immediately, is often called failing ____.',
+          options: [],
+          answer: 'fast',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Build Artifacts and Docker Images in CI',
+    content: lessonContent(
+      'Build Artifacts and Docker Images in CI',
+      `Once tests pass, most pipelines produce something deployable, a compiled binary, a bundled frontend, or, very commonly today, a **Docker image**. This lesson builds and pushes one from CI.\n\n## Building and pushing an image\n\n\`\`\`yaml\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Log in to registry\n        uses: docker/login-action@v3\n        with:\n          username: \${{ secrets.REGISTRY_USER }}\n          password: \${{ secrets.REGISTRY_TOKEN }}\n      - name: Build and push\n        run: |\n          docker build -t myregistry/web:\${{ github.sha }} .\n          docker push myregistry/web:\${{ github.sha }}\n\`\`\`\n\n\`secrets.REGISTRY_USER\`/\`REGISTRY_TOKEN\` pull encrypted repository secrets into the workflow at runtime, never hardcode credentials directly in the YAML (covered in more depth in the secrets-management lesson).\n\n## Tagging strategy\n\nTagging every image build matters more than it looks: it's how you know exactly what's running, and how you roll back.\n\n| Tag style | Example | Tradeoff |\n|---|---|---|\n| Commit SHA | \`web:a1b2c3d\` | Always unique, traces directly to exact code, not human-friendly |\n| Semantic version | \`web:1.4.2\` | Human-friendly, requires a versioning/release process |\n| \`latest\` | \`web:latest\` | Convenient, but ambiguous, "latest" changes meaning over time, avoid for production deploys |\n\nA common, robust approach: always tag with the commit SHA (guaranteed unique, always traceable), and *additionally* tag stable releases with a semantic version for human readability.\n\n## Uploading build artifacts\n\nNot every pipeline needs a Docker image, sometimes you just need to pass a build output (a compiled bundle, a test report) from one job to another:\n\n\`\`\`yaml\n- uses: actions/upload-artifact@v4\n  with:\n    name: dist\n    path: dist/\n\n# in a later job:\n- uses: actions/download-artifact@v4\n  with:\n    name: dist\n\`\`\`\n\n> [!NOTE]\n> Artifacts uploaded with \`upload-artifact\` are how you pass files **between jobs** in the same workflow run (each job gets its own fresh runner with no shared filesystem), it's not for long-term storage, that's what a registry or object storage (like S3) is for.`
+    ),
+    quiz: {
+      title: 'Build Artifacts & Images Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why should you avoid deploying with only the latest tag in production?',
+          options: [
+            'latest is not a valid Docker tag',
+            'latest is ambiguous and changes meaning over time',
+            'latest images are always broken',
+            'Docker does not support tags',
+          ],
+          answer: 'latest is ambiguous and changes meaning over time',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Tagging a Docker image with the commit ____ guarantees a unique tag that always traces back to the exact code that built it.',
+          options: [],
+          answer: 'SHA',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Repository secrets like registry credentials should be hardcoded directly into the workflow YAML for simplicity.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is actions/upload-artifact used for?',
+          options: ['Deploying to production', 'Passing files between jobs in the same workflow run', 'Encrypting secrets', 'Building Docker images'],
+          answer: 'Passing files between jobs in the same workflow run',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Each job in a workflow run gets its own fresh runner with no filesystem shared with other jobs by default.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What's a common, robust Docker tagging approach?",
+          options: [
+            'Only ever use latest',
+            'Tag with the commit SHA always, and additionally a semantic version for stable releases',
+            'Never tag images',
+            'Use a random UUID for every tag',
+          ],
+          answer: 'Tag with the commit SHA always, and additionally a semantic version for stable releases',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Continuous Deployment Strategies',
+    content: lessonContent(
+      'Continuous Deployment Strategies',
+      `Getting a new build out doesn't have to mean "stop the old version, start the new one" (and the downtime that implies). Different deployment strategies trade off complexity for safety and zero-downtime releases.\n\n## Rolling deployment\n\nReplace old instances/Pods with new ones gradually, a few at a time, as covered in the Kubernetes course's Deployments lesson, this is the default behavior for a Kubernetes Deployment. At any moment, some traffic hits the old version and some hits the new one.\n\n## Blue-green deployment\n\nRun two full, identical environments, **blue** (currently live) and **green** (the new version), deploy entirely to green, test it for real, then switch all traffic over atomically:\n\n\`\`\`\nBefore:  Router → Blue (v1.4)     Green (v1.5, idle)\nSwitch:  Router → Blue (v1.4, idle)     Green (v1.5)\n\`\`\`\n\nIf something's wrong with green, you switch traffic straight back to blue, instant rollback, no redeploying anything. The cost: you need double the infrastructure running during the switch.\n\n## Canary deployment\n\nSend a small percentage of real traffic (say 5%) to the new version, watch error rates and latency, then gradually increase that percentage if everything looks healthy:\n\n\`\`\`\n5% of traffic  → v1.5 (canary)\n95% of traffic → v1.4 (stable)\n\`\`\`\n\nThis catches problems that only show up under real production traffic and load, while limiting the blast radius to a small slice of users if something's wrong.\n\n## Feature flags: decoupling deploy from release\n\nA **feature flag** wraps new code in a runtime toggle, so the code can be deployed to production while still being turned *off* for real users:\n\n\`\`\`\nif (featureFlags.isEnabled('new-checkout')) {\n  return renderNewCheckout();\n}\nreturn renderOldCheckout();\n\`\`\`\n\nThis separates two things that rolling/blue-green/canary strategies bundle together: *deploying* code (getting it running in production) and *releasing* a feature (turning it on for users). You can deploy on Tuesday and flip the flag on Friday, no redeploy needed, and instantly turn it back off if something's wrong.\n\n> [!TIP]\n> These strategies aren't mutually exclusive, a very common real setup is: canary + feature flags together, deploy the new version to a small percentage of infrastructure (canary), with the risky new behavior additionally behind a flag that's off by default, two independent safety nets instead of one.`
+    ),
+    quiz: {
+      title: 'Deployment Strategies Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "In a blue-green deployment, what happens if something's wrong with the new (green) version after switching?",
+          options: [
+            'You must redeploy from scratch',
+            'You switch traffic straight back to blue instantly',
+            'The whole app goes down',
+            'You wait 24 hours for it to fix itself',
+          ],
+          answer: 'You switch traffic straight back to blue instantly',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A canary deployment sends all traffic to the new version immediately.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A ____ flag wraps new code in a runtime toggle, decoupling deploying code from releasing a feature to users.',
+          options: [],
+          answer: 'feature',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the main cost of a blue-green deployment strategy?',
+          options: [
+            "It's slower than rolling deployments",
+            'You need double the infrastructure running during the switch',
+            'It cannot be automated',
+            'It requires downtime',
+          ],
+          answer: 'You need double the infrastructure running during the switch',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'With feature flags, you can deploy code to production while keeping it turned off for real users.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A ____ deployment sends a small percentage of real traffic to the new version before gradually increasing it.',
+          options: [],
+          answer: 'canary',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Secrets and Environment Management in Pipelines',
+    content: lessonContent(
+      'Secrets and Environment Management in Pipelines',
+      `A pipeline that builds and deploys your app almost always needs credentials, registry logins, cloud provider access, database passwords. Handling these safely is one of the most consequential parts of CI/CD to get right.\n\n## Repository/organization secrets\n\nCI platforms provide an encrypted secrets store separate from your code, referenced in workflows without ever appearing in the YAML or logs:\n\n\`\`\`yaml\nsteps:\n  - name: Deploy\n    env:\n      AWS_ACCESS_KEY_ID: \${{ secrets.AWS_ACCESS_KEY_ID }}\n      AWS_SECRET_ACCESS_KEY: \${{ secrets.AWS_SECRET_ACCESS_KEY }}\n    run: ./deploy.sh\n\`\`\`\n\nGitHub Actions automatically **redacts** any value matching a registered secret from logs, if a step accidentally echoes \`$AWS_SECRET_ACCESS_KEY\`, the log shows \`***\` instead of the real value.\n\n## Least-privilege deploy credentials\n\nThe credentials your pipeline uses to deploy should follow the same rule as everything else: only what's needed. A pipeline deploying a static site to one S3 bucket doesn't need account-wide admin access, give it a role/user scoped to exactly that bucket (and nothing else), the same IAM principle from the AWS course, applied to your CI system's credentials specifically.\n\n## Environment-specific configuration\n\nDifferent environments (staging, production) usually need different config: different database URLs, different feature flag defaults, different API keys. GitHub Actions **Environments** let you scope secrets and required approvals per environment:\n\n\`\`\`yaml\njobs:\n  deploy-production:\n    environment: production\n    runs-on: ubuntu-latest\n    steps:\n      - run: ./deploy.sh\n\`\`\`\n\nAn \`environment: production\` job can require manual approval before running, and only has access to secrets scoped to that environment, \`staging\` secrets and \`production\` secrets never mix, even within the same repository.\n\n## OIDC: no long-lived secrets at all\n\nThe most modern approach skips storing cloud credentials as secrets entirely: **OIDC (OpenID Connect)** lets your CI platform request short-lived, auto-expiring credentials directly from your cloud provider for each run, nothing long-lived to leak in the first place.\n\n> [!WARNING]\n> A leaked CI secret is one of the most common ways real production incidents start, because CI credentials are often broader than they need to be ("just give it admin, it's easier"). Treat pipeline credentials with the exact same least-privilege scrutiny you'd apply to a human's access.`
+    ),
+    quiz: {
+      title: 'Pipeline Secrets Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does GitHub Actions do if a step's output accidentally contains a registered secret's value?",
+          options: [
+            'It crashes the workflow',
+            'It redacts the value in logs, showing *** instead',
+            'It emails the repository owner',
+            'Nothing, it prints the value in plain text',
+          ],
+          answer: 'It redacts the value in logs, showing *** instead',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A pipeline's deploy credentials should have broad, account-wide access to make deployment simpler.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'GitHub Actions ____ let you scope secrets and require manual approval per deployment target like staging or production.',
+          options: [],
+          answer: 'Environments',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does OIDC let a CI platform do?',
+          options: [
+            'Store secrets in plain text',
+            'Request short-lived, auto-expiring credentials from a cloud provider for each run',
+            'Skip running tests',
+            'Bypass IAM entirely',
+          ],
+          answer: 'Request short-lived, auto-expiring credentials from a cloud provider for each run',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Staging and production secrets scoped to different GitHub Actions Environments are automatically kept separate, even in the same repository.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A leaked CI ____ is one of the most common ways real production security incidents start.',
+          options: [],
+          answer: 'secret',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Full CI/CD Pipeline for a Sample App',
+    content: lessonContent(
+      'Final Project: Build a Full CI/CD Pipeline for a Sample App',
+      `Bring every piece together into one real, working pipeline for a small application of your choice.\n\n## Requirements\n\n1. Set up a GitHub Actions workflow that runs on every push and pull request: install dependencies, lint, and run the test suite, failing fast if any step fails.\n2. Cache dependencies so repeated runs are meaningfully faster than a cold run.\n3. Build a Docker image of your app in the pipeline and tag it with the commit SHA.\n4. Add a separate deploy job that only runs after the test job succeeds (\`needs:\`), deploying your image somewhere real (a container registry at minimum, a running service if you want to go further).\n5. Use at least one repository secret for a credential your pipeline needs, never hardcoded in the workflow file.\n\n## Stretch goals\n\n- Add a test matrix running your suite against two different runtime versions.\n- Use a GitHub Actions Environment with a required manual approval step before deploying to "production".\n- Add a simple feature flag to your app, and deploy a new feature behind it, turned off by default.\n\nSubmit a link to your finished project (a repo with your workflow file, and a note on what it actually deploys to) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const observabilityLessons: SeedLesson[] = [
+  {
+    title: 'The Three Pillars: Logs, Metrics, and Traces',
+    content: lessonContent(
+      'The Three Pillars: Logs, Metrics, and Traces',
+      `**Observability** is the ability to understand what's happening inside a running system just from what it exposes externally, without having to guess or attach a debugger to production. It's usually broken down into three complementary signal types.\n\n## Monitoring vs. observability\n\n**Monitoring** answers questions you already thought to ask ahead of time ("is CPU usage above 80%?"). **Observability** is what lets you answer questions you *didn't* anticipate when something goes wrong at 3am ("why are only requests from mobile clients in the EU slow, and only since 20 minutes ago?"), by exploring the raw signals your system emits.\n\n## The three pillars\n\n| Pillar | Answers | Example |\n|---|---|---|\n| **Logs** | What happened, in detail, at a specific point | "User 42's payment failed: card declined" |\n| **Metrics** | How much/how many, over time | "Requests per second", "p99 latency" |\n| **Traces** | How a single request flowed through multiple services | "Request hit API → auth service (12ms) → database (340ms) → response" |\n\nNone of the three replaces the others, metrics tell you *something* is wrong and roughly when, logs tell you the specific detail of what happened, traces tell you *where* in a multi-service request the time actually went.\n\n## A concrete example\n\nImagine checkout latency suddenly spikes:\n1. A **metric** (p99 latency dashboard) shows the spike started at 14:32 and is ongoing.\n2. A **trace** for a slow request shows 90% of the time is spent in a call to the inventory service.\n3. **Logs** from the inventory service around that time show repeated database connection timeout errors.\n\nEach pillar narrowed the investigation, from "something is slow" to "which service" to "the exact underlying error", in minutes instead of hours of guessing.\n\n> [!NOTE]\n> This course focuses on the concepts and vendor-agnostic tools (structured logging, Prometheus-style metrics, OpenTelemetry), the same ideas apply whether you're using a cloud provider's built-in tools, a self-hosted stack, or a dedicated observability vendor.`
+    ),
+    quiz: {
+      title: 'Observability Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What's the key difference between monitoring and observability?",
+          options: [
+            'They are exactly the same thing',
+            'Monitoring answers pre-defined questions, observability lets you explore unanticipated questions',
+            'Observability only works for Kubernetes',
+            'Monitoring is newer than observability',
+          ],
+          answer: 'Monitoring answers pre-defined questions, observability lets you explore unanticipated questions',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which pillar tells you how a single request flowed through multiple services?',
+          options: ['Logs', 'Metrics', 'Traces', 'Alerts'],
+          answer: 'Traces',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Metrics can tell you the specific detailed reason a single request failed.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The pillar that answers 'how much/how many, over time' is ____.",
+          options: [],
+          answer: 'Metrics',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The three pillars of observability are redundant with each other, so you only need one.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "In the checkout latency example, what narrowed the investigation from 'something is slow' to the exact root cause?",
+          options: [
+            'Guessing randomly',
+            'Using metrics, then a trace, then logs together',
+            'Restarting the service repeatedly',
+            'Ignoring the issue until it resolved itself',
+          ],
+          answer: 'Using metrics, then a trace, then logs together',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Structured Logging Done Right',
+    content: lessonContent(
+      'Structured Logging Done Right',
+      `A log line like \`Payment failed for user\` is easy for a human to read once, and nearly useless to search, filter, or aggregate across millions of log lines. **Structured logging** fixes that by emitting logs as data, not prose.\n\n## Plain text vs. structured\n\n\`\`\`\n# Plain text\nPayment failed for user 42, card declined, order #8817\n\n# Structured (JSON)\n{"level": "error", "event": "payment_failed", "userId": 42, "orderId": 8817, "reason": "card_declined", "timestamp": "2026-07-08T14:32:01Z"}\n\`\`\`\n\nThe structured version is trivial to query ("show me every \`payment_failed\` event where \`reason = card_declined\` in the last hour"), the plain-text version requires fragile regex or full-text search across free-form sentences that might not even be phrased consistently between developers.\n\n## Log levels\n\nEvery log line should carry a **level**, indicating urgency and who needs to see it:\n\n| Level | Meaning |\n|---|---|\n| \`debug\` | Detailed diagnostic info, useful in development, usually off in production |\n| \`info\` | Normal operational events (a request completed, a job started) |\n| \`warn\` | Something unexpected, but not (yet) a failure |\n| \`error\` | An operation failed |\n\nBeing disciplined about levels means production can run at \`info\` and above by default, keeping log volume (and cost) manageable, while \`debug\` is available to flip on temporarily when actively investigating something.\n\n## Correlation IDs\n\nA single user action often triggers work across multiple services, correlating all their logs together requires a shared identifier attached to every log line involved in handling that one request:\n\n\`\`\`\n{"event": "request_received", "correlationId": "req-9f8a", "path": "/checkout"}\n{"event": "payment_charged", "correlationId": "req-9f8a", "amount": 4999}\n{"event": "order_created", "correlationId": "req-9f8a", "orderId": 8817}\n\`\`\`\n\nGenerate a \`correlationId\` (or reuse the incoming one if the request came from another internal service) at the very start of handling a request, and pass it along to every downstream call and every log line for that request.\n\n> [!TIP]\n> If you can't answer "show me every log line related to this one specific user's specific failed request" in under a minute, your logging isn't structured enough yet, that query is the entire point of doing this.`
+    ),
+    quiz: {
+      title: 'Structured Logging Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What's the main advantage of structured (JSON) logs over free-form text?",
+          options: [
+            'They take up less disk space always',
+            'They are trivial to query and filter reliably',
+            'They cannot be read by humans at all',
+            'They replace the need for metrics',
+          ],
+          answer: 'They are trivial to query and filter reliably',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A ____ ID is a shared identifier attached to every log line involved in handling one specific request, letting you trace it across services.',
+          options: [],
+          answer: 'correlation',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "In production, it's common to run at info level and above by default, keeping debug logs available to enable temporarily.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which log level indicates an operation actually failed?',
+          options: ['debug', 'info', 'warn', 'error'],
+          answer: 'error',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Structured logging replaces the need for log levels entirely.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Being able to find every log line related to one specific failed request quickly is the whole point of ____ logging.',
+          options: [],
+          answer: 'structured',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Metrics and Time-Series Data',
+    content: lessonContent(
+      'Metrics and Time-Series Data',
+      `Logs tell you about individual events. **Metrics** aggregate numbers over time, letting you see trends, set alerts, and build dashboards without drowning in individual log lines.\n\n## The three basic metric types\n\n| Type | Behavior | Example |\n|---|---|---|\n| **Counter** | Only ever goes up (until reset) | Total requests served |\n| **Gauge** | Goes up or down freely | Current memory usage, active connections |\n| **Histogram** | Buckets observations to compute distributions | Request latency (so you can ask for p50/p95/p99) |\n\nA counter for \`http_requests_total\` doesn't tell you the request *rate*, but a monitoring system can compute the rate of change over time from a raw counter, which is usually what you actually want to graph.\n\n## Prometheus-style metrics\n\nA very common pattern (used by Prometheus and compatible with most modern monitoring stacks) is exposing metrics as plain text on an HTTP endpoint that a collector periodically scrapes:\n\n\`\`\`\n# HELP http_requests_total Total HTTP requests\n# TYPE http_requests_total counter\nhttp_requests_total{method="GET",status="200"} 84213\nhttp_requests_total{method="GET",status="500"} 12\n\n# HELP http_request_duration_seconds Request latency\n# TYPE http_request_duration_seconds histogram\nhttp_request_duration_seconds_bucket{le="0.1"} 79000\nhttp_request_duration_seconds_bucket{le="0.5"} 83900\nhttp_request_duration_seconds_bucket{le="+Inf"} 84225\n\`\`\`\n\nThe \`{method="GET",status="200"}\` part is a set of **labels**, letting you slice the same metric by dimensions (which method, which status code) without defining a separate metric name for every combination.\n\n## The cardinality trap\n\nLabels are powerful, but each unique combination of label values creates a separate time series stored and tracked individually. Adding a label like \`userId\` to a metric with millions of users creates millions of time series, this is called a **cardinality explosion**, and it can silently overwhelm a monitoring system's storage and query performance.\n\n> [!WARNING]\n> Never put unbounded, high-cardinality values (user IDs, email addresses, raw URLs with query strings, request IDs) directly into a metric's labels. Those belong in logs and traces instead, metric labels should stay to a bounded, relatively small set of values (a handful of environments, a handful of status codes, a handful of regions).`
+    ),
+    quiz: {
+      title: 'Metrics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which metric type only ever increases (until it resets)?',
+          options: ['Gauge', 'Counter', 'Histogram', 'Trace'],
+          answer: 'Counter',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which metric type lets you compute percentiles like p95 latency?',
+          options: ['Counter', 'Gauge', 'Histogram', 'Log level'],
+          answer: 'Histogram',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A gauge metric can go both up and down, like current memory usage.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A set of key-value pairs attached to a metric, like method and status, letting you slice it by dimension, is called a ____.',
+          options: [],
+          answer: 'label',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Adding a high-cardinality label like userId to a metric is a safe, recommended practice.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Adding unbounded label values that create millions of separate time series is called a cardinality ____.',
+          options: [],
+          answer: 'explosion',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Distributed Tracing',
+    content: lessonContent(
+      'Distributed Tracing',
+      `A single user request in a microservices system might touch five, ten, or more services before a response comes back. When it's slow, "logs from each service" don't easily show you the full, connected picture, **distributed tracing** does.\n\n## Traces, spans, and context propagation\n\nA **trace** represents one end-to-end request, made up of multiple **spans**, each span is one unit of work (a single service call, a database query) with a start time, duration, and metadata.\n\n\`\`\`\nTrace: checkout-req-9f8a\n├── span: API gateway            (2ms)\n├── span: auth service check     (12ms)\n├── span: inventory service call (340ms)  ← the slow one\n│   └── span: inventory DB query (335ms)\n└── span: payment service call   (45ms)\n\`\`\`\n\nEach span records its **parent span**, building the tree above, so a tracing tool can render exactly where time was spent across the whole request, at a glance.\n\n## Propagating context across services\n\nFor this to work, a **trace context** (trace ID + current span ID) has to travel with the request as it hops between services, usually via an HTTP header:\n\n\`\`\`\ntraceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\n\`\`\`\n\nEvery service in the chain reads the incoming trace context, creates its own span as a child of it, and passes the updated context along to whatever it calls next. Miss this step in even one service, and the trace breaks into two disconnected pieces there.\n\n## OpenTelemetry\n\n**OpenTelemetry (OTel)** is the current industry-standard, vendor-neutral way to instrument code for traces (and logs and metrics), instrument your code once with OTel's libraries, and send the data to whichever backend you choose (many are compatible), instead of locking your instrumentation to one specific vendor's proprietary SDK.\n\n\`\`\`\nimport { trace } from '@opentelemetry/api';\n\nconst tracer = trace.getTracer('inventory-service');\n\nasync function checkStock(itemId) {\n  return tracer.startActiveSpan('checkStock', async (span) => {\n    const result = await db.query(...);\n    span.end();\n    return result;\n  });\n}\n\`\`\`\n\n> [!NOTE]\n> A great deal of tracing's value comes for free once a service framework or library has built-in OTel instrumentation, HTTP frameworks, database clients, and message queues increasingly ship this out of the box, so you often get spans for the "boring" infrastructure calls without writing any tracing code yourself, and only add manual spans for the business logic you specifically want visibility into.`
+    ),
+    quiz: {
+      title: 'Distributed Tracing Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is a span?',
+          options: ['An entire trace', 'One unit of work within a trace, like a single service call', 'A type of log level', 'A metric label'],
+          answer: 'One unit of work within a trace, like a single service call',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Trace context must travel with a request across service boundaries (e.g. via an HTTP header) for a trace to stay connected.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'If a service fails to propagate the incoming trace context to what it calls next, the trace ____ into disconnected pieces.',
+          options: [],
+          answer: 'breaks',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is OpenTelemetry?',
+          options: [
+            "A single vendor's proprietary monitoring product",
+            'A vendor-neutral standard for instrumenting traces, logs, and metrics',
+            'A database engine',
+            'A container orchestrator',
+          ],
+          answer: 'A vendor-neutral standard for instrumenting traces, logs, and metrics',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Each span records its parent span, which is how a tracing tool reconstructs the full request tree.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Many HTTP frameworks and database clients now ship built-in ____ instrumentation, giving you spans for infrastructure calls with no extra code.',
+          options: [],
+          answer: 'OTel',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Alerting Without Burning Out Your Team',
+    content: lessonContent(
+      'Alerting Without Burning Out Your Team',
+      `Collecting logs, metrics, and traces is only useful if the right person finds out at the right time when something's actually wrong, without being paged for things that don't matter. Alerting is where observability turns into action.\n\n## SLIs, SLOs, and error budgets\n\n- **SLI (Service Level Indicator)**: a specific measurement, e.g. "percentage of requests completed successfully" or "p99 latency".\n- **SLO (Service Level Objective)**: a target for that indicator, e.g. "99.9% of requests succeed over a rolling 30 days".\n- **Error budget**: the amount of "failure" the SLO allows, 99.9% success means a 0.1% error budget, once you're consistently spending it faster than planned, that's a signal to slow down new releases and focus on stability instead of features.\n\n## Alert on symptoms, not causes\n\nA common mistake: alerting on every possible underlying cause ("CPU > 90%", "one Pod restarted", "disk usage > 80%") instead of on user-visible symptoms ("error rate > 1%", "p99 latency > 2s"). A single real incident can trigger dozens of cause-based alerts simultaneously, symptom-based alerts fire once, for the thing that actually matters to users.\n\n\`\`\`\n❌ Alert: "CPU usage above 90% on node-7"\n✅ Alert: "Error rate above 1% for checkout service, sustained 5 minutes"\n\`\`\`\n\n## Actionable alerts only\n\nEvery alert that pages a human should be something they can actually **act on**. If an alert fires and the response is always "check it, it's fine, go back to sleep", that's not an alert, that's noise, and it trains people to ignore the next one, including the real one.\n\n- Does this alert mean something is currently broken for users, or might be soon?\n- Is there a clear next action for whoever receives it?\n- Would ignoring this alert for an hour actually cause harm?\n\nIf the answer to any of these is "no", it probably shouldn't page anyone, it might still be worth a metric on a dashboard, just not a 3am notification.\n\n> [!WARNING]\n> **Alert fatigue** (too many low-value alerts) is one of the most common ways real incidents get missed, not because nobody was watching, but because everyone had learned to tune out the constant noise. A team with 5 alerts they trust completely responds faster than a team with 50 they've learned to dismiss.`
+    ),
+    quiz: {
+      title: 'Alerting Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is an SLO?',
+          options: [
+            'A type of log format',
+            'A target for a specific service level indicator, like 99.9% success rate',
+            'A metric label',
+            'A distributed tracing tool',
+          ],
+          answer: 'A target for a specific service level indicator, like 99.9% success rate',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The amount of allowed failure under an SLO (e.g. 0.1% for a 99.9% target) is called the error ____.',
+          options: [],
+          answer: 'budget',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Alerting on user-visible symptoms (like error rate) is generally preferred over alerting on every possible underlying cause.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What is 'alert fatigue'?",
+          options: [
+            'A hardware failure',
+            'When too many low-value alerts train people to ignore alerts, including real ones',
+            'A type of distributed trace',
+            'A billing charge from too many alerts',
+          ],
+          answer: 'When too many low-value alerts train people to ignore alerts, including real ones',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Every alert that fires should always page a human immediately, regardless of whether there's a clear next action.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A Service Level ____ is a specific measurement, like percentage of successful requests or p99 latency.',
+          options: [],
+          answer: 'Indicator',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Dashboards and Centralized Log Aggregation',
+    content: lessonContent(
+      'Dashboards and Centralized Log Aggregation',
+      `With logs, metrics, and traces flowing from every service, you need somewhere to actually collect, search, and visualize all of it, especially once you have more than one service or more than one server.\n\n## Why centralize logs\n\nIf every service's logs only live on its own machine/container, investigating anything that spans services (which is most real incidents) means SSHing into multiple machines and manually correlating timestamps, painfully slow, and impossible once containers get recycled and their local logs disappear with them.\n\nA **log aggregation** pipeline ships logs from every service to one central, searchable place:\n\n\`\`\`\nService A logs ─┐\nService B logs ─┼──→  Log shipper  →  Central storage/index  →  Search UI\nService C logs ─┘\n\`\`\`\n\nCommon building blocks: **Fluentd**/**Fluent Bit** or **Logstash** as the shipper, **Elasticsearch** or a similar index as storage, **Kibana** or **Grafana** as the search/visualization UI, this combination (Elasticsearch + Logstash + Kibana) is common enough to have its own acronym, the "ELK stack".\n\n## Building a useful dashboard\n\nA good dashboard answers "is everything okay right now?" at a glance, and helps narrow down "what's wrong?" within seconds if not. A solid starting point for almost any service:\n\n- **Request rate** (traffic volume over time)\n- **Error rate** (percentage of failed requests)\n- **Latency** (p50 and p99, not just an average, which hides outliers)\n- **Saturation** (how close a resource, CPU/memory/queue depth, is to its limit)\n\nThis is sometimes called the **"four golden signals"** (from Google's SRE book), covering both "are users having a bad time" (rate/errors/latency) and "are we about to have a bad time" (saturation).\n\n## Correlating across pillars in one place\n\nThe real payoff of centralizing everything: from one dashboard, you can jump from a metric spike, to the traces active during that window, to the specific logs from the exact service and time range the trace pointed at, without re-typing timestamps or switching between five different tools' worth of context.\n\n> [!TIP]\n> Don't build a dashboard with 40 panels nobody looks at. Start with the four golden signals for your most important service, and only add more once you've actually needed something else while debugging a real incident.`
+    ),
+    quiz: {
+      title: 'Dashboards & Log Aggregation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the ELK stack stand for?',
+          options: ['Elasticsearch, Logstash, Kibana', 'Events, Logs, Kubernetes', 'Error, Latency, Kafka', 'Encryption, Logging, Kubernetes'],
+          answer: 'Elasticsearch, Logstash, Kibana',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Investigating an incident by SSHing into each service's machine individually is a scalable, recommended approach for a multi-service system.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The 'four golden signals' from Google's SRE book are latency, traffic, errors, and ____.",
+          options: [],
+          answer: 'saturation',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why should latency be shown as p50/p99 rather than just an average?',
+          options: [
+            'Averages are illegal in monitoring',
+            'An average hides outliers that percentiles reveal',
+            'p99 is easier to compute',
+            'Averages cannot be graphed',
+          ],
+          answer: 'An average hides outliers that percentiles reveal',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A good dashboard should have as many panels as possible to show every available metric.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Central log storage lets you jump from a metric spike to related traces to the exact ____ from that time range, all in one place.',
+          options: [],
+          answer: 'logs',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Instrument a Sample App with Logs, Metrics, and Traces',
+    content: lessonContent(
+      'Final Project: Instrument a Sample App with Logs, Metrics, and Traces',
+      `Apply all three pillars to a real, running application, however small.\n\n## Requirements\n\n1. Add structured (JSON) logging to your app, including at least one correlation ID that's attached to every log line generated while handling a single request.\n2. Expose at least three Prometheus-style metrics: one counter (e.g. total requests), one gauge (e.g. active connections), and one histogram (e.g. request latency), on a scrapeable endpoint.\n3. Add basic distributed tracing (using OpenTelemetry or a similar library) around at least one operation that calls another service or the database, with the trace context propagated if your app has more than one service.\n4. Build a simple dashboard (even a basic Grafana/hosted-tool dashboard, or a written mockup with real numbers) showing the four golden signals for your app.\n5. Define at least one SLO for your app (e.g. "99% of requests complete in under 500ms") and describe what alert you'd configure to catch a violation of it.\n\n## Stretch goals\n\n- Deliberately introduce a bug, then use only your logs/metrics/traces (not the source code) to diagnose it, and write up how you found it.\n- Add a second alert rule based on error rate, and explain why it's a symptom-based alert rather than a cause-based one.\n- Correlate a single request end-to-end: capture its correlation ID, find its trace, and find its logs, all for the exact same request.\n\nSubmit a link to your finished project (a repo, or a written report with dashboard screenshots/mock numbers) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const promptEngineeringLessons: SeedLesson[] = [
   {
     title: 'What Is Prompt Engineering (and Vibe Coding)?',
@@ -4055,18 +5362,36 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       lessons: nodePrismaLessons,
     },
   ],
-  docker: [
+  devops: [
     {
       title: 'Docker Fundamentals',
       description: 'Package, ship, and run applications anywhere with containers, images, Dockerfiles, and Docker Compose.',
       lessons: dockerLessons,
     },
-  ],
-  azure: [
     {
       title: 'Azure Fundamentals',
       description: 'Deploy, host, and scale real applications in the cloud with Microsoft Azure.',
       lessons: azureLessons,
+    },
+    {
+      title: 'Kubernetes Fundamentals',
+      description: 'Orchestrate containers at scale: Pods, Deployments, Services, config and storage, and real kubectl workflows.',
+      lessons: kubernetesLessons,
+    },
+    {
+      title: 'AWS Fundamentals',
+      description: 'Regions and IAM, EC2, S3, VPC networking, and serverless with Lambda and API Gateway.',
+      lessons: awsLessons,
+    },
+    {
+      title: 'CI/CD Fundamentals',
+      description: 'Build real pipelines with GitHub Actions: automated testing, Docker image builds, deployment strategies, and pipeline secrets.',
+      lessons: cicdLessons,
+    },
+    {
+      title: 'Logging and Observability',
+      description: 'The three pillars of observability: structured logging, metrics and time-series data, distributed tracing, and alerting that does not burn out your team.',
+      lessons: observabilityLessons,
     },
   ],
   'ai-coding': [
@@ -4515,6 +5840,19 @@ async function main() {
       update: p,
       create: p,
     });
+
+    if (p.slug === 'devops') {
+      // Docker and Azure used to be their own standalone paths; fold their existing courses
+      // (and any real enrollments/progress/certificates already on them) into DevOps instead
+      // of recreating them, then remove the now-empty standalone path.
+      for (const oldSlug of ['docker', 'azure']) {
+        const oldPath = await prisma.learningPath.findUnique({ where: { slug: oldSlug } });
+        if (!oldPath) continue;
+        await prisma.course.updateMany({ where: { pathId: oldPath.id }, data: { pathId: path.id } });
+        await prisma.learningPath.delete({ where: { id: oldPath.id } });
+        console.log(`  ↳ moved "${oldSlug}" courses into devops, removed the standalone "${oldSlug}" path`);
+      }
+    }
 
     for (const courseSeed of coursesByPath[p.slug] ?? []) {
       const existing = await prisma.course.findFirst({ where: { pathId: path.id, title: courseSeed.title } });
