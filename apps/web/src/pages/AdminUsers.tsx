@@ -62,6 +62,9 @@ export function AdminUsers() {
         <NavLink to="/admin/users" className={adminTabClass}>
           Users
         </NavLink>
+        <NavLink to="/admin/reviews" className={adminTabClass}>
+          Reviews
+        </NavLink>
         <NavLink to="/admin/analytics" className={adminTabClass}>
           Analytics
         </NavLink>

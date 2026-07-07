@@ -121,6 +121,15 @@ export interface FeaturedReviewDto {
   createdAt: string;
 }
 
+export interface AdminReviewDto {
+  id: string;
+  rating: number;
+  body: string;
+  username: string;
+  courseTitle: string;
+  createdAt: string;
+}
+
 export interface QuizQuestionDto {
   id: string;
   type: QuestionType;
