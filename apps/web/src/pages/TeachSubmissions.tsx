@@ -21,7 +21,7 @@ function QuizAttemptDetail({ attemptId, onClose }: { attemptId: string; onClose:
           {detail ? `${detail.quizTitle} · ${new Date(detail.createdAt).toLocaleString()}` : 'Loading attempt…'}
         </p>
         <button onClick={onClose} className="text-xs text-slate-500 hover:text-white">
-          ✕ Close
+          Close
         </button>
       </div>
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
@@ -31,7 +31,7 @@ function QuizAttemptDetail({ attemptId, onClose }: { attemptId: string; onClose:
             <li key={a.questionId} className={`rounded-md px-2.5 py-2 text-xs ${a.isCorrect ? 'bg-emerald-950/40' : 'bg-red-950/40'}`}>
               <p className="text-slate-300">{a.prompt}</p>
               <p className={a.isCorrect ? 'mt-1 text-emerald-400' : 'mt-1 text-red-400'}>
-                {a.isCorrect ? '✅' : '❌'} Picked: {a.givenAnswer ?? '(no answer)'}
+                {a.isCorrect ? 'Correct' : 'Incorrect'} · Picked: {a.givenAnswer ?? '(no answer)'}
               </p>
               {!a.isCorrect && <p className="mt-0.5 text-slate-500">Correct answer: {a.correctAnswer}</p>}
             </li>
@@ -205,7 +205,7 @@ export function TeachSubmissions() {
                                   {q.attemptCount} attempt{q.attemptCount === 1 ? '' : 's'}, best {q.bestScore}%
                                 </span>
                                 <span className={q.passed ? 'text-emerald-400' : 'text-red-400'}>
-                                  {q.passed ? '✅' : '❌'}
+                                  {q.passed ? 'Passed' : 'Not passed'}
                                 </span>
                               </>
                             )}
@@ -223,7 +223,7 @@ export function TeachSubmissions() {
                                     : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                                 }`}
                               >
-                                Attempt {i + 1}: {a.score}% {a.passed ? '✅' : '❌'}
+                                Attempt {i + 1}: {a.score}% {a.passed ? '(passed)' : '(failed)'}
                               </button>
                             ))}
                           </div>
