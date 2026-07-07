@@ -3,6 +3,7 @@ import { parse as parseCookie } from 'cookie';
 import type { ChatMessageDto } from '@codeforge/shared';
 import { prisma } from '../lib/prisma.ts';
 import { AUTH_COOKIE, verifyToken, type TokenPayload } from '../lib/jwt.ts';
+import { userRoom } from '../lib/io.ts';
 
 export const CHAT_ROOMS = ['general', 'help', 'random', 'showcase'] as const;
 export type ChatRoom = (typeof CHAT_ROOMS)[number];
@@ -41,6 +42,9 @@ export function setupChat(io: Server) {
   });
 
   io.on('connection', (socket: ChatSocket) => {
+    // lets any route push a private event straight to this user, independent of chat rooms
+    socket.join(userRoom(socket.data.auth!.sub));
+
     socket.on('chat:join', (room: unknown) => {
       if (!isRoom(room)) return;
       const previous = socket.data.room;

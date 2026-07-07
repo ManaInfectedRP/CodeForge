@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   slugify,
+  type InstructorQuizAttemptDetailDto,
   type InstructorStudentProgressDto,
   type InstructorStudentQuizDto,
   type InstructorSubmissionDto,
@@ -17,6 +18,7 @@ import { HttpError } from '../middleware/errors.ts';
 import type { TokenPayload } from '../lib/jwt.ts';
 import { deleteLocalUpload, videoUpload } from '../lib/upload.ts';
 import { buildCourseMarkdown } from '../lib/exportMarkdown.ts';
+import { getIo, userRoom } from '../lib/io.ts';
 
 const courseSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(120),
@@ -139,6 +141,12 @@ async function quizSummariesByCourseUser(
           bestScore,
           passed: quizAttempts.some((a) => a.passed),
           lastAttemptAt: quizAttempts.length > 0 ? quizAttempts[quizAttempts.length - 1].createdAt.toISOString() : null,
+          attempts: quizAttempts.map((a) => ({
+            id: a.id,
+            score: a.score,
+            passed: a.passed,
+            createdAt: a.createdAt.toISOString(),
+          })),
         };
       });
     result.set(key, quizzes);
@@ -289,6 +297,12 @@ instructorRouter.get(
           bestScore,
           passed: quizAttempts.some((a) => a.passed),
           lastAttemptAt: quizAttempts.length > 0 ? quizAttempts[quizAttempts.length - 1].createdAt.toISOString() : null,
+          attempts: quizAttempts.map((a) => ({
+            id: a.id,
+            score: a.score,
+            passed: a.passed,
+            createdAt: a.createdAt.toISOString(),
+          })),
         };
       });
 
@@ -535,6 +549,52 @@ instructorRouter.put(
   })
 );
 
+instructorRouter.get(
+  '/quiz-attempts/:id',
+  h(async (req, res) => {
+    const attempt = await prisma.quizAttempt.findUnique({
+      where: { id: req.params.id },
+      include: {
+        quiz: {
+          include: {
+            questions: { orderBy: { order: 'asc' } },
+            lesson: { include: { course: true } },
+          },
+        },
+      },
+    });
+    if (!attempt) throw new HttpError(404, 'Quiz attempt not found');
+    if (attempt.quiz.lesson.course.instructorId !== req.auth!.sub && req.auth!.role !== 'ADMIN') {
+      throw new HttpError(403, 'You do not own this course');
+    }
+
+    const answers = attempt.answers as Record<string, string>;
+    const body: InstructorQuizAttemptDetailDto = {
+      id: attempt.id,
+      lessonTitle: attempt.quiz.lesson.title,
+      quizTitle: attempt.quiz.title,
+      score: attempt.score,
+      passed: attempt.passed,
+      createdAt: attempt.createdAt.toISOString(),
+      answers: attempt.quiz.questions.map((q) => {
+        const given = (answers[q.id] ?? '').trim();
+        const isCorrect =
+          q.type === 'FILL_BLANK' ? given.toLowerCase() === q.answer.trim().toLowerCase() : given === q.answer;
+        return {
+          questionId: q.id,
+          type: q.type,
+          prompt: q.prompt,
+          options: q.options,
+          correctAnswer: q.answer,
+          givenAnswer: answers[q.id] ?? null,
+          isCorrect,
+        };
+      }),
+    };
+    res.json(body);
+  })
+);
+
 function toInstructorSubmissionDto(
   s: {
     id: string;
@@ -601,6 +661,19 @@ instructorRouter.post(
       include: { lesson: { include: { course: { select: { id: true, title: true } } } }, user: true },
     });
     const quizMap = await quizSummariesByCourseUser([{ courseId: updated.lesson.course.id, userId: updated.user.id }]);
+    getIo()
+      ?.to(userRoom(updated.user.id))
+      .emit('submission:updated', {
+        lessonId: updated.lessonId,
+        submission: {
+          id: updated.id,
+          submissionUrl: updated.submissionUrl,
+          status: updated.status,
+          feedback: updated.feedback,
+          submittedAt: updated.submittedAt.toISOString(),
+          reviewedAt: updated.reviewedAt?.toISOString() ?? null,
+        },
+      });
     res.json(toInstructorSubmissionDto(updated, quizMap.get(`${updated.lesson.course.id}:${updated.user.id}`) ?? []));
   })
 );
@@ -616,6 +689,19 @@ instructorRouter.post(
       include: { lesson: { include: { course: { select: { id: true, title: true } } } }, user: true },
     });
     const quizMap = await quizSummariesByCourseUser([{ courseId: updated.lesson.course.id, userId: updated.user.id }]);
+    getIo()
+      ?.to(userRoom(updated.user.id))
+      .emit('submission:updated', {
+        lessonId: updated.lessonId,
+        submission: {
+          id: updated.id,
+          submissionUrl: updated.submissionUrl,
+          status: updated.status,
+          feedback: updated.feedback,
+          submittedAt: updated.submittedAt.toISOString(),
+          reviewedAt: updated.reviewedAt?.toISOString() ?? null,
+        },
+      });
     res.json(toInstructorSubmissionDto(updated, quizMap.get(`${updated.lesson.course.id}:${updated.user.id}`) ?? []));
   })
 );

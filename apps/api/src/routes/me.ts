@@ -138,14 +138,20 @@ meRouter.delete(
 meRouter.get(
   '/certificates',
   h(async (req, res) => {
+    const userId = req.auth!.sub;
     const certs = await prisma.certificate.findMany({
-      where: { userId: req.auth!.sub },
+      where: { userId },
       include: {
         user: { select: { username: true } },
         course: { include: { path: true, instructor: { select: { username: true } } } },
       },
       orderBy: { issuedAt: 'desc' },
     });
+    const reviews = await prisma.courseReview.findMany({
+      where: { userId, courseId: { in: certs.map((c) => c.courseId) } },
+    });
+    const reviewByCourse = new Map(reviews.map((r) => [r.courseId, r]));
+
     const body: CertificateDto[] = certs.map((c) => ({
       id: c.id,
       courseId: c.courseId,
@@ -155,6 +161,10 @@ meRouter.get(
       instructorName: c.course.instructor.username,
       verificationCode: c.verificationCode,
       issuedAt: c.issuedAt.toISOString(),
+      myReview: (() => {
+        const r = reviewByCourse.get(c.courseId);
+        return r ? { rating: r.rating, body: r.body } : null;
+      })(),
     }));
     res.json(body);
   })
@@ -172,6 +182,10 @@ meRouter.get(
     });
     if (!c || c.userId !== req.auth!.sub) throw new HttpError(404, 'Certificate not found');
 
+    const review = await prisma.courseReview.findUnique({
+      where: { courseId_userId: { courseId: c.courseId, userId: req.auth!.sub } },
+    });
+
     const body: CertificateDto = {
       id: c.id,
       courseId: c.courseId,
@@ -181,6 +195,7 @@ meRouter.get(
       instructorName: c.course.instructor.username,
       verificationCode: c.verificationCode,
       issuedAt: c.issuedAt.toISOString(),
+      myReview: review ? { rating: review.rating, body: review.body } : null,
     };
     res.json(body);
   })
