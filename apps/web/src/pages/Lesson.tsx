@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import type { LessonDetailDto } from '@codeforge/shared';
+import type { LessonDetailDto, ProjectSubmissionDto } from '@codeforge/shared';
 import { LessonMarkdown } from '../components/LessonMarkdown';
 import { api, errorMessage } from '../lib/api';
 import { QuizPlayer } from '../components/QuizPlayer';
 import { ProjectSubmissionPanel } from '../components/ProjectSubmissionPanel';
 import { useAuth } from '../context/AuthContext';
+import { getChatSocket } from '../lib/socket';
 
 export function Lesson() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +27,18 @@ export function Lesson() {
         setQuizPassed(res.data.quizPassed);
       })
       .catch((err) => setError(errorMessage(err)));
+  }, [id]);
+
+  useEffect(() => {
+    const socket = getChatSocket();
+    function onSubmissionUpdated(payload: { lessonId: string; submission: ProjectSubmissionDto }) {
+      if (payload.lessonId !== id) return;
+      setLesson((prev) => (prev ? { ...prev, mySubmission: payload.submission } : prev));
+    }
+    socket.on('submission:updated', onSubmissionUpdated);
+    return () => {
+      socket.off('submission:updated', onSubmissionUpdated);
+    };
   }, [id]);
 
   async function markComplete() {

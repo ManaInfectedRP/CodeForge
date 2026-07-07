@@ -3,12 +3,14 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import { createApp } from './app.ts';
 import { setupChat } from './chat/socket.ts';
+import { setIo } from './lib/io.ts';
 
 const port = Number(process.env.PORT ?? 4000);
 
 const httpServer = createServer(createApp());
 const io = new Server(httpServer, { cors: { origin: true, credentials: true } });
 setupChat(io);
+setIo(io);
 
 httpServer.listen(port, () => {
   console.log(`Kodstigen API listening on http://localhost:${port}`);

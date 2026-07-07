@@ -7,6 +7,16 @@ import { useAuth } from '../context/AuthContext';
 import { LessonMarkdown } from '../components/LessonMarkdown';
 import { runTestCase, type RunnableLang } from '../lib/sandbox';
 import { highlight, type PrismLang } from '../lib/prism';
+import { deepEqual } from '../lib/deepEqual';
+
+interface PreviewResult {
+  input: unknown[];
+  expectedOutput: unknown;
+  actualOutput: unknown;
+  errored: boolean;
+  errorMessage: string | null;
+  passed: boolean;
+}
 
 const langToRunnable: Record<ChallengeLanguage, RunnableLang> = {
   PYTHON: 'python',
@@ -51,11 +61,14 @@ export function ChallengeSolve() {
   const [code, setCode] = useState('');
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ChallengeSubmissionDto | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewResults, setPreviewResults] = useState<PreviewResult[] | null>(null);
 
   useEffect(() => {
     setChallenge(null);
     setError(null);
     setResult(null);
+    setPreviewResults(null);
     api
       .get<ChallengeDetailDto>(`/challenges/${id}`)
       .then((res) => {
@@ -72,12 +85,42 @@ export function ChallengeSolve() {
     setLanguage(lang);
     setCode(challenge.starterCode[starterKeyByLang[lang]] ?? '');
     setResult(null);
+    setPreviewResults(null);
+  }
+
+  async function runPreview() {
+    if (!challenge || !language) return;
+    setPreviewing(true);
+    setError(null);
+    setPreviewResults(null);
+    try {
+      const runnable = langToRunnable[language];
+      // Sequential for the same reason as submit(): Pyodide's stdout capture isn't safe to run concurrently.
+      const results: PreviewResult[] = [];
+      for (const ex of challenge.examples) {
+        const r = await runTestCase(runnable, code, challenge.entryPoint, ex.input);
+        results.push({
+          input: ex.input,
+          expectedOutput: ex.expectedOutput,
+          actualOutput: r.actualOutput,
+          errored: r.errored,
+          errorMessage: r.errorMessage,
+          passed: !r.errored && deepEqual(r.actualOutput, ex.expectedOutput),
+        });
+      }
+      setPreviewResults(results);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setPreviewing(false);
+    }
   }
 
   async function submit() {
     if (!challenge || !language) return;
     setRunning(true);
     setError(null);
+    setPreviewResults(null);
     try {
       const runnable = langToRunnable[language];
       // Sequential, not Promise.all: Pyodide is a single shared interpreter instance whose
@@ -168,14 +211,26 @@ export function ChallengeSolve() {
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={running}
-            className="rounded-md bg-emerald-600 px-4 py-1 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
-          >
-            {running ? 'Running…' : '▶ Submit'}
-          </button>
+          <div className="flex gap-2">
+            {challenge.examples.length > 0 && (
+              <button
+                type="button"
+                onClick={runPreview}
+                disabled={running || previewing}
+                className="rounded-md border border-slate-600 px-4 py-1 text-xs font-semibold text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+              >
+                {previewing ? 'Running…' : '▷ Run'}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={submit}
+              disabled={running || previewing}
+              className="rounded-md bg-emerald-600 px-4 py-1 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+            >
+              {running ? 'Running…' : '▶ Submit'}
+            </button>
+          </div>
         </div>
 
         <div className="max-h-[36rem] min-h-[14rem] overflow-auto bg-slate-950">
@@ -195,6 +250,33 @@ export function ChallengeSolve() {
       </div>
 
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+
+      {previewResults && (
+        <div className="mt-4 space-y-2">
+          {previewResults.map((r, i) => (
+            <div
+              key={i}
+              className={`rounded-xl px-4 py-3 font-mono text-xs ${
+                r.passed ? 'bg-emerald-900/40 text-emerald-300' : 'bg-red-900/40 text-red-300'
+              }`}
+            >
+              <p className="font-sans font-semibold">
+                {r.passed ? '✅' : '❌'}{' '}
+                {language === 'HTML'
+                  ? (() => {
+                      const a = r.input[0] as { selector: string; extract: string; attr?: string };
+                      return `${a.selector} → ${a.extract}${a.attr ? `(${a.attr})` : ''}`;
+                    })()
+                  : `solve(${r.input.map((v) => JSON.stringify(v)).join(', ')})`}
+              </p>
+              <p className="mt-1">expected: {JSON.stringify(r.expectedOutput)}</p>
+              <p>
+                {r.errored ? `error: ${r.errorMessage}` : `got: ${JSON.stringify(r.actualOutput)}`}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {result && (
         <div

@@ -1,7 +1,46 @@
 import { useCallback, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import type { InstructorSubmissionDto, SubmissionStatus } from '@codeforge/shared';
+import type { InstructorQuizAttemptDetailDto, InstructorSubmissionDto, SubmissionStatus } from '@codeforge/shared';
 import { api, errorMessage } from '../lib/api';
+
+function QuizAttemptDetail({ attemptId, onClose }: { attemptId: string; onClose: () => void }) {
+  const [detail, setDetail] = useState<InstructorQuizAttemptDetailDto | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .get<InstructorQuizAttemptDetailDto>(`/instructor/quiz-attempts/${attemptId}`)
+      .then((res) => setDetail(res.data))
+      .catch((err) => setError(errorMessage(err)));
+  }, [attemptId]);
+
+  return (
+    <div className="mt-2 rounded-lg border border-slate-700 bg-slate-900 p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-slate-300">
+          {detail ? `${detail.quizTitle} · ${new Date(detail.createdAt).toLocaleString()}` : 'Loading attempt…'}
+        </p>
+        <button onClick={onClose} className="text-xs text-slate-500 hover:text-white">
+          Close
+        </button>
+      </div>
+      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+      {detail && (
+        <ul className="mt-2 space-y-2">
+          {detail.answers.map((a) => (
+            <li key={a.questionId} className={`rounded-md px-2.5 py-2 text-xs ${a.isCorrect ? 'bg-emerald-950/40' : 'bg-red-950/40'}`}>
+              <p className="text-slate-300">{a.prompt}</p>
+              <p className={a.isCorrect ? 'mt-1 text-emerald-400' : 'mt-1 text-red-400'}>
+                {a.isCorrect ? 'Correct' : 'Incorrect'} · Picked: {a.givenAnswer ?? '(no answer)'}
+              </p>
+              {!a.isCorrect && <p className="mt-0.5 text-slate-500">Correct answer: {a.correctAnswer}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 const teachTabClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-full px-4 py-1.5 text-sm font-medium ${
@@ -27,6 +66,7 @@ export function TeachSubmissions() {
   const [feedback, setFeedback] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [openAttemptId, setOpenAttemptId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setSubmissions(null);
@@ -149,26 +189,48 @@ export function TeachSubmissions() {
                   <summary className="cursor-pointer font-medium text-slate-300">
                     Quiz attempts across this course ({s.quizzes.filter((q) => q.passed).length}/{s.quizzes.length} passed)
                   </summary>
-                  <ul className="mt-2 space-y-1.5">
+                  <ul className="mt-2 space-y-3">
                     {s.quizzes.map((q) => (
-                      <li key={q.lessonId} className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-slate-400">
-                          {q.lessonTitle} <span className="text-slate-600">· {q.quizTitle}</span>
-                        </span>
-                        <span className="flex items-center gap-2">
-                          {q.attemptCount === 0 ? (
-                            <span className="text-slate-500">Not attempted</span>
-                          ) : (
-                            <>
-                              <span className="text-slate-500">
-                                {q.attemptCount} attempt{q.attemptCount === 1 ? '' : 's'}, best {q.bestScore}%
-                              </span>
-                              <span className={q.passed ? 'text-emerald-400' : 'text-red-400'}>
-                                {q.passed ? '✅' : '❌'}
-                              </span>
-                            </>
-                          )}
-                        </span>
+                      <li key={q.lessonId}>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="text-slate-400">
+                            {q.lessonTitle} <span className="text-slate-600">· {q.quizTitle}</span>
+                          </span>
+                          <span className="flex items-center gap-2">
+                            {q.attemptCount === 0 ? (
+                              <span className="text-slate-500">Not attempted</span>
+                            ) : (
+                              <>
+                                <span className="text-slate-500">
+                                  {q.attemptCount} attempt{q.attemptCount === 1 ? '' : 's'}, best {q.bestScore}%
+                                </span>
+                                <span className={q.passed ? 'text-emerald-400' : 'text-red-400'}>
+                                  {q.passed ? 'Passed' : 'Not passed'}
+                                </span>
+                              </>
+                            )}
+                          </span>
+                        </div>
+                        {q.attempts.length > 0 && (
+                          <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {q.attempts.map((a, i) => (
+                              <button
+                                key={a.id}
+                                onClick={() => setOpenAttemptId(openAttemptId === a.id ? null : a.id)}
+                                className={`rounded-md px-2 py-1 text-[11px] font-medium ${
+                                  openAttemptId === a.id
+                                    ? 'bg-forge-600 text-white'
+                                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                }`}
+                              >
+                                Attempt {i + 1}: {a.score}% {a.passed ? '(passed)' : '(failed)'}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {q.attempts.some((a) => a.id === openAttemptId) && (
+                          <QuizAttemptDetail attemptId={openAttemptId!} onClose={() => setOpenAttemptId(null)} />
+                        )}
                       </li>
                     ))}
                   </ul>

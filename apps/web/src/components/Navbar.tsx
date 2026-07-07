@@ -101,13 +101,13 @@ export function Navbar() {
         ) : (
           <nav className="flex items-center gap-1">
             <NavLink to="/login" className={navLinkClass}>
-              Log in
+              Logga in
             </NavLink>
             <Link
               to="/register"
               className="ml-2 rounded-lg bg-forge-600 px-4 py-2 text-sm font-semibold text-white hover:bg-forge-500"
             >
-              Get started
+              Börja lära dig
             </Link>
           </nav>
         )}

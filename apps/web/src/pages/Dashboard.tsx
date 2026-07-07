@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import type { CertificateDto, DashboardDto } from '@codeforge/shared';
 import { api } from '../lib/api';
 import { ProgressBar } from '../components/ProgressBar';
+import { CourseReviewForm } from '../components/CourseReviewForm';
 
 export function Dashboard() {
   const [data, setData] = useState<DashboardDto | null>(null);
   const [certificates, setCertificates] = useState<CertificateDto[]>([]);
   const [failed, setFailed] = useState(false);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<DashboardDto>('/me/dashboard').then((res) => setData(res.data)).catch(() => setFailed(true));
@@ -79,17 +81,31 @@ export function Dashboard() {
           <h2 className="text-xl font-bold">🎓 Certificates</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {certificates.map((c) => (
-              <Link
-                key={c.id}
-                to={`/certificates/${c.id}`}
-                className="rounded-2xl border border-amber-700/40 bg-slate-900 p-4 transition-colors hover:border-amber-500/60"
-              >
-                <p className="text-xs uppercase tracking-wide text-slate-500">{c.pathName}</p>
-                <p className="mt-1 font-semibold">{c.courseTitle}</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  Issued {new Date(c.issuedAt).toLocaleDateString()}
-                </p>
-              </Link>
+              <div key={c.id} className="rounded-2xl border border-amber-700/40 bg-slate-900 p-4">
+                <Link to={`/certificates/${c.id}`} className="block transition-colors hover:opacity-80">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">{c.pathName}</p>
+                  <p className="mt-1 font-semibold">{c.courseTitle}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Issued {new Date(c.issuedAt).toLocaleDateString()}
+                  </p>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setReviewingId(reviewingId === c.id ? null : c.id)}
+                  className="mt-3 text-sm font-medium text-forge-500 hover:underline"
+                >
+                  {c.myReview ? `★ Your review (${c.myReview.rating}/5)` : '★ Leave a review'}
+                </button>
+                {reviewingId === c.id && (
+                  <CourseReviewForm
+                    courseId={c.courseId}
+                    myReview={c.myReview}
+                    onSaved={(myReview) =>
+                      setCertificates((list) => list.map((cert) => (cert.id === c.id ? { ...cert, myReview } : cert)))
+                    }
+                  />
+                )}
+              </div>
             ))}
           </div>
         </section>

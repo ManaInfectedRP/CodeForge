@@ -31,6 +31,8 @@ export interface CertificateDto {
   instructorName: string;
   verificationCode: string;
   issuedAt: string;
+  /** the viewer's own review of this course, if they've left one */
+  myReview?: MyCourseReviewDto | null;
 }
 
 export interface AdminUserDto {
@@ -279,6 +281,13 @@ export interface InstructorSubmissionDto {
 
 // --- Student progress & quiz results (instructor view) ---
 
+export interface InstructorQuizAttemptSummaryDto {
+  id: string;
+  score: number;
+  passed: boolean;
+  createdAt: string;
+}
+
 export interface InstructorStudentQuizDto {
   lessonId: string;
   lessonTitle: string;
@@ -288,6 +297,28 @@ export interface InstructorStudentQuizDto {
   bestScore: number | null;
   passed: boolean;
   lastAttemptAt: string | null;
+  /** every attempt this student has made, oldest first, so an instructor can drill into a specific one */
+  attempts: InstructorQuizAttemptSummaryDto[];
+}
+
+export interface InstructorQuizAttemptAnswerDto {
+  questionId: string;
+  type: QuestionType;
+  prompt: string;
+  options: string[];
+  correctAnswer: string;
+  givenAnswer: string | null;
+  isCorrect: boolean;
+}
+
+export interface InstructorQuizAttemptDetailDto {
+  id: string;
+  lessonTitle: string;
+  quizTitle: string;
+  score: number;
+  passed: boolean;
+  createdAt: string;
+  answers: InstructorQuizAttemptAnswerDto[];
 }
 
 export interface InstructorStudentProgressDto {
