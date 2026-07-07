@@ -43,6 +43,7 @@ export interface AdminUserDto {
   createdAt: string;
   bannedAt: string | null;
   chatBlockedAt: string | null;
+  githubUsername: string | null;
 }
 
 export interface ChatMessageDto {

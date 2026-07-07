@@ -109,6 +109,11 @@ export function AdminUsers() {
                           Chat blocked
                         </span>
                       )}
+                      {u.githubUsername && (
+                        <span className="rounded bg-slate-700 px-1.5 py-0.5 text-[10px] font-bold text-slate-200">
+                          GitHub: @{u.githubUsername}
+                        </span>
+                      )}
                     </p>
                     <p className="mt-0.5 truncate text-sm text-slate-500">
                       {u.email} · ⚡ {u.xp} XP · 🔥 {u.streak} · joined {new Date(u.createdAt).toLocaleDateString()}

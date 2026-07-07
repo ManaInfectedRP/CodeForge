@@ -28,6 +28,7 @@ function toAdminUserDto(u: User): AdminUserDto {
     createdAt: u.createdAt.toISOString(),
     bannedAt: u.bannedAt?.toISOString() ?? null,
     chatBlockedAt: u.chatBlockedAt?.toISOString() ?? null,
+    githubUsername: u.githubUsername,
   };
 }
 
