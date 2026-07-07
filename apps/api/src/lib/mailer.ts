@@ -5,7 +5,10 @@ import nodemailer from 'nodemailer';
  * On Render this is provided automatically as RENDER_EXTERNAL_URL.
  */
 export function appUrl(): string {
-  return process.env.APP_URL ?? process.env.RENDER_EXTERNAL_URL ?? 'http://localhost:5173';
+  const url = process.env.APP_URL ?? process.env.RENDER_EXTERNAL_URL ?? 'http://localhost:5173';
+  // a trailing slash here would double up when callers append a path (e.g. "//api/auth/...”),
+  // which GitHub's OAuth redirect_uri matching treats as a different, unregistered URL
+  return url.replace(/\/+$/, '');
 }
 
 /** When no SMTP is configured, accounts are auto-verified at registration instead. */
