@@ -79,7 +79,7 @@ export function CourseDetail() {
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
-      <Link to="/courses" className="text-sm text-slate-400 hover:text-white">
+      <Link to={`/courses?path=${course.pathSlug}`} className="text-sm text-slate-400 hover:text-white">
         ← All courses
       </Link>
       <p className="mt-4 text-xs uppercase tracking-wide text-slate-500">{course.pathName}</p>
