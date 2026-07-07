@@ -63,7 +63,9 @@ model User {
   id                 String           @id @default(cuid())
   username           String           @unique
   email              String           @unique
-  passwordHash       String
+  passwordHash       String?
+  githubId           String?          @unique
+  githubUsername     String?
   role               Role             @default(STUDENT)
   avatarUrl          String?
   bio                String?

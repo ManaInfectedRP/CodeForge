@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { UserDto } from '@codeforge/shared';
 import { api, errorMessage } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -8,8 +9,15 @@ function Notice({ text, tone }: { text: string; tone: 'ok' | 'err' }) {
   return <p className={`text-sm ${tone === 'ok' ? 'text-emerald-400' : 'text-red-400'}`}>{text}</p>;
 }
 
+const githubErrorMessages: Record<string, string> = {
+  not_configured: 'GitHub login is not set up on this server yet.',
+  failed: 'Connecting to GitHub failed, please try again.',
+  already_linked: 'That GitHub account is already connected to a different Kodstigen account.',
+};
+
 export function Settings() {
   const { user, refreshUser } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [username, setUsername] = useState(user?.username ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -18,10 +26,34 @@ export function Settings() {
   const [profileMsg, setProfileMsg] = useState<{ text: string; tone: 'ok' | 'err' } | null>(null);
   const [avatarMsg, setAvatarMsg] = useState<{ text: string; tone: 'ok' | 'err' } | null>(null);
   const [passwordMsg, setPasswordMsg] = useState<{ text: string; tone: 'ok' | 'err' } | null>(null);
+  const githubStatus = searchParams.get('github');
+  const githubReason = searchParams.get('reason');
+  const [githubMsg, setGithubMsg] = useState<{ text: string; tone: 'ok' | 'err' } | null>(
+    githubStatus === 'connected'
+      ? { text: 'GitHub account connected.', tone: 'ok' }
+      : githubStatus === 'error'
+        ? { text: githubErrorMessages[githubReason ?? ''] ?? 'Connecting to GitHub failed, please try again.', tone: 'err' }
+        : null
+  );
   const [busy, setBusy] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
 
   if (!user) return null;
+
+  async function disconnectGithub() {
+    setBusy(true);
+    setGithubMsg(null);
+    try {
+      await api.post('/me/github/disconnect');
+      await refreshUser();
+      setGithubMsg({ text: 'GitHub account disconnected.', tone: 'ok' });
+    } catch (err) {
+      setGithubMsg({ text: errorMessage(err), tone: 'err' });
+    } finally {
+      setBusy(false);
+      setSearchParams({});
+    }
+  }
 
   function pickAvatarFile(file: File) {
     const reader = new FileReader();
@@ -233,6 +265,40 @@ export function Settings() {
           Change password
         </button>
       </form>
+
+      <section className="mt-6 space-y-4 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <h2 className="text-lg font-bold">GitHub</h2>
+        {user.githubUsername ? (
+          <>
+            <p className="text-sm text-slate-400">
+              Connected as <span className="font-medium text-slate-200">@{user.githubUsername}</span>.
+            </p>
+            {!user.hasPassword && (
+              <p className="text-xs text-amber-400">
+                Set a password above before disconnecting, otherwise you won't be able to log back in.
+              </p>
+            )}
+            <button
+              onClick={disconnectGithub}
+              disabled={busy || !user.hasPassword}
+              className="rounded-lg border border-red-800 px-4 py-2 text-sm font-medium text-red-300 hover:bg-red-950/40 disabled:opacity-50"
+            >
+              Disconnect GitHub
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-slate-400">Not connected.</p>
+            <a
+              href="/api/auth/github/connect"
+              className="inline-block rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+            >
+              Connect GitHub
+            </a>
+          </>
+        )}
+        {githubMsg && <Notice {...githubMsg} />}
+      </section>
 
       {cropSrc && (
         <AvatarCropModal

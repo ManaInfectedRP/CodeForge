@@ -75,7 +75,9 @@ meRouter.put(
     const { currentPassword, newPassword } = passwordSchema.parse(req.body);
     const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.sub } });
 
-    if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+    // Accounts created via GitHub OAuth have no password yet, so there's nothing to check
+    // against, anyone setting a first password just needs to prove they're logged in already.
+    if (user.passwordHash && !(await bcrypt.compare(currentPassword, user.passwordHash))) {
       throw new HttpError(401, 'Current password is incorrect');
     }
 
@@ -84,6 +86,23 @@ meRouter.put(
       data: { passwordHash: await bcrypt.hash(newPassword, 10) },
     });
     res.json({ changed: true });
+  })
+);
+
+meRouter.post(
+  '/github/disconnect',
+  h(async (req, res) => {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: req.auth!.sub } });
+    if (!user.githubId) throw new HttpError(400, 'No GitHub account is connected');
+    if (!user.passwordHash) {
+      throw new HttpError(400, "Set a password first, otherwise you won't be able to log back in without GitHub");
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { githubId: null, githubUsername: null },
+    });
+    res.json(toUserDto(updated));
   })
 );
 
