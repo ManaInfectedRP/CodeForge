@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { AdminChallengeDto, AdminCourseDto, AdminUserDto } from '@codeforge/shared';
+import type { AdminChallengeDto, AdminCourseDto, AdminReviewDto, AdminUserDto } from '@codeforge/shared';
 import type { User } from '@prisma/client';
 import { prisma } from '../lib/prisma.ts';
 import { h } from '../lib/helpers.ts';
@@ -299,5 +299,37 @@ adminRouter.post(
       data: { status: 'DRAFT', reviewNote: note ?? null },
     });
     res.json({ status: 'DRAFT' });
+  })
+);
+
+adminRouter.get(
+  '/reviews',
+  h(async (req, res) => {
+    const reviews = await prisma.courseReview.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { username: true } },
+        course: { select: { title: true } },
+      },
+    });
+    const body: AdminReviewDto[] = reviews.map((r) => ({
+      id: r.id,
+      rating: r.rating,
+      body: r.body,
+      username: r.user.username,
+      courseTitle: r.course.title,
+      createdAt: r.createdAt.toISOString(),
+    }));
+    res.json(body);
+  })
+);
+
+adminRouter.delete(
+  '/reviews/:id',
+  h(async (req, res) => {
+    const review = await prisma.courseReview.findUnique({ where: { id: req.params.id } });
+    if (!review) throw new HttpError(404, 'Review not found');
+    await prisma.courseReview.delete({ where: { id: review.id } });
+    res.json({ deleted: true });
   })
 );

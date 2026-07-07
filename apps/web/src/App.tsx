@@ -29,6 +29,7 @@ import { TeachSubmissions } from './pages/TeachSubmissions';
 import { AdminReview } from './pages/AdminReview';
 import { AdminChallengeReview } from './pages/AdminChallengeReview';
 import { AdminUsers } from './pages/AdminUsers';
+import { AdminReviews } from './pages/AdminReviews';
 import { AdminAnalytics } from './pages/AdminAnalytics';
 import { VerifyEmail } from './pages/VerifyEmail';
 import { Chat } from './pages/Chat';
@@ -79,6 +80,7 @@ export function App() {
                 <Route path="/admin" element={<AdminReview />} />
                 <Route path="/admin/challenges" element={<AdminChallengeReview />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/reviews" element={<AdminReviews />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
               </Route>
               <Route path="*" element={<main className="p-16 text-center text-slate-400">Page not found</main>} />
