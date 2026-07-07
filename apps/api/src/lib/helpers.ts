@@ -20,5 +20,7 @@ export function toUserDto(user: User): UserDto {
     xp: user.xp,
     streak: user.streak,
     emailVerified: user.emailVerified,
+    githubUsername: user.githubUsername,
+    hasPassword: user.passwordHash !== null,
   };
 }

@@ -18,6 +18,8 @@ export interface UserDto {
   xp: number;
   streak: number;
   emailVerified: boolean;
+  githubUsername: string | null;
+  hasPassword: boolean;
 }
 
 export interface CertificateDto {

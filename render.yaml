@@ -63,6 +63,13 @@ services:
       # you serve the app from a custom domain.
       - key: APP_URL
         sync: false
+      # GitHub OAuth ("Sign in with GitHub"). Leave unset to disable it. Register an
+      # OAuth App at https://github.com/settings/developers with callback URL
+      # {APP_URL}/api/auth/github/callback (used for both sign-in and Settings connect).
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
     # --- persistent uploads (paid instances only) ---
     # disk:
     #   name: codeforge-uploads
