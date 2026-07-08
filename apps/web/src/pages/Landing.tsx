@@ -51,11 +51,6 @@ export function Landing() {
   return (
     <main>
       <section className="mx-auto max-w-6xl px-4 py-16 text-center">
-        <img
-          src="/logo.png"
-          alt="Kodstigen"
-          className="mx-auto mb-6 h-64 w-64 rounded-3xl object-cover shadow-lg shadow-forge-600/20"
-        />
         <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight sm:text-6xl">
           Din väg mot en karriär som <span className="bg-gradient-to-r from-forge-500 to-emerald-400 bg-clip-text text-transparent">mjukvaruutvecklare</span>
         </h1>
