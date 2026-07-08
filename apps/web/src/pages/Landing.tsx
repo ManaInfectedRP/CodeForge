@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { FeaturedReviewDto, LearningPathDto } from '@codeforge/shared';
 import { api } from '../lib/api';
@@ -39,13 +39,78 @@ function ReviewCard({ review }: { review: FeaturedReviewDto }) {
   );
 }
 
+function ReviewsCarousel({ reviews }: { reviews: FeaturedReviewDto[] }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  function updateScrollState() {
+    const el = scrollerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }
+
+  useEffect(() => {
+    updateScrollState();
+  }, [reviews]);
+
+  function scroll(direction: 1 | -1) {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const card = el.firstElementChild as HTMLElement | null;
+    const step = card ? card.getBoundingClientRect().width + 20 : el.clientWidth;
+    el.scrollBy({ left: direction * step, behavior: 'smooth' });
+  }
+
+  return (
+    <div className="relative">
+      <div
+        ref={scrollerRef}
+        onScroll={updateScrollState}
+        className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {reviews.map((r) => (
+          <div key={r.id} className="w-full shrink-0 snap-start sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)]">
+            <ReviewCard review={r} />
+          </div>
+        ))}
+      </div>
+
+      {canScrollLeft && (
+        <button
+          type="button"
+          onClick={() => scroll(-1)}
+          aria-label="Föregående"
+          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-700 bg-slate-900/90 text-lg text-slate-200 shadow-lg hover:bg-slate-800"
+        >
+          ‹
+        </button>
+      )}
+      {canScrollRight && (
+        <button
+          type="button"
+          onClick={() => scroll(1)}
+          aria-label="Nästa"
+          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-700 bg-slate-900/90 text-lg text-slate-200 shadow-lg hover:bg-slate-800"
+        >
+          ›
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function Landing() {
   const [paths, setPaths] = useState<LearningPathDto[]>([]);
   const [reviews, setReviews] = useState<FeaturedReviewDto[]>([]);
 
   useEffect(() => {
     api.get<LearningPathDto[]>('/paths').then((res) => setPaths(res.data)).catch(() => {});
-    api.get<FeaturedReviewDto[]>('/reviews/featured').then((res) => setReviews(res.data)).catch(() => {});
+    api
+      .get<FeaturedReviewDto[]>('/reviews/featured', { params: { limit: 9 } })
+      .then((res) => setReviews(res.data))
+      .catch(() => {});
   }, []);
 
   return (
@@ -81,11 +146,7 @@ export function Landing() {
       {reviews.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-20">
           <h2 className="mb-8 text-center text-2xl font-bold">Vad våra studenter säger</h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {reviews.map((r) => (
-              <ReviewCard key={r.id} review={r} />
-            ))}
-          </div>
+          <ReviewsCarousel reviews={reviews} />
         </section>
       )}
 
