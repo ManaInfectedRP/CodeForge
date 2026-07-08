@@ -222,6 +222,16 @@ export interface TeachCourseSummaryDto {
   reviewNote: string | null;
   lessonCount: number;
   enrollmentCount: number;
+  /** true when the viewer created this course, false when they're an invited co-instructor */
+  isCreator: boolean;
+  creatorUsername: string;
+}
+
+export interface CourseCollaboratorDto {
+  id: string;
+  username: string;
+  email: string;
+  role: Role;
 }
 
 export interface TeachLessonSummaryDto {
@@ -233,6 +243,7 @@ export interface TeachLessonSummaryDto {
 
 export interface TeachCourseDetailDto extends TeachCourseSummaryDto {
   lessons: TeachLessonSummaryDto[];
+  collaborators: CourseCollaboratorDto[];
 }
 
 export interface QuizQuestionEditDto {

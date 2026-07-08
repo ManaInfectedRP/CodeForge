@@ -139,7 +139,16 @@ export function TeachCourses() {
                   <p className="text-xs uppercase tracking-wide text-slate-500">{c.pathName}</p>
                   <h2 className="mt-0.5 font-semibold">{c.title}</h2>
                 </div>
-                <StatusBadge status={c.status} />
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                      c.isCreator ? 'bg-slate-800 text-slate-300' : 'bg-forge-900/50 text-forge-200'
+                    }`}
+                  >
+                    {c.isCreator ? 'Creator' : `Co-instructor · ${c.creatorUsername}`}
+                  </span>
+                  <StatusBadge status={c.status} />
+                </div>
               </div>
               <p className="mt-2 text-sm text-slate-400">
                 {c.lessonCount} lessons · {c.enrollmentCount} students enrolled
