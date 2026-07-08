@@ -61,8 +61,7 @@ export function Landing() {
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">
           Kliv för kliv, från din första rad kod till din första utvecklarroll. Interaktiva kurser, verkliga
-          projekt och quiz i bland annat C++, Python, JavaScript, TypeScript, Node.js, Git, React, C# och SQL,
-          med XP och streaks som håller farten uppe.
+          projekt och quiz i alla möjliga programmeringsspråk.
         </p>
         <div className="mt-8 flex justify-center gap-4">
           <Link
