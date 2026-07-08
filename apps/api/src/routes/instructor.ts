@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   slugify,
+  type CourseCollaboratorDto,
   type InstructorQuizAttemptDetailDto,
   type InstructorStudentProgressDto,
   type InstructorStudentQuizDto,
@@ -66,11 +67,34 @@ const quizSchema = z.object({
 
 const moveSchema = z.object({ direction: z.enum(['up', 'down']) });
 
+const inviteCollaboratorSchema = z.object({
+  identifier: z.string().trim().min(1, 'Enter a username or email'),
+});
+
+/** Creator, an invited co-instructor, and admins all get full editing access to a course. */
+async function hasCourseAccess(courseInstructorId: string, courseId: string, auth: TokenPayload): Promise<boolean> {
+  if (courseInstructorId === auth.sub || auth.role === 'ADMIN') return true;
+  const collaborator = await prisma.courseCollaborator.findUnique({
+    where: { courseId_userId: { courseId, userId: auth.sub } },
+  });
+  return collaborator !== null;
+}
+
 async function ownedCourse(courseId: string, auth: TokenPayload): Promise<Course> {
   const course = await prisma.course.findUnique({ where: { id: courseId } });
   if (!course) throw new HttpError(404, 'Course not found');
+  if (!(await hasCourseAccess(course.instructorId, course.id, auth))) {
+    throw new HttpError(403, 'You do not have access to this course');
+  }
+  return course;
+}
+
+/** Only the creator (or an admin) can delete the course or manage who co-instructs it. */
+async function creatorCourse(courseId: string, auth: TokenPayload): Promise<Course> {
+  const course = await prisma.course.findUnique({ where: { id: courseId } });
+  if (!course) throw new HttpError(404, 'Course not found');
   if (course.instructorId !== auth.sub && auth.role !== 'ADMIN') {
-    throw new HttpError(403, 'You do not own this course');
+    throw new HttpError(403, 'Only the course creator can do this');
   }
   return course;
 }
@@ -81,8 +105,8 @@ async function ownedLesson(lessonId: string, auth: TokenPayload) {
     include: { course: true },
   });
   if (!lesson) throw new HttpError(404, 'Lesson not found');
-  if (lesson.course.instructorId !== auth.sub && auth.role !== 'ADMIN') {
-    throw new HttpError(403, 'You do not own this lesson');
+  if (!(await hasCourseAccess(lesson.course.instructorId, lesson.course.id, auth))) {
+    throw new HttpError(403, 'You do not have access to this lesson');
   }
   return lesson;
 }
@@ -93,8 +117,8 @@ async function ownedSubmission(submissionId: string, auth: TokenPayload) {
     include: { lesson: { include: { course: true } } },
   });
   if (!submission) throw new HttpError(404, 'Submission not found');
-  if (submission.lesson.course.instructorId !== auth.sub && auth.role !== 'ADMIN') {
-    throw new HttpError(403, 'You do not own this submission');
+  if (!(await hasCourseAccess(submission.lesson.course.instructorId, submission.lesson.course.id, auth))) {
+    throw new HttpError(403, 'You do not have access to this submission');
   }
   return submission;
 }
@@ -162,8 +186,14 @@ instructorRouter.get(
   '/courses',
   h(async (req, res) => {
     const courses = await prisma.course.findMany({
-      where: { instructorId: req.auth!.sub },
-      include: { path: true, _count: { select: { lessons: true, enrollments: true } } },
+      where: {
+        OR: [{ instructorId: req.auth!.sub }, { collaborators: { some: { userId: req.auth!.sub } } }],
+      },
+      include: {
+        path: true,
+        instructor: { select: { username: true } },
+        _count: { select: { lessons: true, enrollments: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
     const body: TeachCourseSummaryDto[] = courses.map((c) => ({
@@ -176,6 +206,8 @@ instructorRouter.get(
       reviewNote: c.reviewNote,
       lessonCount: c._count.lessons,
       enrollmentCount: c._count.enrollments,
+      isCreator: c.instructorId === req.auth!.sub,
+      creatorUsername: c.instructor.username,
     }));
     res.json(body);
   })
@@ -199,7 +231,7 @@ instructorRouter.get(
   '/courses/:id',
   h(async (req, res) => {
     const course = await ownedCourse(req.params.id, req.auth!);
-    const [path, lessons, counts] = await Promise.all([
+    const [path, lessons, counts, creator, collaborators] = await Promise.all([
       prisma.learningPath.findUniqueOrThrow({ where: { id: course.pathId } }),
       prisma.lesson.findMany({
         where: { courseId: course.id },
@@ -207,6 +239,12 @@ instructorRouter.get(
         orderBy: { order: 'asc' },
       }),
       prisma.enrollment.count({ where: { courseId: course.id } }),
+      prisma.user.findUniqueOrThrow({ where: { id: course.instructorId }, select: { username: true } }),
+      prisma.courseCollaborator.findMany({
+        where: { courseId: course.id },
+        include: { user: { select: { id: true, username: true, email: true, role: true } } },
+        orderBy: { createdAt: 'asc' },
+      }),
     ]);
 
     const body: TeachCourseDetailDto = {
@@ -219,9 +257,61 @@ instructorRouter.get(
       reviewNote: course.reviewNote,
       lessonCount: lessons.length,
       enrollmentCount: counts,
+      isCreator: course.instructorId === req.auth!.sub,
+      creatorUsername: creator.username,
       lessons: lessons.map((l) => ({ id: l.id, title: l.title, order: l.order, hasQuiz: l.quiz !== null })),
+      collaborators: collaborators.map((c) => ({
+        id: c.user.id,
+        username: c.user.username,
+        email: c.user.email,
+        role: c.user.role,
+      })),
     };
     res.json(body);
+  })
+);
+
+instructorRouter.post(
+  '/courses/:id/collaborators',
+  h(async (req, res) => {
+    const course = await creatorCourse(req.params.id, req.auth!);
+    const { identifier } = inviteCollaboratorSchema.parse(req.body);
+
+    const user = await prisma.user.findFirst({
+      where: { OR: [{ username: identifier }, { email: identifier }] },
+    });
+    if (!user) throw new HttpError(404, 'No user found with that username or email');
+    if (user.role !== 'INSTRUCTOR' && user.role !== 'ADMIN') {
+      throw new HttpError(400, 'Only instructors or admins can be added as co-instructors');
+    }
+    if (user.id === course.instructorId) throw new HttpError(400, `${user.username} already created this course`);
+
+    const existing = await prisma.courseCollaborator.findUnique({
+      where: { courseId_userId: { courseId: course.id, userId: user.id } },
+    });
+    if (existing) throw new HttpError(400, `${user.username} is already a co-instructor on this course`);
+
+    await prisma.courseCollaborator.create({ data: { courseId: course.id, userId: user.id } });
+    const body: CourseCollaboratorDto = { id: user.id, username: user.username, email: user.email, role: user.role };
+    res.status(201).json(body);
+  })
+);
+
+instructorRouter.delete(
+  '/courses/:id/collaborators/:userId',
+  h(async (req, res) => {
+    const course = await creatorCourse(req.params.id, req.auth!);
+    await prisma.courseCollaborator.deleteMany({ where: { courseId: course.id, userId: req.params.userId } });
+    res.json({ removed: true });
+  })
+);
+
+instructorRouter.delete(
+  '/courses/:id',
+  h(async (req, res) => {
+    const course = await creatorCourse(req.params.id, req.auth!);
+    await prisma.course.delete({ where: { id: course.id } });
+    res.json({ deleted: true });
   })
 );
 
@@ -564,8 +654,8 @@ instructorRouter.get(
       },
     });
     if (!attempt) throw new HttpError(404, 'Quiz attempt not found');
-    if (attempt.quiz.lesson.course.instructorId !== req.auth!.sub && req.auth!.role !== 'ADMIN') {
-      throw new HttpError(403, 'You do not own this course');
+    if (!(await hasCourseAccess(attempt.quiz.lesson.course.instructorId, attempt.quiz.lesson.course.id, req.auth!))) {
+      throw new HttpError(403, 'You do not have access to this course');
     }
 
     const answers = attempt.answers as Record<string, string>;
@@ -637,7 +727,15 @@ instructorRouter.get(
     const submissions = await prisma.projectSubmission.findMany({
       where: {
         ...(status ? { status } : {}),
-        ...(req.auth!.role === 'ADMIN' ? {} : { lesson: { course: { instructorId: req.auth!.sub } } }),
+        ...(req.auth!.role === 'ADMIN'
+          ? {}
+          : {
+              lesson: {
+                course: {
+                  OR: [{ instructorId: req.auth!.sub }, { collaborators: { some: { userId: req.auth!.sub } } }],
+                },
+              },
+            }),
       },
       include: { lesson: { include: { course: { select: { id: true, title: true } } } }, user: true },
       orderBy: { submittedAt: 'desc' },

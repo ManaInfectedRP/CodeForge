@@ -13,6 +13,7 @@ export function TeachCourseEditor() {
   const [description, setDescription] = useState('');
   const [pathSlug, setPathSlug] = useState('');
   const [newLessonTitle, setNewLessonTitle] = useState('');
+  const [collaboratorIdentifier, setCollaboratorIdentifier] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -64,6 +65,32 @@ export function TeachCourseEditor() {
     });
   }
 
+  function inviteCollaborator(e: FormEvent) {
+    e.preventDefault();
+    const identifier = collaboratorIdentifier;
+    setCollaboratorIdentifier('');
+    void run(() => api.post(`/instructor/courses/${id}/collaborators`, { identifier }));
+  }
+
+  function removeCollaborator(userId: string, username: string) {
+    if (!confirm(`Remove ${username} as a co-instructor on this course?`)) return;
+    void run(() => api.delete(`/instructor/courses/${id}/collaborators/${userId}`));
+  }
+
+  async function deleteCourse() {
+    if (!course) return;
+    if (!confirm(`Delete "${course.title}"? This permanently removes all its lessons, enrollments, and student progress.`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.delete(`/instructor/courses/${id}`);
+      navigate('/teach');
+    } catch (err) {
+      setError(errorMessage(err));
+      setBusy(false);
+    }
+  }
+
   async function exportMarkdown() {
     if (!course) return;
     setBusy(true);
@@ -99,7 +126,8 @@ export function TeachCourseEditor() {
       </div>
       <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
-          {course.enrollmentCount} students enrolled · {course.lessonCount} lessons
+          {course.enrollmentCount} students enrolled · {course.lessonCount} lessons ·{' '}
+          {course.isCreator ? 'you created this course' : `created by ${course.creatorUsername}`}
         </p>
         <div className="flex items-center gap-2">
           <Link
@@ -191,6 +219,60 @@ export function TeachCourseEditor() {
         </button>
       </form>
 
+      <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <h2 className="text-lg font-bold">Co-instructors</h2>
+        <p className="mt-1 text-sm text-slate-400">
+          Co-instructors can edit lessons and quizzes, review submissions, and manage students, everything except
+          delete the course or manage this list.
+        </p>
+
+        <ul className="mt-4 space-y-2">
+          <li className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/50 px-3.5 py-2.5 text-sm">
+            <span>
+              {course.creatorUsername} <span className="text-slate-500">· creator</span>
+            </span>
+          </li>
+          {course.collaborators.map((c) => (
+            <li
+              key={c.id}
+              className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/50 px-3.5 py-2.5 text-sm"
+            >
+              <span>
+                {c.username} <span className="text-slate-500">· {c.email}</span>
+              </span>
+              {course.isCreator && (
+                <button
+                  onClick={() => removeCollaborator(c.id, c.username)}
+                  disabled={busy}
+                  className="text-xs font-medium text-red-400/80 hover:text-red-300 disabled:opacity-30"
+                >
+                  Remove
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        {course.isCreator && (
+          <form onSubmit={inviteCollaborator} className="mt-4 flex gap-2">
+            <input
+              required
+              value={collaboratorIdentifier}
+              onChange={(e) => setCollaboratorIdentifier(e.target.value)}
+              placeholder="Username or email of an instructor…"
+              className="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm focus:border-forge-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={busy}
+              className="rounded-lg bg-slate-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+            >
+              + Invite
+            </button>
+          </form>
+        )}
+      </section>
+
       <section className="mt-8">
         <h2 className="text-lg font-bold">Lessons</h2>
         {course.lessons.length === 0 ? (
@@ -262,6 +344,22 @@ export function TeachCourseEditor() {
           </button>
         </form>
       </section>
+
+      {course.isCreator && (
+        <section className="mt-8 rounded-2xl border border-red-900/50 bg-red-950/10 p-6">
+          <h2 className="text-lg font-bold text-red-300">Danger zone</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Permanently delete this course, its lessons, and all student progress. Only the creator can do this.
+          </p>
+          <button
+            onClick={deleteCourse}
+            disabled={busy}
+            className="mt-4 rounded-lg bg-red-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-50"
+          >
+            Delete course
+          </button>
+        </section>
+      )}
     </main>
   );
 }
