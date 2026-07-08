@@ -64,11 +64,21 @@ function ReviewsCarousel({ reviews }: { reviews: FeaturedReviewDto[] }) {
   }
 
   return (
-    <div className="relative">
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={() => scroll(-1)}
+        disabled={!canScrollLeft}
+        aria-label="Föregående"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-forge-600 text-lg text-white shadow-lg shadow-forge-600/25 hover:bg-forge-500 disabled:invisible"
+      >
+        ‹
+      </button>
+
       <div
         ref={scrollerRef}
         onScroll={updateScrollState}
-        className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex min-w-0 flex-1 snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {reviews.map((r) => (
           <div key={r.id} className="w-full shrink-0 snap-start sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)]">
@@ -77,26 +87,15 @@ function ReviewsCarousel({ reviews }: { reviews: FeaturedReviewDto[] }) {
         ))}
       </div>
 
-      {canScrollLeft && (
-        <button
-          type="button"
-          onClick={() => scroll(-1)}
-          aria-label="Föregående"
-          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-forge-600 text-lg text-white shadow-lg shadow-forge-600/25 hover:bg-forge-500"
-        >
-          ‹
-        </button>
-      )}
-      {canScrollRight && (
-        <button
-          type="button"
-          onClick={() => scroll(1)}
-          aria-label="Nästa"
-          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-forge-600 text-lg text-white shadow-lg shadow-forge-600/25 hover:bg-forge-500"
-        >
-          ›
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => scroll(1)}
+        disabled={!canScrollRight}
+        aria-label="Nästa"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-forge-600 text-lg text-white shadow-lg shadow-forge-600/25 hover:bg-forge-500 disabled:invisible"
+      >
+        ›
+      </button>
     </div>
   );
 }
