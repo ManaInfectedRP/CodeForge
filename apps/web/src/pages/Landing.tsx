@@ -82,7 +82,7 @@ function ReviewsCarousel({ reviews }: { reviews: FeaturedReviewDto[] }) {
           type="button"
           onClick={() => scroll(-1)}
           aria-label="Föregående"
-          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-700 bg-slate-900/90 text-lg text-slate-200 shadow-lg hover:bg-slate-800"
+          className="absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-forge-600 text-lg text-white shadow-lg shadow-forge-600/25 hover:bg-forge-500"
         >
           ‹
         </button>
@@ -92,7 +92,7 @@ function ReviewsCarousel({ reviews }: { reviews: FeaturedReviewDto[] }) {
           type="button"
           onClick={() => scroll(1)}
           aria-label="Nästa"
-          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-700 bg-slate-900/90 text-lg text-slate-200 shadow-lg hover:bg-slate-800"
+          className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-forge-600 text-lg text-white shadow-lg shadow-forge-600/25 hover:bg-forge-500"
         >
           ›
         </button>
