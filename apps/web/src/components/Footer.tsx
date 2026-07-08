@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer className="border-t border-slate-800 py-8 text-sm text-slate-500">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 sm:flex-row sm:justify-between">
-        <p>Kodstigen, a path forwards in coding, by Sebastian Larsson.</p>
+        <p>Kodstigen, a path forward in coding, by Sebastian Larsson.</p>
         <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
           <Link to="/dashboard" className="hover:text-white">
             Dashboard
