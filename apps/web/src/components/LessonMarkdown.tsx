@@ -1,4 +1,4 @@
-import { isValidElement, type ComponentProps, type ReactElement, type ReactNode } from 'react';
+import { isValidElement, useMemo, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
@@ -11,7 +11,7 @@ import { highlight, resolvePrismLang } from '../lib/prism';
  * playgrounds, html blocks become a live sandboxed preview, everything else is a
  * static, syntax-highlighted block.
  */
-function PreBlock({ children, ...props }: ComponentProps<'pre'>) {
+function PreBlock({ children, sessionKey, ...props }: ComponentProps<'pre'> & { sessionKey?: string }) {
   const child = Array.isArray(children) ? children[0] : children;
   if (isValidElement(child)) {
     const el = child as ReactElement<{ className?: string; children?: ReactNode }>;
@@ -24,7 +24,7 @@ function PreBlock({ children, ...props }: ComponentProps<'pre'>) {
     }
 
     const runnable = normalizeLang(rawLang);
-    if (runnable) return <CodePlayground language={runnable} initialCode={code} />;
+    if (runnable) return <CodePlayground language={runnable} initialCode={code} sessionKey={sessionKey} />;
 
     const prismLang = resolvePrismLang(rawLang);
     if (prismLang) {
@@ -41,9 +41,16 @@ function PreBlock({ children, ...props }: ComponentProps<'pre'>) {
   return <pre {...props}>{children}</pre>;
 }
 
-export function LessonMarkdown({ children }: { children: string }) {
+export function LessonMarkdown({ children, sessionKey }: { children: string; sessionKey?: string }) {
+  // Stable across re-renders unless sessionKey changes, so editing a code block doesn't get
+  // wiped out by an unrelated parent re-render remounting every playground on the page.
+  const components = useMemo(
+    () => ({ pre: (props: ComponentProps<'pre'>) => <PreBlock {...props} sessionKey={sessionKey} /> }),
+    [sessionKey]
+  );
+
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm, remarkAlert]} components={{ pre: PreBlock }}>
+    <ReactMarkdown remarkPlugins={[remarkGfm, remarkAlert]} components={components}>
       {children}
     </ReactMarkdown>
   );

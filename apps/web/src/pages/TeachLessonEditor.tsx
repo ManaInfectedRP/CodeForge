@@ -208,7 +208,7 @@ export function TeachLessonEditor() {
           </div>
           {preview ? (
             <div className="prose-lesson min-h-64 rounded-lg border border-slate-700 bg-slate-950 px-4 py-2">
-              <LessonMarkdown>{content}</LessonMarkdown>
+              <LessonMarkdown sessionKey={`lesson-edit-${id}`}>{content}</LessonMarkdown>
             </div>
           ) : (
             <textarea

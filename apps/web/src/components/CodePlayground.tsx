@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import Editor from 'react-simple-code-editor';
-import { isLuaLoading, isPyodideLoading, normalizeLang, runJs, runLua, runPython, type RunnableLang } from '../lib/sandbox';
+import {
+  isLuaLoading,
+  isPyodideLoading,
+  normalizeLang,
+  runJs,
+  runLua,
+  runPythonInSession,
+  type RunnableLang,
+} from '../lib/sandbox';
 import { highlight, type PrismLang } from '../lib/prism';
 
 export { normalizeLang, type RunnableLang };
@@ -24,7 +32,16 @@ const highlightLangByRunnable: Record<RunnableLang, PrismLang> = {
   html: 'markup',
 };
 
-export function CodePlayground({ language, initialCode }: { language: RunnableLang; initialCode: string }) {
+interface Props {
+  language: RunnableLang;
+  initialCode: string;
+  /** Python code blocks sharing this key share one interpreter namespace, like notebook cells:
+   * a variable or import from one block is still visible when another block with the same key
+   * runs. Blocks without a sessionKey (or in other languages) stay isolated. */
+  sessionKey?: string;
+}
+
+export function CodePlayground({ language, initialCode, sessionKey }: Props) {
   const [code, setCode] = useState(initialCode);
   const [output, setOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +56,7 @@ export function CodePlayground({ language, initialCode }: { language: RunnableLa
       let result: { output: string; error: string | null };
       if (language === 'python') {
         if (isPyodideLoading()) setStatus('Loading Python runtime… (first run only, ~10 MB)');
-        result = await runPython(code);
+        result = await runPythonInSession(sessionKey ?? 'default', code);
       } else if (language === 'lua') {
         if (isLuaLoading()) setStatus('Loading Lua runtime… (first run only)');
         result = await runLua(code);
@@ -70,7 +87,14 @@ export function CodePlayground({ language, initialCode }: { language: RunnableLa
   return (
     <div className="my-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
       <div className="flex items-center justify-between border-b border-slate-800 px-4 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{labels[language]}</span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          {labels[language]}
+          {language === 'python' && sessionKey && (
+            <span className="ml-2 font-normal normal-case text-slate-600" title="Variables and imports carry over from other Python blocks on this page">
+              shares state with other Python blocks
+            </span>
+          )}
+        </span>
         <div className="flex items-center gap-2">
           <button
             type="button"
