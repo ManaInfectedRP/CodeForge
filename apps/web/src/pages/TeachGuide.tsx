@@ -103,7 +103,7 @@ export function TeachGuide() {
       </p>
 
       <article className="prose-lesson mt-8">
-        <LessonMarkdown>{guide}</LessonMarkdown>
+        <LessonMarkdown sessionKey="teach-guide">{guide}</LessonMarkdown>
       </article>
     </main>
   );

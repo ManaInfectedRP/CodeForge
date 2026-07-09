@@ -264,7 +264,7 @@ export function TeachChallengeEditor() {
           </div>
           {preview ? (
             <div className="prose-lesson min-h-32 rounded-lg border border-slate-700 bg-slate-950 px-4 py-2">
-              <LessonMarkdown>{prompt}</LessonMarkdown>
+              <LessonMarkdown sessionKey={`challenge-edit-${id}`}>{prompt}</LessonMarkdown>
             </div>
           ) : (
             <textarea

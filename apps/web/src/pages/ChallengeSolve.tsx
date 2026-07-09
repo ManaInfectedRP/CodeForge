@@ -165,7 +165,7 @@ export function ChallengeSolve() {
       </div>
 
       <article className="prose-lesson mt-4">
-        <LessonMarkdown>{challenge.prompt}</LessonMarkdown>
+        <LessonMarkdown sessionKey={challenge.id}>{challenge.prompt}</LessonMarkdown>
       </article>
 
       {challenge.examples.length > 0 && (

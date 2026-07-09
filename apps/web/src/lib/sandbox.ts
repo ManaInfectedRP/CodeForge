@@ -69,7 +69,7 @@ export async function runPython(code: string): Promise<{ output: string; error: 
   let output = '';
   py.setStdout({ batched: (s) => (output += s + '\n') });
   py.setStderr({ batched: (s) => (output += s + '\n') });
-  // fresh namespace per run so lessons don't leak variables into each other
+  // fresh namespace per run, used for challenge grading where each test case must be isolated
   const namespace = py.globals.get('dict')();
   try {
     await py.runPythonAsync(code, { globals: namespace });
@@ -78,6 +78,45 @@ export async function runPython(code: string): Promise<{ output: string; error: 
     return { output, error: err instanceof Error ? err.message : String(err) };
   } finally {
     namespace.destroy();
+  }
+}
+
+// --- Persistent Python namespace, shared across every code block on the same lesson/page ---
+//
+// Unlike runPython() above (fresh globals every call, for isolated challenge grading), this lets
+// multiple `python` fenced code blocks on the same page behave like notebook cells: a variable or
+// import from one block is still visible when a later block runs, in any order, as many times as
+// the student re-runs them. The namespace is keyed by a caller-supplied session key (typically the
+// lesson id) and is torn down and replaced whenever that key changes.
+
+type PyNamespace = { destroy(): void };
+
+let sessionKey: string | null = null;
+let sessionNamespace: PyNamespace | null = null;
+
+function getSessionNamespace(py: PyodideInterface, key: string): PyNamespace {
+  if (sessionKey !== key) {
+    sessionNamespace?.destroy();
+    sessionNamespace = py.globals.get('dict')();
+    sessionKey = key;
+  }
+  return sessionNamespace!;
+}
+
+export async function runPythonInSession(
+  key: string,
+  code: string
+): Promise<{ output: string; error: string | null }> {
+  const py = await getPyodide();
+  let output = '';
+  py.setStdout({ batched: (s) => (output += s + '\n') });
+  py.setStderr({ batched: (s) => (output += s + '\n') });
+  const namespace = getSessionNamespace(py, key);
+  try {
+    await py.runPythonAsync(code, { globals: namespace });
+    return { output, error: null };
+  } catch (err) {
+    return { output, error: err instanceof Error ? err.message : String(err) };
   }
 }
 

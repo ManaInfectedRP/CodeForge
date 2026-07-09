@@ -89,7 +89,7 @@ export function Lesson() {
       )}
 
       <article className="prose-lesson mt-2">
-        <LessonMarkdown>{lesson.content}</LessonMarkdown>
+        <LessonMarkdown sessionKey={lesson.id}>{lesson.content}</LessonMarkdown>
       </article>
 
       {lesson.requiresSubmission && (
