@@ -50,6 +50,7 @@ const highlightLangByRunnable: Record<RunnableLang, PrismLang> = {
   typescript: 'typescript',
   lua: 'lua',
   html: 'markup',
+  c: 'c',
 };
 
 export function ChallengeSolve() {

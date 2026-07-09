@@ -12,6 +12,7 @@
   "dependencies": {
     "@codeforge/shared": "*",
     "axios": "^1.8.4",
+    "picoc-js": "^1.0.12",
     "prismjs": "^1.30.0",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
