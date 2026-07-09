@@ -146,6 +146,60 @@ const paths = [
     projectCount: 10,
     description: 'Think like an attacker to defend like a pro: the CIA triad, common attack vectors, network and web app security, cryptography, and access control.',
   },
+  {
+    slug: 'c',
+    name: 'C',
+    icon: '🔧',
+    difficulty: 4,
+    estimatedHours: 45,
+    projectCount: 11,
+    description: 'Get close to the machine: structs, pointers, manual memory management, and build your own garbage collector from scratch.',
+  },
+  {
+    slug: 'linux',
+    name: 'Linux',
+    icon: '🐧',
+    difficulty: 2,
+    estimatedHours: 20,
+    projectCount: 7,
+    description: 'The command line, filesystems, processes, permissions, and setting up a real development environment.',
+  },
+  {
+    slug: 'java',
+    name: 'Java',
+    icon: '☕',
+    difficulty: 3,
+    estimatedHours: 45,
+    projectCount: 7,
+    description: 'Statically-typed, object-oriented programming on the JVM: classes, collections, generics, and interfaces.',
+  },
+  {
+    slug: 'go',
+    name: 'Go',
+    icon: '🐹',
+    difficulty: 3,
+    estimatedHours: 35,
+    projectCount: 8,
+    description: 'A simple, fast, compiled language built for concurrency: structs, goroutines, channels, and error handling.',
+  },
+  {
+    slug: 'solidity',
+    name: 'Solidity',
+    icon: '⛓️',
+    difficulty: 4,
+    estimatedHours: 30,
+    projectCount: 7,
+    description: 'Write smart contracts for Ethereum: state variables, functions and visibility, access control, mappings, and events.',
+  },
+  {
+    slug: 'gdscript',
+    name: 'GDScript',
+    icon: '🎮',
+    difficulty: 2,
+    estimatedHours: 25,
+    projectCount: 7,
+    description: "Godot's built-in scripting language: nodes, the scene tree, signals, and building real gameplay behavior.",
+  },
 ];
 
 type SeedQuestion = {
@@ -5490,6 +5544,1390 @@ const cybersecurityLessons: SeedLesson[] = [
   },
 ];
 
+const cLessons: SeedLesson[] = [
+  {
+    title: 'C Basics',
+    content: lessonContent(
+      'C Basics',
+      `C is a compiled, statically-typed language from 1972 that still powers operating systems, databases, and language runtimes today. Learning C means learning how a computer actually works, no hidden garbage collector, no implicit conversions you didn't ask for, just you and the machine.\n\n## Your first program\n\n\`\`\`c\n#include <stdio.h>\n\nint main(void) {\n    printf("Hello, Kodstigen!\\n");\n    return 0;\n}\n\`\`\`\n\n- \`#include <stdio.h>\` pulls in the standard I/O library, so \`printf\` exists.\n- \`int main(void)\` is the entry point every C program starts from, it returns an \`int\` **exit code** to the operating system, \`0\` means "success".\n- \`printf\` formats and prints text, \`\\n\` is a newline escape sequence, unlike Python there's no automatic newline after a print.\n\n## Compiling and running\n\nC is compiled ahead of time, there's no interpreter:\n\n\`\`\`bash\ngcc hello.c -o hello\n./hello\n\`\`\`\n\n\`gcc\` translates your \`.c\` source file into a native executable, \`-o hello\` names the output file. Every time you change the source, you recompile before running again.\n\n## Variables and types\n\nUnlike Python or JavaScript, every variable in C has a fixed, explicit type:\n\n\`\`\`c\nint xp = 0;\nfloat ratio = 0.5f;\nchar grade = 'A';\nxp += 10;\n\`\`\`\n\nThere's no \`var\`/\`let\` inference, you declare the type up front and it never changes. This is why C is fast, the compiler knows exactly how much memory each variable needs and never has to check types at runtime.\n\n> [!TIP]\n> C has no built-in string type, a "string" is really just an array of \`char\` ending in a special \`\\0\` (null terminator) byte. You'll see why that matters a lot once we get to pointers.`
+    ),
+    quiz: {
+      title: 'C Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does main() returning 0 signal to the operating system?',
+          options: ['An error occurred', 'The program succeeded', 'The program is still running', 'Nothing, the return value is ignored'],
+          answer: 'The program succeeded',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In C, a variable\'s type must be declared up front and cannot change later.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The command to compile hello.c into an executable called hello with gcc is: gcc hello.c -o ____',
+          options: [],
+          answer: 'hello',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Structs',
+    content: lessonContent(
+      'Structs',
+      `C has no classes, but it has **structs**: a way to group related variables together under one name.\n\n\`\`\`c\nstruct Point {\n    int x;\n    int y;\n};\n\nint main(void) {\n    struct Point p = { .x = 3, .y = 4 };\n    printf("(%d, %d)\\n", p.x, p.y);\n    p.x += 1;\n    return 0;\n}\n\`\`\`\n\n\`.x\` and \`.y\` are the struct's **members**, accessed with the dot operator. \`{ .x = 3, .y = 4 }\` is a designated initializer, it sets each member by name so the order doesn't matter and the intent is clear.\n\n## Memory layout\n\nA struct isn't magic, it's just its members laid out **contiguously** in memory, one right after another, in declaration order (the compiler may add small gaps called padding for alignment, but conceptually think of it as one solid block):\n\n\`\`\`c\nstruct Point {   // sizeof(struct Point) is typically 8 bytes\n    int x;        // bytes 0-3\n    int y;        // bytes 4-7\n};\n\`\`\`\n\nThis matters a lot once pointers enter the picture: a pointer to a struct is just an address pointing at the start of that block, and every member is at a fixed, predictable offset from it.\n\n## typedef\n\nWriting \`struct Point\` everywhere gets tedious, \`typedef\` gives it a shorter alias:\n\n\`\`\`c\ntypedef struct {\n    int x;\n    int y;\n} Point;\n\nPoint p = { 3, 4 };\n\`\`\`\n\nNow \`Point\` can be used on its own, exactly like a built-in type such as \`int\`.`
+    ),
+    quiz: {
+      title: 'Structs Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "How are a struct's members arranged in memory?",
+          options: ['Randomly, wherever there is free space', 'Contiguously, one after another', 'Each member gets its own separate heap allocation', 'They are not stored, only computed on access'],
+          answer: 'Contiguously, one after another',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'typedef creates a shorter alias for a type, like naming an anonymous struct Point instead of writing struct Point every time.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Given "struct Point p;", you access its x member with the ____ operator: p.x',
+          options: [],
+          answer: 'dot',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Pointers',
+    content: lessonContent(
+      'Pointers',
+      `A **pointer** is just a variable that stores a memory address instead of a value. That's it, everything else about pointers is a consequence of that one idea.\n\n\`\`\`c\nint xp = 10;\nint *xpPtr = &xp;   // xpPtr holds the address of xp\n\nprintf("value: %d\\n", xp);       // 10\nprintf("address: %p\\n", (void*)&xp);\nprintf("via pointer: %d\\n", *xpPtr); // 10, dereferenced\n\n*xpPtr = 20;    // writes through the pointer\nprintf("now: %d\\n", xp);         // 20\n\`\`\`\n\n- \`&xp\` is the **address-of** operator, "give me the memory address where \`xp\` lives".\n- \`int *xpPtr\` declares \`xpPtr\` as "a pointer to an \`int\`".\n- \`*xpPtr\` is the **dereference** operator used on an existing pointer, "go to the address this pointer holds, and give me (or set) the value there".\n\n## Why bother?\n\nWithout pointers, C functions can only work with **copies** of the arguments you pass in:\n\n\`\`\`c\nvoid doubleIt(int n) {\n    n = n * 2;   // only changes the local copy\n}\n\nvoid doubleItProperly(int *n) {\n    *n = *n * 2; // changes the caller's variable\n}\n\nint main(void) {\n    int x = 5;\n    doubleIt(x);\n    printf("%d\\n", x);          // still 5\n    doubleItProperly(&x);\n    printf("%d\\n", x);          // now 10\n}\n\`\`\`\n\nPassing a pointer lets a function reach back into the caller's memory and modify it directly, this is how C simulates "pass by reference" since it only ever passes values (and an address is just a value).\n\n> [!WARNING]\n> A pointer that doesn't point at valid memory (never initialized, or freed already) is called a **dangling pointer**. Dereferencing one is undefined behavior, it might crash, or worse, silently corrupt unrelated memory. Always initialize pointers, even to \`NULL\`.`
+    ),
+    quiz: {
+      title: 'Pointers Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the & operator do when applied to a variable?',
+          options: ['Doubles its value', 'Returns its memory address', 'Dereferences it', 'Deletes it'],
+          answer: 'Returns its memory address',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Passing a pointer to a function lets that function modify the caller\'s original variable.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Given "int *p = &x;", the ____ operator (*p) reads or writes the value p points to.',
+          options: [],
+          answer: 'dereference',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Enums',
+    content: lessonContent(
+      'Enums',
+      `An **enum** (enumeration) creates a set of named integer constants, useful whenever a variable should only ever hold one of a small, fixed set of values.\n\n\`\`\`c\nenum Status {\n    PENDING,   // 0\n    APPROVED,  // 1\n    REJECTED   // 2\n};\n\nenum Status s = APPROVED;\nif (s == APPROVED) {\n    printf("Approved!\\n");\n}\n\`\`\`\n\nBy default, the first member is \`0\` and each following one increments by \`1\`. You can override this explicitly:\n\n\`\`\`c\nenum HttpStatus {\n    OK = 200,\n    NOT_FOUND = 404,\n    SERVER_ERROR = 500\n};\n\`\`\`\n\n## Why not just use plain ints?\n\nYou *could* use \`#define APPROVED 1\`, but an enum gives the compiler (and your editor) a real type to check, so passing an unrelated integer where a \`Status\` is expected can trigger a warning, and switch statements over an enum can warn you if you forgot to handle a case:\n\n\`\`\`c\nswitch (s) {\n    case PENDING:  printf("Waiting...\\n"); break;\n    case APPROVED: printf("Approved!\\n"); break;\n    case REJECTED: printf("Rejected.\\n"); break;\n}\n\`\`\`\n\nUnder the hood, an enum value really is just an \`int\`, C has no runtime type safety here, it's purely a naming and readability convenience, but a very useful one.`
+    ),
+    quiz: {
+      title: 'Enums Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'By default, what integer value does the first member of an enum get?',
+          options: ['1', '0', '-1', 'It is undefined'],
+          answer: '0',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'You can explicitly assign a specific integer value to an enum member, like OK = 200.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Under the hood, an enum value in C is really just an ____.',
+          options: [],
+          answer: 'int',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Unions',
+    content: lessonContent(
+      'Unions',
+      `If you know TypeScript, a "union type" there means a value that could be *one of several different types* (\`string | number\`), and the compiler tracks which. A C \`union\` is a completely different, much lower-level idea: it's a block of memory that all its members **share**, one at a time.\n\n\`\`\`c\nunion Value {\n    int asInt;\n    float asFloat;\n    char asChar[4];\n};\n\nunion Value v;\nv.asInt = 65;\nprintf("%d\\n", v.asInt);    // 65\nprintf("%c\\n", v.asChar[0]); // 'A', same bytes read as a char\n\`\`\`\n\nUnlike a struct, where every member gets its **own** space (so the struct's total size is the sum of its members), a union's members all **overlap the same bytes**. Its total size is only as big as its *largest* member, because only one member is ever "live" at a time, writing to one member overwrites whatever was in the others.\n\n## Why use one?\n\nUnions save memory when you need to represent "this is either an A or a B, never both at once" without wasting space storing both. They're commonly paired with a separate "tag" field (often an enum) to remember which member is currently valid, since the union itself has no idea:\n\n\`\`\`c\nenum ValueType { TYPE_INT, TYPE_FLOAT };\n\nstruct TaggedValue {\n    enum ValueType type;\n    union {\n        int asInt;\n        float asFloat;\n    } data;\n};\n\`\`\`\n\nThis "tagged union" pattern is exactly how many interpreters and virtual machines represent dynamically-typed values internally, worth remembering, you'll build something very close to it later in this course.`
+    ),
+    quiz: {
+      title: 'Unions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What is the size of a C union roughly equal to?",
+          options: ['The sum of all its members', 'The size of its largest member', 'Always 8 bytes', 'The size of its first member only'],
+          answer: 'The size of its largest member',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A C union's members occupy separate, non-overlapping memory, similar to a struct.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Pairing a union with an enum "tag" field to remember which member is currently valid is called a ____ union.',
+          options: [],
+          answer: 'tagged',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Stack and Heap',
+    content: lessonContent(
+      'Stack and Heap',
+      `Every running C program has two very different places to put data: the **stack** and the **heap**. Understanding the difference is essential once your programs get bigger than a single function.\n\n## The stack\n\nLocal variables live on the stack, memory is claimed automatically when a function is called and freed automatically the instant it returns:\n\n\`\`\`c\nvoid greet(void) {\n    char name[32] = "Ada"; // lives on the stack\n    printf("Hi, %s\\n", name);\n} // name's memory is reclaimed right here, automatically\n\`\`\`\n\nThe stack is extremely fast (allocating is just moving a pointer), but limited in size (usually a few MB) and strictly scoped, you can never return a pointer to a local stack variable and use it after the function returns, that memory is gone.\n\n## The heap\n\nThe heap is a much larger pool of memory that you manage **manually**, with \`malloc\` and \`free\`:\n\n\`\`\`c\n#include <stdlib.h>\n\nint *numbers = malloc(10 * sizeof(int)); // ask for room for 10 ints\nif (numbers == NULL) {\n    // malloc failed, out of memory\n    return 1;\n}\nnumbers[0] = 42;\nfree(numbers); // you MUST free it yourself when done\nnumbers = NULL; // avoid leaving a dangling pointer around\n\`\`\`\n\nHeap memory survives until you explicitly \`free\` it, which is exactly what makes it useful for data that needs to outlive the function that created it, and exactly what makes it dangerous: forget to \`free\` and you leak memory, \`free\` twice or use it after freeing and you get undefined behavior.\n\n| | Stack | Heap |\n|---|---|---|\n| Managed by | The compiler, automatically | You, manually (malloc/free) |\n| Speed | Very fast | Slower |\n| Size | Small, fixed | Large, limited by system RAM |\n| Lifetime | Ends when function returns | Until you free it |\n\n> [!WARNING]\n> Forgetting to \`free\` heap memory is a **memory leak**. This is exactly the problem garbage collectors exist to solve, and exactly what you'll build one for later in this course.`
+    ),
+    quiz: {
+      title: 'Stack and Heap Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which memory region is automatically reclaimed the instant a function returns?',
+          options: ['The heap', 'The stack', 'Neither, both require manual free()', 'Both, automatically'],
+          answer: 'The stack',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Memory allocated with malloc() must be freed manually with free(), it is not reclaimed automatically.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Forgetting to free heap memory that is no longer used is called a memory ____.',
+          options: [],
+          answer: 'leak',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Advanced Pointers',
+    content: lessonContent(
+      'Advanced Pointers',
+      `You thought pointers were hard? Wrong. The rest is just applying the same one idea, "a variable holding an address", one more layer deep.\n\n## Pointers to pointers\n\nA pointer can point at another pointer, useful whenever a function needs to modify **which address** the caller's pointer holds, not just the value at that address:\n\n\`\`\`c\nvoid allocate(int **outPtr) {\n    *outPtr = malloc(sizeof(int)); // sets the CALLER's pointer\n    **outPtr = 42;\n}\n\nint main(void) {\n    int *p = NULL;\n    allocate(&p);        // pass the address OF the pointer\n    printf("%d\\n", *p);  // 42\n    free(p);\n}\n\`\`\`\n\n\`int **outPtr\` reads right-to-left: "\`outPtr\` is a pointer to (a pointer to an \`int\`)". \`*outPtr\` gives you the inner pointer, \`**outPtr\` dereferences all the way down to the \`int\` itself.\n\n## Pointers and arrays\n\nAn array name, used in most expressions, "decays" into a pointer to its first element, this is why array indexing and pointer arithmetic are interchangeable in C:\n\n\`\`\`c\nint scores[3] = {10, 20, 30};\nint *p = scores;       // decays to &scores[0]\n\nprintf("%d\\n", scores[1]); // 20\nprintf("%d\\n", *(p + 1));  // 20, identical operation\np++;                        // now points at scores[1]\n\`\`\`\n\n\`p + 1\` doesn't add 1 byte, it adds \`1 * sizeof(int)\` bytes, pointer arithmetic automatically scales by the size of whatever type the pointer points to.\n\n## Function pointers\n\nA pointer can even point at executable code, letting you pass a function around like a value:\n\n\`\`\`c\nint square(int n) { return n * n; }\n\nint apply(int (*fn)(int), int value) {\n    return fn(value);\n}\n\nint result = apply(square, 5); // 25\n\`\`\`\n\n\`int (*fn)(int)\` declares \`fn\` as "a pointer to a function taking an \`int\` and returning an \`int\`", this is the mechanism behind callbacks in C, and it's exactly how the object system you'll build next represents dynamic behavior.`
+    ),
+    quiz: {
+      title: 'Advanced Pointers Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why would a function take an int** (pointer to a pointer) parameter?',
+          options: ['To make the code look more advanced', 'To modify which address the caller\'s own pointer holds', 'It is required for all malloc calls', 'To avoid using arrays'],
+          answer: "To modify which address the caller's own pointer holds",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'For an int pointer p, the expression (p + 1) advances by exactly 1 byte, regardless of type.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In most expressions, an array name automatically ____ into a pointer to its first element.',
+          options: [],
+          answer: 'decays',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Stack Data Structure',
+    content: lessonContent(
+      'Stack Data Structure',
+      `Time to combine structs and pointers into a real, reusable data structure: a **stack** (last-in, first-out), backed by the heap so it can grow.\n\n\`\`\`c\n#include <stdlib.h>\n\ntypedef struct {\n    int *items;\n    int count;\n    int capacity;\n} IntStack;\n\nIntStack *stackCreate(int capacity) {\n    IntStack *s = malloc(sizeof(IntStack));\n    s->items = malloc(capacity * sizeof(int));\n    s->count = 0;\n    s->capacity = capacity;\n    return s;\n}\n\nvoid stackPush(IntStack *s, int value) {\n    if (s->count == s->capacity) return; // full, ignoring for simplicity\n    s->items[s->count] = value;\n    s->count++;\n}\n\nint stackPop(IntStack *s) {\n    s->count--;\n    return s->items[s->count];\n}\n\nvoid stackFree(IntStack *s) {\n    free(s->items); // free the array first...\n    free(s);        // ...then the struct that describes it\n}\n\`\`\`\n\n## The arrow operator\n\n\`s->items\` is shorthand for \`(*s).items\`, "dereference the pointer \`s\`, then access the \`items\` member". Since working with pointers-to-structs is so common in C, \`->\` exists purely to avoid writing \`(*s).\` everywhere.\n\n## Where does each piece live?\n\nThis is the key insight for this lesson: \`stackCreate\` allocates **two separate heap blocks**, the \`IntStack\` struct itself, and the \`items\` array it points to. They're independent allocations linked only by the pointer stored inside the struct, which is exactly why \`stackFree\` must free both, and in the right order, freeing \`s\` before \`s->items\` would leak the array's memory forever since you'd lose the only pointer to it.\n\n\`\`\`c\nint main(void) {\n    IntStack *s = stackCreate(10);\n    stackPush(s, 1);\n    stackPush(s, 2);\n    printf("%d\\n", stackPop(s)); // 2, last in, first out\n    stackFree(s);\n}\n\`\`\``
+    ),
+    quiz: {
+      title: 'Stack Data Structure Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the -> operator do?',
+          options: ['Compares two pointers', 'Dereferences a pointer and accesses a member in one step', 'Allocates memory', 'Declares a function pointer'],
+          answer: 'Dereferences a pointer and accesses a member in one step',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In the IntStack example, freeing the struct before freeing its items array would leak the array\'s memory.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A stack follows a "last in, first ____" ordering.',
+          options: [],
+          answer: 'out',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Objects',
+    content: lessonContent(
+      'Objects',
+      `C has no built-in "object" concept, but you can build your own object system using exactly the tools you already have: structs, tagged unions, and function pointers. This is the same foundation real language runtimes (Python's CPython, Lua's VM) are built on.\n\n\`\`\`c\ntypedef enum {\n    OBJ_INT,\n    OBJ_STRING\n} ObjType;\n\ntypedef struct Obj {\n    ObjType type;\n    int refCount;      // we'll use this in the next lesson\n    union {\n        int intValue;\n        char *stringValue;\n    } as;\n} Obj;\n\nObj *objNewInt(int value) {\n    Obj *obj = malloc(sizeof(Obj));\n    obj->type = OBJ_INT;\n    obj->refCount = 1;\n    obj->as.intValue = value;\n    return obj;\n}\n\nObj *objNewString(const char *value) {\n    Obj *obj = malloc(sizeof(Obj));\n    obj->type = OBJ_STRING;\n    obj->refCount = 1;\n    obj->as.stringValue = strdup(value); // heap-allocate a copy\n    return obj;\n}\n\nvoid objPrint(Obj *obj) {\n    switch (obj->type) {\n        case OBJ_INT:    printf("%d\\n", obj->as.intValue); break;\n        case OBJ_STRING:  printf("%s\\n", obj->as.stringValue); break;\n    }\n}\n\`\`\`\n\nThis is the **tagged union** pattern from a few lessons ago, put to real use: \`Obj\` can represent *any* value your future language or program needs, and \`type\` tells every function which union member is actually valid right now.\n\n## Why refCount is already here\n\nEvery \`Obj\` is heap-allocated (so it can outlive the function that created it and be shared around freely), which means something has to decide **when it's safe to free**. That's exactly the problem the next two lessons solve, this \`refCount\` field is the first piece of a reference-counting garbage collector, and this \`Obj\` struct is what it will manage.`
+    ),
+    quiz: {
+      title: 'Objects Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In the Obj struct, what determines which member of the "as" union is currently valid?',
+          options: ['The refCount field', 'The order the struct was declared in', 'The type field', 'Nothing, you must guess'],
+          answer: 'The type field',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every Obj in this design is heap-allocated so it can be shared and outlive the function that created it.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Combining a type tag with a union to represent any kind of value is called a tagged ____.',
+          options: [],
+          answer: 'union',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Refcounting GC',
+    content: lessonContent(
+      'Refcounting GC',
+      `A garbage collector's job is simple to state and tricky to implement: automatically free heap memory once nothing needs it anymore. **Reference counting** is the simplest strategy, every \`Obj\` tracks how many places are pointing at it, and frees itself the moment that count hits zero.\n\n\`\`\`c\nvoid objRetain(Obj *obj) {\n    if (obj == NULL) return;\n    obj->refCount++;\n}\n\nvoid objRelease(Obj *obj) {\n    if (obj == NULL) return;\n    obj->refCount--;\n    if (obj->refCount == 0) {\n        if (obj->type == OBJ_STRING) {\n            free(obj->as.stringValue); // free the string data first\n        }\n        free(obj); // then the Obj itself\n    }\n}\n\`\`\`\n\nThe rule every piece of code has to follow religiously: call \`objRetain\` whenever you store a new reference to an object (assign it to another variable, put it in a list, etc.), and \`objRelease\` whenever that reference goes away.\n\n\`\`\`c\nObj *a = objNewInt(42);   // refCount = 1\nObj *b = a;\nobjRetain(b);              // refCount = 2, two owners now\n\nobjRelease(a);             // refCount = 1, still alive\nobjRelease(b);             // refCount = 0, freed here\n\`\`\`\n\n## The fatal flaw: cycles\n\nRefcounting has one well-known blind spot, if object A holds a reference to B, and B holds a reference right back to A, their counts can never reach zero, even if nothing outside the pair references either of them anymore. That memory leaks forever. This isn't a bug you can patch, it's fundamental to how refcounting works, which is exactly why the next lesson introduces a completely different strategy.\n\n> [!TIP]\n> This exact tradeoff is why Python uses reference counting *plus* a supplementary cycle detector, and why some languages (like the one you're about to build a collector for) choose mark-and-sweep instead, no cycle problem, at the cost of needing to pause and scan everything periodically.`
+    ),
+    quiz: {
+      title: 'Refcounting GC Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In reference counting, when is an object freed?',
+          options: ['On a fixed timer', 'When its reference count reaches zero', 'When the program exits', 'Whenever malloc runs low on memory'],
+          answer: 'When its reference count reaches zero',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Reference counting correctly frees two objects that reference each other in a cycle, even if nothing else references them.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Two objects that reference each other so their counts never reach zero form a reference ____.',
+          options: [],
+          answer: 'cycle',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Mark and Sweep GC',
+    content: lessonContent(
+      'Mark and Sweep GC',
+      `**Mark-and-sweep** takes a completely different approach from reference counting: instead of tracking counts continuously, it periodically pauses the program and asks one question directly, "starting from everything currently reachable, what's still alive?" Anything left over gets swept away.\n\nIt runs in two phases:\n\n1. **Mark**: starting from a set of "roots" (global variables, local variables currently on the stack), recursively visit every object reachable from them, flagging each one as \`marked\`.\n2. **Sweep**: walk every object the allocator has ever handed out, free any that *weren't* marked, then clear the marks for next time.\n\n\`\`\`c\ntypedef struct Obj {\n    ObjType type;\n    int marked;        // replaces refCount\n    struct Obj *next;   // every object, linked so sweep can walk them all\n    union {\n        int intValue;\n        char *stringValue;\n    } as;\n} Obj;\n\nvoid markObject(Obj *obj) {\n    if (obj == NULL || obj->marked) return; // already visited, avoid infinite loops on cycles\n    obj->marked = 1;\n    // if this object type could reference other Objs, mark those too here\n}\n\nvoid sweep(Obj **allObjects) {\n    Obj **current = allObjects;\n    while (*current != NULL) {\n        if (!(*current)->marked) {\n            Obj *unreached = *current;\n            *current = unreached->next; // unlink it\n            free(unreached);\n        } else {\n            (*current)->marked = 0; // reset for next collection\n            current = &(*current)->next;\n        }\n    }\n}\n\`\`\`\n\nNotice \`markObject\` checks \`obj->marked\` **before** recursing, this is exactly what solves the cycle problem from the last lesson: two objects referencing each other both simply get marked once each, then correctly swept together if nothing external points to either.\n\n## The tradeoff\n\n| | Refcounting | Mark and Sweep |\n|---|---|---|\n| Handles cycles | No | Yes |\n| Overhead | A little, on every assignment | A pause during collection |\n| Simplicity | Simpler per-operation | More bookkeeping (roots, linked list of all objects) |\n\nNeither is strictly "better", refcounting is used where memory needs to be freed the instant it's unreachable (like Swift's ARC), mark-and-sweep is used where occasional pauses are acceptable in exchange for never leaking cycles (like most JavaScript engines).\n\n## Final project\n\nCombine everything from this course: write a small C program with an \`Obj\` type (int and string, like the earlier lessons), a way to track "roots", and a working \`mark\` + \`sweep\` pair that correctly frees unreached objects, including a deliberate reference cycle to prove it doesn't leak. Submit a link to your repository below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+    quiz: {
+      title: 'Mark and Sweep GC Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What are the two phases of a mark-and-sweep collector?',
+          options: ['Allocate and free', 'Mark and sweep', 'Retain and release', 'Push and pop'],
+          answer: 'Mark and sweep',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Mark-and-sweep correctly frees a reference cycle that nothing external points to, unlike plain refcounting.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The starting points a mark-and-sweep collector walks from (globals, the current stack) are called ____.',
+          options: [],
+          answer: 'roots',
+        },
+      ],
+    },
+  },
+];
+
+const linuxLessons: SeedLesson[] = [
+  {
+    title: 'The Command Line',
+    content: lessonContent(
+      'The Command Line',
+      `A command-line interface (CLI) lets you control a computer by typing text commands instead of clicking through menus. It looks intimidating at first, but it's often faster and, crucially, **scriptable**: anything you can type, you can save and re-run automatically.\n\n## Why text beats clicking\n\n- A CLI command can be copy-pasted, shared, and reproduced exactly, a screenshot of "click here, then here" cannot.\n- Commands compose: the output of one command can feed directly into another (more on that soon).\n- Almost every server in the world has no graphical interface at all, the CLI isn't a retro curiosity, it's how most computing actually happens.\n\n## Your first commands\n\n\`\`\`bash\nwhoami        # who am I logged in as?\npwd           # print working directory, where am I?\necho "hi"     # print text\ndate          # current date and time\n\`\`\`\n\nEvery command follows roughly the same shape: a program name, optionally followed by **flags** (options, usually starting with \`-\`) and **arguments** (the things it operates on):\n\n\`\`\`bash\nls -l /home\n# ^command  ^flag  ^argument\n\`\`\`\n\n\`ls\` lists files, \`-l\` is a flag asking for the "long" (detailed) format, \`/home\` is the argument telling it which directory to list. You'll see this exact pattern, command, flags, arguments, in nearly every tool covered in this course.\n\n> [!TIP]\n> Stuck on what a command does or which flags it accepts? Almost every command supports \`--help\`, e.g. \`ls --help\`. That's always your first move, not memorization.`
+    ),
+    quiz: {
+      title: 'Command Line Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the main advantage of CLI commands over clicking through a GUI?',
+          options: ['CLI commands always run faster on the CPU', 'They can be scripted, copied, and reproduced exactly', 'GUIs do not exist on servers', 'There is no real advantage'],
+          answer: 'They can be scripted, copied, and reproduced exactly',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In "ls -l /home", -l is an argument and /home is a flag.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'To see the current working directory in the terminal, you run: ____',
+          options: [],
+          answer: 'pwd',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Filesystems',
+    content: lessonContent(
+      'Filesystems',
+      `A Linux filesystem is organized as a single tree, starting from one root directory, \`/\`, with everything else nested underneath it, unlike Windows there's no separate "C:" drive.\n\n\`\`\`\n/\n├── home/\n│   └── ada/       # your personal files usually live here\n├── etc/            # system configuration files\n├── usr/            # installed programs\n└── tmp/            # temporary files, cleared periodically\n\`\`\`\n\n## Navigating\n\n\`\`\`bash\ncd /home/ada       # change directory (absolute path, starts with /)\ncd Documents       # relative path, relative to where you already are\ncd ..              # go up one level\ncd ~               # jump to your home directory\nls -la             # list files, including hidden ones (-a) with details (-l)\n\`\`\`\n\nAn **absolute path** always starts from \`/\` and works no matter where you currently are. A **relative path** is interpreted starting from your current directory, so \`cd Documents\` only works if \`Documents\` exists right where you're standing.\n\n## Managing files\n\n\`\`\`bash\nmkdir projects           # create a directory\ntouch notes.txt          # create an empty file\ncp notes.txt backup.txt  # copy\nmv notes.txt todo.txt    # rename/move\nrm backup.txt            # delete a file\nrm -r old_folder         # delete a directory and everything in it (recursive)\n\`\`\`\n\n> [!WARNING]\n> \`rm\` does **not** move files to a trash bin, it deletes them immediately and permanently. \`rm -r\` on the wrong directory is one of the most common ways people lose real work, always double-check the path before you hit enter.`
+    ),
+    quiz: {
+      title: 'Filesystems Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does a relative path like "Documents" (without a leading /) depend on?',
+          options: ['Your username', 'Your current working directory', 'The system clock', 'Nothing, it always resolves the same way'],
+          answer: 'Your current working directory',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Files deleted with rm on Linux are moved to a recoverable trash/recycle bin by default.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The command to create a new, empty directory is: ____ <name>',
+          options: [],
+          answer: 'mkdir',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Programs',
+    content: lessonContent(
+      'Programs',
+      `Running a program from the command line is more nuanced than it looks, the shell has to first figure out **where** the program you typed actually lives.\n\n## PATH\n\nWhen you type \`ls\`, the shell doesn't magically know where the \`ls\` program is, it searches a list of directories stored in an environment variable called \`PATH\`:\n\n\`\`\`bash\necho $PATH\n# /usr/local/bin:/usr/bin:/bin\n\nwhich ls\n# /usr/bin/ls, the first match found while searching PATH in order\n\`\`\`\n\n\`PATH\` is a colon-separated list of directories, the shell checks each one in order until it finds an executable file with that name. This is why installing a new tool sometimes requires adding its folder to \`PATH\`, otherwise typing its name does nothing but "command not found".\n\n## Running local scripts\n\nA script in your current directory is deliberately **not** found automatically, even if you're standing right next to it, this is a safety feature so a malicious file named \`ls\` sitting in a random folder can't silently hijack your commands:\n\n\`\`\`bash\n./deploy.sh     # explicit "run the file right here", the ./ is required\nbash deploy.sh  # or, explicitly hand it to the bash interpreter\n\`\`\`\n\n## Executable permission\n\nA script also needs the **executable bit** set before \`./\` will run it (more on permissions two lessons from now):\n\n\`\`\`bash\nchmod +x deploy.sh\n./deploy.sh\n\`\`\`\n\nWithout \`chmod +x\`, you'll get a "permission denied" error even though the file exists and is readable.`
+    ),
+    quiz: {
+      title: 'Programs Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is PATH?',
+          options: ['The current working directory', 'A colon-separated list of directories the shell searches for programs', 'A single file containing every installed program', 'A Linux permission level'],
+          answer: 'A colon-separated list of directories the shell searches for programs',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A script in your current directory runs automatically just by typing its name, the same as a PATH command.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'To run a script literally sitting in your current directory, you type ____./deploy.sh',
+          options: [],
+          answer: '',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Input/Output',
+    content: lessonContent(
+      'Input/Output',
+      `Every program has three standard I/O streams: **stdin** (input), **stdout** (normal output), and **stderr** (error output). Understanding them is what unlocks the CLI's real power, connecting simple programs together to build something bigger.\n\n## Redirection\n\n\`\`\`bash\necho "hello" > out.txt     # redirect stdout, overwrites out.txt\necho "world" >> out.txt    # append instead of overwrite\nsort < names.txt            # redirect stdin FROM a file\ncat missing.txt 2> err.log  # redirect stderr (file descriptor 2) to a file\n\`\`\`\n\n\`>\` and \`>>\` both aim a program's output at a file instead of your screen, the difference is whether it replaces or adds to existing content. \`<\` does the reverse, feeding a file's contents in as if you'd typed them.\n\n## Pipes\n\nA pipe (\`|\`) connects one program's stdout directly to the next program's stdin, no temp file needed:\n\n\`\`\`bash\ncat access.log | grep "ERROR" | wc -l\n\`\`\`\n\nRead this left to right: print the log file, filter to lines containing "ERROR", count how many lines are left. Each command does one small job well, and piping chains them into something none of them could do alone, this is the core Unix philosophy.\n\n## Arguments and flags recap\n\n\`\`\`bash\ngrep -i "error" access.log   # -i = case-insensitive flag\ngrep -c "error" access.log   # -c = count matches instead of printing them\n\`\`\`\n\nMost CLI tools accept flags to change their behavior without changing what you're fundamentally asking them to do, always check \`--help\` when you need a tool to behave slightly differently than its default.`
+    ),
+    quiz: {
+      title: 'Input/Output Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the pipe operator (|) do?',
+          options: ['Deletes both files', 'Connects one command\'s stdout to the next command\'s stdin', 'Runs two commands at the exact same instant', 'Compares two files for differences'],
+          answer: "Connects one command's stdout to the next command's stdin",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Using >> instead of > appends to a file instead of overwriting it.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The three standard I/O streams every program has are stdin, stdout, and ____.',
+          options: [],
+          answer: 'stderr',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Local CLI',
+    content: lessonContent(
+      'Local CLI',
+      `Everything so far works the same in a browser-based sandbox. Real systems work involves your own machine, so this lesson is a guided tour of what to set up locally.\n\n## A real terminal, and WSL on Windows\n\nmacOS and Linux both ship with a real terminal out of the box. On Windows, install **WSL** (Windows Subsystem for Linux), which runs a genuine Linux environment alongside Windows:\n\n\`\`\`bash\nwsl --install\n\`\`\`\n\nThis gets you a real \`bash\` shell, real Linux filesystem semantics, and every command in this course working exactly as shown, rather than an approximation.\n\n## Manual pages\n\nEvery standard command ships with a full manual, more detailed than \`--help\`:\n\n\`\`\`bash\nman ls\n# space/f = next page, b = previous page, q = quit\n\`\`\`\n\n## Interactive pagers\n\nCommands like \`man\`, and tools like \`less\`, are **pagers**, they show output one screen at a time instead of dumping it all at once:\n\n\`\`\`bash\ncat huge_log.txt | less   # scroll through with arrow keys, q to quit\n\`\`\`\n\n## Processes\n\nEvery running program is a **process**, with a unique process ID (PID):\n\n\`\`\`bash\nps aux            # list running processes\ntop                # live, updating view of processes and resource use\nkill 4821          # ask a process to stop, by PID\n\`\`\`\n\n## Users, root, and sudo\n\nLinux is multi-user by design. Regular users can't modify system files or other users' data, that requires the **root** user, the one account with unrestricted access:\n\n\`\`\`bash\nwhoami             # your current user\nsudo apt update    # run one command AS root, temporarily, with a password prompt\n\`\`\`\n\n\`sudo\` ("superuser do") is how you borrow root's power for a single command without permanently logging in as root, which is exactly the safer, auditable model almost every real system uses.\n\n> [!WARNING]\n> Running everyday commands as root "just to avoid permission errors" is a common beginner habit and a real safety risk, a typo in a root shell can damage the whole system. Use \`sudo\` per-command instead.`
+    ),
+    quiz: {
+      title: 'Local CLI Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does WSL let you do on Windows?',
+          options: ['Delete Linux permanently', 'Run a real Linux environment alongside Windows', 'Compile Windows programs faster', 'Replace the Windows terminal with cmd.exe'],
+          answer: 'Run a real Linux environment alongside Windows',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'sudo permanently logs you in as the root user for the rest of your session.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The one Linux account with unrestricted access to modify any file on the system is called ____.',
+          options: [],
+          answer: 'root',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Permissions',
+    content: lessonContent(
+      'Permissions',
+      `Every file and directory on Linux has an owner, a group, and a set of permissions controlling who can read, write, or execute it.\n\n\`\`\`bash\nls -l notes.txt\n# -rw-r--r-- 1 ada staff 128 Jan 5 10:00 notes.txt\n\`\`\`\n\nThat first cryptic-looking column breaks down into four parts:\n\n\`\`\`\n-  rw-  r--  r--\n│   │    │    │\n│   │    │    └─ others: read only\n│   │    └────── group: read only\n│   └─────────── owner (ada): read and write\n└─────────────── file type (- = regular file, d = directory)\n\`\`\`\n\nEach group of three letters means **r**ead, **w**rite, **e**xecute, in that fixed order, a \`-\` means that permission is absent.\n\n## Changing permissions\n\n\`\`\`bash\nchmod +x deploy.sh       # add execute permission for everyone\nchmod u+w notes.txt      # add write, but only for the (u)ser/owner\nchmod 644 notes.txt      # numeric form: owner rw-, group r--, others r--\n\`\`\`\n\nThe numeric form adds up read (4) + write (2) + execute (1) per group: \`6\` = rw-, \`7\` = rwx, \`4\` = r--. \`644\` is an extremely common default for regular files, \`755\` for scripts and directories (execute lets you \`cd\` into a directory, not just list it).\n\n## Changing ownership\n\n\`\`\`bash\nsudo chown ada:staff notes.txt   # change owner (ada) and group (staff)\n\`\`\`\n\nChanging ownership requires root, since it's a security-sensitive operation, you can't just hand your files off to someone else's ownership without a privileged account authorizing it.`
+    ),
+    quiz: {
+      title: 'Permissions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In "-rw-r--r--", what permissions does the file\'s owner have?',
+          options: ['Read only', 'Read and write', 'Read, write, and execute', 'No permissions'],
+          answer: 'Read and write',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The numeric permission 644 grants the owner read+write, and group/others read-only.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The command to add execute permission to a script for everyone is: chmod ____ deploy.sh',
+          options: [],
+          answer: '+x',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Editors and Packages',
+    content: lessonContent(
+      'Editors and Packages',
+      `The last piece of a real development environment: editing files without a GUI, and installing software the Linux way.\n\n## Terminal text editors\n\nWhen you're already in a terminal (editing a config file on a remote server, for example), a terminal-based editor avoids switching context entirely:\n\n\`\`\`bash\nnano notes.txt   # beginner-friendly, shortcuts shown on screen\nvim notes.txt    # ubiquitous, steeper learning curve, worth learning eventually\n\`\`\`\n\n\`nano\` shows its keyboard shortcuts (like \`^O\` to save) right at the bottom of the screen, making it the easiest place to start. \`vim\` is nearly universal, it's preinstalled on almost every Linux server you'll ever SSH into, which is exactly why it's worth getting comfortable with over time even though \`nano\` is friendlier at first.\n\n## Package managers\n\nInstalling software on Linux almost never means downloading an installer from a website, a **package manager** fetches, installs, and keeps software up to date from a trusted repository:\n\n\`\`\`bash\n# Debian/Ubuntu\nsudo apt update && sudo apt install git\n\n# macOS\nbrew install git\n\n# Cross-platform, no admin rights required\nwebi git\n\`\`\`\n\n\`apt\` is Debian/Ubuntu's package manager, built into the OS. **Homebrew** (\`brew\`) is the de facto standard on macOS, and increasingly used on Linux too. **Webi** is a newer, simpler installer that doesn't require \`sudo\` at all, handy when you don't have admin rights on a machine.\n\n## Setting up a dev environment, end to end\n\n\`\`\`bash\nsudo apt update\nsudo apt install git python3 build-essential\ngit --version\npython3 --version\n\`\`\`\n\nThat's the complete pattern behind setting up almost any machine for development: update your package lists, install the tools you need by name, and verify each one with \`--version\`.`
+    ),
+    quiz: {
+      title: 'Editors and Packages Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the main advantage of installing software with a package manager instead of a website installer?',
+          options: ['It is always faster to download', 'It fetches trusted, versioned software and keeps it updatable from one place', 'It never requires any configuration', 'Package managers only work offline'],
+          answer: 'It fetches trusted, versioned software and keeps it updatable from one place',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'vim is preinstalled on almost every Linux server, which is part of why it is worth learning even though it has a steeper learning curve than nano.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'On Debian/Ubuntu, the command to install a package called git is: sudo apt ____ git',
+          options: [],
+          answer: 'install',
+        },
+      ],
+    },
+  },
+];
+
+const javaLessons: SeedLesson[] = [
+  {
+    title: 'Hello, Java',
+    content: lessonContent(
+      'Hello, Java',
+      `Java is a statically-typed, object-oriented language that runs on the **JVM** (Java Virtual Machine), write once, run anywhere: the same compiled bytecode runs unmodified on any machine with a JVM installed.\n\n## Your first program\n\n\`\`\`java\npublic class Hello {\n    public static void main(String[] args) {\n        System.out.println("Hello, Kodstigen!");\n    }\n}\n\`\`\`\n\nA few things that look unfamiliar if you're coming from Python or JavaScript:\n\n- **Everything lives inside a class.** Java has no free-floating functions, \`main\` must be a method of some class.\n- \`public static void main(String[] args)\` is the fixed, required signature the JVM looks for as the entry point, \`public\` (callable from outside), \`static\` (belongs to the class itself, not an instance), \`void\` (returns nothing), \`String[] args\` (command-line arguments).\n- The **filename must match the public class name** exactly: \`Hello.java\`.\n\n## Compiling and running\n\nJava compiles to an intermediate form called **bytecode**, not directly to native machine code:\n\n\`\`\`bash\njavac Hello.java   # compiles Hello.java into Hello.class (bytecode)\njava Hello          # the JVM runs the bytecode\n\`\`\`\n\nThis two-step process, and the JVM in between, is exactly what makes "write once, run anywhere" true, the same \`.class\` file runs on Windows, macOS, or Linux without recompiling, as long as a JVM is installed.\n\n> [!TIP]\n> \`System.out.println\` is verbose on purpose, it's read as "the \`out\` stream on the \`System\` class, call \`println\`", once you know Java always nests functionality inside classes, the verbosity stops feeling arbitrary.`
+    ),
+    quiz: {
+      title: 'Hello, Java Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the JVM actually execute?',
+          options: ['Raw Java source code', 'Compiled bytecode', 'Native machine code compiled per-OS', 'Python bytecode'],
+          answer: 'Compiled bytecode',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In Java, a function can exist on its own, outside of any class.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The command that compiles Hello.java into bytecode is: ____ Hello.java',
+          options: [],
+          answer: 'javac',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Variables and Types',
+    content: lessonContent(
+      'Variables and Types',
+      `Java has two fundamentally different kinds of types: **primitives**, and **objects**. Mixing them up is one of the most common early confusions.\n\n## Primitives\n\n\`\`\`java\nint xp = 0;\ndouble ratio = 0.5;\nboolean loggedIn = true;\nchar grade = 'A';\nxp += 10;\n\`\`\`\n\nPrimitives store their value directly, are fixed-size, and are **not** objects, they have no methods, can't be \`null\`, and are always passed by value.\n\n## Objects\n\nEverything else, starting with \`String\`, is an object, a reference to data living on the heap:\n\n\`\`\`java\nString name = "Ada";\nInteger boxedXp = 10;    // the "boxed" object version of int\nname = null;              // objects CAN be null, primitives cannot\n\`\`\`\n\n\`String\` looks like a primitive in everyday use (you can write \`"hello"\` directly), but it's really an object under the hood, with methods like \`.length()\` and \`.toUpperCase()\`.\n\n## Type inference with var\n\nModern Java lets the compiler infer a local variable's type from its initializer:\n\n\`\`\`java\nvar count = 5;          // inferred as int\nvar name = "Ada";        // inferred as String\n\`\`\`\n\n\`var\` is purely a compile-time convenience, Java is still 100% statically typed underneath, \`count\` is genuinely an \`int\` forever, the compiler just saved you from typing it twice.\n\n| | Primitive | Object |\n|---|---|---|\n| Examples | int, double, boolean, char | String, Integer, any class |\n| Can be null | No | Yes |\n| Has methods | No | Yes |\n| Stored | Directly, on the stack | Reference to the heap |`
+    ),
+    quiz: {
+      title: 'Variables and Types Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which of these can be set to null?',
+          options: ['int', 'boolean', 'String', 'char'],
+          answer: 'String',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Using var still means the variable is statically typed, the compiler just infers the type instead of you writing it.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A type like int or boolean that stores its value directly and is never null is called a ____.',
+          options: [],
+          answer: 'primitive',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Control Flow and Loops',
+    content: lessonContent(
+      'Control Flow and Loops',
+      `Java's control flow will look familiar if you know C-family syntax, curly braces mark blocks, conditions need parentheses.\n\n\`\`\`java\nint xp = 45;\n\nif (xp >= 100) {\n    System.out.println("Level up!");\n} else if (xp >= 50) {\n    System.out.println("Almost there");\n} else {\n    System.out.println("Keep going");\n}\n\`\`\`\n\n## Loops\n\n\`\`\`java\nfor (int i = 0; i < 5; i++) {\n    System.out.println("Iteration " + i);\n}\n\nint[] scores = {90, 85, 77};\nfor (int score : scores) {   // "enhanced for", like Python's for-in\n    System.out.println(score);\n}\n\nint tries = 0;\nwhile (tries < 3) {\n    tries++;\n}\n\`\`\`\n\nThe enhanced \`for (int score : scores)\` form reads as "for each \`score\` in \`scores\`", it's the idiomatic way to iterate when you don't need the index.\n\n## Switch expressions\n\nModern Java's \`switch\` can be used as an **expression** that directly produces a value, not just a statement that runs code:\n\n\`\`\`java\nString tier = switch (xp / 25) {\n    case 0 -> "Bronze";\n    case 1 -> "Silver";\n    case 2 -> "Gold";\n    default -> "Platinum";\n};\n\`\`\`\n\nEach \`case\` uses \`->\` instead of \`:\`, which means no accidental "fallthrough" to the next case, a common bug in older-style \`switch\` statements, and the whole thing evaluates directly to \`tier\`.`
+    ),
+    quiz: {
+      title: 'Control Flow Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does "for (int score : scores)" mean?',
+          options: ['Loop while score equals scores', 'Iterate over each element in the scores array', 'Declare a new array called scores', 'Compare score to scores'],
+          answer: 'Iterate over each element in the scores array',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A modern switch expression using -> can directly produce a value assigned to a variable.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The loop that keeps running as long as a condition stays true, checked before each iteration, is a ____ loop.',
+          options: [],
+          answer: 'while',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Methods and Classes',
+    content: lessonContent(
+      'Methods and Classes',
+      `A **class** is a blueprint for objects, bundling data (**fields**) and behavior (**methods**) together, the foundation of Java's object-oriented style.\n\n\`\`\`java\npublic class Student {\n    private String name;\n    private int xp;\n\n    public Student(String name) {   // constructor\n        this.name = name;\n        this.xp = 0;\n    }\n\n    public void gainXp(int amount) {\n        this.xp += amount;\n    }\n\n    public int getXp() {\n        return this.xp;\n    }\n}\n\`\`\`\n\n\`\`\`java\nStudent ada = new Student("Ada");\nada.gainXp(50);\nSystem.out.println(ada.getXp()); // 50\n\`\`\`\n\n- The **constructor** (same name as the class, no return type) runs whenever you \`new\` an instance, setting up its initial state.\n- \`this\` refers to the specific instance a method was called on, needed here because the parameter \`name\` shadows the field \`name\`.\n- \`private\` fields can only be accessed from inside the class itself, forcing outside code to go through methods like \`gainXp\`/\`getXp\` instead of reaching in and mutating state directly, this is **encapsulation**.\n\n## Why private fields plus public methods?\n\n\`getXp()\`/\`gainXp()\` exist instead of a public \`xp\` field so the class controls *how* its state changes, e.g. \`gainXp\` could reject negative amounts, or trigger a level-up check, logic a bare public field could never enforce. This getter/setter pattern is one of the most common in all of Java.`
+    ),
+    quiz: {
+      title: 'Methods and Classes Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What runs automatically when you create a new instance with "new Student(...)"?',
+          options: ['The getXp method', 'The constructor', 'The main method', 'Nothing runs automatically'],
+          answer: 'The constructor',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A private field can be accessed directly from outside the class it is declared in.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Keeping fields private and only exposing controlled access through methods is called ____.',
+          options: [],
+          answer: 'encapsulation',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Collections and Generics',
+    content: lessonContent(
+      'Collections and Generics',
+      `Java's **Collections Framework** provides ready-made, reusable data structures, and **generics** let those structures stay type-safe no matter what they hold.\n\n\`\`\`java\nimport java.util.ArrayList;\nimport java.util.List;\n\nList<String> languages = new ArrayList<>();\nlanguages.add("Java");\nlanguages.add("Go");\nSystem.out.println(languages.get(0)); // "Java"\n\nfor (String lang : languages) {\n    System.out.println(lang.toUpperCase());\n}\n\`\`\`\n\n\`List<String>\` is a **generic type**, the \`<String>\` tells the compiler "this list only ever holds \`String\`s", so trying to \`.add(42)\` is a compile error, not a runtime surprise. \`ArrayList\` is the most common concrete implementation, a resizable, array-backed list.\n\n## Maps\n\n\`\`\`java\nimport java.util.HashMap;\nimport java.util.Map;\n\nMap<String, Integer> scores = new HashMap<>();\nscores.put("Ada", 95);\nscores.put("Grace", 98);\n\nSystem.out.println(scores.get("Ada")); // 95\nSystem.out.println(scores.getOrDefault("Bob", 0)); // 0, key doesn't exist\n\`\`\`\n\n\`Map<String, Integer>\` associates keys with values, like Python's dict. \`getOrDefault\` avoids a \`null\` result (and a potential \`NullPointerException\`) when a key might not exist.\n\n## Why generics matter\n\nWithout generics, a collection could only hold \`Object\`, meaning you'd have to cast every single item back to its real type before using it, and the compiler couldn't catch a mistake until it crashed at runtime. Generics push that type checking to compile time, exactly where you want to catch bugs.`
+    ),
+    quiz: {
+      title: 'Collections and Generics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the <String> in List<String> guarantee?',
+          options: ['The list can never be empty', 'The list only ever holds String values, checked at compile time', 'The list is automatically sorted', 'Nothing, it is just documentation'],
+          answer: 'The list only ever holds String values, checked at compile time',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Map.getOrDefault avoids returning null when a key does not exist in the map.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The most common resizable, array-backed implementation of List in Java is called ____.',
+          options: [],
+          answer: 'ArrayList',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Interfaces and Inheritance',
+    content: lessonContent(
+      'Interfaces and Inheritance',
+      `Java supports two ways to share behavior across classes: **inheritance** (extending a class) and **interfaces** (implementing a contract). Knowing when to reach for each is core to writing idiomatic Java.\n\n## Inheritance\n\n\`\`\`java\npublic class Animal {\n    protected String name;\n    public Animal(String name) { this.name = name; }\n    public String speak() { return name + " makes a sound"; }\n}\n\npublic class Dog extends Animal {\n    public Dog(String name) { super(name); } // call the parent constructor\n\n    @Override\n    public String speak() {\n        return name + " barks";\n    }\n}\n\`\`\`\n\n\`Dog extends Animal\` inherits its fields and methods, then **overrides** \`speak()\` with its own version. \`super(name)\` calls \`Animal\`'s constructor, since \`Dog\` doesn't own the \`name\` field itself, it inherited it.\n\n## Interfaces\n\nAn interface declares **what** a class must do, without saying **how**:\n\n\`\`\`java\npublic interface Comparable2<T> {\n    int compareTo(T other);\n}\n\npublic class Student implements Comparable2<Student> {\n    int xp;\n    public int compareTo(Student other) {\n        return this.xp - other.xp;\n    }\n}\n\`\`\`\n\nA class can \`implements\` as many interfaces as it wants, but can only \`extends\` **one** class, this is a deliberate Java design decision to avoid the ambiguity of multiple inheritance ("if two parent classes both define \`speak()\` differently, which one wins?").\n\n## Why prefer interfaces?\n\nCode written against an interface (\`List<String>\` instead of \`ArrayList<String>\`) doesn't care which concrete implementation it's handed, \`ArrayList\`, \`LinkedList\`, anything, as long as it implements \`List\`. This is called **programming to an interface**, and it's one of the most valuable habits in all of object-oriented design.`
+    ),
+    quiz: {
+      title: 'Interfaces and Inheritance Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How many classes can a single Java class extend?',
+          options: ['Zero', 'Exactly one', 'As many as needed', 'Unlimited, same as interfaces'],
+          answer: 'Exactly one',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A class can implement multiple interfaces at the same time.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The call super(name) inside a subclass constructor invokes the ____ class\'s constructor.',
+          options: [],
+          answer: 'parent',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Library Management Console App',
+    content: lessonContent(
+      'Final Project: Library Management Console App',
+      `Combine everything from this course into a small, real console application: a library management system.\n\n## Requirements\n\n1. Create a \`Book\` class with fields for title, author, and a checked-out boolean, plus a constructor and getter methods.\n2. Create a \`Library\` class holding a \`List<Book>\`, with methods \`addBook(Book b)\`, \`checkOut(String title)\`, \`returnBook(String title)\`, and \`listAvailable()\`.\n3. Use a \`Map<String, Book>\` (keyed by title) internally if you'd like faster lookups than scanning the list, either approach is fine.\n4. \`main\` should add at least 3 books, check one out, attempt to check out an already-checked-out book (and print a clear message instead of crashing), then list what's still available.\n5. Define at least one interface (e.g. \`Searchable\` with a \`search(String query)\` method) and implement it on \`Library\`.\n\n## Stretch goals\n\n- Add a \`Member\` class and track which member currently has each book checked out.\n- Support returning a book by member name instead of just by title.\n- Sort the available books alphabetically before printing them.\n\nSubmit a link to your finished project below, an instructor will review it before you can mark this lesson complete. Good luck!`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const goLessons: SeedLesson[] = [
+  {
+    title: 'Hello, Go',
+    content: lessonContent(
+      'Hello, Go',
+      `Go (often called Golang) was built at Google to be simple, fast to compile, and easy to run at scale, it deliberately has a small feature set compared to languages like C++ or Java, that's a design goal, not a limitation.\n\n## Your first program\n\n\`\`\`go\npackage main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, Kodstigen!")\n}\n\`\`\`\n\n- Every Go file belongs to a **package**, \`package main\` marks this one as an executable program's entry point (as opposed to a reusable library package).\n- \`import "fmt"\` brings in the formatting/printing package, Go's standard library is organized into small, focused packages like this.\n- \`func main()\` is where execution starts, no class wrapper needed, unlike Java.\n\n## Compiling and running\n\n\`\`\`bash\ngo run main.go     # compile and run in one step, good for development\ngo build main.go   # produce a standalone binary called main (or main.exe)\n./main\n\`\`\`\n\nGo compiles to a **single, statically-linked binary** with no external runtime required, you can copy that one file to another machine and run it, nothing else needs to be installed.\n\n> [!TIP]\n> Go ships an opinionated formatter, \`gofmt\`, and the community treats consistent formatting as non-negotiable. Run \`gofmt -w main.go\` and never argue about tabs vs. spaces again.`
+    ),
+    quiz: {
+      title: 'Hello, Go Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does "go build" produce?',
+          options: ['A bytecode file requiring a separate runtime', 'A standalone, statically-linked binary', 'A JavaScript file', 'Nothing, it only checks for errors'],
+          answer: 'A standalone, statically-linked binary',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Go requires main to be defined inside a class, similar to Java.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The command that compiles and runs a Go file in a single step is: go ____ main.go',
+          options: [],
+          answer: 'run',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Variables, Types and Constants',
+    content: lessonContent(
+      'Variables, Types and Constants',
+      `Go is statically typed, but leans hard on type inference so you rarely have to spell types out.\n\n\`\`\`go\nvar xp int = 0        // explicit type\nvar name = "Ada"       // inferred as string\ncount := 5              // short declaration, inferred, only works inside functions\nxp += 10\n\`\`\`\n\n\`:=\` is the idiomatic way to declare and initialize a variable at the same time inside a function, Go infers the type from the right-hand side. \`var\` is used instead when you need to declare without initializing, or at the package level (outside any function), where \`:=\` isn't allowed.\n\n## Zero values\n\nUnlike many languages, an uninitialized Go variable is never garbage or \`undefined\`, it gets a sensible **zero value** automatically:\n\n\`\`\`go\nvar count int      // 0\nvar name string     // "" (empty string)\nvar ready bool      // false\n\`\`\`\n\nThis eliminates an entire category of "uninitialized variable" bugs common in other languages.\n\n## Constants\n\n\`\`\`go\nconst MaxRetries = 3\nconst Pi = 3.14159\n\`\`\`\n\n\`const\` values are fixed at compile time and can never be reassigned, use them for values that should never change during a program's execution, like configuration limits.`
+    ),
+    quiz: {
+      title: 'Variables and Constants Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the zero value of an uninitialized Go int?',
+          options: ['null', 'undefined', '0', 'It is a compile error'],
+          answer: '0',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The := short declaration operator can be used at the package level, outside any function.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A value declared with ____ is fixed at compile time and can never be reassigned.',
+          options: [],
+          answer: 'const',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Control Flow',
+    content: lessonContent(
+      'Control Flow',
+      `Go strips control flow down to the essentials, there's no \`while\`, no ternary operator, and \`if\` never needs parentheses around its condition.\n\n\`\`\`go\nxp := 45\n\nif xp >= 100 {\n    fmt.Println("Level up!")\n} else if xp >= 50 {\n    fmt.Println("Almost there")\n} else {\n    fmt.Println("Keep going")\n}\n\`\`\`\n\n## for is Go's only loop\n\nGo has exactly one looping keyword, \`for\`, used in several shapes:\n\n\`\`\`go\nfor i := 0; i < 5; i++ {   // classic three-part form\n    fmt.Println(i)\n}\n\ncount := 0\nfor count < 3 {              // this IS Go's while loop\n    count++\n}\n\nfor {                         // infinite loop, until an explicit break\n    break\n}\n\nscores := []int{90, 85, 77}\nfor i, score := range scores { // like Python's enumerate\n    fmt.Println(i, score)\n}\n\`\`\`\n\n\`range\` gives you both the index and value on each iteration, if you only need the value, discard the index with \`_\`: \`for _, score := range scores\`.\n\n## switch\n\n\`\`\`go\nswitch {\ncase xp >= 100:\n    fmt.Println("Gold")\ncase xp >= 50:\n    fmt.Println("Silver")\ndefault:\n    fmt.Println("Bronze")\n}\n\`\`\`\n\nUnlike C or Java, a Go \`switch\` case does **not** fall through to the next one automatically, each case breaks on its own by default, removing a very common source of bugs.`
+    ),
+    quiz: {
+      title: 'Control Flow Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which keyword is used for every kind of loop in Go, including a "while"-style loop?',
+          options: ['while', 'loop', 'for', 'repeat'],
+          answer: 'for',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A Go switch case automatically falls through to the next case unless you add a break.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Iterating with "for i, v := range items" gives you both the index and the ____ on each pass.',
+          options: [],
+          answer: 'value',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Functions and Multiple Return Values',
+    content: lessonContent(
+      'Functions and Multiple Return Values',
+      `Go functions are straightforward, with one distinctive feature that shapes idiomatic Go code more than almost anything else: they can return **multiple values**.\n\n\`\`\`go\nfunc add(a int, b int) int {\n    return a + b\n}\n\nfunc divide(a, b float64) (float64, error) {\n    if b == 0 {\n        return 0, fmt.Errorf("cannot divide %v by zero", a)\n    }\n    return a / b, nil\n}\n\`\`\`\n\n\`\`\`go\nresult, err := divide(10, 0)\nif err != nil {\n    fmt.Println("Error:", err)\n} else {\n    fmt.Println("Result:", result)\n}\n\`\`\`\n\n## Why Go does errors this way\n\nGo deliberately has **no exceptions** for ordinary error handling. Instead, any function that can fail returns an \`error\` as its last value, \`nil\` means success. The caller checks \`if err != nil\` immediately after every call that could fail, this is more verbose than a \`try\`/\`catch\`, but it makes every possible failure point visible directly in the code, nothing can silently fail three function calls away.\n\n## Named returns\n\n\`\`\`go\nfunc minMax(nums []int) (min, max int) {\n    min, max = nums[0], nums[0]\n    for _, n := range nums {\n        if n < min { min = n }\n        if n > max { max = n }\n    }\n    return // "naked" return, sends back the current values of min and max\n}\n\`\`\`\n\nNaming return values documents intent directly in the function signature, and lets a bare \`return\` send back whatever they currently hold.`
+    ),
+    quiz: {
+      title: 'Functions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How does idiomatic Go typically signal that a function call failed?',
+          options: ['Throwing an exception', 'Returning a non-nil error as the last return value', 'Returning -1', 'Crashing the program immediately'],
+          answer: 'Returning a non-nil error as the last return value',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A nil error return value conventionally means the function call succeeded.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A Go function can return more than one value at once, commonly a result and an ____.',
+          options: [],
+          answer: 'error',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Structs and Methods',
+    content: lessonContent(
+      'Structs and Methods',
+      `Go has no classes, but combines **structs** with **methods** (functions attached to a type) to get most of the same benefits, more explicitly.\n\n\`\`\`go\ntype Student struct {\n    Name string\n    XP   int\n}\n\nfunc (s *Student) GainXP(amount int) {\n    s.XP += amount\n}\n\nfunc (s Student) Greeting() string {\n    return "Hi, I'm " + s.Name\n}\n\`\`\`\n\n\`\`\`go\nada := Student{Name: "Ada", XP: 0}\nada.GainXP(50)\nfmt.Println(ada.XP)         // 50\nfmt.Println(ada.Greeting()) // "Hi, I'm Ada"\n\`\`\`\n\n\`func (s *Student) GainXP(...)\` is a **method** with \`s\` as its **receiver**, this is what attaches the function to the \`Student\` type, letting you call it as \`ada.GainXP(...)\` instead of \`GainXP(ada, ...)\`.\n\n## Pointer vs. value receivers\n\nThis is the one detail that trips everyone up at first: \`GainXP\` uses a **pointer** receiver (\`*Student\`) because it needs to *modify* the struct, \`Greeting\` uses a **value** receiver (\`Student\`) because it only *reads* from it. A value receiver operates on a copy, changes inside it never affect the original:\n\n\`\`\`go\nfunc (s Student) BrokenGainXP(amount int) {\n    s.XP += amount // only modifies the local copy, caller sees no change\n}\n\`\`\`\n\nRule of thumb: if a method needs to modify the struct, use a pointer receiver, if it only reads, either works, but staying consistent within a type is idiomatic Go.`
+    ),
+    quiz: {
+      title: 'Structs and Methods Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does GainXP use a pointer receiver (*Student) instead of a value receiver?',
+          options: ['Pointer receivers are always faster', 'It needs to modify the original struct, not a copy', 'Value receivers are illegal in Go', 'It is required for every method'],
+          answer: 'It needs to modify the original struct, not a copy',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A method with a value receiver operates on a copy of the struct, so changes inside it are not visible to the caller.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In "func (s *Student) GainXP(...)", s is called the method\'s ____.',
+          options: [],
+          answer: 'receiver',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Slices, Maps and Error Handling',
+    content: lessonContent(
+      'Slices, Maps and Error Handling',
+      `Go's two everyday collection types, and a closer look at the error-handling pattern you've already seen in action.\n\n## Slices\n\nA slice is a resizable, dynamically-sized view over an underlying array, Go's equivalent of a list:\n\n\`\`\`go\nscores := []int{90, 85, 77}\nscores = append(scores, 100)    // append returns a new slice, always reassign it\nfmt.Println(scores[0])           // 90\nfmt.Println(len(scores))          // 4\n\nsubset := scores[1:3]              // elements at index 1 and 2\n\`\`\`\n\n\`append\` might allocate a new underlying array behind the scenes if the old one ran out of room, that's exactly why you always write \`scores = append(scores, ...)\` instead of just calling it and discarding the result.\n\n## Maps\n\n\`\`\`go\nscoresByName := map[string]int{"Ada": 95, "Grace": 98}\nscoresByName["Bob"] = 70\n\nvalue, ok := scoresByName["Missing"]\nfmt.Println(value, ok)     // 0 false, ok tells you whether the key existed\n\ndelete(scoresByName, "Bob")\n\`\`\`\n\nThe **comma-ok idiom** (\`value, ok := ...\`) is how Go distinguishes "the key exists and its value is the zero value" from "the key doesn't exist at all", both would otherwise look identical.\n\n## Error handling recap\n\n\`\`\`go\nfile, err := os.Open("data.txt")\nif err != nil {\n    fmt.Println("Could not open file:", err)\n    return\n}\ndefer file.Close()   // runs when the surrounding function returns, guaranteed\n\`\`\`\n\n\`defer\` schedules a call to run right before the enclosing function returns, no matter which \`return\` statement triggers it, exactly like a \`finally\` block, and the idiomatic way to guarantee cleanup (closing files, unlocking mutexes) happens.`
+    ),
+    quiz: {
+      title: 'Slices, Maps and Error Handling Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the second value in "value, ok := myMap[key]" tell you?',
+          options: ['The type of the key', 'Whether the key exists in the map', 'The length of the map', 'Whether the map is nil'],
+          answer: 'Whether the key exists in the map',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'defer schedules a function call to run right before the enclosing function returns.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The built-in function used to add an element to a slice is: ____(scores, newValue)',
+          options: [],
+          answer: 'append',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Goroutines and Channels',
+    content: lessonContent(
+      'Goroutines and Channels',
+      `Concurrency is Go's headline feature. A **goroutine** is a lightweight, independently-running function, and a **channel** is a typed pipe for goroutines to safely communicate through, instead of sharing memory directly.\n\n## Goroutines\n\n\`\`\`go\nfunc sayHi(name string) {\n    fmt.Println("Hi,", name)\n}\n\nfunc main() {\n    go sayHi("Ada")    // runs concurrently, doesn't block main\n    go sayHi("Grace")\n    time.Sleep(100 * time.Millisecond) // crude wait, channels below do this properly\n}\n\`\`\`\n\nThe \`go\` keyword launches a function as a goroutine, thousands of them can run concurrently with very little overhead, far lighter-weight than an OS thread.\n\n## Channels\n\nWithout coordination, \`main\` might exit before the goroutines above even run. Channels solve this properly:\n\n\`\`\`go\nfunc fetchStatus(url string, results chan<- string) {\n    // pretend this makes a real HTTP request\n    results <- url + ": OK"   // send a value into the channel\n}\n\nfunc main() {\n    urls := []string{"a.com", "b.com", "c.com"}\n    results := make(chan string)\n\n    for _, url := range urls {\n        go fetchStatus(url, results)\n    }\n\n    for range urls {\n        fmt.Println(<-results)   // receive a value, blocks until one arrives\n    }\n}\n\`\`\`\n\n\`results <- value\` sends into the channel, \`<-results\` receives from it, and receiving **blocks** until a value is available, this is exactly what replaces \`time.Sleep\` guesswork with real synchronization: \`main\` waits precisely as long as it needs to, no more, no less.\n\n> [!TIP]\n> Go's own proverb sums up the philosophy: "Don't communicate by sharing memory, share memory by communicating." Channels are the idiomatic way to coordinate goroutines, reaching for shared variables and locks is usually a sign to reach for a channel instead.`
+    ),
+    quiz: {
+      title: 'Goroutines and Channels Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the "go" keyword do when placed before a function call?',
+          options: ['Deletes the function', 'Runs the function as a lightweight, concurrent goroutine', 'Compiles the function ahead of time', 'Imports the function from another package'],
+          answer: 'Runs the function as a lightweight, concurrent goroutine',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Receiving from a channel with <-results blocks until a value is available.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A typed pipe used for goroutines to safely send and receive values is called a ____.',
+          options: [],
+          answer: 'channel',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Concurrent URL Status Checker',
+    content: lessonContent(
+      'Final Project: Concurrent URL Status Checker',
+      `Combine goroutines, channels, structs, and error handling into a small concurrent tool: a URL status checker that checks multiple URLs at once instead of one at a time.\n\n## Requirements\n\n1. Define a \`Result\` struct with fields for the URL, its HTTP status code (or an error), and how long the request took.\n2. Write a \`checkURL(url string, results chan<- Result)\` function using \`net/http\`'s \`http.Get\`, sending a \`Result\` into the channel when done (success or failure).\n3. In \`main\`, launch a goroutine per URL for a list of at least 5 URLs, then receive and print every result as it arrives.\n4. Handle the error case explicitly, a failed request should still produce a \`Result\` (with the error recorded), not crash the whole program.\n5. Print a final summary: how many succeeded, how many failed, and the total time the whole batch took (it should be close to the *slowest single request*, not the sum of all of them, that's the entire point of doing this concurrently).\n\n## Stretch goals\n\n- Add a timeout per request using \`context.WithTimeout\`.\n- Limit how many requests run at once (a worker pool) instead of launching unlimited goroutines.\n- Sort the final results by response time before printing.\n\nSubmit a link to your finished project below, an instructor will review it before you can mark this lesson complete. Good luck!`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const solidityLessons: SeedLesson[] = [
+  {
+    title: 'Introduction to Smart Contracts & Solidity',
+    content: lessonContent(
+      'Introduction to Smart Contracts & Solidity',
+      `A **smart contract** is a program that lives on a blockchain, deployed once, then executed automatically and identically by every node in the network, no company or server can be shut down or quietly change its behavior. **Solidity** is the language most Ethereum smart contracts are written in.\n\n## Your first contract\n\n\`\`\`solidity\n// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\ncontract Greeter {\n    string public greeting = "Hello, Kodstigen!";\n\n    function setGreeting(string memory newGreeting) public {\n        greeting = newGreeting;\n    }\n}\n\`\`\`\n\n- \`pragma solidity ^0.8.20;\` pins which compiler version this contract expects, the \`^\` allows any compatible 0.8.x version, protecting against breaking changes in future major versions.\n- \`contract Greeter { ... }\` is the closest thing Solidity has to a class, it bundles state and functions together, like a Java or C# class deployed permanently to the blockchain.\n- \`string public greeting\` is a **state variable**, permanently stored on the blockchain itself, \`public\` automatically generates a free getter function for it.\n\n## The EVM\n\nSolidity compiles to bytecode that runs on the **EVM** (Ethereum Virtual Machine), conceptually similar to how Java compiles to bytecode for the JVM, except every EVM node in the world executes the same bytecode and must reach the exact same result, that's what makes it trustworthy without a central authority.\n\n> [!WARNING]\n> Once deployed, a smart contract's code **cannot be changed**. There's no patching a bug in production the way you'd redeploy a web server, this is exactly why security and careful testing matter so much more here than in most other kinds of programming.`
+    ),
+    quiz: {
+      title: 'Smart Contracts Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the EVM do?',
+          options: ['Stores files for a website', 'Executes smart contract bytecode identically across every network node', 'Compiles Java to bytecode', 'Mines new Bitcoin'],
+          answer: 'Executes smart contract bytecode identically across every network node',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A deployed smart contract\'s code can be edited later the same way you would redeploy a web server.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The pragma line at the top of a Solidity file pins which compiler ____ the contract expects.',
+          options: [],
+          answer: 'version',
+        },
+      ],
+    },
+  },
+  {
+    title: 'State Variables and Data Types',
+    content: lessonContent(
+      'State Variables and Data Types',
+      `A **state variable** is permanently stored on the blockchain as part of the contract's data, every write to one costs real money (**gas**), which shapes how Solidity code is written more than almost anything else.\n\n\`\`\`solidity\ncontract Wallet {\n    uint256 public balance;          // unsigned integer, 256 bits\n    address public owner;             // an Ethereum address\n    bool public isLocked;\n    string public label = "Savings";\n\n    constructor() {\n        owner = msg.sender;   // the account that deployed the contract\n        balance = 0;\n    }\n}\n\`\`\`\n\n## Core types\n\n| Type | Meaning |\n|---|---|\n| \`uint256\` | Unsigned integer, 0 or positive, the most common numeric type |\n| \`int256\` | Signed integer, can be negative |\n| \`address\` | A 20-byte Ethereum account or contract address |\n| \`bool\` | true or false |\n| \`string\` / \`bytes\` | Text or raw byte data |\n\nSolidity has no floating-point type at all, financial logic is done in whole-number units (like storing cents instead of dollars) to avoid the rounding errors that plague floating-point money math in other languages.\n\n## msg.sender\n\n\`msg.sender\` is a special, always-available variable holding the address that called the current function, it's the foundation almost every access-control check in Solidity is built on, "is the caller allowed to do this?"\n\n\`\`\`solidity\nfunction withdraw() public {\n    require(msg.sender == owner, "Not the owner");\n    // ...\n}\n\`\`\``
+    ),
+    quiz: {
+      title: 'State Variables Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does Solidity have no floating-point type?',
+          options: ['The EVM cannot store numbers', 'To avoid rounding errors in financial calculations, using whole-number units instead', 'Floating point was removed in a recent update', 'It is a bug that will be fixed'],
+          answer: 'To avoid rounding errors in financial calculations, using whole-number units instead',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'msg.sender always holds the address that called the current function.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The Solidity type used to store an Ethereum account or contract address is: ____',
+          options: [],
+          answer: 'address',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Functions and Visibility',
+    content: lessonContent(
+      'Functions and Visibility',
+      `Every Solidity function needs an explicit **visibility**, controlling who can call it, and a **mutability** annotation, telling the EVM (and gas estimators) whether it touches the blockchain's state at all.\n\n\`\`\`solidity\ncontract Counter {\n    uint256 private count;\n\n    function increment() public {\n        count += 1;   // modifies state, costs gas\n    }\n\n    function getCount() public view returns (uint256) {\n        return count;  // only reads state, free to call\n    }\n\n    function double(uint256 n) public pure returns (uint256) {\n        return n * 2;   // touches no state at all, purely computes\n    }\n}\n\`\`\`\n\n## Visibility\n\n| Modifier | Callable from |\n|---|---|\n| \`public\` | Anyone, and from within the contract |\n| \`external\` | Only from outside the contract |\n| \`internal\` | This contract and contracts that inherit from it |\n| \`private\` | Only this exact contract |\n\n## Mutability\n\n- \`view\` functions read state but never modify it, calling one from outside costs **no gas**.\n- \`pure\` functions don't even read state, they're a pure computation on their inputs, also free to call.\n- Functions with neither modify state, and always cost gas when called as a real transaction.\n\n> [!TIP]\n> Marking a read-only function \`view\` isn't just documentation, the compiler enforces it, if you accidentally write to a state variable inside a function marked \`view\`, it simply won't compile.`
+    ),
+    quiz: {
+      title: 'Functions and Visibility Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which function type touches no state at all, purely computing from its inputs?',
+          options: ['view', 'pure', 'external', 'payable'],
+          answer: 'pure',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Calling a view function from outside the contract (not as part of a state-changing transaction) costs no gas.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The visibility modifier that only allows a function to be called from outside the contract is: ____',
+          options: [],
+          answer: 'external',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Modifiers and Access Control',
+    content: lessonContent(
+      'Modifiers and Access Control',
+      `A **modifier** wraps reusable logic, most commonly an access-control check, around a function, avoiding copy-pasting the same \`require\` statement into every function that needs it.\n\n\`\`\`solidity\ncontract Vault {\n    address public owner;\n\n    constructor() {\n        owner = msg.sender;\n    }\n\n    modifier onlyOwner() {\n        require(msg.sender == owner, "Not the owner");\n        _;   // this is where the wrapped function's body runs\n    }\n\n    function withdraw(uint256 amount) public onlyOwner {\n        // only the owner can ever reach this point\n    }\n\n    function setOwner(address newOwner) public onlyOwner {\n        owner = newOwner;\n    }\n}\n\`\`\`\n\nThe \`_;\` inside a modifier marks exactly where the decorated function's own body gets spliced in, everything before \`_;\` runs first (here, the ownership check), and if \`require\` fails, the function body after it never executes at all, the whole transaction reverts.\n\n## require, revert, and assert\n\n\`\`\`solidity\nfunction transfer(address to, uint256 amount) public {\n    require(amount > 0, "Amount must be positive");   // validate input\n    require(balance[msg.sender] >= amount, "Insufficient balance");\n    balance[msg.sender] -= amount;\n    balance[to] += amount;\n}\n\`\`\`\n\n\`require\` checks a condition and reverts the **entire transaction** (undoing every state change made so far in it) with an error message if it fails, this all-or-nothing behavior is fundamental, a smart contract transaction can never be left half-finished.`
+    ),
+    quiz: {
+      title: 'Modifiers and Access Control Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does _; represent inside a modifier?',
+          options: ['A syntax error placeholder', 'Where the decorated function\'s body gets inserted', 'A private variable', 'The end of the contract'],
+          answer: "Where the decorated function's body gets inserted",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'If a require() check fails partway through a function, all state changes made earlier in that same transaction are undone.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A reusable block of logic, commonly an access check, wrapped around a function is called a ____.',
+          options: [],
+          answer: 'modifier',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Mappings, Structs and Arrays',
+    content: lessonContent(
+      'Mappings, Structs and Arrays',
+      `Solidity's core data structures for organizing on-chain state, each with tradeoffs shaped by the fact that every operation costs gas.\n\n## Mappings\n\nA mapping is a key-value store, Solidity's version of a hash map, but with a twist: it has **no length**, and no way to iterate over its keys, every possible key conceptually already exists, mapped to its type's default (zero) value:\n\n\`\`\`solidity\nmapping(address => uint256) public balances;\n\nfunction deposit() public payable {\n    balances[msg.sender] += msg.value;\n}\n\`\`\`\n\nThere's no "key not found" error, \`balances[someRandomAddress]\` simply returns \`0\` if nothing was ever set, exactly the same as if it had explicitly been set to zero.\n\n## Structs\n\n\`\`\`solidity\nstruct Player {\n    string name;\n    uint256 xp;\n    bool active;\n}\n\nmapping(address => Player) public players;\n\nfunction register(string memory name) public {\n    players[msg.sender] = Player(name, 0, true);\n}\n\`\`\`\n\nMappings and structs combine constantly, exactly like the pattern above, associating a wallet address with a whole record of data about it.\n\n## Arrays\n\n\`\`\`solidity\naddress[] public registeredPlayers;\n\nfunction register2() public {\n    registeredPlayers.push(msg.sender);\n}\n\`\`\`\n\nUnlike mappings, arrays **do** have a length and can be iterated, but looping over a large on-chain array in a function costs gas proportional to its size, and can even become too expensive to call at all if it grows large enough. This is exactly why mappings, not arrays, are the default choice for most on-chain lookups.`
+    ),
+    quiz: {
+      title: 'Mappings, Structs and Arrays Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What happens when you read a mapping key that was never explicitly set?',
+          options: ['It throws an error', 'It returns the type\'s default (zero) value', 'It returns null', 'The transaction reverts'],
+          answer: "It returns the type's default (zero) value",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Looping over a large on-chain array can become expensive or even too costly to call as gas usage grows with its size.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Solidity\'s key-value data structure, which has no length and cannot be iterated, is called a ____.',
+          options: [],
+          answer: 'mapping',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Events and Error Handling',
+    content: lessonContent(
+      'Events and Error Handling',
+      `Smart contracts run in an isolated environment with no built-in "print to console" for the outside world, **events** are how a contract communicates what happened to applications and users watching the blockchain.\n\n\`\`\`solidity\ncontract Token {\n    mapping(address => uint256) public balances;\n\n    event Transfer(address indexed from, address indexed to, uint256 amount);\n\n    function transfer(address to, uint256 amount) public {\n        require(amount > 0, "Amount must be positive");\n        require(balances[msg.sender] >= amount, "Insufficient balance");\n\n        balances[msg.sender] -= amount;\n        balances[to] += amount;\n\n        emit Transfer(msg.sender, to, amount);\n    }\n}\n\`\`\`\n\n\`emit Transfer(...)\` writes a permanent, cheap-to-store log entry to the blockchain, off-chain applications (like a wallet's UI, or a block explorer) listen for these events instead of constantly polling contract state, it's how "your transaction went through" notifications actually work under the hood. \`indexed\` parameters can be efficiently searched/filtered by event listeners.\n\n## Custom errors\n\nModern Solidity favors custom errors over plain string messages, they're significantly cheaper in gas:\n\n\`\`\`solidity\nerror InsufficientBalance(uint256 available, uint256 requested);\n\nfunction withdraw(uint256 amount) public {\n    if (balances[msg.sender] < amount) {\n        revert InsufficientBalance(balances[msg.sender], amount);\n    }\n    balances[msg.sender] -= amount;\n}\n\`\`\`\n\n\`revert\` with a custom error immediately stops execution and undoes all state changes in the current transaction, exactly like \`require\`, but lets you attach structured data (here, the actual vs. requested amounts) instead of just a plain string.`
+    ),
+    quiz: {
+      title: 'Events and Error Handling Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the main purpose of an event in Solidity?',
+          options: ['To store data more cheaply than a state variable', 'To let off-chain applications know something happened on-chain', 'To validate function inputs', 'To restrict who can call a function'],
+          answer: 'To let off-chain applications know something happened on-chain',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Custom errors are generally cheaper in gas than plain require() string messages.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The keyword used to write an event to the blockchain\'s log is: ____ Transfer(...)',
+          options: [],
+          answer: 'emit',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Simple Token Contract',
+    content: lessonContent(
+      'Final Project: Build a Simple Token Contract',
+      `Combine everything from this course into a simple, ERC-20-style fungible token contract, the same basic pattern underlying most tokens on Ethereum.\n\n## Requirements\n\n1. Declare state variables for \`name\`, \`symbol\`, \`totalSupply\`, and a \`mapping(address => uint256)\` for balances.\n2. In the constructor, mint the entire \`totalSupply\` to \`msg.sender\` (the deployer).\n3. Implement \`function transfer(address to, uint256 amount) public returns (bool)\`, using \`require\` to check the sender has enough balance, updating both balances, and emitting a \`Transfer\` event.\n4. Implement \`function balanceOf(address account) public view returns (uint256)\`.\n5. Add an \`onlyOwner\`-style modifier and a \`mint(address to, uint256 amount)\` function restricted to the contract's owner, that increases \`totalSupply\` and the recipient's balance.\n6. Use a custom error (not a plain string) for the insufficient-balance case in \`transfer\`.\n\n## Stretch goals\n\n- Add \`approve\`/\`transferFrom\` to support spending on someone else's behalf (the rest of the real ERC-20 standard).\n- Add a \`burn(uint256 amount)\` function that destroys tokens from the caller's own balance.\n- Write a few test cases (using Hardhat or Foundry) proving transfer fails correctly when the sender has insufficient balance.\n\nSubmit a link to your finished contract below, an instructor will review it before you can mark this lesson complete. Good luck!`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const gdscriptLessons: SeedLesson[] = [
+  {
+    title: 'Introduction to GDScript & Godot',
+    content: lessonContent(
+      'Introduction to GDScript & Godot',
+      `**Godot** is a free, open-source game engine, and **GDScript** is its built-in scripting language, designed specifically to feel natural for game development and to integrate tightly with the engine's editor.\n\n## Nodes and the scene tree\n\nEverything in a Godot game is a **node**: a sprite, a button, a sound player, even an abstract logic container. Nodes are arranged into a tree, and a saved tree of nodes is called a **scene**:\n\n\`\`\`\nPlayer (CharacterBody2D)\n├── Sprite2D\n├── CollisionShape2D\n└── Camera2D\n\`\`\`\n\nA scene can be instanced inside another scene, exactly like a reusable component, this is how a "Player" scene gets placed into a "Level" scene without duplicating its logic.\n\n## Your first script\n\n\`\`\`gdscript\nextends Node2D\n\nfunc _ready():\n    print("Hello, Kodstigen!")\n\nfunc _process(delta):\n    # runs every single frame, delta is the time since the last frame in seconds\n    pass\n\`\`\`\n\n- \`extends Node2D\` attaches this script's behavior to a node of type \`Node2D\` (or anything that inherits from it), scripts in Godot are never standalone, they always extend some node type.\n- \`_ready()\` is a **lifecycle method** the engine calls automatically once, when the node first enters the running scene.\n- \`_process(delta)\` is called automatically every rendered frame, \`delta\` lets you write movement and animation that's consistent regardless of frame rate.\n\n> [!TIP]\n> Function names starting with an underscore, like \`_ready\` and \`_process\`, are **engine callbacks**, Godot calls them for you at the right moment, you never call them yourself directly.`
+    ),
+    quiz: {
+      title: 'Introduction to GDScript Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is a "scene" in Godot?',
+          options: ['A single image asset', 'A saved tree of nodes that can be instanced elsewhere', 'A sound effect', 'A compiled executable'],
+          answer: 'A saved tree of nodes that can be instanced elsewhere',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: '_process(delta) is called automatically by the engine every frame.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The lifecycle method Godot calls automatically once, when a node first enters the running scene, is: _____()',
+          options: [],
+          answer: '_ready',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Variables and Types',
+    content: lessonContent(
+      'Variables and Types',
+      `GDScript is dynamically typed by default, like Python, but with **optional static typing** you can add for extra safety and editor autocompletion.\n\n\`\`\`gdscript\nvar xp = 0              # dynamically typed, inferred as int\nvar name := "Ada"        # := infers AND locks in the type (String)\nvar health: float = 100.0 # explicit static type annotation\n\nxp += 10\n\`\`\`\n\n\`var xp = 0\` works exactly like Python, no type is enforced. \`var name := "Ada"\` (with a colon before \`=\`) tells the compiler to infer the type once and then **enforce** it, assigning a number to \`name\` later becomes a compile-time error instead of a silent bug.\n\n## Exported variables\n\nA variable marked \`@export\` becomes editable directly in the Godot editor's Inspector panel, no code changes needed to tweak it:\n\n\`\`\`gdscript\nextends CharacterBody2D\n\n@export var speed: float = 300.0\n@export var jump_velocity: float = -400.0\n\`\`\`\n\nThis is one of GDScript's most distinctive features, a game designer with no programming background can tune \`speed\` and \`jump_velocity\` by dragging a slider in the editor, without ever opening this file.\n\n## Common built-in types\n\n\`\`\`gdscript\nvar position := Vector2(100, 50)   # a 2D point/vector, everywhere in 2D games\nvar items := ["sword", "shield"]     # array\nvar stats := {"str": 10, "dex": 8}    # dictionary\n\`\`\`\n\n\`Vector2\` isn't just a convenience class, it has built-in math operators (\`+\`, \`-\`, \`*\`) that work exactly as you'd expect mathematically, since 2D position and movement math is something almost every game script needs constantly.`
+    ),
+    quiz: {
+      title: 'Variables and Types Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does marking a variable with @export do?',
+          options: ['Makes it read-only', 'Makes it editable in the Godot editor\'s Inspector panel', 'Deletes it when the game exits', 'Converts it to a global variable'],
+          answer: "Makes it editable in the Godot editor's Inspector panel",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'GDScript requires every variable to have an explicit static type declared.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The built-in type commonly used to represent a 2D point or movement vector is: ____',
+          options: [],
+          answer: 'Vector2',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Control Flow and Functions',
+    content: lessonContent(
+      'Control Flow and Functions',
+      `GDScript's syntax leans heavily on Python: indentation defines blocks, no curly braces, no semicolons.\n\n\`\`\`gdscript\nvar xp = 45\n\nif xp >= 100:\n    print("Level up!")\nelif xp >= 50:\n    print("Almost there")\nelse:\n    print("Keep going")\n\`\`\`\n\n## Loops\n\n\`\`\`gdscript\nfor i in range(5):\n    print(i)\n\nvar items = ["sword", "shield", "potion"]\nfor item in items:\n    print(item)\n\nvar tries = 0\nwhile tries < 3:\n    tries += 1\n\`\`\`\n\n\`for item in items\` iterates directly over any array-like value, exactly like Python's \`for x in list\`.\n\n## Functions\n\n\`\`\`gdscript\nfunc calculate_damage(base: int, multiplier: float = 1.0) -> int:\n    return int(base * multiplier)\n\nvar dmg = calculate_damage(10)        # 10, uses the default multiplier\nvar crit = calculate_damage(10, 2.0)   # 20\n\`\`\`\n\n\`multiplier: float = 1.0\` gives the parameter a **default value**, callers can omit it entirely. \`-> int\` is an optional return-type annotation, purely for clarity and editor tooling, not enforced as strictly as some statically-typed languages.\n\n> [!TIP]\n> Because indentation is meaningful, mixing tabs and spaces in the same GDScript file causes real parse errors, not just style warnings. Configure your editor to use one or the other consistently.`
+    ),
+    quiz: {
+      title: 'Control Flow and Functions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What defines a code block in GDScript?',
+          options: ['Curly braces {}', 'The keyword "block"', 'Indentation, like Python', 'Semicolons'],
+          answer: 'Indentation, like Python',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A function parameter can be given a default value, making it optional for callers.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The keyword used to define a function in GDScript is: ____ calculate_damage(base):',
+          options: [],
+          answer: 'func',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Signals',
+    content: lessonContent(
+      'Signals',
+      `**Signals** are Godot's event system, letting nodes communicate without directly knowing about each other, one of the most distinctive and important GDScript features to understand well.\n\n\`\`\`gdscript\n# Health.gd, attached to a Player node\nextends Node\n\nsignal health_depleted\nsignal health_changed(new_value)\n\nvar health := 100\n\nfunc take_damage(amount: int):\n    health -= amount\n    health_changed.emit(health)\n    if health <= 0:\n        health_depleted.emit()\n\`\`\`\n\n\`\`\`gdscript\n# UI.gd, attached to a completely separate HUD node\nfunc _ready():\n    var player = get_node("/root/Game/Player")\n    player.health_changed.connect(_on_health_changed)\n    player.health_depleted.connect(_on_player_died)\n\nfunc _on_health_changed(new_value):\n    print("Health is now: ", new_value)\n\nfunc _on_player_died():\n    print("Game over!")\n\`\`\`\n\n## Why signals instead of direct calls?\n\nThe \`Health\` script has **no idea** the UI even exists, it just \`emit\`s when something happens. The \`UI\` script \`connect\`s to those signals separately. This means the \`Player\`'s health logic and the \`HUD\`'s display logic are completely decoupled, you can add a second listener (a sound effect script, an achievement tracker) without touching \`Health.gd\` at all, and swap out the UI entirely without touching gameplay code.\n\nThis pattern (also called "observer" or "pub/sub" in other languages) is exactly why Godot projects tend to stay maintainable as they grow, systems talk *about* events, not directly *to* each other.`
+    ),
+    quiz: {
+      title: 'Signals Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the main benefit of using signals instead of one script calling another directly?',
+          options: ['Signals run faster than function calls', 'The emitting script does not need to know who, if anyone, is listening', 'Signals are required by the Godot compiler', 'Signals automatically save the game'],
+          answer: 'The emitting script does not need to know who, if anyone, is listening',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A script must know exactly which other node will receive a signal before it can emit it.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'To trigger a signal named health_depleted, you call: health_depleted.____()',
+          options: [],
+          answer: 'emit',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Node References and the Scene Tree',
+    content: lessonContent(
+      'Node References and the Scene Tree',
+      `A script attached to one node very often needs to reach other nodes nearby in the scene tree, to read their state or call their methods.\n\n\`\`\`gdscript\nextends CharacterBody2D\n\n@onready var sprite = $Sprite2D\n@onready var collision_shape = $CollisionShape2D\n\nfunc _ready():\n    sprite.modulate = Color.RED\n\`\`\`\n\n\`$Sprite2D\` is shorthand for \`get_node("Sprite2D")\`, fetching a direct child node by name. \`@onready\` delays that lookup until the node has actually entered the scene tree, if you tried to grab \`$Sprite2D\` immediately when the script's variables are first declared, the child node might not exist yet.\n\n## Relative and absolute paths\n\n\`\`\`gdscript\nvar sibling = get_node("../Enemy")        # relative: up one level, then into Enemy\nvar anywhere = get_node("/root/Game/UI")  # absolute: from the very root of the tree\n\`\`\`\n\nRelative paths (\`\"..\"\` for parent, a name for a child) are more portable, since they don't break if the whole scene gets moved somewhere else in a larger tree, absolute paths are more explicit but brittle if the tree's structure changes.\n\n## Groups\n\nFor finding many unrelated nodes at once, node **groups** are usually cleaner than manual tree-walking:\n\n\`\`\`gdscript\n# In the editor, add each enemy node to a group called "enemies"\nfor enemy in get_tree().get_nodes_in_group("enemies"):\n    enemy.take_damage(10)\n\`\`\`\n\nGroups decouple "find all the enemies" from the tree's exact shape entirely, new enemies just need to join the group, no code elsewhere needs to change.`
+    ),
+    quiz: {
+      title: 'Node References Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is $Sprite2D shorthand for?',
+          options: ['A new Sprite2D instance', 'get_node("Sprite2D")', 'A global variable', 'An exported variable'],
+          answer: 'get_node("Sprite2D")',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: '@onready delays a node lookup until the node has actually entered the scene tree.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Finding all nodes tagged with a shared label, like "enemies", without manually walking the tree, is done with node ____.',
+          options: [],
+          answer: 'groups',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Classes and Inheritance',
+    content: lessonContent(
+      'Classes and Inheritance',
+      `Beyond scripts attached directly to nodes, GDScript supports full custom classes, letting you define reusable data types and share behavior through inheritance.\n\n\`\`\`gdscript\n# item.gd\nclass_name Item\nextends Resource\n\n@export var name: String\n@export var value: int\n\nfunc describe() -> String:\n    return "%s (%d gold)" % [name, value]\n\`\`\`\n\n\`class_name Item\` registers this script as a globally-available type named \`Item\`, usable anywhere in the project without an explicit \`preload\`. Extending \`Resource\` (rather than a scene node type) makes it a reusable data asset, perfect for things like item definitions that don't need a position in the game world.\n\n## Inheriting your own classes\n\n\`\`\`gdscript\n# weapon.gd\nclass_name Weapon\nextends Item\n\n@export var damage: int\n\nfunc describe() -> String:\n    return super.describe() + " - %d damage" % damage\n\`\`\`\n\n\`Weapon extends Item\` inherits \`name\`, \`value\`, and the base \`describe()\`, then **overrides** \`describe()\` with its own version. \`super.describe()\` calls the parent class's original implementation first, then extends its result, rather than throwing it away entirely, a common pattern when a subclass wants to *add to* behavior instead of fully replacing it.\n\n\`\`\`gdscript\nvar sword = Weapon.new()\nsword.name = "Iron Sword"\nsword.value = 50\nsword.damage = 12\nprint(sword.describe())   # "Iron Sword (50 gold) - 12 damage"\n\`\`\``
+    ),
+    quiz: {
+      title: 'Classes and Inheritance Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does class_name Item do?',
+          options: ['Deletes the class', 'Registers the script as a globally-available type usable without preload', 'Makes the class private', 'Attaches the script to every node in the scene'],
+          answer: 'Registers the script as a globally-available type usable without preload',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'super.describe() calls the parent class\'s original method instead of the overriding one.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A custom GDScript class inherits from another with the keyword: ____ Item',
+          options: [],
+          answer: 'extends',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Player Movement Script',
+    content: lessonContent(
+      'Final Project: Player Movement Script',
+      `Combine everything from this course into a real, playable script: 2D platformer-style player movement, the foundation almost every 2D Godot game starts from.\n\n## Requirements\n\n1. Create a script extending \`CharacterBody2D\` with \`@export\` variables for \`speed\` and \`jump_velocity\`, tunable from the editor's Inspector.\n2. In \`_physics_process(delta)\`, read left/right input and set horizontal velocity accordingly (use \`Input.get_axis("ui_left", "ui_right")\` or your own custom input actions).\n3. Apply gravity to vertical velocity every frame, and let the player jump (set a negative vertical velocity) only when \`is_on_floor()\` is true, so jumping mid-air isn't possible.\n4. Call \`move_and_slide()\` to actually apply the computed velocity and handle collisions.\n5. Define a \`signal health_depleted\` and a simple \`health\` variable with a \`take_damage(amount)\` method that emits the signal when health reaches 0, connect to it from a separate script (even a simple one that just prints "Game Over") to prove the decoupling works.\n\n## Stretch goals\n\n- Add a \`Sprite2D\` reference and flip it horizontally based on movement direction.\n- Add a double-jump, allowed only once per airborne period.\n- Add a \`@export var coyote_time: float\` grace period that still allows a jump for a few frames after walking off a platform edge.\n\nSubmit a link to your finished project below, an instructor will review it before you can mark this lesson complete. Good luck!`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
   nodejs: [
     {
@@ -5654,6 +7092,48 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       title: 'Cybersecurity Fundamentals',
       description: 'Think like an attacker to defend like a pro: the CIA triad, common attack vectors, network and web app security, cryptography, and access control.',
       lessons: cybersecurityLessons,
+    },
+  ],
+  c: [
+    {
+      title: 'C Programming',
+      description: 'Get close to the machine: structs, pointers, manual memory management, and build your own garbage collector from scratch.',
+      lessons: cLessons,
+    },
+  ],
+  linux: [
+    {
+      title: 'Linux Fundamentals',
+      description: 'The command line, filesystems, processes, permissions, and setting up a real development environment.',
+      lessons: linuxLessons,
+    },
+  ],
+  java: [
+    {
+      title: 'Java Foundations',
+      description: 'Statically-typed, object-oriented programming on the JVM: classes, collections, generics, and interfaces.',
+      lessons: javaLessons,
+    },
+  ],
+  go: [
+    {
+      title: 'Go Fundamentals',
+      description: 'A simple, fast, compiled language built for concurrency: structs, goroutines, channels, and error handling.',
+      lessons: goLessons,
+    },
+  ],
+  solidity: [
+    {
+      title: 'Solidity Fundamentals',
+      description: 'Write smart contracts for Ethereum: state variables, functions and visibility, access control, mappings, and events.',
+      lessons: solidityLessons,
+    },
+  ],
+  gdscript: [
+    {
+      title: 'GDScript Fundamentals',
+      description: "Godot's built-in scripting language: nodes, the scene tree, signals, and building real gameplay behavior.",
+      lessons: gdscriptLessons,
     },
   ],
 };
