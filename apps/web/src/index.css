@@ -13,6 +13,25 @@ body {
   @apply bg-slate-950 text-slate-100 antialiased;
 }
 
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 32s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
+
 .prose-lesson h1 { @apply text-3xl font-bold mt-2 mb-4; }
 .prose-lesson h2 { @apply text-xl font-semibold mt-6 mb-3 text-forge-100; }
 .prose-lesson h3 { @apply text-lg font-semibold mt-5 mb-2 text-slate-100; }

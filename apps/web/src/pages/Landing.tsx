@@ -149,22 +149,26 @@ export function Landing() {
         </section>
       )}
 
-      <section className="mx-auto max-w-6xl px-4 pb-20">
-        <h2 className="mb-8 text-center text-2xl font-bold">Välj din stig</h2>
+      {paths.length > 0 && (
+        <section className="pb-20">
+          <h2 className="mb-8 text-center text-2xl font-bold">Välj din stig</h2>
 
-        <div className="mx-auto flex max-w-[600px] flex-wrap justify-center gap-x-10 gap-y-8">
-          {paths.map((p) => (
-            <div key={p.slug} className="flex w-20 flex-col items-center gap-2.5">
-              <img
-                src={`/langs/${p.slug}.svg`}
-                alt={`${p.name} logo`}
-                className="h-14 w-14 transition-transform hover:scale-110"
-              />
-              <span className="text-sm font-medium text-slate-300">{p.name}</span>
+          <div className="mx-auto max-w-6xl overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+            <div className="animate-marquee flex w-max gap-x-12">
+              {[...paths, ...paths].map((p, i) => (
+                <div key={`${p.slug}-${i}`} className="flex w-20 shrink-0 flex-col items-center gap-2.5">
+                  <img
+                    src={`/langs/${p.slug}.svg`}
+                    alt={`${p.name} logo`}
+                    className="h-14 w-14 transition-transform hover:scale-110"
+                  />
+                  <span className="whitespace-nowrap text-sm font-medium text-slate-300">{p.name}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
