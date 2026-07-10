@@ -6928,6 +6928,254 @@ const gdscriptLessons: SeedLesson[] = [
   },
 ];
 
+const kivyMatch3Lessons: SeedLesson[] = [
+  {
+    title: 'Kivy: Setup and Installation',
+    content: lessonContent(
+      'Kivy: Setup and Installation',
+      `Kivy is a Python framework for building cross-platform apps and games, the same codebase can run on Windows, macOS, Linux, Android, and iOS. It's especially popular for 2D games with touch controls: puzzle games, card games, simple platformers, and, in this project, a **Match-3 game** in the style of Candy Crush.\n\n## Installing Kivy\n\nLike Pygame, Kivy needs a real window to draw into, so it doesn't run inside this course's browser sandbox. Write and run this project locally with a real Python install.\n\n\`\`\`bash\npip install kivy\n\`\`\`\n\nVerify it installed correctly:\n\n\`\`\`\nimport kivy\nprint(kivy.__version__)\n\`\`\`\n\n## Your first Kivy app\n\nEvery Kivy app is a class that extends \`App\`, with a \`build()\` method that returns the single root widget the whole app is drawn from.\n\n\`\`\`\nfrom kivy.app import App\nfrom kivy.uix.label import Label\n\nclass Match3App(App):\n    def build(self):\n        return Label(text='Match-3, coming soon!', font_size=32)\n\nif __name__ == '__main__':\n    Match3App().run()\n\`\`\`\n\n- \`App.run()\` opens the window and starts Kivy's own event loop (similar in spirit to Pygame's \`while running:\` loop, but Kivy manages it for you).\n- \`build()\` is called once, at startup, whatever widget it returns becomes the entire visible app, later lessons will return a full game board here instead of a single \`Label\`.\n\n## Packaging for mobile\n\nThis course focuses on getting the game working on your desktop, but Kivy code is written with mobile in mind from the start. When you're ready to ship, **Buildozer** packages a Kivy app into a real Android APK:\n\n\`\`\`bash\npip install buildozer\nbuildozer init\nbuildozer -v android debug\n\`\`\`\n\n\`buildozer init\` generates a \`buildozer.spec\` file describing your app (name, permissions, dependencies), and \`buildozer android debug\` builds the actual installable APK. You won't need Buildozer for this course's lessons, it's mentioned here so you know the path from "Python script" to "installable app" exists and is just one command away.\n\n> [!NOTE]\n> Buildozer only runs on Linux (or WSL on Windows). It's completely optional for following this course, everything here runs and is testable as a normal desktop Python app.`
+    ),
+    quiz: {
+      title: 'Kivy Setup Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What must every Kivy app class extend?',
+          options: ['Widget', 'App', 'Window', 'Game'],
+          answer: 'App',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A Kivy app's build() method is called repeatedly, once per frame.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____ packages a finished Kivy app into an installable Android APK.',
+          options: [],
+          answer: 'Buildozer',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Layouts and Widgets',
+    content: lessonContent(
+      'Layouts and Widgets',
+      `A Match-3 board is fundamentally a grid, so before writing any game logic, this lesson covers the Kivy widgets that will hold it: layouts, which arrange other widgets, and buttons, which will represent each gem.\n\n## Layouts arrange widgets, they don't draw anything themselves\n\n\`\`\`\nfrom kivy.app import App\nfrom kivy.uix.boxlayout import BoxLayout\nfrom kivy.uix.button import Button\nfrom kivy.uix.label import Label\n\nclass DemoApp(App):\n    def build(self):\n        root = BoxLayout(orientation='vertical')\n        root.add_widget(Label(text='Score: 0', font_size=24))\n        root.add_widget(Button(text='Shuffle'))\n        return root\n\nif __name__ == '__main__':\n    DemoApp().run()\n\`\`\`\n\n- \`BoxLayout\` stacks its children in a single row or column, \`orientation='vertical'\` stacks them top to bottom.\n- \`add_widget(...)\` is how every widget, layout or not, gets a child added to it. Layouts just also decide *where* their children end up.\n\n## GridLayout: the board itself\n\nAn 8×8 Match-3 board is a perfect fit for \`GridLayout\`, which arranges children into a fixed number of columns (and, implicitly, however many rows the number of children requires):\n\n\`\`\`\nfrom kivy.uix.gridlayout import GridLayout\nfrom kivy.uix.button import Button\n\nclass BoardDemoApp(App):\n    def build(self):\n        grid = GridLayout(cols=8)\n        for i in range(8 * 8):\n            grid.add_widget(Button(text=str(i)))\n        return grid\n\nif __name__ == '__main__':\n    BoardDemoApp().run()\n\`\`\`\n\nSetting \`cols=8\` and then adding 64 buttons is all it takes, \`GridLayout\` automatically wraps to a new row every 8 widgets, giving you an 8×8 grid with zero manual positioning math.\n\n## Buttons as gems\n\nEach cell in the board will be a \`Button\`, gems don't need any text, just a solid background color, which Kivy exposes through two properties together:\n\n\`\`\`\nfrom kivy.uix.button import Button\n\ngem = Button(text='', background_normal='', background_color=(0.9, 0.2, 0.2, 1))  # solid red\n\`\`\`\n\n- \`background_color\` is an RGBA tuple, each channel from \`0\` to \`1\` (not 0-255 like most other tools).\n- \`background_normal=''\` is required to actually *see* that color, by default Kivy's \`Button\` draws its built-in gray button-image on top of \`background_color\`, setting it to an empty string turns that image off so the flat color shows through.\n\n## Responding to taps\n\n\`\`\`\ndef on_gem_pressed(instance):\n    print('tapped a gem!')\n\ngem.bind(on_press=on_gem_pressed)\n\`\`\`\n\n\`bind(on_press=...)\` connects a function to the button's press event, Kivy calls it with the widget instance itself as the only argument, which is exactly how the next lesson will know *which* gem was tapped.\n\n> [!TIP]\n> \`size_hint\` (a tuple like \`(1, 1)\`) controls how much of the available space a widget claims relative to its siblings, the default \`(1, 1)\` already makes every gem button fill its grid cell evenly, so you won't need to touch it for this project.`
+    ),
+    quiz: {
+      title: 'Layouts and Widgets Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which layout automatically arranges widgets into a fixed number of columns?',
+          options: ['BoxLayout', 'GridLayout', 'StackLayout', 'FloatLayout'],
+          answer: 'GridLayout',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Setting background_normal='' on a Button is necessary to see its background_color clearly.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'button.____(on_press=handler) connects a function to run whenever the button is tapped.',
+          options: [],
+          answer: 'bind',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Modeling the Board',
+    content: lessonContent(
+      'Modeling the Board',
+      `Before drawing a single gem on screen, it's worth building the board as plain Python data, completely separate from Kivy. This keeps the game's rules testable and easy to reason about, the UI will just be a thin layer that reads and updates this data.\n\n## Representing the grid\n\nAn 8×8 board is a list of 8 rows, each row a list of 8 gems. Each gem is just a string naming its color:\n\n\`\`\`\nimport random\n\nBOARD_SIZE = 8\nGEM_COLORS = ['red', 'blue', 'green', 'yellow', 'purple']\n\ndef make_board():\n    return [\n        [random.choice(GEM_COLORS) for _col in range(BOARD_SIZE)]\n        for _row in range(BOARD_SIZE)\n    ]\n\nboard = make_board()\nprint(board[0])   # the top row, e.g. ['red', 'purple', 'blue', ...]\nprint(board[3][5])  # the gem at row 3, column 5\n\`\`\`\n\n\`board[row][col]\` is the indexing convention used for the rest of this project, the outer list is rows (top to bottom), the inner list is columns (left to right) within that row.\n\n## Why keep the model separate from the UI?\n\nIt's tempting to store the gem's color as a property directly on a Kivy \`Button\`, and read it back from there whenever you need it. Resist that: keeping \`board\` as a plain Python list means:\n\n- You can write and test match-detection logic (next lesson) with no Kivy window involved at all, just \`print(board)\`.\n- The UI's only job becomes "read \`board\` and draw it", and "translate taps back into changes to \`board\`", nothing about *how a gem looks* needs to leak into the rules for *how gems match and fall*.\n\n\`\`\`\ndef adjacent(pos1, pos2):\n    r1, c1 = pos1\n    r2, c2 = pos2\n    return abs(r1 - r2) + abs(c1 - c2) == 1\n\nprint(adjacent((3, 4), (3, 5)))  # True, same row, next column\nprint(adjacent((3, 4), (4, 5)))  # False, diagonal, not adjacent\n\`\`\`\n\n\`abs(r1 - r2) + abs(c1 - c2)\` is the **Manhattan distance** between two grid positions, it equals exactly \`1\` only when the two cells share a row or column and are right next to each other, exactly the "adjacent" rule a Match-3 swap needs, no diagonals allowed.\n\n> [!NOTE]\n> \`random.choice(GEM_COLORS)\` doesn't check whether it accidentally created a match while building the initial board, that's fine for this project's prototype scope, a production game would re-roll any gem that would start pre-matched.`
+    ),
+    quiz: {
+      title: 'Modeling the Board Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In this project\'s board representation, what does board[3][5] refer to?',
+          options: ['Row 5, column 3', 'Row 3, column 5', 'The 3rd board', 'A GEM_COLORS index'],
+          answer: 'Row 3, column 5',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Two grid positions are adjacent (for swapping purposes) if they are diagonal to each other.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'abs(r1 - r2) + abs(c1 - c2) computes the ____ distance between two grid positions.',
+          options: [],
+          answer: 'Manhattan',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Displaying the Board',
+    content: lessonContent(
+      'Displaying the Board',
+      `With \`make_board()\` producing the data and \`GridLayout\` able to hold an 8×8 grid of buttons, this lesson connects the two: turning the plain Python \`board\` into actual colored gems on screen.\n\n## Mapping colors to RGBA\n\n\`\`\`\nGEM_RGBA = {\n    'red':    (0.9, 0.2, 0.2, 1),\n    'blue':   (0.2, 0.4, 0.9, 1),\n    'green':  (0.2, 0.8, 0.3, 1),\n    'yellow': (0.95, 0.85, 0.2, 1),\n    'purple': (0.6, 0.2, 0.8, 1),\n}\n\`\`\`\n\nEvery gem color string from \`board\` needs a matching entry here, this dictionary is the only place that translates the game's data (plain strings) into something Kivy can actually render.\n\n## Building the grid of buttons\n\n\`\`\`\nfrom kivy.app import App\nfrom kivy.uix.gridlayout import GridLayout\nfrom kivy.uix.button import Button\n\nclass Match3App(App):\n    def build(self):\n        self.board = make_board()\n        self.grid = GridLayout(cols=BOARD_SIZE)\n        self.buttons = {}  # (row, col) -> Button, so taps can be mapped back to a position\n\n        for row in range(BOARD_SIZE):\n            for col in range(BOARD_SIZE):\n                gem = Button(text='', background_normal='')\n                self.buttons[(row, col)] = gem\n                self.grid.add_widget(gem)\n\n        self.render_board()\n        return self.grid\n\n    def render_board(self):\n        for row in range(BOARD_SIZE):\n            for col in range(BOARD_SIZE):\n                color = self.board[row][col]\n                self.buttons[(row, col)].background_color = GEM_RGBA[color]\n\nif __name__ == '__main__':\n    Match3App().run()\n\`\`\`\n\nA few things worth noticing:\n\n- \`self.buttons\` is a dictionary keyed by \`(row, col)\`, created once in \`build()\`. Every later lesson looks up "which button is at this position?" through this dictionary rather than re-creating widgets, Kivy widgets are relatively expensive to create, so the board reuses the same 64 buttons for the entire game.\n- \`render_board()\` is deliberately a separate method from \`build()\`: it only *reads* \`self.board\` and updates colors, it never creates new widgets. That means any later change to \`self.board\` (a swap, a match being cleared, gems falling) can be shown on screen just by calling \`self.render_board()\` again.\n- Note the important order: rows are added top to bottom, and within each row, columns left to right, matching \`GridLayout(cols=BOARD_SIZE)\`'s own top-to-bottom, left-to-right fill order, so \`self.buttons[(row, col)]\` really does end up in the right visual position.\n\n> [!TIP]\n> Separating "update the data" from "redraw from the data" (the same idea as Pygame's update/draw split) is what makes the rest of this game's logic straightforward: every lesson from here on just changes \`self.board\` and then calls \`self.render_board()\`.`
+    ),
+    quiz: {
+      title: 'Displaying the Board Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does the app store buttons in a self.buttons dictionary keyed by (row, col) instead of recreating them?',
+          options: [
+            'Kivy requires dictionaries for layouts',
+            'To reuse the same widgets and just update their colors, rather than recreating 64 buttons every frame',
+            'Dictionaries render faster than lists',
+            'It is required for touch input to work at all',
+          ],
+          answer: 'To reuse the same widgets and just update their colors, rather than recreating 64 buttons every frame',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'render_board() creates new Button widgets every time it runs.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'background_color expects an ____ tuple with each channel between 0 and 1.',
+          options: [],
+          answer: 'RGBA',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Selecting and Swapping Gems',
+    content: lessonContent(
+      'Selecting and Swapping Gems',
+      `With gems visible on screen, the next step is making them tappable: select one gem, tap an adjacent one, and swap them.\n\n## Tracking the current selection\n\n\`\`\`\nclass Match3App(App):\n    def build(self):\n        self.board = make_board()\n        self.selected = None  # will hold a (row, col) tuple, or None\n        self.grid = GridLayout(cols=BOARD_SIZE)\n        self.buttons = {}\n\n        for row in range(BOARD_SIZE):\n            for col in range(BOARD_SIZE):\n                gem = Button(text='', background_normal='')\n                gem.bind(on_press=self.make_gem_handler(row, col))\n                self.buttons[(row, col)] = gem\n                self.grid.add_widget(gem)\n\n        self.render_board()\n        return self.grid\n\n    def make_gem_handler(self, row, col):\n        def handler(instance):\n            self.on_gem_tapped(row, col)\n        return handler\n\`\`\`\n\n\`bind(on_press=...)\` only passes Kivy the *widget instance* that was pressed, not which row/col it represents. \`make_gem_handler(row, col)\` solves this with a **closure**: it returns a fresh \`handler\` function that remembers its own \`row\` and \`col\` from when it was created, one such closure is made per button, in the same loop that creates the button itself.\n\n## Handling a tap\n\n\`\`\`\n    def on_gem_tapped(self, row, col):\n        if self.selected is None:\n            self.selected = (row, col)\n            return\n\n        first = self.selected\n        second = (row, col)\n        self.selected = None\n\n        if first == second:\n            return  # tapped the same gem twice, treat as a deselect\n\n        if not adjacent(first, second):\n            self.selected = second  # start a fresh selection from here instead\n            return\n\n        self.swap(first, second)\n        self.render_board()\n\`\`\`\n\nThe logic has three outcomes for a second tap: the same gem (cancel), a non-adjacent gem (start over from that gem instead of swapping), or a valid adjacent gem (swap). Storing \`self.selected = None\` at the very top of the "second tap" branch, before any of those checks, means every path correctly clears the selection, there's no way to get stuck with a stale \`self.selected\`.\n\n## Swapping two positions\n\n\`\`\`\n    def swap(self, pos1, pos2):\n        r1, c1 = pos1\n        r2, c2 = pos2\n        self.board[r1][c1], self.board[r2][c2] = self.board[r2][c2], self.board[r1][c1]\n\`\`\`\n\nPython's tuple-assignment swap (\`a, b = b, a\`) works just as well on two list-of-list cells as it does on two plain variables, no temporary variable needed.\n\n> [!WARNING]\n> This lesson's version swaps unconditionally, even if the swap doesn't create any match. A real Match-3 game only allows swaps that produce at least one match, swapping back otherwise, that's exactly what the next lesson's match-detection makes possible.`
+    ),
+    quiz: {
+      title: 'Selecting and Swapping Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does make_gem_handler(row, col) return a new function instead of binding one shared handler to every button?',
+          options: [
+            'Kivy requires a unique function object per widget',
+            "So each button's handler remembers its own row/col via a closure, since on_press only passes the widget instance",
+            'It makes the app start faster',
+            'To avoid using self.board',
+          ],
+          answer: "So each button's handler remembers its own row/col via a closure, since on_press only passes the widget instance",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'a, b = b, a swaps two variables (or list cells) in Python without a temporary variable.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A function defined inside another function that remembers variables from the enclosing scope is called a ____.',
+          options: [],
+          answer: 'closure',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Detecting Matches',
+    content: lessonContent(
+      'Detecting Matches',
+      `Swapping gems is only useful once the game can tell whether that swap actually created a match, three or more identical gems in a row, either horizontally or vertically.\n\n## Scanning rows\n\n\`\`\`\ndef find_matches(board):\n    matched = set()\n\n    # horizontal runs\n    for row in range(BOARD_SIZE):\n        run_start = 0\n        for col in range(1, BOARD_SIZE + 1):\n            end_of_row = col == BOARD_SIZE\n            broke_run = end_of_row or board[row][col] != board[row][run_start]\n            if broke_run:\n                run_length = col - run_start\n                if run_length >= 3:\n                    for c in range(run_start, col):\n                        matched.add((row, c))\n                run_start = col\n\n    return matched\n\`\`\`\n\nThis walks each row left to right, tracking where the current run of identical gems started (\`run_start\`). Every time the gem changes (or the row ends), it checks whether the run that just ended was long enough (\`>= 3\`), and if so, adds every position in that run to \`matched\`. Using a loop bound of \`BOARD_SIZE + 1\` (not just \`BOARD_SIZE\`) is what lets the *last* run in the row get checked too, without it, a run reaching all the way to the last column would never trigger the "broke run" check.\n\n## Adding vertical runs\n\nColumns need the exact same logic, just swapped: outer loop over columns, inner loop over rows.\n\n\`\`\`\ndef find_matches(board):\n    matched = set()\n\n    for row in range(BOARD_SIZE):\n        run_start = 0\n        for col in range(1, BOARD_SIZE + 1):\n            end_of_row = col == BOARD_SIZE\n            broke_run = end_of_row or board[row][col] != board[row][run_start]\n            if broke_run:\n                if col - run_start >= 3:\n                    for c in range(run_start, col):\n                        matched.add((row, c))\n                run_start = col\n\n    for col in range(BOARD_SIZE):\n        run_start = 0\n        for row in range(1, BOARD_SIZE + 1):\n            end_of_col = row == BOARD_SIZE\n            broke_run = end_of_col or board[row][col] != board[run_start][col]\n            if broke_run:\n                if row - run_start >= 3:\n                    for r in range(run_start, row):\n                        matched.add((r, col))\n                run_start = row\n\n    return matched\n\`\`\`\n\n\`matched\` is a \`set\` of \`(row, col)\` tuples, not a list, deliberately: a gem at the intersection of a horizontal *and* vertical run (an L or T shape) would otherwise get added twice, a set automatically collapses duplicates.\n\n## Using it after a swap\n\n\`\`\`\n    def on_gem_tapped(self, row, col):\n        # ... same selection logic as the previous lesson ...\n        self.swap(first, second)\n\n        if find_matches(self.board):\n            self.render_board()\n        else:\n            self.swap(first, second)  # no match, swap back\n\`\`\`\n\nCalling \`self.swap(first, second)\` a second time with the same two positions undoes the first swap, exactly the "swap back if it didn't help" rule real Match-3 games use to stop players from making pointless moves.\n\n> [!TIP]\n> \`find_matches\` only reports *which cells matched*, it doesn't remove anything from the board itself, keeping "detect" and "remove" as separate steps (next lesson) makes each one easy to test on its own.`
+    ),
+    quiz: {
+      title: 'Detecting Matches Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does find_matches return a set instead of a list?',
+          options: [
+            'Sets are required by Kivy',
+            'To automatically avoid duplicate positions when a gem is part of both a horizontal and vertical match',
+            'Sets preserve insertion order, lists do not',
+            'It makes the loop run faster',
+          ],
+          answer: 'To automatically avoid duplicate positions when a gem is part of both a horizontal and vertical match',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Swapping the same two positions a second time undoes the first swap.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A run of identical gems only counts as a match once its length is 3 or ____.',
+          options: [],
+          answer: 'more',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Clearing, Dropping, and Refilling',
+    content: lessonContent(
+      'Clearing, Dropping, and Refilling',
+      `A detected match needs to actually disappear, let the gems above it fall down to fill the gap, and have brand-new gems spawn at the top, then check whether *that* created new matches, and repeat until the board settles. This is the "cascade" that makes Match-3 games feel alive.\n\n## Clearing matched gems\n\nAn empty cell is represented as \`None\`, distinct from any real gem color:\n\n\`\`\`\ndef clear_matches(board, matched):\n    for (row, col) in matched:\n        board[row][col] = None\n\`\`\`\n\n## Dropping gems down, column by column\n\n\`\`\`\ndef drop_gems(board):\n    for col in range(BOARD_SIZE):\n        # collect this column's surviving (non-None) gems, top to bottom\n        remaining = [board[row][col] for row in range(BOARD_SIZE) if board[row][col] is not None]\n        missing = BOARD_SIZE - len(remaining)\n\n        # empty space at the top, then the survivors settle to the bottom\n        new_column = [None] * missing + remaining\n\n        for row in range(BOARD_SIZE):\n            board[row][col] = new_column[row]\n\`\`\`\n\nBuilding a brand-new \`new_column\` list (rather than trying to shift entries in place) avoids a whole class of off-by-one bugs: \`remaining\` already has the survivors in the right relative order, padding \`missing\` \`None\`s in front of them is all it takes to push them down, since row \`0\` is the top of the board.\n\n## Spawning new gems in the empty top cells\n\n\`\`\`\ndef refill_board(board):\n    for row in range(BOARD_SIZE):\n        for col in range(BOARD_SIZE):\n            if board[row][col] is None:\n                board[row][col] = random.choice(GEM_COLORS)\n\`\`\`\n\nAfter \`drop_gems\`, every remaining \`None\` is guaranteed to be at the top of its column (that's exactly what the padding in \`drop_gems\` guaranteed), so \`refill_board\` can simply fill in any \`None\` it finds, no need to track which rows were affected.\n\n## Repeating until the board is stable\n\n\`\`\`\n    def resolve_matches(self):\n        matched = find_matches(self.board)\n        while matched:\n            clear_matches(self.board, matched)\n            drop_gems(self.board)\n            refill_board(self.board)\n            matched = find_matches(self.board)  # newly-fallen gems might match too\n\`\`\`\n\nThis \`while matched:\` loop is the "repeat until no matches remain" step: clearing and refilling can easily create *new* runs of 3 (a cascade), so the function keeps re-checking \`find_matches\` after every refill, only stopping once a full pass finds nothing left to clear.\n\n## Wiring it into a swap\n\n\`\`\`\n    def on_gem_tapped(self, row, col):\n        # ... selection logic ...\n        self.swap(first, second)\n\n        if find_matches(self.board):\n            self.resolve_matches()\n        else:\n            self.swap(first, second)\n\n        self.render_board()\n\`\`\`\n\n> [!WARNING]\n> \`resolve_matches\` only touches \`self.board\`, the plain Python data, it never calls \`self.render_board()\` itself. Forgetting to call \`render_board()\` after \`resolve_matches()\` (as the snippet above does, on the very last line) is a common bug, the board would be fully correct internally while the screen still shows the old, un-cleared gems.`
+    ),
+    quiz: {
+      title: 'Clearing, Dropping & Refilling Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does the game keep calling find_matches() again inside a while loop after refilling?',
+          options: [
+            'To detect the very first match only',
+            'Because clearing and refilling gems can create new matches (cascades) that also need resolving',
+            'It is required by Kivy to update the screen',
+            'To slow the game down for animation purposes',
+          ],
+          answer: 'Because clearing and refilling gems can create new matches (cascades) that also need resolving',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In this board representation, None represents an empty cell, distinct from any real gem color.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'random.____(GEM_COLORS) picks one random gem color to fill an empty cell.',
+          options: [],
+          answer: 'choice',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Complete the Match-3 Prototype',
+    content: lessonContent(
+      'Final Project: Complete the Match-3 Prototype',
+      `Every piece from this course now exists on its own: a board of random gems, a grid of tappable buttons, adjacent swapping, match detection, and clearing/dropping/refilling with cascades. This final project assembles all of it into one complete, playable prototype.\n\n## Requirements\n\nYour finished \`match3.py\` should satisfy every one of these:\n\n1. ✅ Creates an 8×8 board of randomly colored gems (\`make_board()\`).\n2. ✅ Displays the gems on screen as colored buttons in a \`GridLayout\` (\`render_board()\`).\n3. ✅ Lets the player select two gems by tapping them (\`self.selected\`, \`on_gem_tapped\`).\n4. ✅ Swaps two **adjacent** gems, and only two adjacent gems, non-adjacent taps should start a new selection instead of swapping (\`adjacent()\`, \`swap()\`).\n5. ✅ Detects 3-in-a-row matches, both horizontal and vertical (\`find_matches()\`).\n6. ✅ Replaces matched gems: clears them, drops the gems above down, spawns new random gems at the top, and repeats until no matches remain (\`resolve_matches()\`).\n\nBring the pieces from every earlier lesson together into one file, in this order works well:\n\n\`\`\`\nimport random\nfrom kivy.app import App\nfrom kivy.uix.gridlayout import GridLayout\nfrom kivy.uix.button import Button\n\nBOARD_SIZE = 8\nGEM_COLORS = ['red', 'blue', 'green', 'yellow', 'purple']\nGEM_RGBA = {\n    'red':    (0.9, 0.2, 0.2, 1),\n    'blue':   (0.2, 0.4, 0.9, 1),\n    'green':  (0.2, 0.8, 0.3, 1),\n    'yellow': (0.95, 0.85, 0.2, 1),\n    'purple': (0.6, 0.2, 0.8, 1),\n}\n\n\ndef make_board():\n    return [[random.choice(GEM_COLORS) for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]\n\n\ndef adjacent(pos1, pos2):\n    r1, c1 = pos1\n    r2, c2 = pos2\n    return abs(r1 - r2) + abs(c1 - c2) == 1\n\n\ndef find_matches(board):\n    matched = set()\n\n    for row in range(BOARD_SIZE):\n        run_start = 0\n        for col in range(1, BOARD_SIZE + 1):\n            broke_run = col == BOARD_SIZE or board[row][col] != board[row][run_start]\n            if broke_run:\n                if col - run_start >= 3:\n                    for c in range(run_start, col):\n                        matched.add((row, c))\n                run_start = col\n\n    for col in range(BOARD_SIZE):\n        run_start = 0\n        for row in range(1, BOARD_SIZE + 1):\n            broke_run = row == BOARD_SIZE or board[row][col] != board[run_start][col]\n            if broke_run:\n                if row - run_start >= 3:\n                    for r in range(run_start, row):\n                        matched.add((r, col))\n                run_start = row\n\n    return matched\n\n\ndef clear_matches(board, matched):\n    for (row, col) in matched:\n        board[row][col] = None\n\n\ndef drop_gems(board):\n    for col in range(BOARD_SIZE):\n        remaining = [board[row][col] for row in range(BOARD_SIZE) if board[row][col] is not None]\n        missing = BOARD_SIZE - len(remaining)\n        new_column = [None] * missing + remaining\n        for row in range(BOARD_SIZE):\n            board[row][col] = new_column[row]\n\n\ndef refill_board(board):\n    for row in range(BOARD_SIZE):\n        for col in range(BOARD_SIZE):\n            if board[row][col] is None:\n                board[row][col] = random.choice(GEM_COLORS)\n\n\nclass Match3App(App):\n    def build(self):\n        self.board = make_board()\n        self.selected = None\n        self.grid = GridLayout(cols=BOARD_SIZE)\n        self.buttons = {}\n\n        for row in range(BOARD_SIZE):\n            for col in range(BOARD_SIZE):\n                gem = Button(text='', background_normal='')\n                gem.bind(on_press=self.make_gem_handler(row, col))\n                self.buttons[(row, col)] = gem\n                self.grid.add_widget(gem)\n\n        self.render_board()\n        return self.grid\n\n    def make_gem_handler(self, row, col):\n        def handler(instance):\n            self.on_gem_tapped(row, col)\n        return handler\n\n    def on_gem_tapped(self, row, col):\n        if self.selected is None:\n            self.selected = (row, col)\n            return\n\n        first = self.selected\n        second = (row, col)\n        self.selected = None\n\n        if first == second:\n            return\n        if not adjacent(first, second):\n            self.selected = second\n            return\n\n        self.swap(first, second)\n        if find_matches(self.board):\n            self.resolve_matches()\n        else:\n            self.swap(first, second)\n\n        self.render_board()\n\n    def swap(self, pos1, pos2):\n        r1, c1 = pos1\n        r2, c2 = pos2\n        self.board[r1][c1], self.board[r2][c2] = self.board[r2][c2], self.board[r1][c1]\n\n    def resolve_matches(self):\n        matched = find_matches(self.board)\n        while matched:\n            clear_matches(self.board, matched)\n            drop_gems(self.board)\n            refill_board(self.board)\n            matched = find_matches(self.board)\n\n    def render_board(self):\n        for row in range(BOARD_SIZE):\n            for col in range(BOARD_SIZE):\n                color = self.board[row][col]\n                self.buttons[(row, col)].background_color = GEM_RGBA[color]\n\n\nif __name__ == '__main__':\n    Match3App().run()\n\`\`\`\n\nRun it, click two adjacent gems, and you should see them swap, and if they formed a match, watch the board clear, drop, and refill down to a stable state.\n\n## Stretch goals (Hard): production-quality polish\n\nThe prototype above is a fully playable Match-3 game, but a production-quality version would add considerably more. Pick as many of these as you like:\n\n- **Animated swapping**, instead of an instant color-swap, gradually move the two gems toward each other's positions over a few frames using \`kivy.animation.Animation\`.\n- **Gems falling with physics**, drop new gems in from above the board and animate them falling into place, rather than appearing instantly.\n- **Cascading combos with a score system**, award more points for each successive cascade in a single \`resolve_matches()\` call, not just a flat amount per gem.\n- **Level objectives**, e.g. "collect 20 blue gems" or "reach 5,000 points in 30 moves", tracked and displayed alongside the board.\n- **Special gems**, a match of 4 creates a bomb (clears a 3×3 area when matched), a match of 5 creates a rainbow gem (clears every gem of one color).\n- **Particle effects**, a small burst of color where each gem is cleared.\n- **Sound effects**, a swap sound and a satisfying match/cascade sound with \`kivy.core.audio.SoundLoader\`.\n- **Swipe gestures**, detect a swipe direction with \`on_touch_down\`/\`on_touch_up\` instead of tap-tap-to-select, closer to how mobile Match-3 games actually feel.\n\nFor a real mobile release, using actual gem images (\`kivy.uix.image.Image\`) or Canvas drawing instead of flat button colors would make it feel far more like a real game. A reasonable project layout for that larger scope:\n\n\`\`\`\nMatch3 Game\n│\n├── main.py              # Starts app\n├── game.py              # Match-3 rules\n├── board.py             # Grid management\n├── gem.py               # Gem objects\n├── assets/\n│   ├── red.png\n│   ├── blue.png\n│   └── yellow.png\n└── sounds/\n    ├── swap.wav\n    └── match.wav\n\`\`\`\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
   nodejs: [
     {
@@ -6953,6 +7201,12 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       description:
         "Build a clone of the classic Asteroids game using Pygame and object-oriented programming concepts. This guided project will help you understand how to use Pygame to create a game loop, handle user input, and manage game state. You'll also learn how to use object-oriented programming to create game objects and manage their interactions.",
       lessons: pygameAsteroidsLessons,
+    },
+    {
+      title: 'Build a Match-3 Game using Python and Kivy',
+      description:
+        "Build a Candy Crush-style Match-3 puzzle game with Kivy, the Python framework for cross-platform apps and mobile games. You'll model the board as plain Python data, render it with Kivy's layout and button widgets, handle taps to select and swap adjacent gems, detect 3-in-a-row matches, and resolve cascades until the board settles.",
+      lessons: kivyMatch3Lessons,
     },
   ],
   javascript: [
