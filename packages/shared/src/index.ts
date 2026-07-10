@@ -494,3 +494,37 @@ export interface AchievementDto {
   unlocked: boolean;
   unlockedAt: string | null;
 }
+
+// --- Blog ---
+
+export type BlogPostStatus = 'DRAFT' | 'PUBLISHED';
+
+export interface BlogPostSummaryDto {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  coverImageUrl: string | null;
+  authorUsername: string;
+  publishedAt: string;
+}
+
+export interface BlogPostDetailDto extends BlogPostSummaryDto {
+  content: string;
+}
+
+export interface AdminBlogPostSummaryDto {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  status: BlogPostStatus;
+  authorUsername: string;
+  createdAt: string;
+  publishedAt: string | null;
+}
+
+export interface AdminBlogPostDetailDto extends AdminBlogPostSummaryDto {
+  content: string;
+  coverImageUrl: string | null;
+}
