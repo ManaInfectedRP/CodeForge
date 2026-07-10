@@ -1426,6 +1426,205 @@ const cppLessons: SeedLesson[] = [
   },
 ];
 
+const sfmlBreakoutLessons: SeedLesson[] = [
+  {
+    title: 'SFML: Setup and Installation',
+    content: lessonContent(
+      'SFML: Setup and Installation',
+      `**SFML** (Simple and Fast Multimedia Library) is C++'s most popular library for 2D graphics, windows, input, and audio, think of it as C++'s answer to Python's Pygame. It handles opening a window and drawing shapes so you can focus on game logic instead of low-level graphics APIs.\n\n## Installing SFML\n\n- **Ubuntu/Debian**: \`sudo apt install libsfml-dev\`\n- **macOS (Homebrew)**: \`brew install sfml\`\n- **Windows**: install via \`vcpkg install sfml\`, or download prebuilt binaries from the SFML website and point your IDE at them.\n\n## Compiling with SFML\n\nSFML is split into modules, a game needs at least \`graphics\`, \`window\`, and \`system\`:\n\n\`\`\`bash\ng++ main.cpp -o breakout -lsfml-graphics -lsfml-window -lsfml-system\n./breakout\n\`\`\`\n\n## Opening a window\n\n\`\`\`cpp\n#include <SFML/Graphics.hpp>\n\nint main() {\n    sf::RenderWindow window(sf::VideoMode(800, 600), "Breakout");\n\n    while (window.isOpen()) {\n        sf::Event event;\n        while (window.pollEvent(event)) {\n            if (event.type == sf::Event::Closed) {\n                window.close();\n            }\n        }\n\n        window.clear(sf::Color::Black);\n        window.display();\n    }\n\n    return 0;\n}\n\`\`\`\n\n## Reading it line by line\n\n- \`sf::RenderWindow window(sf::VideoMode(800, 600), "Breakout")\` creates an 800x600 window titled "Breakout".\n- The outer \`while (window.isOpen())\` is the **game loop**, it keeps running every frame until the window closes.\n- The inner \`while (window.pollEvent(event))\` drains every pending event (key presses, window close, etc.) this frame, \`sf::Event::Closed\` fires when the user clicks the close button.\n- \`window.clear(...)\` wipes the previous frame, and \`window.display()\` swaps the finished frame onto the screen, without both of these you'd see nothing, or a smeared trail of every frame ever drawn.\n\n> [!TIP]\n> Forgetting \`window.pollEvent(event)\` entirely makes the window freeze and appear "Not Responding", the OS needs your program to keep handling events even if you don't care about most of them.`
+    ),
+    quiz: {
+      title: 'SFML Setup Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does SFML stand for?',
+          options: [
+            'Simple and Fast Multimedia Library',
+            'Standard Framework for Modern Languages',
+            'System Function Mapping Layer',
+            'Structured File Management Library',
+          ],
+          answer: 'Simple and Fast Multimedia Library',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'You must call both window.clear() and window.display() every frame to see a stable image.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The Game Loop',
+    content: lessonContent(
+      'The Game Loop',
+      `Every real-time game runs the same three steps, over and over, dozens of times per second: **handle input, update the world, draw the world**.\n\n## Framerate and deltaTime\n\nIf you move an object by a fixed amount every frame, the game runs faster on powerful computers and slower on weak ones, because faster computers simply produce more frames per second. The fix is **deltaTime**: the actual time elapsed since the last frame, used to scale every movement.\n\n\`\`\`cpp\n#include <SFML/Graphics.hpp>\n\nint main() {\n    sf::RenderWindow window(sf::VideoMode(800, 600), "Breakout");\n    window.setFramerateLimit(60);\n\n    sf::CircleShape shape(20.f);\n    shape.setFillColor(sf::Color::Green);\n\n    float speed = 200.f; // pixels per second\n    sf::Clock clock;\n\n    while (window.isOpen()) {\n        float deltaTime = clock.restart().asSeconds();\n\n        sf::Event event;\n        while (window.pollEvent(event)) {\n            if (event.type == sf::Event::Closed) {\n                window.close();\n            }\n        }\n\n        shape.move(speed * deltaTime, 0.f);\n\n        window.clear(sf::Color::Black);\n        window.draw(shape);\n        window.display();\n    }\n\n    return 0;\n}\n\`\`\`\n\n## The pieces\n\n- \`window.setFramerateLimit(60)\` caps the loop at roughly 60 frames per second, so it doesn't burn 100% CPU rendering thousands of frames nobody sees.\n- \`sf::Clock clock\` starts a stopwatch. \`clock.restart()\` returns the elapsed time since the last restart **and** resets it, so calling it once per frame gives you exactly that frame's duration.\n- \`speed * deltaTime\` means "how far should this move, given it travels at \`speed\` pixels per second and this frame took \`deltaTime\` seconds", this keeps motion smooth and consistent regardless of framerate.\n- \`window.draw(shape)\` queues the shape to be drawn, it isn't actually shown until \`window.display()\`.\n\n> [!WARNING]\n> Moving objects by a flat number of pixels per frame (instead of \`speed * deltaTime\`) is a classic bug, the game will play at wildly different speeds on different hardware.`
+    ),
+    quiz: {
+      title: 'Game Loop Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why should movement be multiplied by deltaTime instead of using a fixed step per frame?',
+          options: [
+            'It makes the code shorter',
+            'It keeps movement speed consistent regardless of framerate',
+            'SFML requires it to compile',
+            'It reduces memory usage',
+          ],
+          answer: 'It keeps movement speed consistent regardless of framerate',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The SFML class used as a stopwatch to measure elapsed time between frames is sf::____.',
+          options: [],
+          answer: 'Clock',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'window.draw() immediately shows the shape on screen, before window.display() is called.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The Paddle',
+    content: lessonContent(
+      'The Paddle',
+      `Wrap the paddle's shape, position, and behavior into a \`class\`, this keeps every piece of paddle logic in one place instead of scattered loose variables.\n\n\`\`\`cpp\nclass Paddle {\npublic:\n    Paddle(float x, float y) {\n        shape.setSize(sf::Vector2f(100.f, 15.f));\n        shape.setFillColor(sf::Color::White);\n        shape.setPosition(x, y);\n    }\n\n    void update(float deltaTime, float windowWidth) {\n        float dx = 0.f;\n        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {\n            dx = -speed * deltaTime;\n        }\n        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {\n            dx = speed * deltaTime;\n        }\n\n        shape.move(dx, 0.f);\n\n        // Clamp to the window so the paddle can't slide off-screen\n        sf::Vector2f pos = shape.getPosition();\n        float width = shape.getSize().x;\n        if (pos.x < 0.f) shape.setPosition(0.f, pos.y);\n        if (pos.x + width > windowWidth) shape.setPosition(windowWidth - width, pos.y);\n    }\n\n    void draw(sf::RenderWindow& window) {\n        window.draw(shape);\n    }\n\n    sf::RectangleShape shape;\n\nprivate:\n    float speed = 400.f;\n};\n\`\`\`\n\n## The pieces\n\n- \`sf::Keyboard::isKeyPressed(...)\` checks the **current** state of a key, unlike \`sf::Event\`, it doesn't wait for a press event, which is exactly what you want for smooth, continuous movement.\n- Clamping reads the paddle's current position and size, then snaps it back inside \`[0, windowWidth]\` if it would otherwise cross an edge.\n- \`void draw(sf::RenderWindow& window)\` takes the window **by reference**, so the class can draw itself without copying the whole window object.\n\n> [!TIP]\n> Passing \`sf::RenderWindow&\` (a reference) instead of \`sf::RenderWindow\` (a copy) matters here, \`sf::RenderWindow\` isn't copyable at all, and even if it were, copying an entire window every frame would be wasteful.`
+    ),
+    quiz: {
+      title: 'Paddle Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why use sf::Keyboard::isKeyPressed() instead of sf::Event for paddle movement?',
+          options: [
+            'It checks the key\'s current state, giving smooth continuous movement',
+            'It is the only way to read the Left and Right keys',
+            'sf::Event cannot detect keyboard input at all',
+            'It runs faster than every other input method',
+          ],
+          answer: 'It checks the key\'s current state, giving smooth continuous movement',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Clamping the paddle position prevents it from moving off the edges of the window.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The Ball',
+    content: lessonContent(
+      'The Ball',
+      `The ball needs a position, a shape, and a **velocity**, how fast and in what direction it's moving on each axis.\n\n\`\`\`cpp\nclass Ball {\npublic:\n    Ball(float x, float y) {\n        shape.setRadius(10.f);\n        shape.setFillColor(sf::Color::Red);\n        shape.setPosition(x, y);\n    }\n\n    void update(float deltaTime, float windowWidth) {\n        shape.move(velocity.x * deltaTime, velocity.y * deltaTime);\n\n        sf::Vector2f pos = shape.getPosition();\n        float radius = shape.getRadius();\n\n        // Bounce off the left and right walls\n        if (pos.x <= 0.f || pos.x + radius * 2 >= windowWidth) {\n            velocity.x = -velocity.x;\n        }\n\n        // Bounce off the ceiling\n        if (pos.y <= 0.f) {\n            velocity.y = -velocity.y;\n        }\n    }\n\n    void draw(sf::RenderWindow& window) {\n        window.draw(shape);\n    }\n\n    sf::CircleShape shape;\n    sf::Vector2f velocity = sf::Vector2f(200.f, -200.f);\n};\n\`\`\`\n\n## The pieces\n\n- \`sf::Vector2f velocity\` stores an (x, y) pair of floats, positive \`x\` moves right, negative moves left, positive \`y\` moves **down** (SFML's y-axis grows downward, unlike math class), negative moves up.\n- Bouncing is just **flipping the sign** of the relevant component, hit a side wall, invert \`velocity.x\`, hit the ceiling, invert \`velocity.y\`.\n- Notice there's no floor bounce yet, when the ball passes below the paddle, that's a "miss", handled in the Score and Lives lesson, not treated like a wall.\n\n> [!TIP]\n> \`shape.getPosition()\` on an \`sf::CircleShape\` returns the **top-left corner of its bounding box**, not the center, that's why the right-wall check adds \`radius * 2\` (the shape's full width) instead of just \`radius\`.`
+    ),
+    quiz: {
+      title: 'Ball Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'FILL_BLANK',
+          prompt: 'To make the ball bounce off a wall, you flip the sign of its ____.x or .y velocity component.',
+          options: [],
+          answer: 'velocity',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "In SFML's coordinate system, which direction does increasing y move a shape?",
+          options: ['Up', 'Down', 'Left', 'Right'],
+          answer: 'Down',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Bricks and Collisions',
+    content: lessonContent(
+      'Bricks and Collisions',
+      `A Breakout level is just a grid of rectangles. Build it once at startup, then remove bricks as the ball destroys them.\n\n## Laying out the grid\n\n\`\`\`cpp\n#include <vector>\n\nstd::vector<sf::RectangleShape> createBricks(int rows, int cols) {\n    std::vector<sf::RectangleShape> bricks;\n    float brickWidth = 75.f;\n    float brickHeight = 20.f;\n    float padding = 5.f;\n\n    for (int row = 0; row < rows; row++) {\n        for (int col = 0; col < cols; col++) {\n            sf::RectangleShape brick(sf::Vector2f(brickWidth, brickHeight));\n            brick.setPosition(\n                col * (brickWidth + padding) + 35.f,\n                row * (brickHeight + padding) + 50.f\n            );\n            brick.setFillColor(sf::Color::Cyan);\n            bricks.push_back(brick);\n        }\n    }\n    return bricks;\n}\n\`\`\`\n\n## Detecting collisions\n\nEvery drawable shape has \`getGlobalBounds()\`, an \`sf::FloatRect\` describing its bounding box in the window, and every \`sf::FloatRect\` has \`.intersects(other)\` to test overlap:\n\n\`\`\`cpp\nfor (std::size_t i = 0; i < bricks.size(); i++) {\n    if (ball.shape.getGlobalBounds().intersects(bricks[i].getGlobalBounds())) {\n        ball.velocity.y = -ball.velocity.y; // simplified bounce\n        bricks.erase(bricks.begin() + i);\n        score += 10;\n        break; // only handle one collision per frame\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`getGlobalBounds()\` returns the shape's bounding box **after** any position, rotation, or scale is applied, use this (not raw size) for collision checks.\n- \`.intersects(other)\` returns \`true\` if the two rectangles overlap at all.\n- \`bricks.erase(bricks.begin() + i)\` removes the destroyed brick from the vector, shifting later elements down. Once a collision is handled, \`break\` out of the loop, the indices are no longer valid after an erase.\n- Flipping \`velocity.y\` on every brick hit is a simplification, real Breakout clones check which **side** of the brick was hit to decide whether to flip \`x\` or \`y\`. That's a great stretch goal for the final project.\n\n> [!WARNING]\n> Erasing from a \`std::vector\` while iterating it with a range-based \`for\` loop (\`for (auto& brick : bricks)\`) invalidates the iterator and causes undefined behavior. Use an index-based loop with \`break\`, like above, whenever the loop body might erase.`
+    ),
+    quiz: {
+      title: 'Bricks & Collisions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which method checks whether two sf::FloatRect bounding boxes overlap?',
+          options: ['.overlaps()', '.intersects()', '.collides()', '.touches()'],
+          answer: '.intersects()',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'It is safe to erase elements from a std::vector while iterating it with a range-based for loop.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The method that returns a shape's bounding box after position and scale are applied is get____Bounds().",
+          options: [],
+          answer: 'Global',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Score, Lives, and Game Over',
+    content: lessonContent(
+      'Score, Lives, and Game Over',
+      `A playable game needs feedback: a visible score, a limited number of lives, and a clear end condition.\n\n## Drawing text\n\n\`\`\`cpp\nsf::Font font;\nif (!font.loadFromFile("arial.ttf")) {\n    // handle missing font file\n}\n\nsf::Text scoreText;\nscoreText.setFont(font);\nscoreText.setCharacterSize(20);\nscoreText.setFillColor(sf::Color::White);\nscoreText.setPosition(10.f, 10.f);\n\n// Each frame:\nscoreText.setString("Score: " + std::to_string(score) + "  Lives: " + std::to_string(lives));\nwindow.draw(scoreText);\n\`\`\`\n\n## Losing a life\n\nWhen the ball's position goes past the bottom edge, it's a miss, not a wall bounce:\n\n\`\`\`cpp\nif (ball.shape.getPosition().y > windowHeight) {\n    lives--;\n\n    if (lives <= 0) {\n        gameOver = true;\n    } else {\n        // Reset the ball above the paddle to keep playing\n        ball.shape.setPosition(windowWidth / 2.f, windowHeight / 2.f);\n        ball.velocity = sf::Vector2f(200.f, -200.f);\n    }\n}\n\`\`\`\n\n## Winning\n\n\`\`\`cpp\nif (bricks.empty()) {\n    won = true;\n}\n\`\`\`\n\n## The pieces\n\n- \`sf::Font\` and \`sf::Text\` need a real \`.ttf\` file, on Linux \`/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf\` usually exists, on other platforms bundle a font file with your project.\n- \`std::to_string(score)\` converts a number to a \`std::string\` so it can be concatenated with \`+\` onto other strings.\n- Losing a life resets the ball instead of ending the game immediately, the game should only end once \`lives\` reaches \`0\`.\n- Checking \`bricks.empty()\` is a clean win condition, once every brick is destroyed, the vector naturally has no elements left.\n\n> [!TIP]\n> Once \`gameOver\` or \`won\` is \`true\`, stop calling \`ball.update()\` and \`paddle.update()\` (but keep the event loop and \`window.display()\` running), otherwise the ball keeps bouncing behind your "GAME OVER" text.`
+    ),
+    quiz: {
+      title: 'Score & Game Over Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What should happen when the ball passes below the paddle and lives remain?',
+          options: [
+            'The game ends immediately',
+            'A life is lost and the ball resets so play continues',
+            'The score resets to zero',
+            'The bricks respawn',
+          ],
+          answer: 'A life is lost and the ball resets so play continues',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The function used to convert a number into a std::string for display is std::____().',
+          options: [],
+          answer: 'to_string',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Checking bricks.empty() is a reasonable way to detect that the player has won.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Finish Your Breakout Game',
+    content: lessonContent(
+      'Final Project: Finish Your Breakout Game',
+      `You now have every piece: a paddle that responds to input, a ball that bounces off walls, a grid of bricks that break on contact, and score/lives tracking. Put it all together into a complete, playable game.\n\n## Requirements\n\n1. Combine the \`Paddle\`, \`Ball\`, and brick grid from earlier lessons into a single game with one game loop running at a consistent framerate (use \`window.setFramerateLimit(60)\` and deltaTime).\n2. Display the current score and remaining lives on screen every frame.\n3. When the ball passes below the paddle, lose a life and reset the ball above the paddle instead of ending immediately, only show "GAME OVER" once lives reach \`0\`.\n4. Show "YOU WIN" once every brick has been destroyed.\n5. Add a simple start screen ("Press SPACE to start") shown before the game loop begins updating gameplay.\n\n## Stretch goals\n\n- Replace the simplified brick bounce (always flipping \`velocity.y\`) with proper side detection, compare the ball's previous position to the brick's edges to decide whether to flip \`x\` or \`y\`.\n- Make the paddle bounce affect the ball's angle based on **where** it hit the paddle (center vs. edge), instead of a fixed reflection.\n- Give brick rows different colors and point values, and add a basic sound effect for brick breaks with \`sf::SoundBuffer\`/\`sf::Sound\`.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const gitLessons: SeedLesson[] = [
   {
     title: 'Introduction to Git',
@@ -8753,6 +8952,12 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       title: 'C++ Foundations',
       description: 'Compiled programming, pointers, and memory, the bedrock of systems development.',
       lessons: cppLessons,
+    },
+    {
+      title: 'Build Breakout using C++ and SFML',
+      description:
+        "Build a classic Breakout/Arkanoid clone with SFML, C++'s go-to library for 2D graphics and games. You'll open a window and run a real-time game loop, build a keyboard-controlled paddle and a bouncing ball as classes, lay out a grid of destructible bricks, detect collisions with SFML's rectangle intersection, and track score and lives until you win or lose.",
+      lessons: sfmlBreakoutLessons,
     },
   ],
   git: [
