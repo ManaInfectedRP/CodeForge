@@ -1971,6 +1971,264 @@ const expoLessons: SeedLesson[] = [
   },
 ];
 
+const tetrisExpoLessons: SeedLesson[] = [
+  {
+    title: 'The Board and the Grid',
+    content: lessonContent(
+      'The Board and the Grid',
+      `**Tetris** is a perfect second mobile project after the React-Expo course: it's built almost entirely from things you already know (state, \`useEffect\`, \`View\`/\`Text\`, touch handlers), just combined into a real-time game loop. This course builds the classic version from scratch: a 10x20 board, all 7 tetrominoes with rotation, gravity, touch controls, line-clearing, and scoring.\n\n## Modeling the board\n\nClassic Tetris uses a board 10 columns wide and 20 rows tall. Just like the Match-3 course's approach to a game board, keep it as plain data first, completely separate from how it's drawn:\n\n\`\`\`\nconst BOARD_WIDTH = 10;\nconst BOARD_HEIGHT = 20;\n\nfunction createEmptyBoard(): number[][] {\n  return Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0));\n}\n\`\`\`\n\nEach cell is a number: \`0\` means empty, any other value (1-7) identifies which tetromino color locked into that cell. \`Array.from({ length: BOARD_HEIGHT }, () => Array(BOARD_WIDTH).fill(0))\` is important here, not \`Array(BOARD_HEIGHT).fill(Array(BOARD_WIDTH).fill(0))\`, the latter would make every row **the same array reference**, mutating one row would silently mutate all of them. \`Array.from\` calls its callback fresh for every row, giving each one its own independent array.\n\n## Rendering the grid\n\n\`\`\`tsx\nimport { View, StyleSheet } from 'react-native';\n\nconst CELL_SIZE = 16;\n\nfunction Board({ board }: { board: number[][] }) {\n  return (\n    <View style={styles.board}>\n      {board.map((row, r) => (\n        <View key={r} style={styles.row}>\n          {row.map((cell, c) => (\n            <View key={c} style={[styles.cell, cell !== 0 && styles.filled]} />\n          ))}\n        </View>\n      ))}\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  board: { borderWidth: 2, borderColor: '#334155' },\n  row: { flexDirection: 'row' },\n  cell: { width: CELL_SIZE, height: CELL_SIZE, borderWidth: 0.5, borderColor: '#1e293b' },\n  filled: { backgroundColor: '#38bdf8' },\n});\n\`\`\`\n\nEach row is a \`<View>\` with \`flexDirection: 'row'\`, stacked vertically by the outer \`<View>\`'s default \`flexDirection: 'column'\`, exactly how a 2D array naturally maps to nested flexbox rows and columns. \`cell !== 0 && styles.filled\` is a common React Native idiom: an array of styles where \`false\` entries are simply ignored, so a cell only gets the \`filled\` background when it's actually occupied.\n\n> [!NOTE]\n> This course builds on the React-Expo course's setup (\`npx create-expo-app\`, running on a device with Expo Go), and needs a real Expo project to run, it can't run in this course's browser sandbox. Treat it like the Kivy or Pygame projects: read, understand, and run the code on your own machine.`
+    ),
+    quiz: {
+      title: 'The Board and the Grid Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does createEmptyBoard() use Array.from() instead of Array(BOARD_HEIGHT).fill(Array(BOARD_WIDTH).fill(0))?',
+          options: [
+            'Array.from() is faster to type',
+            'fill() would make every row the same array reference, so mutating one row would mutate all of them',
+            'Array.from() is required by React Native',
+            "There's no real difference",
+          ],
+          answer: 'fill() would make every row the same array reference, so mutating one row would mutate all of them',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In the board array, a cell value of 0 means that cell is empty.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "cell !== 0 && styles.filled is a common React Native idiom: array style entries that are ____ are simply ignored.",
+          options: [],
+          answer: 'false',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Tetromino Shapes and Rotation',
+    content: lessonContent(
+      'Tetromino Shapes and Rotation',
+      `There are exactly 7 tetromino shapes (**I, O, T, S, Z, J, L**), each made of 4 connected squares. This lesson defines them as data, and writes the rotation logic every one of them shares.\n\n## Defining the shapes\n\nEach shape is a small matrix, \`1\` for a filled cell, \`0\` for empty:\n\n\`\`\`\ntype Matrix = number[][];\n\nconst SHAPES: Record<string, Matrix> = {\n  I: [[1, 1, 1, 1]],\n  O: [\n    [1, 1],\n    [1, 1],\n  ],\n  T: [\n    [0, 1, 0],\n    [1, 1, 1],\n  ],\n  S: [\n    [0, 1, 1],\n    [1, 1, 0],\n  ],\n  Z: [\n    [1, 1, 0],\n    [0, 1, 1],\n  ],\n  J: [\n    [1, 0, 0],\n    [1, 1, 1],\n  ],\n  L: [\n    [0, 0, 1],\n    [1, 1, 1],\n  ],\n};\n\nconst SHAPE_COLORS: Record<string, number> = { I: 1, O: 2, T: 3, S: 4, Z: 5, J: 6, L: 7 };\n\`\`\`\n\nThe \`SHAPE_COLORS\` map assigns each shape a number matching the board cell values from the last lesson, when a piece locks into the board, its cells get filled with this id, which the \`Board\` component's styling can later look up to pick a color per piece type.\n\n## Rotating a matrix 90°\n\n\`\`\`\nfunction rotate(matrix: Matrix): Matrix {\n  return matrix[0].map((_, col) => matrix.map((row) => row[col]).reverse());\n}\n\nconsole.log(rotate(SHAPES.L));\n// [0,0,1] [1,1,1]  ->  [1,0] [1,0] [1,1]\n\`\`\`\n\nThis single line is the standard "rotate a matrix 90° clockwise" trick: \`matrix.map((row) => row[col])\` reads down one **column** of the original matrix, turning it into a **row**, then \`.reverse()\` flips that row's order. Doing this for every column (\`matrix[0].map((_, col) => ...)\`, using the first row just to get the right number of columns to iterate) builds an entirely new, rotated matrix, the original \`matrix\` is never mutated.\n\n## Why this works for every shape, unchanged\n\nBecause \`rotate\` only ever looks at a matrix's dimensions, not which shape it represents, the exact same function correctly rotates the I-piece (1x4), the O-piece (2x2, visually unchanged by rotation, but the code doesn't need to know that), and every other shape. Calling \`rotate\` four times returns you to (approximately) the original orientation.\n\n> [!TIP]\n> The O-piece rotating "into itself" every time isn't a special case you need to write, it's just what naturally falls out of rotating a symmetric 2x2 matrix, one of the small satisfactions of representing shapes as plain data instead of hand-coding each shape's four rotations separately.`
+    ),
+    quiz: {
+      title: 'Tetromino Shapes and Rotation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How many distinct tetromino shapes does classic Tetris use?',
+          options: ['4', '5', '7', '10'],
+          answer: '7',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The rotate() function needs a special case written for the O-piece so it rotates correctly.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The rotate() function reads down a column with map(), then calls .____() to flip that row\'s order.',
+          options: [],
+          answer: 'reverse',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The Game Loop: Gravity and Collision',
+    content: lessonContent(
+      'The Game Loop: Gravity and Collision',
+      `A static board and a rotatable shape aren't a game yet, they need to actually **fall**, and stop falling when they hit something. This lesson builds both.\n\n## Piece state\n\n\`\`\`\ninterface ActivePiece {\n  shape: Matrix;\n  shapeName: string;\n  row: number;\n  col: number;\n}\n\nfunction spawnPiece(shapeName: string): ActivePiece {\n  const shape = SHAPES[shapeName];\n  return {\n    shape,\n    shapeName,\n    row: 0,\n    col: Math.floor((BOARD_WIDTH - shape[0].length) / 2),\n  };\n}\n\`\`\`\n\n\`row\`/\`col\` track the piece's **top-left corner** on the board, everything about "where the piece is" lives in these two numbers plus its (possibly rotated) \`shape\` matrix. Centering the spawn column keeps every piece appearing in the middle of the board regardless of its width.\n\n## Collision detection\n\n\`\`\`\nfunction hasCollision(board: Matrix, piece: ActivePiece, row: number, col: number): boolean {\n  for (let r = 0; r < piece.shape.length; r++) {\n    for (let c = 0; c < piece.shape[r].length; c++) {\n      if (!piece.shape[r][c]) continue; // empty cell within the piece's bounding box\n\n      const boardRow = row + r;\n      const boardCol = col + c;\n      const outOfBounds = boardCol < 0 || boardCol >= BOARD_WIDTH || boardRow >= BOARD_HEIGHT;\n      const collidesWithLocked = boardRow >= 0 && board[boardRow][boardCol] !== 0;\n\n      if (outOfBounds || collidesWithLocked) return true;\n    }\n  }\n  return false;\n}\n\`\`\`\n\nThis checks a **hypothetical** position (\`row\`, \`col\`), not necessarily the piece's current one, that's deliberate: every move (left, right, rotate, down) works the same way, compute where the piece *would* end up, ask \`hasCollision\` whether that's legal, and only commit the move if it isn't. \`boardRow >= 0\` guards against checking above the board (pieces spawn partially off-screen while rotating near the top), where there's no board row to safely index into.\n\n## The falling tick\n\n\`\`\`tsx\nimport { useEffect, useState } from 'react';\n\nfunction useGameLoop(speedMs: number, onTick: () => void) {\n  useEffect(() => {\n    const interval = setInterval(onTick, speedMs);\n    return () => clearInterval(interval);\n  }, [speedMs, onTick]);\n}\n\`\`\`\n\n\`setInterval\` calls \`onTick\` (which will move the active piece down by one row) every \`speedMs\` milliseconds, this is Tetris's **gravity**. Returning \`clearInterval\` from \`useEffect\` is essential, without it, every re-render (or speed change) would start a *new* interval on top of the old one, stacking up multiple ticks firing simultaneously.\n\n> [!WARNING]\n> \`onTick\` needs to be stable across renders (wrapped in \`useCallback\`, covered in the next lesson) or this effect re-runs (clearing and restarting the interval) far more often than intended, since \`[speedMs, onTick]\` includes it as a dependency.`
+    ),
+    quiz: {
+      title: 'Game Loop and Collision Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does hasCollision() check a hypothetical (row, col) instead of only the piece\'s current position?',
+          options: [
+            "It doesn't, it only checks the current position",
+            'Every move (left/right/rotate/down) reuses the same function to test whether a proposed new position is legal before committing to it',
+            'To make the board render faster',
+            'Collision detection only matters when the piece is at the bottom',
+          ],
+          answer: 'Every move (left/right/rotate/down) reuses the same function to test whether a proposed new position is legal before committing to it',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Returning clearInterval from a useEffect cleanup function prevents multiple overlapping intervals from stacking up.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The row/col fields on ActivePiece track the position of the shape\'s ____-____ corner on the board.',
+          options: [],
+          answer: 'top-left',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Touch Controls: Move, Rotate, and Drop',
+    content: lessonContent(
+      'Touch Controls: Move, Rotate, and Drop',
+      `With gravity and collision working, this lesson wires up the controls a player actually taps: move left/right, rotate, and drop.\n\n## Move and rotate handlers\n\n\`\`\`tsx\nfunction useTetris() {\n  const [board] = useState<Matrix>(createEmptyBoard);\n  const [piece, setPiece] = useState<ActivePiece>(() => spawnPiece('T'));\n\n  function tryMove(deltaRow: number, deltaCol: number) {\n    setPiece((current) => {\n      const newRow = current.row + deltaRow;\n      const newCol = current.col + deltaCol;\n      if (hasCollision(board, current, newRow, newCol)) return current; // illegal, stay put\n      return { ...current, row: newRow, col: newCol };\n    });\n  }\n\n  function tryRotate() {\n    setPiece((current) => {\n      const rotatedShape = rotate(current.shape);\n      const rotated = { ...current, shape: rotatedShape };\n      if (hasCollision(board, rotated, current.row, current.col)) return current; // would overlap, cancel\n      return rotated;\n    });\n  }\n\n  return { board, piece, tryMove, tryRotate };\n}\n\`\`\`\n\nBoth functions follow the same shape as \`hasCollision\` from the last lesson: compute what the piece *would* look like, check it, and only apply the change if it's legal. Using the **updater form** of \`setPiece\` (\`setPiece((current) => ...)\`) rather than reading \`piece\` directly matters here, it guarantees you're always checking against the truly current state, even if multiple moves happen in quick succession before a re-render.\n\n## On-screen buttons\n\n\`\`\`tsx\nimport { View, TouchableOpacity, Text, StyleSheet } from 'react-native';\n\nfunction Controls({ onLeft, onRight, onRotate, onDrop }: {\n  onLeft: () => void;\n  onRight: () => void;\n  onRotate: () => void;\n  onDrop: () => void;\n}) {\n  return (\n    <View style={styles.row}>\n      <TouchableOpacity style={styles.button} onPress={onLeft}><Text style={styles.label}>◀</Text></TouchableOpacity>\n      <TouchableOpacity style={styles.button} onPress={onRotate}><Text style={styles.label}>⟳</Text></TouchableOpacity>\n      <TouchableOpacity style={styles.button} onPress={onDrop}><Text style={styles.label}>▼</Text></TouchableOpacity>\n      <TouchableOpacity style={styles.button} onPress={onRight}><Text style={styles.label}>▶</Text></TouchableOpacity>\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  row: { flexDirection: 'row', justifyContent: 'space-around', padding: 16 },\n  button: { backgroundColor: '#1e293b', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20 },\n  label: { color: '#fff', fontSize: 20 },\n});\n\`\`\`\n\n\`TouchableOpacity\` is React Native's tappable-button-with-a-fade-feedback component, roughly the mobile equivalent of a styled \`<button>\` on the web. Each button just calls one of the handler functions from \`useTetris\`, \`onLeft={() => tryMove(0, -1)}\`, \`onRight={() => tryMove(0, 1)}\`, \`onDrop={() => tryMove(1, 0)}\`, \`onRotate={tryRotate}\`.\n\n> [!TIP]\n> Simple on-screen buttons like this are the easiest way to get Tetris fully playable on a touchscreen. Swipe gestures (via \`react-native-gesture-handler\`) feel more natural for a polished version, that's one of this course's final project stretch goals.`
+    ),
+    quiz: {
+      title: 'Touch Controls Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does tryMove() use the updater form setPiece((current) => ...) instead of reading piece directly?',
+          options: [
+            "It's required syntax in React Native specifically",
+            'It guarantees the collision check runs against the truly current state, even if multiple moves happen in quick succession',
+            'It makes the component render faster',
+            'There is no real difference',
+          ],
+          answer: 'It guarantees the collision check runs against the truly current state, even if multiple moves happen in quick succession',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'TouchableOpacity is roughly the mobile equivalent of a styled <button> on the web.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'tryRotate() computes a rotated shape, checks it with hasCollision(), and only applies it if there is no ____.',
+          options: [],
+          answer: 'collision',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Locking Pieces and Clearing Lines',
+    content: lessonContent(
+      'Locking Pieces and Clearing Lines',
+      `When a falling piece can't move down any further, it needs to permanently **lock** into the board, and any completely filled rows need to disappear. This is the heart of Tetris's core loop.\n\n## Locking a piece into the board\n\n\`\`\`\nfunction lockPiece(board: Matrix, piece: ActivePiece): Matrix {\n  const newBoard = board.map((row) => [...row]); // copy, never mutate the board in place\n  const colorId = SHAPE_COLORS[piece.shapeName];\n\n  for (let r = 0; r < piece.shape.length; r++) {\n    for (let c = 0; c < piece.shape[r].length; c++) {\n      if (!piece.shape[r][c]) continue;\n      const boardRow = piece.row + r;\n      const boardCol = piece.col + c;\n      if (boardRow >= 0) newBoard[boardRow][boardCol] = colorId;\n    }\n  }\n\n  return newBoard;\n}\n\`\`\`\n\n\`board.map((row) => [...row])\` makes a **deep-enough** copy, a new outer array *and* new inner row arrays, so writing into \`newBoard\` never mutates the \`board\` that was passed in. This matters for the same reason \`createEmptyBoard\`'s \`Array.from\` mattered: React needs a genuinely new array reference to know something changed and re-render.\n\n## Finding and clearing full rows\n\n\`\`\`\nfunction clearFullRows(board: Matrix): { board: Matrix; linesCleared: number } {\n  const remainingRows = board.filter((row) => row.some((cell) => cell === 0));\n  const linesCleared = BOARD_HEIGHT - remainingRows.length;\n\n  const emptyRows = Array.from({ length: linesCleared }, () => Array(BOARD_WIDTH).fill(0));\n  return { board: [...emptyRows, ...remainingRows], linesCleared };\n}\n\`\`\`\n\n\`row.some((cell) => cell === 0)\` is true for any row with **at least one** empty cell, so \`board.filter(...)\` keeps only the rows that are *not* completely full, exactly the rows that survive a line clear. Prepending fresh empty rows (\`[...emptyRows, ...remainingRows]\`) at the **top** is what makes everything above a cleared line visually fall down, the surviving rows just end up lower in the new array.\n\n## Wiring it into the tick\n\n\`\`\`\nfunction handleTick(board: Matrix, piece: ActivePiece) {\n  if (!hasCollision(board, piece, piece.row + 1, piece.col)) {\n    return { board, piece: { ...piece, row: piece.row + 1 }, linesCleared: 0 };\n  }\n\n  // can't fall further: lock it, clear lines, spawn the next piece\n  const locked = lockPiece(board, piece);\n  const { board: clearedBoard, linesCleared } = clearFullRows(locked);\n  const nextPiece = spawnPiece(randomShapeName());\n  return { board: clearedBoard, piece: nextPiece, linesCleared };\n}\n\`\`\`\n\nEvery tick asks one question: can the piece move down one more row? If yes, just move it, business as usual. If no, that's the signal the piece has landed, lock it, clear whatever rows are now full, and spawn a fresh piece to keep the game going.\n\n> [!NOTE]\n> \`randomShapeName()\` here just needs to return one of \`'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L'\`, a simple \`Math.random()\`-based picker works, but produces streaky, unfair randomness (you could see the same piece five times in a row), the "Next Piece and the 7-Bag" lesson replaces it with the fairer system real Tetris games use.`
+    ),
+    quiz: {
+      title: 'Locking and Line Clears Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does row.some((cell) => cell === 0) identify?',
+          options: [
+            'A row that is completely full',
+            'A row with at least one empty cell, i.e. NOT eligible for clearing',
+            'A row that is completely empty',
+            'The current piece\'s row',
+          ],
+          answer: 'A row with at least one empty cell, i.e. NOT eligible for clearing',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'lockPiece() mutates the board array that was passed into it directly, rather than returning a copy.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Prepending fresh empty rows at the top of the board (rather than the bottom) is what makes rows above a clear visually ____ down.',
+          options: [],
+          answer: 'fall',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Scoring, Levels, and Game Over',
+    content: lessonContent(
+      'Scoring, Levels, and Game Over',
+      `A line-clearing board isn't quite a full game yet, it needs a score, a sense of progression as levels speed things up, and a way to know when it's over.\n\n## Classic scoring\n\n\`\`\`\nconst LINE_SCORES = [0, 100, 300, 500, 800]; // index = number of lines cleared at once\n\nfunction scoreForLines(linesCleared: number, level: number): number {\n  return LINE_SCORES[linesCleared] * (level + 1);\n}\n\`\`\`\n\nClearing 4 lines at once (a **Tetris**, the move the game is named after) is worth far more than 4x a single line (800 vs. 100), this is deliberate in the original game design, it rewards setting up multi-line clears instead of clearing lines one at a time. Multiplying by \`(level + 1)\` makes higher levels worth more points for the same clear, on top of the game already being faster and harder there.\n\n## Leveling up and speeding up\n\n\`\`\`\nfunction levelForLines(totalLinesCleared: number): number {\n  return Math.floor(totalLinesCleared / 10); // level up every 10 lines\n}\n\nfunction speedForLevel(level: number): number {\n  return Math.max(100, 1000 - level * 75); // ms per tick, capped so it never gets impossibly fast\n}\n\`\`\`\n\n\`speedForLevel\` feeds directly into the \`useGameLoop\` hook's \`speedMs\` from the game loop lesson, as \`level\` climbs, the interval between ticks shrinks, gravity pulls pieces down faster. \`Math.max(100, ...)\` puts a floor on how fast it can get, without it, the formula would eventually produce a negative or absurdly tiny interval.\n\n## Detecting game over\n\n\`\`\`\nfunction isGameOver(board: Matrix, newPiece: ActivePiece): boolean {\n  return hasCollision(board, newPiece, newPiece.row, newPiece.col);\n}\n\`\`\`\n\nThe game is over the instant a **freshly spawned** piece already collides with something at its starting position, meaning the stack has reached all the way to the top, there's nowhere left to put a new piece. Check this right after spawning each new piece in the tick handler from the previous lesson, before letting the game loop continue.\n\n\`\`\`\nconst nextPiece = spawnPiece(randomShapeName());\nif (isGameOver(clearedBoard, nextPiece)) {\n  // stop the interval, show a game over screen\n}\n\`\`\`\n\n> [!TIP]\n> Track \`totalLinesCleared\` as a running total across the whole game (not just the current tick), \`levelForLines\` needs the cumulative count to know when a level threshold has actually been crossed.`
+    ),
+    quiz: {
+      title: 'Scoring and Game Over Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why is clearing 4 lines at once (800 points) worth more than 4x a single line clear (4 x 100 = 400)?',
+          options: [
+            'It is a bug in the scoring formula',
+            "It's a deliberate design choice that rewards setting up multi-line clears over clearing one line at a time",
+            'Four-line clears take longer to compute',
+            'There is no difference, LINE_SCORES is linear',
+          ],
+          answer: "It's a deliberate design choice that rewards setting up multi-line clears over clearing one line at a time",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The game is detected as over the instant a freshly spawned piece already collides with the board at its starting position.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Math.max(100, 1000 - level * 75) puts a ____ on how fast the tick speed can get as the level increases.',
+          options: [],
+          answer: 'floor',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Next Piece Preview and the 7-Bag',
+    content: lessonContent(
+      'Next Piece Preview and the 7-Bag',
+      `A plain \`Math.random()\` piece picker is technically fair over a long enough game, but in the short term it can feel unfair, streaks of the same piece, or an agonizingly long drought without the I-piece you need. Modern Tetris games solve this with the **7-bag randomizer**, and show players what's coming next.\n\n## The 7-bag algorithm\n\n\`\`\`\nfunction shuffle<T>(items: T[]): T[] {\n  const copy = [...items];\n  for (let i = copy.length - 1; i > 0; i--) {\n    const j = Math.floor(Math.random() * (i + 1));\n    [copy[i], copy[j]] = [copy[j], copy[i]];\n  }\n  return copy;\n}\n\nfunction createBag(): string[] {\n  return shuffle(['I', 'O', 'T', 'S', 'Z', 'J', 'L']);\n}\n\`\`\`\n\nThe idea: shuffle all 7 shapes into a random order, a "bag", and deal pieces out of it one at a time. Once the bag is empty, shuffle a fresh set of all 7 and keep going. This guarantees you see every shape exactly once every 7 pieces, no droughts, no unfair streaks, while each individual bag's *order* is still genuinely random.\n\n\`shuffle\` itself is the **Fisher-Yates shuffle**, the standard unbiased way to randomly order a list: walk backwards from the end, and for each position, swap it with a random earlier-or-equal position. \`[copy[i], copy[j]] = [copy[j], copy[i]]\` is a destructuring swap, JavaScript's idiom for exchanging two variables (or array slots) without a temporary variable.\n\n## Managing the piece queue\n\n\`\`\`\nfunction usePieceQueue() {\n  const [queue, setQueue] = useState<string[]>(() => [...createBag(), ...createBag()]);\n\n  function takeNext(): string {\n    const [next, ...rest] = queue;\n    const refilled = rest.length <= 7 ? [...rest, ...createBag()] : rest;\n    setQueue(refilled);\n    return next;\n  }\n\n  return { next: queue[0], takeNext };\n}\n\`\`\`\n\nStarting with **two** bags concatenated together (\`[...createBag(), ...createBag()]\`) guarantees there's always at least one full bag's worth of pieces ahead to peek at for a "Next" preview, even right after a refill. \`takeNext\` removes the front piece, tops the queue back up with a fresh bag once it runs low, and returns the piece that's now active.\n\n## The "Next" preview\n\n\`\`\`tsx\nfunction NextPreview({ shapeName }: { shapeName: string }) {\n  const shape = SHAPES[shapeName];\n  return (\n    <View style={styles.preview}>\n      {shape.map((row, r) => (\n        <View key={r} style={{ flexDirection: 'row' }}>\n          {row.map((cell, c) => (\n            <View key={c} style={[styles.miniCell, cell !== 0 && styles.filled]} />\n          ))}\n        </View>\n      ))}\n    </View>\n  );\n}\n\`\`\`\n\nThis reuses the exact same rendering pattern as the main \`Board\` component, a shape matrix is really just a tiny board, so the same nested-\`View\`-rows approach works for both.\n\n> [!NOTE]\n> \`queue[0]\` (peeking without removing) is what the \`NextPreview\` component should render, only \`takeNext()\` (called from the tick handler when spawning) actually advances the queue.`
+    ),
+    quiz: {
+      title: '7-Bag and Next Piece Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What problem does the 7-bag randomizer solve compared to plain Math.random() piece selection?',
+          options: [
+            'It makes the game run faster',
+            'It guarantees every shape appears exactly once every 7 pieces, avoiding unfair streaks or long droughts',
+            'It reduces memory usage',
+            'It is required for touch controls to work',
+          ],
+          answer: 'It guarantees every shape appears exactly once every 7 pieces, avoiding unfair streaks or long droughts',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The shuffle() function shown is the Fisher-Yates shuffle, the standard unbiased way to randomly order a list.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '[copy[i], copy[j]] = [copy[j], copy[i]] is a ____ swap, exchanging two array slots without a temporary variable.',
+          options: [],
+          answer: 'destructuring',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Complete Your Tetris Game',
+    content: lessonContent(
+      'Final Project: Complete Your Tetris Game',
+      `Every piece from this course now exists on its own: the board, all 7 tetrominoes with rotation, gravity, collision, touch controls, locking, line-clearing, scoring, levels, game over, and a fair 7-bag piece queue. This final project assembles all of it into one complete, playable Tetris screen.\n\n## Requirements\n\nYour finished \`app/tetris.tsx\` screen should satisfy every one of these:\n\n1. Creates a 10x20 board using \`createEmptyBoard()\` and renders it with the nested-\`View\` grid pattern.\n2. Spawns tetrominoes from the 7-bag queue (\`usePieceQueue\`), not plain \`Math.random()\`, and shows a "Next" preview of the upcoming piece.\n3. Runs a game loop (\`useGameLoop\`) that moves the active piece down automatically, at a speed that increases with the level.\n4. Provides on-screen touch controls for move left, move right, rotate, and soft drop, each going through \`hasCollision()\` before being applied.\n5. Locks a piece into the board when it can no longer fall (\`lockPiece\`), clears any completed rows (\`clearFullRows\`), and updates score/level based on lines cleared.\n6. Detects game over when a freshly spawned piece immediately collides, stops the game loop, and shows a game over message with the final score.\n\nBringing every earlier lesson's pieces together into one screen (state, game loop, controls, and rendering) is the whole project:\n\n\`\`\`tsx\nimport { useCallback, useState } from 'react';\nimport { View, Text, StyleSheet } from 'react-native';\n\nexport default function TetrisScreen() {\n  const [board, setBoard] = useState<Matrix>(createEmptyBoard);\n  const [piece, setPiece] = useState<ActivePiece>(() => spawnPiece('T'));\n  const [score, setScore] = useState(0);\n  const [totalLines, setTotalLines] = useState(0);\n  const [gameOver, setGameOver] = useState(false);\n  const { next, takeNext } = usePieceQueue();\n\n  const level = levelForLines(totalLines);\n\n  const tick = useCallback(() => {\n    if (gameOver) return;\n    if (!hasCollision(board, piece, piece.row + 1, piece.col)) {\n      setPiece((p) => ({ ...p, row: p.row + 1 }));\n      return;\n    }\n    const locked = lockPiece(board, piece);\n    const { board: cleared, linesCleared } = clearFullRows(locked);\n    const nextPiece = spawnPiece(takeNext());\n\n    if (isGameOver(cleared, nextPiece)) {\n      setBoard(cleared);\n      setGameOver(true);\n      return;\n    }\n\n    setBoard(cleared);\n    setPiece(nextPiece);\n    setScore((s) => s + scoreForLines(linesCleared, level));\n    setTotalLines((t) => t + linesCleared);\n  }, [board, piece, gameOver, level, takeNext]);\n\n  useGameLoop(speedForLevel(level), tick);\n\n  return (\n    <View style={styles.screen}>\n      <Text style={styles.score}>Score: {score}</Text>\n      <Board board={renderPieceOnBoard(board, piece)} />\n      <NextPreview shapeName={next} />\n      <Controls\n        onLeft={() => tryMove(0, -1)}\n        onRight={() => tryMove(0, 1)}\n        onRotate={tryRotate}\n        onDrop={() => tryMove(1, 0)}\n      />\n      {gameOver && <Text style={styles.gameOver}>Game Over! Final score: {score}</Text>}\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  screen: { flex: 1, alignItems: 'center', paddingTop: 48, backgroundColor: '#0f172a' },\n  score: { color: '#fff', fontSize: 20, marginBottom: 12 },\n  gameOver: { color: '#f87171', fontSize: 18, marginTop: 16 },\n});\n\`\`\`\n\n\`renderPieceOnBoard(board, piece)\` (not shown, worth writing yourself) should return a **copy** of \`board\` with the active piece's cells overlaid on top, so the falling piece is visible before it locks, without mutating the real board state.\n\n## Stretch goals\n\n- Add a **hard drop**: instantly move the piece straight down (loop \`tryMove(1, 0)\` until it would collide) instead of waiting for gravity, common in modern Tetris as a fifth control.\n- Add a **ghost piece**: a faint outline showing where the current piece would land if hard-dropped, computed the same way as the hard drop, but only rendered, not actually moved.\n- Add a **hold piece**: let the player swap the active piece into a "held" slot once per drop, swapping it back in later.\n- Replace the on-screen buttons with **swipe gestures** using \`react-native-gesture-handler\`, swipe left/right to move, swipe down for soft drop, tap to rotate.\n- Persist the high score locally with \`@react-native-async-storage/async-storage\` so it survives closing the app.\n- Add sound effects for line clears and game over with \`expo-av\`.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const csharpLessons: SeedLesson[] = [
   {
     title: 'Hello, C#',
@@ -8470,6 +8728,11 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       title: 'React-Expo',
       description: 'Take React from the browser to your phone: build real mobile apps with Expo, file-based navigation, native device APIs, and ship a build with EAS.',
       lessons: expoLessons,
+    },
+    {
+      title: 'Build Tetris using React Native and Expo',
+      description: 'Build the classic block-stacking game for mobile with Expo and TypeScript: a 10x20 board, all 7 tetrominoes with rotation, a gravity-driven game loop, touch controls, line-clearing, scoring, and a fair 7-bag next-piece queue.',
+      lessons: tetrisExpoLessons,
     },
   ],
   csharp: [
