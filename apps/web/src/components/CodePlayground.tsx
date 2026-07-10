@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import Editor from 'react-simple-code-editor';
 import {
+  isCLoading,
   isLuaLoading,
   isPyodideLoading,
   normalizeLang,
+  runC,
   runJs,
   runLua,
   runPythonInSession,
@@ -19,6 +21,7 @@ const labels: Record<RunnableLang, string> = {
   typescript: 'TypeScript',
   lua: 'Lua',
   html: 'HTML',
+  c: 'C',
 };
 
 // LessonMarkdown intercepts html/htm fences into HtmlPreview before they ever reach this
@@ -30,6 +33,7 @@ const highlightLangByRunnable: Record<RunnableLang, PrismLang> = {
   typescript: 'typescript',
   lua: 'lua',
   html: 'markup',
+  c: 'c',
 };
 
 interface Props {
@@ -60,6 +64,9 @@ export function CodePlayground({ language, initialCode, sessionKey }: Props) {
       } else if (language === 'lua') {
         if (isLuaLoading()) setStatus('Loading Lua runtime… (first run only)');
         result = await runLua(code);
+      } else if (language === 'c') {
+        if (isCLoading()) setStatus('Loading C runtime… (first run only)');
+        result = await runC(code);
       } else {
         let js = code;
         if (language === 'typescript') {

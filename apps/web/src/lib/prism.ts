@@ -14,6 +14,10 @@ import 'prismjs/components/prism-markdown';
 import 'prismjs/components/prism-css';
 import 'prismjs/components/prism-lua';
 import 'prismjs/components/prism-yaml';
+import 'prismjs/components/prism-java';
+import 'prismjs/components/prism-go';
+import 'prismjs/components/prism-solidity';
+import 'prismjs/components/prism-gdscript';
 
 export type PrismLang =
   | 'python'
@@ -29,7 +33,11 @@ export type PrismLang =
   | 'markup'
   | 'css'
   | 'lua'
-  | 'yaml';
+  | 'yaml'
+  | 'java'
+  | 'go'
+  | 'solidity'
+  | 'gdscript';
 
 const ALIASES: Record<string, PrismLang> = {
   python: 'python',
@@ -58,6 +66,13 @@ const ALIASES: Record<string, PrismLang> = {
   lua: 'lua',
   yaml: 'yaml',
   yml: 'yaml',
+  java: 'java',
+  go: 'go',
+  golang: 'go',
+  solidity: 'solidity',
+  sol: 'solidity',
+  gdscript: 'gdscript',
+  gd: 'gdscript',
 };
 
 export function resolvePrismLang(lang: string): PrismLang | null {

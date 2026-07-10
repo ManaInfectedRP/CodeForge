@@ -1,4 +1,4 @@
-export type RunnableLang = 'python' | 'javascript' | 'typescript' | 'lua' | 'html';
+export type RunnableLang = 'python' | 'javascript' | 'typescript' | 'lua' | 'html' | 'c';
 
 export function normalizeLang(lang: string): RunnableLang | null {
   switch (lang.toLowerCase()) {
@@ -16,6 +16,8 @@ export function normalizeLang(lang: string): RunnableLang | null {
     case 'html':
     case 'htm':
       return 'html';
+    case 'c':
+      return 'c';
     default:
       return null;
   }
@@ -157,6 +159,49 @@ export function runLua(code: string): Promise<{ output: string; error: string | 
       worker.terminate();
       luaWorker = null;
       resolve({ output: '', error: e.message || 'The Lua runtime crashed, try running again.' });
+    };
+    worker.postMessage(code);
+  });
+}
+
+// --- C via picoc-js (a small C interpreter compiled to WASM), in a Worker for the same
+// termination-safety reason as Lua above. picoc supports only a subset of ISO C with a
+// minimal standard library, this is intentionally lightweight rather than a full gcc/clang
+// toolchain, so more advanced lessons (manual memory management, some pointer patterns) may
+// not run exactly as a real compiler would. ---
+
+const C_TIMEOUT_MS = 5000;
+
+let cWorker: Worker | null = null;
+
+export function isCLoading(): boolean {
+  return cWorker === null;
+}
+
+function getCWorker(): Worker {
+  if (!cWorker) {
+    cWorker = new Worker(new URL('./cWorker.ts', import.meta.url), { type: 'module' });
+  }
+  return cWorker;
+}
+
+export function runC(code: string): Promise<{ output: string; error: string | null }> {
+  return new Promise((resolve) => {
+    const worker = getCWorker();
+    const timer = setTimeout(() => {
+      worker.terminate();
+      cWorker = null;
+      resolve({ output: '', error: `Execution timed out after ${C_TIMEOUT_MS / 1000}s (infinite loop?)` });
+    }, C_TIMEOUT_MS);
+    worker.onmessage = (e) => {
+      clearTimeout(timer);
+      resolve(e.data as { output: string; error: string | null });
+    };
+    worker.onerror = (e) => {
+      clearTimeout(timer);
+      worker.terminate();
+      cWorker = null;
+      resolve({ output: '', error: e.message || 'The C runtime crashed, try running again.' });
     };
     worker.postMessage(code);
   });
