@@ -7176,6 +7176,424 @@ const kivyMatch3Lessons: SeedLesson[] = [
   },
 ];
 
+const ragLessons: SeedLesson[] = [
+  {
+    title: 'Data Collection',
+    content: lessonContent(
+      'Data Collection',
+      `**Retrieval-Augmented Generation** (RAG) is how you get an LLM to answer questions using *your* knowledge, not just whatever it happened to memorize during training. Instead of retraining the model, you retrieve relevant pieces of your own data at question-time and hand them to the model as extra context. This course builds a complete, working (if simplified) RAG pipeline in 8 steps, this lesson covers the first: gathering the raw knowledge.\n\n## Why RAG at all?\n\nAn LLM's knowledge is frozen at training time and limited to its context window, it can't answer questions about your company's private docs, yesterday's support tickets, or a codebase it's never seen. RAG fixes this by retrieving the *relevant* pieces of your own data and inserting them into the prompt, so the model answers grounded in real, current, specific information instead of guessing from what it half-remembers.\n\n## Gathering the raw knowledge\n\nReal sources are typically PDFs, docs, APIs, websites, and databases, a mix of structured and unstructured data. For this course, each "document" is just a Python string with a bit of metadata, so every lesson's code runs directly in your browser with no external files needed:\n\n\`\`\`python\nraw_documents = [\n    {\n        'source': 'onboarding.md',\n        'text': 'Kodstigen is a learning platform for programming courses. New students should start with the path that matches their goals, for example Python for general programming or DevOps for infrastructure.',\n    },\n    {\n        'source': 'faq.md',\n        'text': 'To reset your password, go to Settings and click Forgot Password. Password reset emails are sent from no-reply@codeforge.dev and expire after one hour.',\n    },\n    {\n        'source': 'billing.md',\n        'text': 'Kodstigen is currently free for all students. Instructors can submit courses and challenges for review, once approved they appear in the public catalog.',\n    },\n]\n\nfor doc in raw_documents:\n    print(doc['source'], '-', len(doc['text']), 'characters')\n\`\`\`\n\n## Structured vs. unstructured\n\n- **Unstructured data** (the kind this course focuses on) is free-form text: markdown docs, articles, chat transcripts. There's no fixed schema, just prose.\n- **Structured data** (rows in a database, JSON API responses) has a predictable shape, you'd typically convert it into descriptive text first (e.g. "Order #4821, shipped 2026-01-03, total $42.50") before it can flow through the same pipeline as unstructured text.\n\n> [!NOTE]\n> The goal of this step is simply to build your knowledge base, a collection of raw text your pipeline can later search through. Nothing here is chunked, embedded, or searchable yet, that's what the next several lessons build.`
+    ),
+    quiz: {
+      title: 'Data Collection Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What problem does RAG solve for an LLM?',
+          options: [
+            'It makes the model respond faster',
+            "It lets the model answer using your own, current data instead of only what it memorized during training",
+            'It reduces the cost of every API call to zero',
+            'It replaces the need for a system prompt',
+          ],
+          answer: "It lets the model answer using your own, current data instead of only what it memorized during training",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Structured data (like database rows) usually needs to be converted into descriptive text before it flows through the same RAG pipeline as unstructured documents.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The goal of the data collection step is to build your ____ ____, a collection of raw text to search through later.",
+          options: [],
+          answer: 'knowledge base',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Data Chunking',
+    content: lessonContent(
+      'Data Chunking',
+      `A whole document is usually too big and too broad to embed and search effectively, this lesson splits each document into small, focused pieces, called **chunks**.\n\n## Why chunk at all?\n\nEmbedding an entire multi-page document into a single vector loses precision, the vector ends up representing an average of many different topics. Splitting into smaller chunks means each vector represents one focused idea, which makes retrieval far more accurate: a query about "password reset" should match a small chunk about password reset, not an entire FAQ document that also happens to mention pricing and onboarding.\n\n## A simple word-based chunker\n\nProduction systems typically aim for chunks of around 200-500 tokens. This course uses much smaller chunks (a handful of words) so you can see the effect clearly on short example text:\n\n\`\`\`python\ndef chunk_text(text, chunk_size=12, overlap=3):\n    words = text.split()\n    chunks = []\n    start = 0\n    while start < len(words):\n        end = start + chunk_size\n        chunk = ' '.join(words[start:end])\n        chunks.append(chunk)\n        start += chunk_size - overlap\n    return chunks\n\ntext = (\n    'Kodstigen is a learning platform for programming courses. '\n    'New students should start with the path that matches their goals, '\n    'for example Python for general programming or DevOps for infrastructure.'\n)\n\nfor i, chunk in enumerate(chunk_text(text)):\n    print(f'Chunk {i}: {chunk!r}')\n\`\`\`\n\n## Why the overlap?\n\nWithout overlap, a sentence that happens to straddle two chunk boundaries gets cut in half, one chunk ends mid-thought and the next picks up without its earlier context. \`overlap=3\` repeats the last 3 words of one chunk at the start of the next, so a query matching that boundary sentence still finds enough surrounding context in at least one of the two chunks.\n\n\`\`\`python\ndef test_boundary():\n    boundary_text = 'one two three four five six seven eight nine ten eleven twelve thirteen fourteen'\n    chunks = chunk_text(boundary_text, chunk_size=6, overlap=2)\n    for chunk in chunks:\n        print(chunk)\n\ntest_boundary()\n\`\`\`\n\nNotice each chunk's last two words reappear as the next chunk's first two words, that repetition is deliberate.\n\n> [!TIP]\n> \`chunk_size\` and \`overlap\` are tunable, smaller chunks give more precise retrieval but more of them to search through, larger chunks keep more context together but dilute the embedding. There's no single correct answer, it depends on your documents.`
+    ),
+    quiz: {
+      title: 'Data Chunking Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does chunking improve retrieval accuracy compared to embedding a whole document at once?',
+          options: [
+            'It makes the document shorter to store',
+            "Each smaller chunk's vector represents one focused idea instead of an average of many topics",
+            'It removes the need for embeddings entirely',
+            'It automatically translates the text',
+          ],
+          answer: "Each smaller chunk's vector represents one focused idea instead of an average of many topics",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Overlap between chunks helps prevent a sentence at a chunk boundary from losing its surrounding context.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Production RAG systems typically aim for chunks around 200 to ____ tokens.',
+          options: [],
+          answer: '500',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Embedding',
+    content: lessonContent(
+      'Embedding',
+      `Chunks of text are still just text, computers can't directly measure how "similar" two pieces of text are unless that meaning is turned into numbers. This lesson converts each chunk into an **embedding**: a vector of numbers that captures its meaning.\n\n## The real-world version\n\nIn production, you'd call an embedding model, most commonly a hosted API like OpenAI's:\n\n\`\`\`\nfrom openai import OpenAI\n\nclient = OpenAI()\n\ndef embed(text):\n    response = client.embeddings.create(model='text-embedding-3-small', input=text)\n    return response.data[0].embedding  # a list of ~1536 floats\n\`\`\`\n\n*This needs a real OpenAI API key and network access, so it's read-only here, every other block in this lesson runs directly in your browser.* A real embedding model has learned, from enormous amounts of text, that phrases like "AI is powerful" and "machine intelligence is strong" should produce nearly identical vectors, even though they don't share a single word, that's what "captures semantic meaning" means in practice.\n\n## A toy embedding you can actually run here\n\nWithout a paid API, this course uses a much simpler stand-in: a **bag-of-words** vector, just a count of how often each word appears. It only catches exact word overlap, not true meaning, but it demonstrates the *mechanism*, text in, vector out, that every later lesson builds on:\n\n\`\`\`python\nimport re\nfrom collections import Counter\n\ndef toy_embed(text):\n    words = re.findall(r\"[a-z']+\", text.lower())\n    return Counter(words)\n\nvector = toy_embed('Password reset emails expire after one hour.')\nprint(vector)\n\`\`\`\n\n\`Counter\` is a dictionary subclass from Python's standard library that counts items, here it counts how many times each lowercase word appears. Two chunks that share more of the same words will end up with more overlapping keys, which the next lessons use to measure similarity.\n\n> [!NOTE]\n> A \`Counter\` mapping words to counts *is* a vector, mathematically, just a sparse one where most possible words have a count of zero and aren't stored at all. Real embedding vectors are dense (every one of their ~1536 numbers is meaningful) and capture meaning rather than exact wording, but the underlying idea, "text becomes a list of numbers you can compare", is exactly the same.`
+    ),
+    quiz: {
+      title: 'Embedding Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does a real embedding model capture that this course\'s toy_embed() does not?',
+          options: [
+            'The length of the text',
+            'Semantic meaning, so different wordings of the same idea produce similar vectors',
+            'The number of words in the text',
+            'Whether the text contains a question mark',
+          ],
+          answer: 'Semantic meaning, so different wordings of the same idea produce similar vectors',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A Counter of word counts is, mathematically, a form of vector.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "OpenAI's client.embeddings.create(...) returns a response whose data[0].embedding is a list of ____.",
+          options: [],
+          answer: 'floats',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Vector Storage',
+    content: lessonContent(
+      'Vector Storage',
+      `Every chunk now has a vector, but a list of vectors floating around isn't useful on its own, it needs somewhere to live alongside the original text it came from, ready to be searched. This lesson builds a minimal **vector store**.\n\n## Production tools\n\nAt real scale (millions of chunks), you'd reach for a dedicated vector database like **Pinecone**, **FAISS**, or **Weaviate**, tools built specifically to store embeddings and run similarity search fast, even across huge datasets, with persistence to disk and metadata filtering built in.\n\n## A minimal in-memory version\n\nFor this course's scale (a handful of chunks), a plain Python list holding every chunk's text, vector, and metadata together is enough to demonstrate the same core idea:\n\n\`\`\`python\nimport re\nfrom collections import Counter\n\ndef toy_embed(text):\n    words = re.findall(r\"[a-z']+\", text.lower())\n    return Counter(words)\n\nclass VectorStore:\n    def __init__(self):\n        self.entries = []  # each entry: {'text': ..., 'vector': ..., 'metadata': ...}\n\n    def add(self, text, vector, metadata=None):\n        self.entries.append({\n            'text': text,\n            'vector': vector,\n            'metadata': metadata or {},\n        })\n\n    def __len__(self):\n        return len(self.entries)\n\nstore = VectorStore()\nstore.add(\n    'Password reset emails expire after one hour.',\n    toy_embed('Password reset emails expire after one hour.'),\n    metadata={'source': 'faq.md'},\n)\nprint(f'Store now has {len(store)} entr{\"y\" if len(store) == 1 else \"ies\"}.')\n\`\`\`\n\n## Storing every chunk from every document\n\nPutting the last three lessons together, every document gets chunked, every chunk gets embedded, and every (chunk, vector) pair gets added to the store along with which document it came from:\n\n\`\`\`python\ndef chunk_text(text, chunk_size=12, overlap=3):\n    words = text.split()\n    chunks = []\n    start = 0\n    while start < len(words):\n        end = start + chunk_size\n        chunks.append(' '.join(words[start:end]))\n        start += chunk_size - overlap\n    return chunks\n\nraw_documents = [\n    {'source': 'onboarding.md', 'text': 'Kodstigen is a learning platform for programming courses. New students should start with the path that matches their goals.'},\n    {'source': 'faq.md', 'text': 'To reset your password, go to Settings and click Forgot Password. Password reset emails expire after one hour.'},\n    {'source': 'billing.md', 'text': 'Kodstigen is currently free for all students. Instructors can submit courses and challenges for review.'},\n]\n\nstore = VectorStore()\n\nfor doc in raw_documents:\n    for chunk in chunk_text(doc['text']):\n        store.add(chunk, toy_embed(chunk), metadata={'source': doc['source']})\n\nprint(f'Indexed {len(store)} chunks from {len(raw_documents)} documents.')\n\`\`\`\n\nKeeping \`metadata\` (like which file a chunk came from) alongside the vector is what lets a real RAG system cite its sources later, "according to faq.md, ...", rather than just returning an answer with no way to trace where it came from.\n\n> [!TIP]\n> The core idea a vector database adds beyond "a list with vectors in it" is **fast similarity search at scale**, techniques like approximate nearest-neighbor indexing that make searching millions of vectors take milliseconds instead of scanning every single one. This course's simple linear scan (next lesson) is correct but wouldn't stay fast forever, which is exactly why those tools exist.`
+    ),
+    quiz: {
+      title: 'Vector Storage Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does the VectorStore keep metadata (like the source filename) alongside each vector?',
+          options: [
+            'It is required for cosine similarity to work',
+            "So a real system can cite where an answer's supporting chunk came from",
+            'To make the vectors smaller',
+            'Metadata is not actually needed',
+          ],
+          answer: "So a real system can cite where an answer's supporting chunk came from",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Pinecone, FAISS, and Weaviate are all examples of dedicated vector database tools.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A key advantage a real vector database adds over a plain list is fast similarity search at ____.',
+          options: [],
+          answer: 'scale',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Query Input',
+    content: lessonContent(
+      'Query Input',
+      `The knowledge base is indexed, now it's time to handle the other half of RAG: what the user actually asks.\n\n## Turning a question into a vector\n\nA user's question arrives as plain natural language, no different in kind from any of the document chunks already indexed. To be comparable to those chunks at all, it needs to go through the **exact same embedding function**:\n\n\`\`\`python\nimport re\nfrom collections import Counter\n\ndef toy_embed(text):\n    words = re.findall(r\"[a-z']+\", text.lower())\n    return Counter(words)\n\nquery = 'How do I reset my password?'\nquery_vector = toy_embed(query)\nprint(query_vector)\n\`\`\`\n\n## Why the same function matters\n\nIf chunks were embedded with one method and the query with a different one, their vectors wouldn't live in the same "space", comparing them would be meaningless, like comparing a temperature in Celsius to one in Fahrenheit without converting first. Whatever \`embed\`/\`toy_embed\` function built the vectors in your \`VectorStore\`, the query must use that identical function:\n\n\`\`\`python\ndef answer_question(query):\n    query_vector = toy_embed(query)  # same function used when indexing the store\n    print(f'Query: {query!r}')\n    print(f'Query vector: {query_vector}')\n    return query_vector\n\n_ = answer_question('How do I reset my password?')\n\`\`\`\n\nNotice \`toy_embed('How do I reset my password?')\` shares words like \`'password'\` and \`'reset'\` with the FAQ chunk from earlier lessons, that overlap is exactly what the next lesson's similarity search will detect and rank highly.\n\n> [!NOTE]\n> In a production system using real OpenAI embeddings, this step is one extra API call per user question, small and cheap compared to the final LLM call, but it's still a network round-trip, worth remembering when thinking about a RAG pipeline's latency and cost.`
+    ),
+    quiz: {
+      title: 'Query Input Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Why must the user's query be embedded with the exact same function used to embed the stored chunks?",
+          options: [
+            "It's not actually required, any embedding function works",
+            "So the query vector and chunk vectors live in the same comparable space",
+            'To make the query run faster',
+            'To automatically translate the query',
+          ],
+          answer: 'So the query vector and chunk vectors live in the same comparable space',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A user query goes through the same embedding process as a document chunk.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A query is expressed in ____ ____ (plain, everyday) language, not a special query syntax.',
+          options: [],
+          answer: 'natural language',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Retrieval',
+    content: lessonContent(
+      'Retrieval',
+      `With both the knowledge base and the query turned into vectors, this lesson finds which stored chunks are actually relevant to the question, by measuring how similar their vectors are.\n\n## Cosine similarity\n\nThe standard way to compare two vectors for similarity is **cosine similarity**: the cosine of the angle between them, ranging from \`-1\` (opposite) to \`1\` (identical direction), regardless of each vector's magnitude. For sparse \`Counter\`-based vectors, it only needs to look at the words that appear in *both*:\n\n\`\`\`python\nimport re\nimport math\nfrom collections import Counter\n\ndef toy_embed(text):\n    words = re.findall(r\"[a-z']+\", text.lower())\n    return Counter(words)\n\ndef cosine_similarity(vec1, vec2):\n    common_words = set(vec1) & set(vec2)\n    dot_product = sum(vec1[word] * vec2[word] for word in common_words)\n    magnitude1 = math.sqrt(sum(count * count for count in vec1.values()))\n    magnitude2 = math.sqrt(sum(count * count for count in vec2.values()))\n    if magnitude1 == 0 or magnitude2 == 0:\n        return 0.0\n    return dot_product / (magnitude1 * magnitude2)\n\na = toy_embed('Password reset emails expire after one hour.')\nb = toy_embed('How do I reset my password?')\nc = toy_embed('Kodstigen is free for all students.')\n\nprint('a vs b (related):', cosine_similarity(a, b))\nprint('a vs c (unrelated):', cosine_similarity(a, c))\n\`\`\`\n\nRun it, the password-related pair should score noticeably higher than the unrelated pair, exactly what makes retrieval work.\n\n## Retrieving the top-K matches\n\nScoring the query against every stored chunk and keeping only the best few (**top-K**) is the retrieval step itself:\n\n\`\`\`python\nclass VectorStore:\n    def __init__(self):\n        self.entries = []\n\n    def add(self, text, vector, metadata=None):\n        self.entries.append({'text': text, 'vector': vector, 'metadata': metadata or {}})\n\nstore = VectorStore()\nstore.add('Password reset emails expire after one hour.', toy_embed('Password reset emails expire after one hour.'), {'source': 'faq.md'})\nstore.add('Kodstigen is currently free for all students.', toy_embed('Kodstigen is currently free for all students.'), {'source': 'billing.md'})\nstore.add('New students should start with the Python path.', toy_embed('New students should start with the Python path.'), {'source': 'onboarding.md'})\n\ndef retrieve(store, query_vector, top_k=2):\n    scored = [\n        (cosine_similarity(query_vector, entry['vector']), entry)\n        for entry in store.entries\n    ]\n    scored.sort(key=lambda pair: pair[0], reverse=True)\n    return [entry for score, entry in scored[:top_k]]\n\nquery_vector = toy_embed('How do I reset my password?')\nresults = retrieve(store, query_vector, top_k=2)\nfor entry in results:\n    print(entry['metadata']['source'], '->', entry['text'][:60])\n\`\`\`\n\n\`sort(..., reverse=True)\` puts the highest similarity scores first, then \`[:top_k]\` keeps only that many, everything else is discarded, only the most relevant handful of chunks moves on to the next step.\n\n> [!TIP]\n> \`top_k\` is another tunable knob: too small and you might miss a relevant chunk, too large and you dilute the final prompt with irrelevant text (and pay for more tokens). 2-5 is a common starting point for small knowledge bases.`
+    ),
+    quiz: {
+      title: 'Retrieval Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does cosine similarity measure between two vectors?',
+          options: [
+            'How many words they have in total',
+            'How similar their direction is, regardless of magnitude',
+            'Which vector was created first',
+            'The exact word-for-word difference',
+          ],
+          answer: 'How similar their direction is, regardless of magnitude',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'retrieve() keeps only the top_k highest-scoring chunks and discards the rest.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Retrieving only the best few matches instead of every chunk is called top-____ retrieval.',
+          options: [],
+          answer: 'K',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Augmentation',
+    content: lessonContent(
+      'Augmentation',
+      `Retrieval found the relevant chunks, but an LLM doesn't automatically know they exist, they need to actually be inserted into the prompt sent to the model. This step is called **augmentation**, and it's the "A" in RAG.\n\n## Building the augmented prompt\n\n\`\`\`python\ndef build_prompt(query, retrieved_chunks):\n    context = '\\n\\n'.join(chunk['text'] for chunk in retrieved_chunks)\n    return (\n        \"Answer the question using ONLY the context below. \"\n        \"If the answer isn't in the context, say you don't know.\\n\\n\"\n        f\"Context:\\n{context}\\n\\n\"\n        f\"Question: {query}\\n\"\n        \"Answer:\"\n    )\n\n# standing in for the chunks retrieve() would have found in the previous lesson\nretrieved = [\n    {'text': 'To reset your password, go to Settings and click Forgot Password.'},\n    {'text': 'Password reset emails expire after one hour.'},\n]\n\nquery = 'How do I reset my password?'\nprompt = build_prompt(query, retrieved)\nprint(prompt)\n\`\`\`\n\n## Why "ONLY the context"\n\nThat instruction is doing real work, an LLM without it will happily blend its own training knowledge with whatever you gave it, sometimes producing a plausible-sounding but wrong answer for *your specific system* (a classic **hallucination**). Explicitly restricting it to the provided context, and telling it what to say when the answer isn't there, is what makes the final response trustworthy and traceable back to your actual data instead of the model's guesswork.\n\n## The final prompt formula\n\nEvery RAG system boils down to the same combination:\n\n\`\`\`\nFinal prompt = Query + Retrieved Context\n\`\`\`\n\nEverything from Data Collection through Retrieval exists purely to produce a good \`Context\`, augmentation is where that context and the original question finally get combined into the single string the LLM will actually see.\n\n> [!NOTE]\n> \`build_prompt\` is plain string formatting, nothing here calls an LLM yet, that's deliberately the very last step, covered next.`
+    ),
+    quiz: {
+      title: 'Augmentation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does build_prompt() explicitly instruct the model to answer "using ONLY the context"?',
+          options: [
+            'To make the response shorter',
+            'To prevent the model from blending in ungrounded, possibly wrong knowledge from its own training (hallucination)',
+            'It is required by the OpenAI API',
+            'To reduce the number of retrieved chunks needed',
+          ],
+          answer: 'To prevent the model from blending in ungrounded, possibly wrong knowledge from its own training (hallucination)',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The augmentation step itself makes an API call to an LLM.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The final prompt formula is: Final prompt = Query + Retrieved ____.',
+          options: [],
+          answer: 'Context',
+        },
+      ],
+    },
+  },
+  {
+    title: 'LLM Response',
+    content: lessonContent(
+      'LLM Response',
+      `Every earlier step exists to arrive at this one: handing the fully augmented prompt to an actual LLM and getting back a grounded, context-aware answer.\n\n## Sending the prompt\n\n\`\`\`\nfrom openai import OpenAI\n\nclient = OpenAI()\n\ndef generate_answer(prompt):\n    response = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{'role': 'user', 'content': prompt}],\n    )\n    return response.choices[0].message.content\n\nanswer = generate_answer(prompt)\nprint(answer)\n\`\`\`\n\n*This needs a real OpenAI API key and network access, so it's read-only here, everything from Data Collection through Augmentation in the earlier lessons runs directly in your browser without any API key at all.*\n\n## Why this produces a better answer\n\nWithout RAG, asking an LLM "How do I reset my password?" gets a generic, plausible-sounding answer about password resets in general, not specific to Kodstigen, since the model has never seen your FAQ. With the augmented prompt from the previous lesson, the model is handed your actual FAQ text as context and instructed to answer only from it, so the response reflects your real password-reset process (the specific email address, the one-hour expiry), not a generic guess.\n\n## The outcome\n\nThis is the entire point of the 8-step pipeline: **more reliable, grounded answers**. The LLM still does the language generation, understanding the question, composing a fluent response, but the *facts* in that response come from your own retrieved data, not from what the model happened to memorize (or half-remember) during training.\n\n> [!TIP]\n> Everything from \`raw_documents\` through \`build_prompt\` is real, runnable Python you've now written from scratch. The only piece that needs an external service is this final call, swapping \`toy_embed\` for real OpenAI embeddings and adding this last API call is genuinely all it takes to turn this into a production RAG system, that's exactly what the final project does next.`
+    ),
+    quiz: {
+      title: 'LLM Response Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Why does the RAG-augmented prompt produce a more useful answer than asking the LLM the question directly?",
+          options: [
+            'The LLM responds faster with a shorter prompt',
+            "The model answers using the specific, real context you retrieved, instead of generic training knowledge",
+            'It uses fewer tokens',
+            'It skips the need for a system prompt',
+          ],
+          answer: "The model answers using the specific, real context you retrieved, instead of generic training knowledge",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In this pipeline, the LLM call is the only step that requires a real API key and network access.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The outcome of a working RAG pipeline is more reliable, ____ answers.',
+          options: [],
+          answer: 'grounded',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build Your Own Mini RAG Pipeline',
+    content: lessonContent(
+      'Final Project: Build Your Own Mini RAG Pipeline',
+      `Every piece from this course now exists on its own: collecting documents, chunking, embedding, storing vectors, embedding a query, retrieving, augmenting, and generating an answer. This final project assembles all of it into one complete, working RAG pipeline.\n\n## Requirements\n\nYour finished \`rag_pipeline.py\` should satisfy every one of these:\n\n1. ✅ Collect at least 3 source "documents" as plain strings with a bit of metadata (\`raw_documents\`).\n2. ✅ Chunk every document with \`chunk_text()\`, tuning \`chunk_size\`/\`overlap\` for your content.\n3. ✅ Embed every chunk (\`toy_embed()\`, or a real embedding model, see stretch goals) and store it in a \`VectorStore\` along with its source metadata.\n4. ✅ Accept a natural-language query and embed it with the exact same embedding function used for the chunks.\n5. ✅ Retrieve the top-K most similar chunks with \`retrieve()\`/\`cosine_similarity()\`.\n6. ✅ Build an augmented prompt with \`build_prompt()\` that includes the retrieved context and instructs the model to answer only from it.\n7. ✅ Feed the prompt to an LLM (\`generate_answer()\`, a real OpenAI or OpenRouter call) and print the grounded answer.\n\nBringing every earlier lesson's code together in order (collect → chunk → embed → store → query → retrieve → augment → generate) is the whole pipeline:\n\n\`\`\`\ndef run_pipeline(query, raw_documents, top_k=2):\n    # 1-4: build the knowledge base\n    store = VectorStore()\n    for doc in raw_documents:\n        for chunk in chunk_text(doc['text']):\n            store.add(chunk, toy_embed(chunk), metadata={'source': doc['source']})\n\n    # 5: embed the query\n    query_vector = toy_embed(query)\n\n    # 6: retrieve\n    retrieved = retrieve(store, query_vector, top_k=top_k)\n\n    # 7: augment\n    prompt = build_prompt(query, retrieved)\n\n    # 8: generate (needs a real API key, see the LLM Response lesson)\n    return generate_answer(prompt)\n\nprint(run_pipeline('How do I reset my password?', raw_documents))\n\`\`\`\n\n## Stretch goals\n\n- Swap \`toy_embed()\` for a real embedding model (OpenAI's \`text-embedding-3-small\`, or a local model via the \`sentence-transformers\` package) for genuinely semantic, not just word-overlap, retrieval.\n- Swap the in-memory \`VectorStore\` for a real vector database like **FAISS** (runs locally, no account needed) or **Pinecone**.\n- Add source citations to the final answer, e.g. "According to faq.md: ...", using each retrieved chunk's \`metadata\`.\n- Try a smarter chunking strategy, split on paragraphs or sentences instead of a fixed word count, and compare retrieval quality.\n- Add a simple cache so an identical query doesn't re-embed or re-call the LLM twice.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const aiAgentLessons: SeedLesson[] = [
+  {
+    title: 'LLMs',
+    content: lessonContent(
+      'LLMs',
+      `An **LLM** (Large Language Model) is a model trained to predict the next token in a sequence of text, given enough training data and scale, that simple objective turns out to produce something that can hold a conversation, write code, and reason through problems. This course builds a real **AI coding agent**, a program that uses an LLM plus tools to actually take action, starting with the basics: sending a prompt and getting a response back.\n\n## The chat message format\n\nEvery modern chat LLM API is built around a list of messages, each with a **role**:\n\n- \`system\`: instructions that set the model's behavior for the whole conversation, not something the user said, more like configuration.\n- \`user\`: what the human (or, later, your code) is asking.\n- \`assistant\`: what the model said back, you'll see this role again when building the agent's conversation history.\n\n\`\`\`python\nmessages = [\n    {'role': 'system', 'content': 'You are a helpful assistant.'},\n    {'role': 'user', 'content': 'What is a large language model?'},\n]\n\`\`\`\n\n## Sending a prompt with the OpenAI SDK, via OpenRouter\n\n**OpenRouter** is a service that exposes dozens of different models (from OpenAI, Anthropic, Meta, and others) behind one single, OpenAI-API-compatible endpoint, so you can use the familiar \`openai\` Python package by just pointing it at a different \`base_url\`:\n\n\`\`\`\nfrom openai import OpenAI\n\nclient = OpenAI(\n    base_url='https://openrouter.ai/api/v1',\n    api_key='YOUR_OPENROUTER_API_KEY',\n)\n\nresponse = client.chat.completions.create(\n    model='openai/gpt-4o-mini',\n    messages=[\n        {'role': 'system', 'content': 'You are a helpful assistant.'},\n        {'role': 'user', 'content': 'What is a large language model?'},\n    ],\n)\n\nprint(response.choices[0].message.content)\n\`\`\`\n\n*This needs a real OpenRouter API key and network access, so it's read-only here, get a free key at openrouter.ai to run this yourself locally.*\n\n\`response.choices[0].message\` is where the model's reply lives, \`.content\` is the actual text. \`choices\` is a list because you can ask a model for multiple candidate responses at once, for a single reply, you'll almost always just use \`choices[0]\`.\n\n> [!TIP]\n> Model names on OpenRouter are prefixed with the provider, \`openai/gpt-4o-mini\`, \`anthropic/claude-3.5-sonnet\`, \`meta-llama/llama-3.1-8b-instruct\`, all callable through the exact same \`client.chat.completions.create(...)\` code, only the \`model\` string changes.`
+    ),
+    quiz: {
+      title: 'LLMs Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the "system" role in a messages list represent?',
+          options: [
+            "What the human user typed",
+            'Instructions that configure the model\'s behavior for the whole conversation',
+            "The model's previous reply",
+            'An error message',
+          ],
+          answer: 'Instructions that configure the model\'s behavior for the whole conversation',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'OpenRouter lets you call many different providers\' models through one OpenAI-API-compatible client, just by changing the model string and base_url.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "A model's reply text is found at response.choices[0].message.____",
+          options: [],
+          answer: 'content',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Functions',
+    content: lessonContent(
+      'Functions',
+      `An LLM on its own can only produce text, it can't read a file, run code, or change anything. To build an actual *agent* (something that takes action, not just talks), you first need real Python functions it can eventually be given access to. This lesson writes three: reading a file, writing a file, and running arbitrary Python code.\n\n## Reading and writing files\n\n\`\`\`python\ndef read_file(path):\n    with open(path, 'r') as f:\n        return f.read()\n\ndef write_file(path, content):\n    with open(path, 'w') as f:\n        f.write(content)\n    return f'Wrote {len(content)} characters to {path}'\n\nwrite_file('notes.txt', 'Remember to fix the bug in calculate_total().')\nprint(read_file('notes.txt'))\n\`\`\`\n\nThese are the two most basic actions any coding agent needs: seeing what's currently in a file, and changing it. Nothing fancy yet, just Python's built-in \`open()\`.\n\n## Running arbitrary Python code\n\nAn agent that can fix bugs needs to actually *execute* code to test whether a fix works, not just read and write text:\n\n\`\`\`python\nimport io\nimport contextlib\n\ndef run_python(code):\n    output = io.StringIO()\n    try:\n        with contextlib.redirect_stdout(output):\n            exec(code, {})\n        return output.getvalue() or '(no output)'\n    except Exception as e:\n        return f'Error: {e}'\n\nprint(run_python('print(2 + 2)'))\nprint(run_python('print(1 / 0)'))\n\`\`\`\n\n- \`exec(code, {})\` runs a string of Python code as if it were a script. Passing \`{}\` as its globals dict gives it a fresh, empty namespace each call, so one \`run_python\` call can't accidentally see variables left over from a previous one.\n- \`contextlib.redirect_stdout(output)\` temporarily redirects anything the code \`print()\`s into an in-memory buffer (\`io.StringIO()\`) instead of your real terminal, so \`run_python\` can capture and return it as a string, exactly what's needed to hand the result back to an LLM as text.\n- The \`try/except\` is deliberate: if the executed code raises an error (like the division by zero above), \`run_python\` returns a description of the error *as its result*, instead of crashing your whole program. An agent needs to see its mistakes as feedback ("that failed because...") to correct course, not have the entire session die.\n\n> [!WARNING]\n> \`exec\` runs code with the same permissions as your own program, there's no sandboxing here. This is fine for a personal learning project you control, but a production agent that executes model-generated code needs much stronger isolation (a container, a subprocess with a timeout, a restricted execution environment), never run untrusted, model-generated code with a bare \`exec\` in anything real.`
+    ),
+    quiz: {
+      title: 'Functions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does run_python wrap exec() in a try/except instead of letting an error crash the program?',
+          options: [
+            'To make the code run faster',
+            "So a failure becomes a text result the agent can see and react to, instead of ending the whole session",
+            'try/except is required syntax for exec()',
+            'To avoid using io.StringIO',
+          ],
+          answer: "So a failure becomes a text result the agent can see and react to, instead of ending the whole session",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "contextlib.redirect_stdout lets run_python capture printed output into a string instead of the real terminal.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "exec(code, {}) runs code with a fresh, empty ____ dictionary so previous calls can't leak variables into it.",
+          options: [],
+          answer: 'globals',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Function Calling',
+    content: lessonContent(
+      'Function Calling',
+      `Having Python functions the agent *could* use isn't the same as the LLM actually being able to use them, a model only outputs text, it has no way to directly call a Python function in your program. **Function calling** (also called **tool calling**) is the bridge: you describe your functions to the model in a structured format, and the model can respond by asking you to call one, with specific arguments, instead of (or as well as) replying in plain text.\n\n## Describing a function to the model\n\nEach tool is described with a JSON Schema, its name, what it does, and what arguments it takes:\n\n\`\`\`python\ntools = [\n    {\n        'type': 'function',\n        'function': {\n            'name': 'run_python',\n            'description': 'Execute a snippet of Python code and return its printed output.',\n            'parameters': {\n                'type': 'object',\n                'properties': {\n                    'code': {'type': 'string', 'description': 'The Python code to run.'},\n                },\n                'required': ['code'],\n            },\n        },\n    },\n]\n\`\`\`\n\n\`description\` matters more than it looks, the model decides *whether* and *when* to call a tool based on how clearly it understands what that tool does from this text alone.\n\n## Passing tools to the model\n\n\`\`\`\nresponse = client.chat.completions.create(\n    model='openai/gpt-4o-mini',\n    messages=messages,\n    tools=tools,\n)\n\nmessage = response.choices[0].message\nif message.tool_calls:\n    for call in message.tool_calls:\n        print(call.function.name, call.function.arguments)\n\`\`\`\n\n*This needs a real API key, so it's read-only here.* Crucially: the model does **not** run \`run_python\` itself, it can't, it has no way to execute code. It just replies with a structured request, "please call \`run_python\` with \`code='print(2 + 2)'\`", \`.arguments\` arrives as a JSON *string* your own code still has to parse and act on.\n\n## Dispatching a tool call yourself\n\nThis part needs no API key at all, it's the exact mechanics your own code has to implement, testable right now with a fake tool call standing in for a real model response:\n\n\`\`\`python\nimport io\nimport json\nimport contextlib\n\ndef run_python(code):\n    output = io.StringIO()\n    try:\n        with contextlib.redirect_stdout(output):\n            exec(code, {})\n        return output.getvalue() or '(no output)'\n    except Exception as e:\n        return f'Error: {e}'\n\navailable_functions = {\n    'run_python': run_python,\n}\n\ndef dispatch_tool_call(tool_call):\n    function_name = tool_call['name']\n    arguments = json.loads(tool_call['arguments'])\n    function = available_functions[function_name]\n    return function(**arguments)\n\nfake_tool_call = {\n    'name': 'run_python',\n    'arguments': json.dumps({'code': 'print(3 * 7)'}),\n}\n\nresult = dispatch_tool_call(fake_tool_call)\nprint(result)\n\`\`\`\n\n\`json.loads(tool_call['arguments'])\` turns the model's JSON-string arguments back into a real Python dict, \`function(**arguments)\` then calls the right function by unpacking that dict as keyword arguments, so \`{'code': '...'}\` becomes \`run_python(code='...')\`.\n\n> [!NOTE]\n> \`available_functions\` is a lookup table mapping the *name* the model was told about (in \`tools\`) to the *actual function object* your code can call, keeping these in sync (every tool you describe to the model needs a matching entry here) is what makes dispatch work at all.`
+    ),
+    quiz: {
+      title: 'Function Calling Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'When a model responds with a tool call, what actually executes the underlying function?',
+          options: [
+            'The model executes it internally',
+            "Your own code, by dispatching the requested function name and arguments",
+            'OpenRouter runs it on their servers automatically',
+            'Nothing, tool calls are purely informational',
+          ],
+          answer: "Your own code, by dispatching the requested function name and arguments",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A tool call's arguments arrive as a JSON string that your code must parse with something like json.loads().",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "function(**arguments) unpacks a dict of arguments as ____ arguments to call the function.",
+          options: [],
+          answer: 'keyword',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Agents',
+    content: lessonContent(
+      'Agents',
+      `Everything so far, sending prompts, writing tool functions, dispatching a tool call, are the individual pieces. An **agent** is what you get when you wire them into a loop: call the model, execute whatever it asks for, feed the result back, and repeat, until the model decides the task is done. This final project builds that loop and points it at a real bug.\n\n## The agent loop\n\n\`\`\`\ndef run_agent(user_task, max_steps=10):\n    messages = [\n        {\n            'role': 'system',\n            'content': 'You are a coding agent. Use the available tools to inspect and fix the bug, then explain the fix.',\n        },\n        {'role': 'user', 'content': user_task},\n    ]\n\n    for _ in range(max_steps):\n        response = client.chat.completions.create(\n            model='openai/gpt-4o-mini',\n            messages=messages,\n            tools=tools,\n        )\n        message = response.choices[0].message\n        messages.append(message)\n\n        if not message.tool_calls:\n            return message.content  # no more tools requested, this is the agent's final answer\n\n        for call in message.tool_calls:\n            result = dispatch_tool_call({\n                'name': call.function.name,\n                'arguments': call.function.arguments,\n            })\n            messages.append({\n                'role': 'tool',\n                'tool_call_id': call.id,\n                'content': str(result),\n            })\n\n    return \"Agent didn't finish within max_steps.\"\n\`\`\`\n\n*This needs a real API key and calls the model in a loop, so it's read-only here, this is exactly what you'll run locally for the final project.*\n\n## Why this is "the feedback loop"\n\n- \`messages\` accumulates the **entire** conversation, the original task, every one of the model's replies (including tool call requests), and every tool result, appended with role \`'tool'\`. Each new call to the model sees all of it, so it remembers what it already tried and what happened.\n- The loop only stops when \`message.tool_calls\` is empty, meaning the model chose to reply with a plain final answer instead of requesting another tool. Until then, it keeps working: read a file, notice a bug, run code to test a fix, write the corrected file, run it again to confirm.\n- \`max_steps\` is a safety net. Without it, a model stuck in a bad loop (repeatedly trying the same failing fix) would run forever, capping the attempts guarantees the agent eventually stops one way or another.\n\nThis is the difference between a chatbot and an **agent**: a chatbot replies once, an agent keeps working, using tools and its own prior results, until it decides the job is actually finished.\n\n## Final project requirements\n\n1. Set up a real OpenRouter (or OpenAI) API key and the \`openai\` Python package locally, this project needs to make real API calls.\n2. Implement \`read_file\`, \`write_file\`, and \`run_python\` (from the Functions lesson, or your own versions).\n3. Write a JSON tool schema for each function (Function Calling lesson) and pass all of them via \`tools\`.\n4. Implement the full \`run_agent()\` loop above: call the model, execute any requested tool calls, feed each result back as a \`'tool'\`-role message, and repeat until the model gives a final plain-text answer.\n5. Point your agent at a real, small, deliberately-broken Python file (plant a genuine bug, an off-by-one error, a wrong variable name, a missing edge case) and give it a task like *"There's a bug in bug.py, find and fix it."* Let it read the file, diagnose the problem, and use \`run_python\`/\`write_file\` to actually fix it, then confirm the fix works.\n\n## Stretch goals\n\n- Log every tool call (name and arguments) to the console as the agent works, visibility into *why* it's doing what it's doing is invaluable for debugging your own agent.\n- Add a \`list_files\` tool so the agent can explore an entire project directory, not just one file you already told it about.\n- Handle the case where the model requests multiple tool calls in a single turn (the \`for call in message.tool_calls:\` loop above already supports this, verify it with a task that needs two tools at once).\n- Add a friendlier message (or a retry with a smaller task) when \`max_steps\` is hit, instead of just giving up.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
   nodejs: [
     {
@@ -7207,6 +7625,18 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       description:
         "Build a Candy Crush-style Match-3 puzzle game with Kivy, the Python framework for cross-platform apps and mobile games. You'll model the board as plain Python data, render it with Kivy's layout and button widgets, handle taps to select and swap adjacent gems, detect 3-in-a-row matches, and resolve cascades until the board settles.",
       lessons: kivyMatch3Lessons,
+    },
+    {
+      title: 'Retrieval-Augmented Generation (RAG) with Python',
+      description:
+        "Build a complete RAG pipeline from scratch in 8 steps: collecting documents, chunking, embedding, vector storage, embedding a query, retrieval, augmentation, and generating a grounded LLM response. You'll write real, runnable Python for every step, no API key required until the very last one.",
+      lessons: ragLessons,
+    },
+    {
+      title: 'Build Your Own AI Coding Agent',
+      description:
+        "Learn how LLMs, function calling, and agent loops actually work by building a real AI coding agent: send prompts via OpenRouter and the OpenAI SDK, write the tool functions your agent needs, wire up function calling, then give it a feedback loop so it can autonomously read, run, and fix a real bug.",
+      lessons: aiAgentLessons,
     },
   ],
   javascript: [
