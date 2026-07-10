@@ -9,13 +9,14 @@ const teachTabClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-forge-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
   }`;
 
-const allLanguages: ChallengeLanguage[] = ['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA', 'HTML'];
+const allLanguages: ChallengeLanguage[] = ['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA', 'HTML', 'C'];
 const languageLabels: Record<ChallengeLanguage, string> = {
   PYTHON: 'Python',
   JAVASCRIPT: 'JavaScript',
   TYPESCRIPT: 'TypeScript',
   LUA: 'Lua',
   HTML: 'HTML',
+  C: 'C',
 };
 
 export function TeachChallenges() {

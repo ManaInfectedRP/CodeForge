@@ -78,7 +78,7 @@ challengesRouter.get(
 );
 
 const submitSchema = z.object({
-  language: z.enum(['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA', 'HTML']),
+  language: z.enum(['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA', 'HTML', 'C']),
   results: z.array(
     z.object({
       testCaseId: z.string(),
