@@ -2,6 +2,40 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { FeaturedReviewDto, LearningPathDto } from '@codeforge/shared';
 import { api } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
+
+function ReferralLink({ username }: { username: string }) {
+  const [copied, setCopied] = useState(false);
+  const referralUrl = `https://kodstigen.se/register?ref=${encodeURIComponent(username)}`;
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(referralUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard access denied, silently ignore
+    }
+  }
+
+  return (
+    <div className="mx-auto mt-8 flex max-w-xl flex-col items-center gap-3 sm:flex-row">
+      <input
+        readOnly
+        value={referralUrl}
+        onFocus={(e) => e.currentTarget.select()}
+        className="w-full min-w-0 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3.5 text-sm text-slate-300"
+      />
+      <button
+        type="button"
+        onClick={copy}
+        className="w-full shrink-0 rounded-xl bg-forge-600 px-6 py-3.5 font-semibold text-white shadow-lg shadow-forge-600/25 hover:bg-forge-500 sm:w-auto"
+      >
+        {copied ? 'Kopierad!' : 'Kopiera länk'}
+      </button>
+    </div>
+  );
+}
 
 function ReviewCard({ review }: { review: FeaturedReviewDto }) {
   const [expanded, setExpanded] = useState(false);
@@ -101,6 +135,7 @@ function ReviewsCarousel({ reviews }: { reviews: FeaturedReviewDto[] }) {
 }
 
 export function Landing() {
+  const { user } = useAuth();
   const [paths, setPaths] = useState<LearningPathDto[]>([]);
   const [reviews, setReviews] = useState<FeaturedReviewDto[]>([]);
 
@@ -122,24 +157,35 @@ export function Landing() {
           Kliv för kliv, från din första rad kod till din första utvecklarroll. Interaktiva kurser, verkliga
           projekt och quiz i alla möjliga programmeringsspråk.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <Link
-            to="/register"
-            className="rounded-xl bg-forge-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-forge-600/25 hover:bg-forge-500"
-          >
-            Börja lära dig gratis
-          </Link>
-          <Link
-            to="/login"
-            className="rounded-xl border border-slate-700 px-8 py-3.5 font-semibold text-slate-200 hover:bg-slate-800"
-          >
-            Logga in
-          </Link>
-        </div>
-        <p className="mx-auto mt-5 max-w-xl text-sm text-slate-500">
-          Den här sidan visas på svenska, men efter att du registrerar dig eller loggar in fortsätter allt i
-          appen på engelska.
-        </p>
+        {user ? (
+          <>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-slate-400">
+              Bjud in en vän med din länk nedan.
+            </p>
+            <ReferralLink username={user.username} />
+          </>
+        ) : (
+          <>
+            <div className="mt-8 flex justify-center gap-4">
+              <Link
+                to="/register"
+                className="rounded-xl bg-forge-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-forge-600/25 hover:bg-forge-500"
+              >
+                Börja lära dig gratis
+              </Link>
+              <Link
+                to="/login"
+                className="rounded-xl border border-slate-700 px-8 py-3.5 font-semibold text-slate-200 hover:bg-slate-800"
+              >
+                Logga in
+              </Link>
+            </div>
+            <p className="mx-auto mt-5 max-w-xl text-sm text-slate-500">
+              Den här sidan visas på svenska, men efter att du registrerar dig eller loggar in fortsätter allt i
+              appen på engelska.
+            </p>
+          </>
+        )}
       </section>
 
       {reviews.length > 0 && (
@@ -155,16 +201,27 @@ export function Landing() {
 
           <div className="mx-auto max-w-6xl overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
             <div className="animate-marquee flex w-max gap-x-12">
-              {[...paths, ...paths].map((p, i) => (
-                <div key={`${p.slug}-${i}`} className="flex w-20 shrink-0 flex-col items-center gap-2.5">
-                  <img
-                    src={`/langs/${p.slug}.svg`}
-                    alt={`${p.name} logo`}
-                    className="h-14 w-14 transition-transform hover:scale-110"
-                  />
-                  <span className="whitespace-nowrap text-sm font-medium text-slate-300">{p.name}</span>
-                </div>
-              ))}
+              {[...paths, ...paths].map((p, i) =>
+                user ? (
+                  <Link
+                    key={`${p.slug}-${i}`}
+                    to={`/courses?path=${p.slug}`}
+                    className="flex w-20 shrink-0 flex-col items-center gap-2.5"
+                  >
+                    <img
+                      src={`/langs/${p.slug}.svg`}
+                      alt={`${p.name} logo`}
+                      className="h-14 w-14 transition-transform hover:scale-110"
+                    />
+                    <span className="whitespace-nowrap text-sm font-medium text-slate-300">{p.name}</span>
+                  </Link>
+                ) : (
+                  <div key={`${p.slug}-${i}`} className="flex w-20 shrink-0 flex-col items-center gap-2.5">
+                    <img src={`/langs/${p.slug}.svg`} alt={`${p.name} logo`} className="h-14 w-14" />
+                    <span className="whitespace-nowrap text-sm font-medium text-slate-300">{p.name}</span>
+                  </div>
+                )
+              )}
             </div>
           </div>
         </section>
