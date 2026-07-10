@@ -6928,6 +6928,1446 @@ const gdscriptLessons: SeedLesson[] = [
   },
 ];
 
+const kivyMatch3Lessons: SeedLesson[] = [
+  {
+    title: 'Kivy: Setup and Installation',
+    content: lessonContent(
+      'Kivy: Setup and Installation',
+      `Kivy is a Python framework for building cross-platform apps and games, the same codebase can run on Windows, macOS, Linux, Android, and iOS. It's especially popular for 2D games with touch controls: puzzle games, card games, simple platformers, and, in this project, a **Match-3 game** in the style of Candy Crush.\n\n## Installing Kivy\n\nLike Pygame, Kivy needs a real window to draw into, so it doesn't run inside this course's browser sandbox. Write and run this project locally with a real Python install.\n\n\`\`\`bash\npip install kivy\n\`\`\`\n\nVerify it installed correctly:\n\n\`\`\`\nimport kivy\nprint(kivy.__version__)\n\`\`\`\n\n## Your first Kivy app\n\nEvery Kivy app is a class that extends \`App\`, with a \`build()\` method that returns the single root widget the whole app is drawn from.\n\n\`\`\`\nfrom kivy.app import App\nfrom kivy.uix.label import Label\n\nclass Match3App(App):\n    def build(self):\n        return Label(text='Match-3, coming soon!', font_size=32)\n\nif __name__ == '__main__':\n    Match3App().run()\n\`\`\`\n\n- \`App.run()\` opens the window and starts Kivy's own event loop (similar in spirit to Pygame's \`while running:\` loop, but Kivy manages it for you).\n- \`build()\` is called once, at startup, whatever widget it returns becomes the entire visible app, later lessons will return a full game board here instead of a single \`Label\`.\n\n## Packaging for mobile\n\nThis course focuses on getting the game working on your desktop, but Kivy code is written with mobile in mind from the start. When you're ready to ship, **Buildozer** packages a Kivy app into a real Android APK:\n\n\`\`\`bash\npip install buildozer\nbuildozer init\nbuildozer -v android debug\n\`\`\`\n\n\`buildozer init\` generates a \`buildozer.spec\` file describing your app (name, permissions, dependencies), and \`buildozer android debug\` builds the actual installable APK. You won't need Buildozer for this course's lessons, it's mentioned here so you know the path from "Python script" to "installable app" exists and is just one command away.\n\n> [!NOTE]\n> Buildozer only runs on Linux (or WSL on Windows). It's completely optional for following this course, everything here runs and is testable as a normal desktop Python app.`
+    ),
+    quiz: {
+      title: 'Kivy Setup Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What must every Kivy app class extend?',
+          options: ['Widget', 'App', 'Window', 'Game'],
+          answer: 'App',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A Kivy app's build() method is called repeatedly, once per frame.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____ packages a finished Kivy app into an installable Android APK.',
+          options: [],
+          answer: 'Buildozer',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Layouts and Widgets',
+    content: lessonContent(
+      'Layouts and Widgets',
+      `A Match-3 board is fundamentally a grid, so before writing any game logic, this lesson covers the Kivy widgets that will hold it: layouts, which arrange other widgets, and buttons, which will represent each gem.\n\n## Layouts arrange widgets, they don't draw anything themselves\n\n\`\`\`\nfrom kivy.app import App\nfrom kivy.uix.boxlayout import BoxLayout\nfrom kivy.uix.button import Button\nfrom kivy.uix.label import Label\n\nclass DemoApp(App):\n    def build(self):\n        root = BoxLayout(orientation='vertical')\n        root.add_widget(Label(text='Score: 0', font_size=24))\n        root.add_widget(Button(text='Shuffle'))\n        return root\n\nif __name__ == '__main__':\n    DemoApp().run()\n\`\`\`\n\n- \`BoxLayout\` stacks its children in a single row or column, \`orientation='vertical'\` stacks them top to bottom.\n- \`add_widget(...)\` is how every widget, layout or not, gets a child added to it. Layouts just also decide *where* their children end up.\n\n## GridLayout: the board itself\n\nAn 8×8 Match-3 board is a perfect fit for \`GridLayout\`, which arranges children into a fixed number of columns (and, implicitly, however many rows the number of children requires):\n\n\`\`\`\nfrom kivy.uix.gridlayout import GridLayout\nfrom kivy.uix.button import Button\n\nclass BoardDemoApp(App):\n    def build(self):\n        grid = GridLayout(cols=8)\n        for i in range(8 * 8):\n            grid.add_widget(Button(text=str(i)))\n        return grid\n\nif __name__ == '__main__':\n    BoardDemoApp().run()\n\`\`\`\n\nSetting \`cols=8\` and then adding 64 buttons is all it takes, \`GridLayout\` automatically wraps to a new row every 8 widgets, giving you an 8×8 grid with zero manual positioning math.\n\n## Buttons as gems\n\nEach cell in the board will be a \`Button\`, gems don't need any text, just a solid background color, which Kivy exposes through two properties together:\n\n\`\`\`\nfrom kivy.uix.button import Button\n\ngem = Button(text='', background_normal='', background_color=(0.9, 0.2, 0.2, 1))  # solid red\n\`\`\`\n\n- \`background_color\` is an RGBA tuple, each channel from \`0\` to \`1\` (not 0-255 like most other tools).\n- \`background_normal=''\` is required to actually *see* that color, by default Kivy's \`Button\` draws its built-in gray button-image on top of \`background_color\`, setting it to an empty string turns that image off so the flat color shows through.\n\n## Responding to taps\n\n\`\`\`\ndef on_gem_pressed(instance):\n    print('tapped a gem!')\n\ngem.bind(on_press=on_gem_pressed)\n\`\`\`\n\n\`bind(on_press=...)\` connects a function to the button's press event, Kivy calls it with the widget instance itself as the only argument, which is exactly how the next lesson will know *which* gem was tapped.\n\n> [!TIP]\n> \`size_hint\` (a tuple like \`(1, 1)\`) controls how much of the available space a widget claims relative to its siblings, the default \`(1, 1)\` already makes every gem button fill its grid cell evenly, so you won't need to touch it for this project.`
+    ),
+    quiz: {
+      title: 'Layouts and Widgets Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which layout automatically arranges widgets into a fixed number of columns?',
+          options: ['BoxLayout', 'GridLayout', 'StackLayout', 'FloatLayout'],
+          answer: 'GridLayout',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Setting background_normal='' on a Button is necessary to see its background_color clearly.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'button.____(on_press=handler) connects a function to run whenever the button is tapped.',
+          options: [],
+          answer: 'bind',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Modeling the Board',
+    content: lessonContent(
+      'Modeling the Board',
+      `Before drawing a single gem on screen, it's worth building the board as plain Python data, completely separate from Kivy. This keeps the game's rules testable and easy to reason about, the UI will just be a thin layer that reads and updates this data.\n\n## Representing the grid\n\nAn 8×8 board is a list of 8 rows, each row a list of 8 gems. Each gem is just a string naming its color:\n\n\`\`\`\nimport random\n\nBOARD_SIZE = 8\nGEM_COLORS = ['red', 'blue', 'green', 'yellow', 'purple']\n\ndef make_board():\n    return [\n        [random.choice(GEM_COLORS) for _col in range(BOARD_SIZE)]\n        for _row in range(BOARD_SIZE)\n    ]\n\nboard = make_board()\nprint(board[0])   # the top row, e.g. ['red', 'purple', 'blue', ...]\nprint(board[3][5])  # the gem at row 3, column 5\n\`\`\`\n\n\`board[row][col]\` is the indexing convention used for the rest of this project, the outer list is rows (top to bottom), the inner list is columns (left to right) within that row.\n\n## Why keep the model separate from the UI?\n\nIt's tempting to store the gem's color as a property directly on a Kivy \`Button\`, and read it back from there whenever you need it. Resist that: keeping \`board\` as a plain Python list means:\n\n- You can write and test match-detection logic (next lesson) with no Kivy window involved at all, just \`print(board)\`.\n- The UI's only job becomes "read \`board\` and draw it", and "translate taps back into changes to \`board\`", nothing about *how a gem looks* needs to leak into the rules for *how gems match and fall*.\n\n\`\`\`\ndef adjacent(pos1, pos2):\n    r1, c1 = pos1\n    r2, c2 = pos2\n    return abs(r1 - r2) + abs(c1 - c2) == 1\n\nprint(adjacent((3, 4), (3, 5)))  # True, same row, next column\nprint(adjacent((3, 4), (4, 5)))  # False, diagonal, not adjacent\n\`\`\`\n\n\`abs(r1 - r2) + abs(c1 - c2)\` is the **Manhattan distance** between two grid positions, it equals exactly \`1\` only when the two cells share a row or column and are right next to each other, exactly the "adjacent" rule a Match-3 swap needs, no diagonals allowed.\n\n> [!NOTE]\n> \`random.choice(GEM_COLORS)\` doesn't check whether it accidentally created a match while building the initial board, that's fine for this project's prototype scope, a production game would re-roll any gem that would start pre-matched.`
+    ),
+    quiz: {
+      title: 'Modeling the Board Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In this project\'s board representation, what does board[3][5] refer to?',
+          options: ['Row 5, column 3', 'Row 3, column 5', 'The 3rd board', 'A GEM_COLORS index'],
+          answer: 'Row 3, column 5',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Two grid positions are adjacent (for swapping purposes) if they are diagonal to each other.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'abs(r1 - r2) + abs(c1 - c2) computes the ____ distance between two grid positions.',
+          options: [],
+          answer: 'Manhattan',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Displaying the Board',
+    content: lessonContent(
+      'Displaying the Board',
+      `With \`make_board()\` producing the data and \`GridLayout\` able to hold an 8×8 grid of buttons, this lesson connects the two: turning the plain Python \`board\` into actual colored gems on screen.\n\n## Mapping colors to RGBA\n\n\`\`\`\nGEM_RGBA = {\n    'red':    (0.9, 0.2, 0.2, 1),\n    'blue':   (0.2, 0.4, 0.9, 1),\n    'green':  (0.2, 0.8, 0.3, 1),\n    'yellow': (0.95, 0.85, 0.2, 1),\n    'purple': (0.6, 0.2, 0.8, 1),\n}\n\`\`\`\n\nEvery gem color string from \`board\` needs a matching entry here, this dictionary is the only place that translates the game's data (plain strings) into something Kivy can actually render.\n\n## Building the grid of buttons\n\n\`\`\`\nfrom kivy.app import App\nfrom kivy.uix.gridlayout import GridLayout\nfrom kivy.uix.button import Button\n\nclass Match3App(App):\n    def build(self):\n        self.board = make_board()\n        self.grid = GridLayout(cols=BOARD_SIZE)\n        self.buttons = {}  # (row, col) -> Button, so taps can be mapped back to a position\n\n        for row in range(BOARD_SIZE):\n            for col in range(BOARD_SIZE):\n                gem = Button(text='', background_normal='')\n                self.buttons[(row, col)] = gem\n                self.grid.add_widget(gem)\n\n        self.render_board()\n        return self.grid\n\n    def render_board(self):\n        for row in range(BOARD_SIZE):\n            for col in range(BOARD_SIZE):\n                color = self.board[row][col]\n                self.buttons[(row, col)].background_color = GEM_RGBA[color]\n\nif __name__ == '__main__':\n    Match3App().run()\n\`\`\`\n\nA few things worth noticing:\n\n- \`self.buttons\` is a dictionary keyed by \`(row, col)\`, created once in \`build()\`. Every later lesson looks up "which button is at this position?" through this dictionary rather than re-creating widgets, Kivy widgets are relatively expensive to create, so the board reuses the same 64 buttons for the entire game.\n- \`render_board()\` is deliberately a separate method from \`build()\`: it only *reads* \`self.board\` and updates colors, it never creates new widgets. That means any later change to \`self.board\` (a swap, a match being cleared, gems falling) can be shown on screen just by calling \`self.render_board()\` again.\n- Note the important order: rows are added top to bottom, and within each row, columns left to right, matching \`GridLayout(cols=BOARD_SIZE)\`'s own top-to-bottom, left-to-right fill order, so \`self.buttons[(row, col)]\` really does end up in the right visual position.\n\n> [!TIP]\n> Separating "update the data" from "redraw from the data" (the same idea as Pygame's update/draw split) is what makes the rest of this game's logic straightforward: every lesson from here on just changes \`self.board\` and then calls \`self.render_board()\`.`
+    ),
+    quiz: {
+      title: 'Displaying the Board Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does the app store buttons in a self.buttons dictionary keyed by (row, col) instead of recreating them?',
+          options: [
+            'Kivy requires dictionaries for layouts',
+            'To reuse the same widgets and just update their colors, rather than recreating 64 buttons every frame',
+            'Dictionaries render faster than lists',
+            'It is required for touch input to work at all',
+          ],
+          answer: 'To reuse the same widgets and just update their colors, rather than recreating 64 buttons every frame',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'render_board() creates new Button widgets every time it runs.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'background_color expects an ____ tuple with each channel between 0 and 1.',
+          options: [],
+          answer: 'RGBA',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Selecting and Swapping Gems',
+    content: lessonContent(
+      'Selecting and Swapping Gems',
+      `With gems visible on screen, the next step is making them tappable: select one gem, tap an adjacent one, and swap them.\n\n## Tracking the current selection\n\n\`\`\`\nclass Match3App(App):\n    def build(self):\n        self.board = make_board()\n        self.selected = None  # will hold a (row, col) tuple, or None\n        self.grid = GridLayout(cols=BOARD_SIZE)\n        self.buttons = {}\n\n        for row in range(BOARD_SIZE):\n            for col in range(BOARD_SIZE):\n                gem = Button(text='', background_normal='')\n                gem.bind(on_press=self.make_gem_handler(row, col))\n                self.buttons[(row, col)] = gem\n                self.grid.add_widget(gem)\n\n        self.render_board()\n        return self.grid\n\n    def make_gem_handler(self, row, col):\n        def handler(instance):\n            self.on_gem_tapped(row, col)\n        return handler\n\`\`\`\n\n\`bind(on_press=...)\` only passes Kivy the *widget instance* that was pressed, not which row/col it represents. \`make_gem_handler(row, col)\` solves this with a **closure**: it returns a fresh \`handler\` function that remembers its own \`row\` and \`col\` from when it was created, one such closure is made per button, in the same loop that creates the button itself.\n\n## Handling a tap\n\n\`\`\`\n    def on_gem_tapped(self, row, col):\n        if self.selected is None:\n            self.selected = (row, col)\n            return\n\n        first = self.selected\n        second = (row, col)\n        self.selected = None\n\n        if first == second:\n            return  # tapped the same gem twice, treat as a deselect\n\n        if not adjacent(first, second):\n            self.selected = second  # start a fresh selection from here instead\n            return\n\n        self.swap(first, second)\n        self.render_board()\n\`\`\`\n\nThe logic has three outcomes for a second tap: the same gem (cancel), a non-adjacent gem (start over from that gem instead of swapping), or a valid adjacent gem (swap). Storing \`self.selected = None\` at the very top of the "second tap" branch, before any of those checks, means every path correctly clears the selection, there's no way to get stuck with a stale \`self.selected\`.\n\n## Swapping two positions\n\n\`\`\`\n    def swap(self, pos1, pos2):\n        r1, c1 = pos1\n        r2, c2 = pos2\n        self.board[r1][c1], self.board[r2][c2] = self.board[r2][c2], self.board[r1][c1]\n\`\`\`\n\nPython's tuple-assignment swap (\`a, b = b, a\`) works just as well on two list-of-list cells as it does on two plain variables, no temporary variable needed.\n\n> [!WARNING]\n> This lesson's version swaps unconditionally, even if the swap doesn't create any match. A real Match-3 game only allows swaps that produce at least one match, swapping back otherwise, that's exactly what the next lesson's match-detection makes possible.`
+    ),
+    quiz: {
+      title: 'Selecting and Swapping Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does make_gem_handler(row, col) return a new function instead of binding one shared handler to every button?',
+          options: [
+            'Kivy requires a unique function object per widget',
+            "So each button's handler remembers its own row/col via a closure, since on_press only passes the widget instance",
+            'It makes the app start faster',
+            'To avoid using self.board',
+          ],
+          answer: "So each button's handler remembers its own row/col via a closure, since on_press only passes the widget instance",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'a, b = b, a swaps two variables (or list cells) in Python without a temporary variable.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A function defined inside another function that remembers variables from the enclosing scope is called a ____.',
+          options: [],
+          answer: 'closure',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Detecting Matches',
+    content: lessonContent(
+      'Detecting Matches',
+      `Swapping gems is only useful once the game can tell whether that swap actually created a match, three or more identical gems in a row, either horizontally or vertically.\n\n## Scanning rows\n\n\`\`\`\ndef find_matches(board):\n    matched = set()\n\n    # horizontal runs\n    for row in range(BOARD_SIZE):\n        run_start = 0\n        for col in range(1, BOARD_SIZE + 1):\n            end_of_row = col == BOARD_SIZE\n            broke_run = end_of_row or board[row][col] != board[row][run_start]\n            if broke_run:\n                run_length = col - run_start\n                if run_length >= 3:\n                    for c in range(run_start, col):\n                        matched.add((row, c))\n                run_start = col\n\n    return matched\n\`\`\`\n\nThis walks each row left to right, tracking where the current run of identical gems started (\`run_start\`). Every time the gem changes (or the row ends), it checks whether the run that just ended was long enough (\`>= 3\`), and if so, adds every position in that run to \`matched\`. Using a loop bound of \`BOARD_SIZE + 1\` (not just \`BOARD_SIZE\`) is what lets the *last* run in the row get checked too, without it, a run reaching all the way to the last column would never trigger the "broke run" check.\n\n## Adding vertical runs\n\nColumns need the exact same logic, just swapped: outer loop over columns, inner loop over rows.\n\n\`\`\`\ndef find_matches(board):\n    matched = set()\n\n    for row in range(BOARD_SIZE):\n        run_start = 0\n        for col in range(1, BOARD_SIZE + 1):\n            end_of_row = col == BOARD_SIZE\n            broke_run = end_of_row or board[row][col] != board[row][run_start]\n            if broke_run:\n                if col - run_start >= 3:\n                    for c in range(run_start, col):\n                        matched.add((row, c))\n                run_start = col\n\n    for col in range(BOARD_SIZE):\n        run_start = 0\n        for row in range(1, BOARD_SIZE + 1):\n            end_of_col = row == BOARD_SIZE\n            broke_run = end_of_col or board[row][col] != board[run_start][col]\n            if broke_run:\n                if row - run_start >= 3:\n                    for r in range(run_start, row):\n                        matched.add((r, col))\n                run_start = row\n\n    return matched\n\`\`\`\n\n\`matched\` is a \`set\` of \`(row, col)\` tuples, not a list, deliberately: a gem at the intersection of a horizontal *and* vertical run (an L or T shape) would otherwise get added twice, a set automatically collapses duplicates.\n\n## Using it after a swap\n\n\`\`\`\n    def on_gem_tapped(self, row, col):\n        # ... same selection logic as the previous lesson ...\n        self.swap(first, second)\n\n        if find_matches(self.board):\n            self.render_board()\n        else:\n            self.swap(first, second)  # no match, swap back\n\`\`\`\n\nCalling \`self.swap(first, second)\` a second time with the same two positions undoes the first swap, exactly the "swap back if it didn't help" rule real Match-3 games use to stop players from making pointless moves.\n\n> [!TIP]\n> \`find_matches\` only reports *which cells matched*, it doesn't remove anything from the board itself, keeping "detect" and "remove" as separate steps (next lesson) makes each one easy to test on its own.`
+    ),
+    quiz: {
+      title: 'Detecting Matches Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does find_matches return a set instead of a list?',
+          options: [
+            'Sets are required by Kivy',
+            'To automatically avoid duplicate positions when a gem is part of both a horizontal and vertical match',
+            'Sets preserve insertion order, lists do not',
+            'It makes the loop run faster',
+          ],
+          answer: 'To automatically avoid duplicate positions when a gem is part of both a horizontal and vertical match',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Swapping the same two positions a second time undoes the first swap.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A run of identical gems only counts as a match once its length is 3 or ____.',
+          options: [],
+          answer: 'more',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Clearing, Dropping, and Refilling',
+    content: lessonContent(
+      'Clearing, Dropping, and Refilling',
+      `A detected match needs to actually disappear, let the gems above it fall down to fill the gap, and have brand-new gems spawn at the top, then check whether *that* created new matches, and repeat until the board settles. This is the "cascade" that makes Match-3 games feel alive.\n\n## Clearing matched gems\n\nAn empty cell is represented as \`None\`, distinct from any real gem color:\n\n\`\`\`\ndef clear_matches(board, matched):\n    for (row, col) in matched:\n        board[row][col] = None\n\`\`\`\n\n## Dropping gems down, column by column\n\n\`\`\`\ndef drop_gems(board):\n    for col in range(BOARD_SIZE):\n        # collect this column's surviving (non-None) gems, top to bottom\n        remaining = [board[row][col] for row in range(BOARD_SIZE) if board[row][col] is not None]\n        missing = BOARD_SIZE - len(remaining)\n\n        # empty space at the top, then the survivors settle to the bottom\n        new_column = [None] * missing + remaining\n\n        for row in range(BOARD_SIZE):\n            board[row][col] = new_column[row]\n\`\`\`\n\nBuilding a brand-new \`new_column\` list (rather than trying to shift entries in place) avoids a whole class of off-by-one bugs: \`remaining\` already has the survivors in the right relative order, padding \`missing\` \`None\`s in front of them is all it takes to push them down, since row \`0\` is the top of the board.\n\n## Spawning new gems in the empty top cells\n\n\`\`\`\ndef refill_board(board):\n    for row in range(BOARD_SIZE):\n        for col in range(BOARD_SIZE):\n            if board[row][col] is None:\n                board[row][col] = random.choice(GEM_COLORS)\n\`\`\`\n\nAfter \`drop_gems\`, every remaining \`None\` is guaranteed to be at the top of its column (that's exactly what the padding in \`drop_gems\` guaranteed), so \`refill_board\` can simply fill in any \`None\` it finds, no need to track which rows were affected.\n\n## Repeating until the board is stable\n\n\`\`\`\n    def resolve_matches(self):\n        matched = find_matches(self.board)\n        while matched:\n            clear_matches(self.board, matched)\n            drop_gems(self.board)\n            refill_board(self.board)\n            matched = find_matches(self.board)  # newly-fallen gems might match too\n\`\`\`\n\nThis \`while matched:\` loop is the "repeat until no matches remain" step: clearing and refilling can easily create *new* runs of 3 (a cascade), so the function keeps re-checking \`find_matches\` after every refill, only stopping once a full pass finds nothing left to clear.\n\n## Wiring it into a swap\n\n\`\`\`\n    def on_gem_tapped(self, row, col):\n        # ... selection logic ...\n        self.swap(first, second)\n\n        if find_matches(self.board):\n            self.resolve_matches()\n        else:\n            self.swap(first, second)\n\n        self.render_board()\n\`\`\`\n\n> [!WARNING]\n> \`resolve_matches\` only touches \`self.board\`, the plain Python data, it never calls \`self.render_board()\` itself. Forgetting to call \`render_board()\` after \`resolve_matches()\` (as the snippet above does, on the very last line) is a common bug, the board would be fully correct internally while the screen still shows the old, un-cleared gems.`
+    ),
+    quiz: {
+      title: 'Clearing, Dropping & Refilling Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does the game keep calling find_matches() again inside a while loop after refilling?',
+          options: [
+            'To detect the very first match only',
+            'Because clearing and refilling gems can create new matches (cascades) that also need resolving',
+            'It is required by Kivy to update the screen',
+            'To slow the game down for animation purposes',
+          ],
+          answer: 'Because clearing and refilling gems can create new matches (cascades) that also need resolving',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In this board representation, None represents an empty cell, distinct from any real gem color.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'random.____(GEM_COLORS) picks one random gem color to fill an empty cell.',
+          options: [],
+          answer: 'choice',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Complete the Match-3 Prototype',
+    content: lessonContent(
+      'Final Project: Complete the Match-3 Prototype',
+      `Every piece from this course now exists on its own: a board of random gems, a grid of tappable buttons, adjacent swapping, match detection, and clearing/dropping/refilling with cascades. This final project assembles all of it into one complete, playable prototype.\n\n## Requirements\n\nYour finished \`match3.py\` should satisfy every one of these:\n\n1. Creates an 8×8 board of randomly colored gems (\`make_board()\`).\n2. Displays the gems on screen as colored buttons in a \`GridLayout\` (\`render_board()\`).\n3. Lets the player select two gems by tapping them (\`self.selected\`, \`on_gem_tapped\`).\n4. Swaps two **adjacent** gems, and only two adjacent gems, non-adjacent taps should start a new selection instead of swapping (\`adjacent()\`, \`swap()\`).\n5. Detects 3-in-a-row matches, both horizontal and vertical (\`find_matches()\`).\n6. Replaces matched gems: clears them, drops the gems above down, spawns new random gems at the top, and repeats until no matches remain (\`resolve_matches()\`).\n\nBring the pieces from every earlier lesson together into one file, in this order works well:\n\n\`\`\`\nimport random\nfrom kivy.app import App\nfrom kivy.uix.gridlayout import GridLayout\nfrom kivy.uix.button import Button\n\nBOARD_SIZE = 8\nGEM_COLORS = ['red', 'blue', 'green', 'yellow', 'purple']\nGEM_RGBA = {\n    'red':    (0.9, 0.2, 0.2, 1),\n    'blue':   (0.2, 0.4, 0.9, 1),\n    'green':  (0.2, 0.8, 0.3, 1),\n    'yellow': (0.95, 0.85, 0.2, 1),\n    'purple': (0.6, 0.2, 0.8, 1),\n}\n\n\ndef make_board():\n    return [[random.choice(GEM_COLORS) for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]\n\n\ndef adjacent(pos1, pos2):\n    r1, c1 = pos1\n    r2, c2 = pos2\n    return abs(r1 - r2) + abs(c1 - c2) == 1\n\n\ndef find_matches(board):\n    matched = set()\n\n    for row in range(BOARD_SIZE):\n        run_start = 0\n        for col in range(1, BOARD_SIZE + 1):\n            broke_run = col == BOARD_SIZE or board[row][col] != board[row][run_start]\n            if broke_run:\n                if col - run_start >= 3:\n                    for c in range(run_start, col):\n                        matched.add((row, c))\n                run_start = col\n\n    for col in range(BOARD_SIZE):\n        run_start = 0\n        for row in range(1, BOARD_SIZE + 1):\n            broke_run = row == BOARD_SIZE or board[row][col] != board[run_start][col]\n            if broke_run:\n                if row - run_start >= 3:\n                    for r in range(run_start, row):\n                        matched.add((r, col))\n                run_start = row\n\n    return matched\n\n\ndef clear_matches(board, matched):\n    for (row, col) in matched:\n        board[row][col] = None\n\n\ndef drop_gems(board):\n    for col in range(BOARD_SIZE):\n        remaining = [board[row][col] for row in range(BOARD_SIZE) if board[row][col] is not None]\n        missing = BOARD_SIZE - len(remaining)\n        new_column = [None] * missing + remaining\n        for row in range(BOARD_SIZE):\n            board[row][col] = new_column[row]\n\n\ndef refill_board(board):\n    for row in range(BOARD_SIZE):\n        for col in range(BOARD_SIZE):\n            if board[row][col] is None:\n                board[row][col] = random.choice(GEM_COLORS)\n\n\nclass Match3App(App):\n    def build(self):\n        self.board = make_board()\n        self.selected = None\n        self.grid = GridLayout(cols=BOARD_SIZE)\n        self.buttons = {}\n\n        for row in range(BOARD_SIZE):\n            for col in range(BOARD_SIZE):\n                gem = Button(text='', background_normal='')\n                gem.bind(on_press=self.make_gem_handler(row, col))\n                self.buttons[(row, col)] = gem\n                self.grid.add_widget(gem)\n\n        self.render_board()\n        return self.grid\n\n    def make_gem_handler(self, row, col):\n        def handler(instance):\n            self.on_gem_tapped(row, col)\n        return handler\n\n    def on_gem_tapped(self, row, col):\n        if self.selected is None:\n            self.selected = (row, col)\n            return\n\n        first = self.selected\n        second = (row, col)\n        self.selected = None\n\n        if first == second:\n            return\n        if not adjacent(first, second):\n            self.selected = second\n            return\n\n        self.swap(first, second)\n        if find_matches(self.board):\n            self.resolve_matches()\n        else:\n            self.swap(first, second)\n\n        self.render_board()\n\n    def swap(self, pos1, pos2):\n        r1, c1 = pos1\n        r2, c2 = pos2\n        self.board[r1][c1], self.board[r2][c2] = self.board[r2][c2], self.board[r1][c1]\n\n    def resolve_matches(self):\n        matched = find_matches(self.board)\n        while matched:\n            clear_matches(self.board, matched)\n            drop_gems(self.board)\n            refill_board(self.board)\n            matched = find_matches(self.board)\n\n    def render_board(self):\n        for row in range(BOARD_SIZE):\n            for col in range(BOARD_SIZE):\n                color = self.board[row][col]\n                self.buttons[(row, col)].background_color = GEM_RGBA[color]\n\n\nif __name__ == '__main__':\n    Match3App().run()\n\`\`\`\n\nRun it, click two adjacent gems, and you should see them swap, and if they formed a match, watch the board clear, drop, and refill down to a stable state.\n\n## Stretch goals (Hard): production-quality polish\n\nThe prototype above is a fully playable Match-3 game, but a production-quality version would add considerably more. Pick as many of these as you like:\n\n- **Animated swapping**, instead of an instant color-swap, gradually move the two gems toward each other's positions over a few frames using \`kivy.animation.Animation\`.\n- **Gems falling with physics**, drop new gems in from above the board and animate them falling into place, rather than appearing instantly.\n- **Cascading combos with a score system**, award more points for each successive cascade in a single \`resolve_matches()\` call, not just a flat amount per gem.\n- **Level objectives**, e.g. "collect 20 blue gems" or "reach 5,000 points in 30 moves", tracked and displayed alongside the board.\n- **Special gems**, a match of 4 creates a bomb (clears a 3×3 area when matched), a match of 5 creates a rainbow gem (clears every gem of one color).\n- **Particle effects**, a small burst of color where each gem is cleared.\n- **Sound effects**, a swap sound and a satisfying match/cascade sound with \`kivy.core.audio.SoundLoader\`.\n- **Swipe gestures**, detect a swipe direction with \`on_touch_down\`/\`on_touch_up\` instead of tap-tap-to-select, closer to how mobile Match-3 games actually feel.\n\nFor a real mobile release, using actual gem images (\`kivy.uix.image.Image\`) or Canvas drawing instead of flat button colors would make it feel far more like a real game. A reasonable project layout for that larger scope:\n\n\`\`\`\nMatch3 Game\n│\n├── main.py              # Starts app\n├── game.py              # Match-3 rules\n├── board.py             # Grid management\n├── gem.py               # Gem objects\n├── assets/\n│   ├── red.png\n│   ├── blue.png\n│   └── yellow.png\n└── sounds/\n    ├── swap.wav\n    └── match.wav\n\`\`\`\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const ragLessons: SeedLesson[] = [
+  {
+    title: 'Data Collection',
+    content: lessonContent(
+      'Data Collection',
+      `**Retrieval-Augmented Generation** (RAG) is how you get an LLM to answer questions using *your* knowledge, not just whatever it happened to memorize during training. Instead of retraining the model, you retrieve relevant pieces of your own data at question-time and hand them to the model as extra context. This course builds a complete, working (if simplified) RAG pipeline in 8 steps, this lesson covers the first: gathering the raw knowledge.\n\n## Why RAG at all?\n\nAn LLM's knowledge is frozen at training time and limited to its context window, it can't answer questions about your company's private docs, yesterday's support tickets, or a codebase it's never seen. RAG fixes this by retrieving the *relevant* pieces of your own data and inserting them into the prompt, so the model answers grounded in real, current, specific information instead of guessing from what it half-remembers.\n\n## Gathering the raw knowledge\n\nReal sources are typically PDFs, docs, APIs, websites, and databases, a mix of structured and unstructured data. For this course, each "document" is just a Python string with a bit of metadata, so every lesson's code runs directly in your browser with no external files needed:\n\n\`\`\`python\nraw_documents = [\n    {\n        'source': 'onboarding.md',\n        'text': 'Kodstigen is a learning platform for programming courses. New students should start with the path that matches their goals, for example Python for general programming or DevOps for infrastructure.',\n    },\n    {\n        'source': 'faq.md',\n        'text': 'To reset your password, go to Settings and click Forgot Password. Password reset emails are sent from no-reply@codeforge.dev and expire after one hour.',\n    },\n    {\n        'source': 'billing.md',\n        'text': 'Kodstigen is currently free for all students. Instructors can submit courses and challenges for review, once approved they appear in the public catalog.',\n    },\n]\n\nfor doc in raw_documents:\n    print(doc['source'], '-', len(doc['text']), 'characters')\n\`\`\`\n\n## Structured vs. unstructured\n\n- **Unstructured data** (the kind this course focuses on) is free-form text: markdown docs, articles, chat transcripts. There's no fixed schema, just prose.\n- **Structured data** (rows in a database, JSON API responses) has a predictable shape, you'd typically convert it into descriptive text first (e.g. "Order #4821, shipped 2026-01-03, total $42.50") before it can flow through the same pipeline as unstructured text.\n\n> [!NOTE]\n> The goal of this step is simply to build your knowledge base, a collection of raw text your pipeline can later search through. Nothing here is chunked, embedded, or searchable yet, that's what the next several lessons build.`
+    ),
+    quiz: {
+      title: 'Data Collection Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What problem does RAG solve for an LLM?',
+          options: [
+            'It makes the model respond faster',
+            "It lets the model answer using your own, current data instead of only what it memorized during training",
+            'It reduces the cost of every API call to zero',
+            'It replaces the need for a system prompt',
+          ],
+          answer: "It lets the model answer using your own, current data instead of only what it memorized during training",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Structured data (like database rows) usually needs to be converted into descriptive text before it flows through the same RAG pipeline as unstructured documents.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The goal of the data collection step is to build your ____ ____, a collection of raw text to search through later.",
+          options: [],
+          answer: 'knowledge base',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Data Chunking',
+    content: lessonContent(
+      'Data Chunking',
+      `A whole document is usually too big and too broad to embed and search effectively, this lesson splits each document into small, focused pieces, called **chunks**.\n\n## Why chunk at all?\n\nEmbedding an entire multi-page document into a single vector loses precision, the vector ends up representing an average of many different topics. Splitting into smaller chunks means each vector represents one focused idea, which makes retrieval far more accurate: a query about "password reset" should match a small chunk about password reset, not an entire FAQ document that also happens to mention pricing and onboarding.\n\n## A simple word-based chunker\n\nProduction systems typically aim for chunks of around 200-500 tokens. This course uses much smaller chunks (a handful of words) so you can see the effect clearly on short example text:\n\n\`\`\`python\ndef chunk_text(text, chunk_size=12, overlap=3):\n    words = text.split()\n    chunks = []\n    start = 0\n    while start < len(words):\n        end = start + chunk_size\n        chunk = ' '.join(words[start:end])\n        chunks.append(chunk)\n        start += chunk_size - overlap\n    return chunks\n\ntext = (\n    'Kodstigen is a learning platform for programming courses. '\n    'New students should start with the path that matches their goals, '\n    'for example Python for general programming or DevOps for infrastructure.'\n)\n\nfor i, chunk in enumerate(chunk_text(text)):\n    print(f'Chunk {i}: {chunk!r}')\n\`\`\`\n\n## Why the overlap?\n\nWithout overlap, a sentence that happens to straddle two chunk boundaries gets cut in half, one chunk ends mid-thought and the next picks up without its earlier context. \`overlap=3\` repeats the last 3 words of one chunk at the start of the next, so a query matching that boundary sentence still finds enough surrounding context in at least one of the two chunks.\n\n\`\`\`python\ndef test_boundary():\n    boundary_text = 'one two three four five six seven eight nine ten eleven twelve thirteen fourteen'\n    chunks = chunk_text(boundary_text, chunk_size=6, overlap=2)\n    for chunk in chunks:\n        print(chunk)\n\ntest_boundary()\n\`\`\`\n\nNotice each chunk's last two words reappear as the next chunk's first two words, that repetition is deliberate.\n\n> [!TIP]\n> \`chunk_size\` and \`overlap\` are tunable, smaller chunks give more precise retrieval but more of them to search through, larger chunks keep more context together but dilute the embedding. There's no single correct answer, it depends on your documents.`
+    ),
+    quiz: {
+      title: 'Data Chunking Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does chunking improve retrieval accuracy compared to embedding a whole document at once?',
+          options: [
+            'It makes the document shorter to store',
+            "Each smaller chunk's vector represents one focused idea instead of an average of many topics",
+            'It removes the need for embeddings entirely',
+            'It automatically translates the text',
+          ],
+          answer: "Each smaller chunk's vector represents one focused idea instead of an average of many topics",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Overlap between chunks helps prevent a sentence at a chunk boundary from losing its surrounding context.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Production RAG systems typically aim for chunks around 200 to ____ tokens.',
+          options: [],
+          answer: '500',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Embedding',
+    content: lessonContent(
+      'Embedding',
+      `Chunks of text are still just text, computers can't directly measure how "similar" two pieces of text are unless that meaning is turned into numbers. This lesson converts each chunk into an **embedding**: a vector of numbers that captures its meaning.\n\n## The real-world version\n\nIn production, you'd call an embedding model, most commonly a hosted API like OpenAI's:\n\n\`\`\`\nfrom openai import OpenAI\n\nclient = OpenAI()\n\ndef embed(text):\n    response = client.embeddings.create(model='text-embedding-3-small', input=text)\n    return response.data[0].embedding  # a list of ~1536 floats\n\`\`\`\n\n*This needs a real OpenAI API key and network access, so it's read-only here, every other block in this lesson runs directly in your browser.* A real embedding model has learned, from enormous amounts of text, that phrases like "AI is powerful" and "machine intelligence is strong" should produce nearly identical vectors, even though they don't share a single word, that's what "captures semantic meaning" means in practice.\n\n## A toy embedding you can actually run here\n\nWithout a paid API, this course uses a much simpler stand-in: a **bag-of-words** vector, just a count of how often each word appears. It only catches exact word overlap, not true meaning, but it demonstrates the *mechanism*, text in, vector out, that every later lesson builds on:\n\n\`\`\`python\nimport re\nfrom collections import Counter\n\ndef toy_embed(text):\n    words = re.findall(r\"[a-z']+\", text.lower())\n    return Counter(words)\n\nvector = toy_embed('Password reset emails expire after one hour.')\nprint(vector)\n\`\`\`\n\n\`Counter\` is a dictionary subclass from Python's standard library that counts items, here it counts how many times each lowercase word appears. Two chunks that share more of the same words will end up with more overlapping keys, which the next lessons use to measure similarity.\n\n> [!NOTE]\n> A \`Counter\` mapping words to counts *is* a vector, mathematically, just a sparse one where most possible words have a count of zero and aren't stored at all. Real embedding vectors are dense (every one of their ~1536 numbers is meaningful) and capture meaning rather than exact wording, but the underlying idea, "text becomes a list of numbers you can compare", is exactly the same.`
+    ),
+    quiz: {
+      title: 'Embedding Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does a real embedding model capture that this course\'s toy_embed() does not?',
+          options: [
+            'The length of the text',
+            'Semantic meaning, so different wordings of the same idea produce similar vectors',
+            'The number of words in the text',
+            'Whether the text contains a question mark',
+          ],
+          answer: 'Semantic meaning, so different wordings of the same idea produce similar vectors',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A Counter of word counts is, mathematically, a form of vector.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "OpenAI's client.embeddings.create(...) returns a response whose data[0].embedding is a list of ____.",
+          options: [],
+          answer: 'floats',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Vector Storage',
+    content: lessonContent(
+      'Vector Storage',
+      `Every chunk now has a vector, but a list of vectors floating around isn't useful on its own, it needs somewhere to live alongside the original text it came from, ready to be searched. This lesson builds a minimal **vector store**.\n\n## Production tools\n\nAt real scale (millions of chunks), you'd reach for a dedicated vector database like **Pinecone**, **FAISS**, or **Weaviate**, tools built specifically to store embeddings and run similarity search fast, even across huge datasets, with persistence to disk and metadata filtering built in.\n\n## A minimal in-memory version\n\nFor this course's scale (a handful of chunks), a plain Python list holding every chunk's text, vector, and metadata together is enough to demonstrate the same core idea:\n\n\`\`\`python\nimport re\nfrom collections import Counter\n\ndef toy_embed(text):\n    words = re.findall(r\"[a-z']+\", text.lower())\n    return Counter(words)\n\nclass VectorStore:\n    def __init__(self):\n        self.entries = []  # each entry: {'text': ..., 'vector': ..., 'metadata': ...}\n\n    def add(self, text, vector, metadata=None):\n        self.entries.append({\n            'text': text,\n            'vector': vector,\n            'metadata': metadata or {},\n        })\n\n    def __len__(self):\n        return len(self.entries)\n\nstore = VectorStore()\nstore.add(\n    'Password reset emails expire after one hour.',\n    toy_embed('Password reset emails expire after one hour.'),\n    metadata={'source': 'faq.md'},\n)\nprint(f'Store now has {len(store)} entr{\"y\" if len(store) == 1 else \"ies\"}.')\n\`\`\`\n\n## Storing every chunk from every document\n\nPutting the last three lessons together, every document gets chunked, every chunk gets embedded, and every (chunk, vector) pair gets added to the store along with which document it came from:\n\n\`\`\`python\ndef chunk_text(text, chunk_size=12, overlap=3):\n    words = text.split()\n    chunks = []\n    start = 0\n    while start < len(words):\n        end = start + chunk_size\n        chunks.append(' '.join(words[start:end]))\n        start += chunk_size - overlap\n    return chunks\n\nraw_documents = [\n    {'source': 'onboarding.md', 'text': 'Kodstigen is a learning platform for programming courses. New students should start with the path that matches their goals.'},\n    {'source': 'faq.md', 'text': 'To reset your password, go to Settings and click Forgot Password. Password reset emails expire after one hour.'},\n    {'source': 'billing.md', 'text': 'Kodstigen is currently free for all students. Instructors can submit courses and challenges for review.'},\n]\n\nstore = VectorStore()\n\nfor doc in raw_documents:\n    for chunk in chunk_text(doc['text']):\n        store.add(chunk, toy_embed(chunk), metadata={'source': doc['source']})\n\nprint(f'Indexed {len(store)} chunks from {len(raw_documents)} documents.')\n\`\`\`\n\nKeeping \`metadata\` (like which file a chunk came from) alongside the vector is what lets a real RAG system cite its sources later, "according to faq.md, ...", rather than just returning an answer with no way to trace where it came from.\n\n> [!TIP]\n> The core idea a vector database adds beyond "a list with vectors in it" is **fast similarity search at scale**, techniques like approximate nearest-neighbor indexing that make searching millions of vectors take milliseconds instead of scanning every single one. This course's simple linear scan (next lesson) is correct but wouldn't stay fast forever, which is exactly why those tools exist.`
+    ),
+    quiz: {
+      title: 'Vector Storage Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does the VectorStore keep metadata (like the source filename) alongside each vector?',
+          options: [
+            'It is required for cosine similarity to work',
+            "So a real system can cite where an answer's supporting chunk came from",
+            'To make the vectors smaller',
+            'Metadata is not actually needed',
+          ],
+          answer: "So a real system can cite where an answer's supporting chunk came from",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Pinecone, FAISS, and Weaviate are all examples of dedicated vector database tools.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A key advantage a real vector database adds over a plain list is fast similarity search at ____.',
+          options: [],
+          answer: 'scale',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Query Input',
+    content: lessonContent(
+      'Query Input',
+      `The knowledge base is indexed, now it's time to handle the other half of RAG: what the user actually asks.\n\n## Turning a question into a vector\n\nA user's question arrives as plain natural language, no different in kind from any of the document chunks already indexed. To be comparable to those chunks at all, it needs to go through the **exact same embedding function**:\n\n\`\`\`python\nimport re\nfrom collections import Counter\n\ndef toy_embed(text):\n    words = re.findall(r\"[a-z']+\", text.lower())\n    return Counter(words)\n\nquery = 'How do I reset my password?'\nquery_vector = toy_embed(query)\nprint(query_vector)\n\`\`\`\n\n## Why the same function matters\n\nIf chunks were embedded with one method and the query with a different one, their vectors wouldn't live in the same "space", comparing them would be meaningless, like comparing a temperature in Celsius to one in Fahrenheit without converting first. Whatever \`embed\`/\`toy_embed\` function built the vectors in your \`VectorStore\`, the query must use that identical function:\n\n\`\`\`python\ndef answer_question(query):\n    query_vector = toy_embed(query)  # same function used when indexing the store\n    print(f'Query: {query!r}')\n    print(f'Query vector: {query_vector}')\n    return query_vector\n\n_ = answer_question('How do I reset my password?')\n\`\`\`\n\nNotice \`toy_embed('How do I reset my password?')\` shares words like \`'password'\` and \`'reset'\` with the FAQ chunk from earlier lessons, that overlap is exactly what the next lesson's similarity search will detect and rank highly.\n\n> [!NOTE]\n> In a production system using real OpenAI embeddings, this step is one extra API call per user question, small and cheap compared to the final LLM call, but it's still a network round-trip, worth remembering when thinking about a RAG pipeline's latency and cost.`
+    ),
+    quiz: {
+      title: 'Query Input Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Why must the user's query be embedded with the exact same function used to embed the stored chunks?",
+          options: [
+            "It's not actually required, any embedding function works",
+            "So the query vector and chunk vectors live in the same comparable space",
+            'To make the query run faster',
+            'To automatically translate the query',
+          ],
+          answer: 'So the query vector and chunk vectors live in the same comparable space',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A user query goes through the same embedding process as a document chunk.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A query is expressed in ____ ____ (plain, everyday) language, not a special query syntax.',
+          options: [],
+          answer: 'natural language',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Retrieval',
+    content: lessonContent(
+      'Retrieval',
+      `With both the knowledge base and the query turned into vectors, this lesson finds which stored chunks are actually relevant to the question, by measuring how similar their vectors are.\n\n## Cosine similarity\n\nThe standard way to compare two vectors for similarity is **cosine similarity**: the cosine of the angle between them, ranging from \`-1\` (opposite) to \`1\` (identical direction), regardless of each vector's magnitude. For sparse \`Counter\`-based vectors, it only needs to look at the words that appear in *both*:\n\n\`\`\`python\nimport re\nimport math\nfrom collections import Counter\n\ndef toy_embed(text):\n    words = re.findall(r\"[a-z']+\", text.lower())\n    return Counter(words)\n\ndef cosine_similarity(vec1, vec2):\n    common_words = set(vec1) & set(vec2)\n    dot_product = sum(vec1[word] * vec2[word] for word in common_words)\n    magnitude1 = math.sqrt(sum(count * count for count in vec1.values()))\n    magnitude2 = math.sqrt(sum(count * count for count in vec2.values()))\n    if magnitude1 == 0 or magnitude2 == 0:\n        return 0.0\n    return dot_product / (magnitude1 * magnitude2)\n\na = toy_embed('Password reset emails expire after one hour.')\nb = toy_embed('How do I reset my password?')\nc = toy_embed('Kodstigen is free for all students.')\n\nprint('a vs b (related):', cosine_similarity(a, b))\nprint('a vs c (unrelated):', cosine_similarity(a, c))\n\`\`\`\n\nRun it, the password-related pair should score noticeably higher than the unrelated pair, exactly what makes retrieval work.\n\n## Retrieving the top-K matches\n\nScoring the query against every stored chunk and keeping only the best few (**top-K**) is the retrieval step itself:\n\n\`\`\`python\nclass VectorStore:\n    def __init__(self):\n        self.entries = []\n\n    def add(self, text, vector, metadata=None):\n        self.entries.append({'text': text, 'vector': vector, 'metadata': metadata or {}})\n\nstore = VectorStore()\nstore.add('Password reset emails expire after one hour.', toy_embed('Password reset emails expire after one hour.'), {'source': 'faq.md'})\nstore.add('Kodstigen is currently free for all students.', toy_embed('Kodstigen is currently free for all students.'), {'source': 'billing.md'})\nstore.add('New students should start with the Python path.', toy_embed('New students should start with the Python path.'), {'source': 'onboarding.md'})\n\ndef retrieve(store, query_vector, top_k=2):\n    scored = [\n        (cosine_similarity(query_vector, entry['vector']), entry)\n        for entry in store.entries\n    ]\n    scored.sort(key=lambda pair: pair[0], reverse=True)\n    return [entry for score, entry in scored[:top_k]]\n\nquery_vector = toy_embed('How do I reset my password?')\nresults = retrieve(store, query_vector, top_k=2)\nfor entry in results:\n    print(entry['metadata']['source'], '->', entry['text'][:60])\n\`\`\`\n\n\`sort(..., reverse=True)\` puts the highest similarity scores first, then \`[:top_k]\` keeps only that many, everything else is discarded, only the most relevant handful of chunks moves on to the next step.\n\n> [!TIP]\n> \`top_k\` is another tunable knob: too small and you might miss a relevant chunk, too large and you dilute the final prompt with irrelevant text (and pay for more tokens). 2-5 is a common starting point for small knowledge bases.`
+    ),
+    quiz: {
+      title: 'Retrieval Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does cosine similarity measure between two vectors?',
+          options: [
+            'How many words they have in total',
+            'How similar their direction is, regardless of magnitude',
+            'Which vector was created first',
+            'The exact word-for-word difference',
+          ],
+          answer: 'How similar their direction is, regardless of magnitude',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'retrieve() keeps only the top_k highest-scoring chunks and discards the rest.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Retrieving only the best few matches instead of every chunk is called top-____ retrieval.',
+          options: [],
+          answer: 'K',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Augmentation',
+    content: lessonContent(
+      'Augmentation',
+      `Retrieval found the relevant chunks, but an LLM doesn't automatically know they exist, they need to actually be inserted into the prompt sent to the model. This step is called **augmentation**, and it's the "A" in RAG.\n\n## Building the augmented prompt\n\n\`\`\`python\ndef build_prompt(query, retrieved_chunks):\n    context = '\\n\\n'.join(chunk['text'] for chunk in retrieved_chunks)\n    return (\n        \"Answer the question using ONLY the context below. \"\n        \"If the answer isn't in the context, say you don't know.\\n\\n\"\n        f\"Context:\\n{context}\\n\\n\"\n        f\"Question: {query}\\n\"\n        \"Answer:\"\n    )\n\n# standing in for the chunks retrieve() would have found in the previous lesson\nretrieved = [\n    {'text': 'To reset your password, go to Settings and click Forgot Password.'},\n    {'text': 'Password reset emails expire after one hour.'},\n]\n\nquery = 'How do I reset my password?'\nprompt = build_prompt(query, retrieved)\nprint(prompt)\n\`\`\`\n\n## Why "ONLY the context"\n\nThat instruction is doing real work, an LLM without it will happily blend its own training knowledge with whatever you gave it, sometimes producing a plausible-sounding but wrong answer for *your specific system* (a classic **hallucination**). Explicitly restricting it to the provided context, and telling it what to say when the answer isn't there, is what makes the final response trustworthy and traceable back to your actual data instead of the model's guesswork.\n\n## The final prompt formula\n\nEvery RAG system boils down to the same combination:\n\n\`\`\`\nFinal prompt = Query + Retrieved Context\n\`\`\`\n\nEverything from Data Collection through Retrieval exists purely to produce a good \`Context\`, augmentation is where that context and the original question finally get combined into the single string the LLM will actually see.\n\n> [!NOTE]\n> \`build_prompt\` is plain string formatting, nothing here calls an LLM yet, that's deliberately the very last step, covered next.`
+    ),
+    quiz: {
+      title: 'Augmentation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does build_prompt() explicitly instruct the model to answer "using ONLY the context"?',
+          options: [
+            'To make the response shorter',
+            'To prevent the model from blending in ungrounded, possibly wrong knowledge from its own training (hallucination)',
+            'It is required by the OpenAI API',
+            'To reduce the number of retrieved chunks needed',
+          ],
+          answer: 'To prevent the model from blending in ungrounded, possibly wrong knowledge from its own training (hallucination)',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The augmentation step itself makes an API call to an LLM.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The final prompt formula is: Final prompt = Query + Retrieved ____.',
+          options: [],
+          answer: 'Context',
+        },
+      ],
+    },
+  },
+  {
+    title: 'LLM Response',
+    content: lessonContent(
+      'LLM Response',
+      `Every earlier step exists to arrive at this one: handing the fully augmented prompt to an actual LLM and getting back a grounded, context-aware answer.\n\n## Sending the prompt\n\n\`\`\`\nfrom openai import OpenAI\n\nclient = OpenAI()\n\ndef generate_answer(prompt):\n    response = client.chat.completions.create(\n        model='gpt-4o-mini',\n        messages=[{'role': 'user', 'content': prompt}],\n    )\n    return response.choices[0].message.content\n\nanswer = generate_answer(prompt)\nprint(answer)\n\`\`\`\n\n*This needs a real OpenAI API key and network access, so it's read-only here, everything from Data Collection through Augmentation in the earlier lessons runs directly in your browser without any API key at all.*\n\n## Why this produces a better answer\n\nWithout RAG, asking an LLM "How do I reset my password?" gets a generic, plausible-sounding answer about password resets in general, not specific to Kodstigen, since the model has never seen your FAQ. With the augmented prompt from the previous lesson, the model is handed your actual FAQ text as context and instructed to answer only from it, so the response reflects your real password-reset process (the specific email address, the one-hour expiry), not a generic guess.\n\n## The outcome\n\nThis is the entire point of the 8-step pipeline: **more reliable, grounded answers**. The LLM still does the language generation, understanding the question, composing a fluent response, but the *facts* in that response come from your own retrieved data, not from what the model happened to memorize (or half-remember) during training.\n\n> [!TIP]\n> Everything from \`raw_documents\` through \`build_prompt\` is real, runnable Python you've now written from scratch. The only piece that needs an external service is this final call, swapping \`toy_embed\` for real OpenAI embeddings and adding this last API call is genuinely all it takes to turn this into a production RAG system, that's exactly what the final project does next.`
+    ),
+    quiz: {
+      title: 'LLM Response Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Why does the RAG-augmented prompt produce a more useful answer than asking the LLM the question directly?",
+          options: [
+            'The LLM responds faster with a shorter prompt',
+            "The model answers using the specific, real context you retrieved, instead of generic training knowledge",
+            'It uses fewer tokens',
+            'It skips the need for a system prompt',
+          ],
+          answer: "The model answers using the specific, real context you retrieved, instead of generic training knowledge",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In this pipeline, the LLM call is the only step that requires a real API key and network access.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The outcome of a working RAG pipeline is more reliable, ____ answers.',
+          options: [],
+          answer: 'grounded',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build Your Own Mini RAG Pipeline',
+    content: lessonContent(
+      'Final Project: Build Your Own Mini RAG Pipeline',
+      `Every piece from this course now exists on its own: collecting documents, chunking, embedding, storing vectors, embedding a query, retrieving, augmenting, and generating an answer. This final project assembles all of it into one complete, working RAG pipeline.\n\n## Requirements\n\nYour finished \`rag_pipeline.py\` should satisfy every one of these:\n\n1. Collect at least 3 source "documents" as plain strings with a bit of metadata (\`raw_documents\`).\n2. Chunk every document with \`chunk_text()\`, tuning \`chunk_size\`/\`overlap\` for your content.\n3. Embed every chunk (\`toy_embed()\`, or a real embedding model, see stretch goals) and store it in a \`VectorStore\` along with its source metadata.\n4. Accept a natural-language query and embed it with the exact same embedding function used for the chunks.\n5. Retrieve the top-K most similar chunks with \`retrieve()\`/\`cosine_similarity()\`.\n6. Build an augmented prompt with \`build_prompt()\` that includes the retrieved context and instructs the model to answer only from it.\n7. Feed the prompt to an LLM (\`generate_answer()\`, a real OpenAI or OpenRouter call) and print the grounded answer.\n\nBringing every earlier lesson's code together in order (collect → chunk → embed → store → query → retrieve → augment → generate) is the whole pipeline:\n\n\`\`\`\ndef run_pipeline(query, raw_documents, top_k=2):\n    # 1-4: build the knowledge base\n    store = VectorStore()\n    for doc in raw_documents:\n        for chunk in chunk_text(doc['text']):\n            store.add(chunk, toy_embed(chunk), metadata={'source': doc['source']})\n\n    # 5: embed the query\n    query_vector = toy_embed(query)\n\n    # 6: retrieve\n    retrieved = retrieve(store, query_vector, top_k=top_k)\n\n    # 7: augment\n    prompt = build_prompt(query, retrieved)\n\n    # 8: generate (needs a real API key, see the LLM Response lesson)\n    return generate_answer(prompt)\n\nprint(run_pipeline('How do I reset my password?', raw_documents))\n\`\`\`\n\n## Stretch goals\n\n- Swap \`toy_embed()\` for a real embedding model (OpenAI's \`text-embedding-3-small\`, or a local model via the \`sentence-transformers\` package) for genuinely semantic, not just word-overlap, retrieval.\n- Swap the in-memory \`VectorStore\` for a real vector database like **FAISS** (runs locally, no account needed) or **Pinecone**.\n- Add source citations to the final answer, e.g. "According to faq.md: ...", using each retrieved chunk's \`metadata\`.\n- Try a smarter chunking strategy, split on paragraphs or sentences instead of a fixed word count, and compare retrieval quality.\n- Add a simple cache so an identical query doesn't re-embed or re-call the LLM twice.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const aiAgentLessons: SeedLesson[] = [
+  {
+    title: 'LLMs',
+    content: lessonContent(
+      'LLMs',
+      `An **LLM** (Large Language Model) is a model trained to predict the next token in a sequence of text, given enough training data and scale, that simple objective turns out to produce something that can hold a conversation, write code, and reason through problems. This course builds a real **AI coding agent**, a program that uses an LLM plus tools to actually take action, starting with the basics: sending a prompt and getting a response back.\n\n## The chat message format\n\nEvery modern chat LLM API is built around a list of messages, each with a **role**:\n\n- \`system\`: instructions that set the model's behavior for the whole conversation, not something the user said, more like configuration.\n- \`user\`: what the human (or, later, your code) is asking.\n- \`assistant\`: what the model said back, you'll see this role again when building the agent's conversation history.\n\n\`\`\`python\nmessages = [\n    {'role': 'system', 'content': 'You are a helpful assistant.'},\n    {'role': 'user', 'content': 'What is a large language model?'},\n]\n\`\`\`\n\n## Sending a prompt with the OpenAI SDK, via OpenRouter\n\n**OpenRouter** is a service that exposes dozens of different models (from OpenAI, Anthropic, Meta, and others) behind one single, OpenAI-API-compatible endpoint, so you can use the familiar \`openai\` Python package by just pointing it at a different \`base_url\`:\n\n\`\`\`\nfrom openai import OpenAI\n\nclient = OpenAI(\n    base_url='https://openrouter.ai/api/v1',\n    api_key='YOUR_OPENROUTER_API_KEY',\n)\n\nresponse = client.chat.completions.create(\n    model='openai/gpt-4o-mini',\n    messages=[\n        {'role': 'system', 'content': 'You are a helpful assistant.'},\n        {'role': 'user', 'content': 'What is a large language model?'},\n    ],\n)\n\nprint(response.choices[0].message.content)\n\`\`\`\n\n*This needs a real OpenRouter API key and network access, so it's read-only here, get a free key at openrouter.ai to run this yourself locally.*\n\n\`response.choices[0].message\` is where the model's reply lives, \`.content\` is the actual text. \`choices\` is a list because you can ask a model for multiple candidate responses at once, for a single reply, you'll almost always just use \`choices[0]\`.\n\n> [!TIP]\n> Model names on OpenRouter are prefixed with the provider, \`openai/gpt-4o-mini\`, \`anthropic/claude-3.5-sonnet\`, \`meta-llama/llama-3.1-8b-instruct\`, all callable through the exact same \`client.chat.completions.create(...)\` code, only the \`model\` string changes.`
+    ),
+    quiz: {
+      title: 'LLMs Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the "system" role in a messages list represent?',
+          options: [
+            "What the human user typed",
+            'Instructions that configure the model\'s behavior for the whole conversation',
+            "The model's previous reply",
+            'An error message',
+          ],
+          answer: 'Instructions that configure the model\'s behavior for the whole conversation',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'OpenRouter lets you call many different providers\' models through one OpenAI-API-compatible client, just by changing the model string and base_url.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "A model's reply text is found at response.choices[0].message.____",
+          options: [],
+          answer: 'content',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Functions',
+    content: lessonContent(
+      'Functions',
+      `An LLM on its own can only produce text, it can't read a file, run code, or change anything. To build an actual *agent* (something that takes action, not just talks), you first need real Python functions it can eventually be given access to. This lesson writes three: reading a file, writing a file, and running arbitrary Python code.\n\n## Reading and writing files\n\n\`\`\`python\ndef read_file(path):\n    with open(path, 'r') as f:\n        return f.read()\n\ndef write_file(path, content):\n    with open(path, 'w') as f:\n        f.write(content)\n    return f'Wrote {len(content)} characters to {path}'\n\nwrite_file('notes.txt', 'Remember to fix the bug in calculate_total().')\nprint(read_file('notes.txt'))\n\`\`\`\n\nThese are the two most basic actions any coding agent needs: seeing what's currently in a file, and changing it. Nothing fancy yet, just Python's built-in \`open()\`.\n\n## Running arbitrary Python code\n\nAn agent that can fix bugs needs to actually *execute* code to test whether a fix works, not just read and write text:\n\n\`\`\`python\nimport io\nimport contextlib\n\ndef run_python(code):\n    output = io.StringIO()\n    try:\n        with contextlib.redirect_stdout(output):\n            exec(code, {})\n        return output.getvalue() or '(no output)'\n    except Exception as e:\n        return f'Error: {e}'\n\nprint(run_python('print(2 + 2)'))\nprint(run_python('print(1 / 0)'))\n\`\`\`\n\n- \`exec(code, {})\` runs a string of Python code as if it were a script. Passing \`{}\` as its globals dict gives it a fresh, empty namespace each call, so one \`run_python\` call can't accidentally see variables left over from a previous one.\n- \`contextlib.redirect_stdout(output)\` temporarily redirects anything the code \`print()\`s into an in-memory buffer (\`io.StringIO()\`) instead of your real terminal, so \`run_python\` can capture and return it as a string, exactly what's needed to hand the result back to an LLM as text.\n- The \`try/except\` is deliberate: if the executed code raises an error (like the division by zero above), \`run_python\` returns a description of the error *as its result*, instead of crashing your whole program. An agent needs to see its mistakes as feedback ("that failed because...") to correct course, not have the entire session die.\n\n> [!WARNING]\n> \`exec\` runs code with the same permissions as your own program, there's no sandboxing here. This is fine for a personal learning project you control, but a production agent that executes model-generated code needs much stronger isolation (a container, a subprocess with a timeout, a restricted execution environment), never run untrusted, model-generated code with a bare \`exec\` in anything real.`
+    ),
+    quiz: {
+      title: 'Functions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does run_python wrap exec() in a try/except instead of letting an error crash the program?',
+          options: [
+            'To make the code run faster',
+            "So a failure becomes a text result the agent can see and react to, instead of ending the whole session",
+            'try/except is required syntax for exec()',
+            'To avoid using io.StringIO',
+          ],
+          answer: "So a failure becomes a text result the agent can see and react to, instead of ending the whole session",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "contextlib.redirect_stdout lets run_python capture printed output into a string instead of the real terminal.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "exec(code, {}) runs code with a fresh, empty ____ dictionary so previous calls can't leak variables into it.",
+          options: [],
+          answer: 'globals',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Function Calling',
+    content: lessonContent(
+      'Function Calling',
+      `Having Python functions the agent *could* use isn't the same as the LLM actually being able to use them, a model only outputs text, it has no way to directly call a Python function in your program. **Function calling** (also called **tool calling**) is the bridge: you describe your functions to the model in a structured format, and the model can respond by asking you to call one, with specific arguments, instead of (or as well as) replying in plain text.\n\n## Describing a function to the model\n\nEach tool is described with a JSON Schema, its name, what it does, and what arguments it takes:\n\n\`\`\`python\ntools = [\n    {\n        'type': 'function',\n        'function': {\n            'name': 'run_python',\n            'description': 'Execute a snippet of Python code and return its printed output.',\n            'parameters': {\n                'type': 'object',\n                'properties': {\n                    'code': {'type': 'string', 'description': 'The Python code to run.'},\n                },\n                'required': ['code'],\n            },\n        },\n    },\n]\n\`\`\`\n\n\`description\` matters more than it looks, the model decides *whether* and *when* to call a tool based on how clearly it understands what that tool does from this text alone.\n\n## Passing tools to the model\n\n\`\`\`\nresponse = client.chat.completions.create(\n    model='openai/gpt-4o-mini',\n    messages=messages,\n    tools=tools,\n)\n\nmessage = response.choices[0].message\nif message.tool_calls:\n    for call in message.tool_calls:\n        print(call.function.name, call.function.arguments)\n\`\`\`\n\n*This needs a real API key, so it's read-only here.* Crucially: the model does **not** run \`run_python\` itself, it can't, it has no way to execute code. It just replies with a structured request, "please call \`run_python\` with \`code='print(2 + 2)'\`", \`.arguments\` arrives as a JSON *string* your own code still has to parse and act on.\n\n## Dispatching a tool call yourself\n\nThis part needs no API key at all, it's the exact mechanics your own code has to implement, testable right now with a fake tool call standing in for a real model response:\n\n\`\`\`python\nimport io\nimport json\nimport contextlib\n\ndef run_python(code):\n    output = io.StringIO()\n    try:\n        with contextlib.redirect_stdout(output):\n            exec(code, {})\n        return output.getvalue() or '(no output)'\n    except Exception as e:\n        return f'Error: {e}'\n\navailable_functions = {\n    'run_python': run_python,\n}\n\ndef dispatch_tool_call(tool_call):\n    function_name = tool_call['name']\n    arguments = json.loads(tool_call['arguments'])\n    function = available_functions[function_name]\n    return function(**arguments)\n\nfake_tool_call = {\n    'name': 'run_python',\n    'arguments': json.dumps({'code': 'print(3 * 7)'}),\n}\n\nresult = dispatch_tool_call(fake_tool_call)\nprint(result)\n\`\`\`\n\n\`json.loads(tool_call['arguments'])\` turns the model's JSON-string arguments back into a real Python dict, \`function(**arguments)\` then calls the right function by unpacking that dict as keyword arguments, so \`{'code': '...'}\` becomes \`run_python(code='...')\`.\n\n> [!NOTE]\n> \`available_functions\` is a lookup table mapping the *name* the model was told about (in \`tools\`) to the *actual function object* your code can call, keeping these in sync (every tool you describe to the model needs a matching entry here) is what makes dispatch work at all.`
+    ),
+    quiz: {
+      title: 'Function Calling Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'When a model responds with a tool call, what actually executes the underlying function?',
+          options: [
+            'The model executes it internally',
+            "Your own code, by dispatching the requested function name and arguments",
+            'OpenRouter runs it on their servers automatically',
+            'Nothing, tool calls are purely informational',
+          ],
+          answer: "Your own code, by dispatching the requested function name and arguments",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A tool call's arguments arrive as a JSON string that your code must parse with something like json.loads().",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "function(**arguments) unpacks a dict of arguments as ____ arguments to call the function.",
+          options: [],
+          answer: 'keyword',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Agents',
+    content: lessonContent(
+      'Agents',
+      `Everything so far, sending prompts, writing tool functions, dispatching a tool call, are the individual pieces. An **agent** is what you get when you wire them into a loop: call the model, execute whatever it asks for, feed the result back, and repeat, until the model decides the task is done. This final project builds that loop and points it at a real bug.\n\n## The agent loop\n\n\`\`\`\ndef run_agent(user_task, max_steps=10):\n    messages = [\n        {\n            'role': 'system',\n            'content': 'You are a coding agent. Use the available tools to inspect and fix the bug, then explain the fix.',\n        },\n        {'role': 'user', 'content': user_task},\n    ]\n\n    for _ in range(max_steps):\n        response = client.chat.completions.create(\n            model='openai/gpt-4o-mini',\n            messages=messages,\n            tools=tools,\n        )\n        message = response.choices[0].message\n        messages.append(message)\n\n        if not message.tool_calls:\n            return message.content  # no more tools requested, this is the agent's final answer\n\n        for call in message.tool_calls:\n            result = dispatch_tool_call({\n                'name': call.function.name,\n                'arguments': call.function.arguments,\n            })\n            messages.append({\n                'role': 'tool',\n                'tool_call_id': call.id,\n                'content': str(result),\n            })\n\n    return \"Agent didn't finish within max_steps.\"\n\`\`\`\n\n*This needs a real API key and calls the model in a loop, so it's read-only here, this is exactly what you'll run locally for the final project.*\n\n## Why this is "the feedback loop"\n\n- \`messages\` accumulates the **entire** conversation, the original task, every one of the model's replies (including tool call requests), and every tool result, appended with role \`'tool'\`. Each new call to the model sees all of it, so it remembers what it already tried and what happened.\n- The loop only stops when \`message.tool_calls\` is empty, meaning the model chose to reply with a plain final answer instead of requesting another tool. Until then, it keeps working: read a file, notice a bug, run code to test a fix, write the corrected file, run it again to confirm.\n- \`max_steps\` is a safety net. Without it, a model stuck in a bad loop (repeatedly trying the same failing fix) would run forever, capping the attempts guarantees the agent eventually stops one way or another.\n\nThis is the difference between a chatbot and an **agent**: a chatbot replies once, an agent keeps working, using tools and its own prior results, until it decides the job is actually finished.\n\n## Final project requirements\n\n1. Set up a real OpenRouter (or OpenAI) API key and the \`openai\` Python package locally, this project needs to make real API calls.\n2. Implement \`read_file\`, \`write_file\`, and \`run_python\` (from the Functions lesson, or your own versions).\n3. Write a JSON tool schema for each function (Function Calling lesson) and pass all of them via \`tools\`.\n4. Implement the full \`run_agent()\` loop above: call the model, execute any requested tool calls, feed each result back as a \`'tool'\`-role message, and repeat until the model gives a final plain-text answer.\n5. Point your agent at a real, small, deliberately-broken Python file (plant a genuine bug, an off-by-one error, a wrong variable name, a missing edge case) and give it a task like *"There's a bug in bug.py, find and fix it."* Let it read the file, diagnose the problem, and use \`run_python\`/\`write_file\` to actually fix it, then confirm the fix works.\n\n## Stretch goals\n\n- Log every tool call (name and arguments) to the console as the agent works, visibility into *why* it's doing what it's doing is invaluable for debugging your own agent.\n- Add a \`list_files\` tool so the agent can explore an entire project directory, not just one file you already told it about.\n- Handle the case where the model requests multiple tool calls in a single turn (the \`for call in message.tool_calls:\` loop above already supports this, verify it with a task that needs two tools at once).\n- Add a friendlier message (or a retry with a smaller task) when \`max_steps\` is hit, instead of just giving up.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const qiskitLessons: SeedLesson[] = [
+  {
+    title: 'Setup and Your First Circuit',
+    content: lessonContent(
+      'Setup and Your First Circuit',
+      `**Qiskit** is IBM's open-source Python SDK for quantum computing: build a quantum circuit in Python, run it on a simulator (or real quantum hardware), and read back the results. A classical bit is always definitely 0 or 1, a **qubit** can be in a mix of both at once (**superposition**), and two qubits can become correlated in a way with no classical equivalent (**entanglement**). This course builds up both ideas from scratch, in code.\n\n## Installing Qiskit\n\nQiskit relies on compiled numerical libraries that aren't available in this course's browser sandbox, so write and run this project locally with a real Python install.\n\n\`\`\`bash\npip install qiskit qiskit-aer\n\`\`\`\n\n\`qiskit\` is the core library for building circuits, \`qiskit-aer\` adds the high-performance local simulator you'll use throughout this course, before ever touching real quantum hardware.\n\n## Building a circuit\n\n\`\`\`\nfrom qiskit import QuantumCircuit\n\nqc = QuantumCircuit(1, 1)  # 1 qubit, 1 classical bit\nqc.x(0)                    # flip the qubit from |0> to |1>\nqc.measure(0, 0)           # read the qubit into the classical bit\n\nprint(qc.draw())\n\`\`\`\n\n- \`QuantumCircuit(1, 1)\` allocates one **qubit** (starts in state \`|0>\`, physicists' notation for "definitely 0") and one **classical bit** to eventually hold a measurement result, quantum and classical bits are tracked separately.\n- \`qc.x(0)\` applies the **X gate** to qubit 0, the quantum equivalent of a classical NOT: it flips \`|0>\` to \`|1>\` (and vice versa).\n- \`qc.measure(0, 0)\` measures qubit 0 and stores the outcome in classical bit 0. Measuring is a one-way operation, before this line the qubit's state is quantum information, after it, you have an ordinary classical bit.\n- \`qc.draw()\` renders the circuit as an ASCII diagram, useful for sanity-checking what you built before running it.\n\n> [!NOTE]\n> Every code block in this course needs a real local Python + Qiskit install to run, quantum simulation depends on compiled numerical libraries this course's browser sandbox doesn't have. Treat this course like the Pygame or Kivy projects: read, understand, and run the code on your own machine.`
+    ),
+    quiz: {
+      title: 'Setup and Your First Circuit Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does QuantumCircuit(1, 1) allocate?',
+          options: [
+            'Two qubits',
+            'One qubit and one classical bit',
+            'One classical bit only',
+            'A pre-built Bell state',
+          ],
+          answer: 'One qubit and one classical bit',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The X gate is the quantum equivalent of a classical NOT, it flips |0> to |1> and |1> to |0>.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'qc.____() renders a circuit as an ASCII diagram so you can sanity-check it before running.',
+          options: [],
+          answer: 'draw',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Qubits and Superposition',
+    content: lessonContent(
+      'Qubits and Superposition',
+      `A qubit doesn't have to be definitely 0 or definitely 1, it can be in a **superposition**, a mix of both, described by two numbers (**amplitudes**) whose squared magnitudes give the probability of measuring each outcome.\n\n## The Hadamard gate\n\n\`\`\`\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import Statevector\n\nqc = QuantumCircuit(1)\nqc.h(0)  # put the qubit into an equal superposition of |0> and |1>\n\nstate = Statevector(qc)\nprint(state)\nprint(state.probabilities())  # [0.5, 0.5]\n\`\`\`\n\n- \`qc.h(0)\` applies the **Hadamard gate**, it takes a qubit starting at \`|0>\` and puts it into an equal superposition, neither definitely 0 nor definitely 1.\n- \`Statevector(qc)\` computes the circuit's exact quantum state mathematically, without simulating any randomness, useful for inspecting *what a circuit does* before introducing measurement noise.\n- \`state.probabilities()\` converts the state into the probability of measuring each outcome, here \`[0.5, 0.5]\`: a 50% chance of \`0\`, 50% chance of \`1\`.\n\n## Measurement collapses superposition\n\n\`\`\`\nqc_measured = QuantumCircuit(1, 1)\nqc_measured.h(0)\nqc_measured.measure(0, 0)\n\n# Once measured, the outcome is a single definite bit (0 or 1), chosen randomly\n# according to the probabilities above, the superposition is gone.\nprint(qc_measured.draw())\n\`\`\`\n\nBefore measurement, a qubit in superposition genuinely holds both possibilities at once, that's not just "unknown to us", it's a real physical difference from a classical bit. The instant you measure it, that superposition **collapses** to one definite outcome, chosen randomly with the probabilities \`Statevector\` predicted. You cannot inspect a qubit's superposition without destroying it, this is the core reason quantum algorithms are designed so differently from classical ones.\n\n> [!TIP]\n> \`Statevector\` is a teaching and debugging tool, it requires knowing the exact mathematical state, which is only possible on a simulator. Real quantum hardware can only ever give you measurement outcomes, never a peek at the superposition itself.`
+    ),
+    quiz: {
+      title: 'Qubits and Superposition Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the Hadamard gate (h) do to a qubit starting in state |0>?',
+          options: [
+            'Flips it to |1>',
+            'Puts it into an equal superposition of |0> and |1>',
+            'Measures it immediately',
+            'Deletes the qubit',
+          ],
+          answer: 'Puts it into an equal superposition of |0> and |1>',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Measuring a qubit in superposition collapses it to one definite classical outcome.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'state.____() converts a Statevector into the probability of measuring each possible outcome.',
+          options: [],
+          answer: 'probabilities',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Quantum Gates',
+    content: lessonContent(
+      'Quantum Gates',
+      `Quantum programs are built from **gates**, operations applied to one or more qubits. Unlike some classical logic gates (like AND, which throws information away), every quantum gate is **reversible**, you could always run it backwards to recover the input.\n\n## Common single-qubit gates\n\n\`\`\`\nfrom qiskit import QuantumCircuit\n\nqc = QuantumCircuit(1)\nqc.x(0)  # NOT: flips |0> <-> |1>\nqc.z(0)  # flips the sign of the |1> amplitude (no visible effect until combined with h)\nqc.h(0)  # Hadamard: creates/undoes superposition\n\nprint(qc.draw())\n\`\`\`\n\n\`x\`, \`z\`, and \`h\` are the gates you'll reach for constantly: \`x\` for a classical-style flip, \`h\` for superposition, \`z\` mostly matters when combined with other gates (its effect is invisible until you interfere it with something else, a recurring theme in quantum algorithms).\n\n## A two-qubit gate: CNOT\n\n\`\`\`\nqc = QuantumCircuit(2)\nqc.h(0)      # put qubit 0 into superposition\nqc.x(1)      # flip qubit 1 to |1>\nqc.cx(0, 1)  # CNOT: flip qubit 1 IF qubit 0 measures as |1>\n\nprint(qc.draw())\n\`\`\`\n\n\`qc.cx(control, target)\` is the **CNOT** (controlled-NOT) gate: it flips the \`target\` qubit, but only conditioned on the \`control\` qubit's state. Applied to a qubit already in superposition, CNOT is what links two qubits' fates together, this is exactly how **entanglement** gets created, covered next.\n\n## Building bigger circuits\n\nGates chain together just like statements in any program:\n\n\`\`\`\nqc = QuantumCircuit(3)\nqc.h(0)\nqc.cx(0, 1)\nqc.cx(1, 2)\nqc.x(2)\n\nprint(qc.draw())\n\`\`\`\n\nEach line appends one more gate to the circuit, in order, exactly the sequence they'll be applied when the circuit runs.\n\n> [!NOTE]\n> "Reversible" doesn't mean "does nothing", it means no information is thrown away, you could always build a circuit that undoes any sequence of gates. Measurement is the one operation in this course that is **not** reversible, once you measure, the superposition is gone for good.`
+    ),
+    quiz: {
+      title: 'Quantum Gates Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does qc.cx(0, 1) do?',
+          options: [
+            'Measures qubit 0',
+            'Flips qubit 1, but only if qubit 0 is |1> (CNOT)',
+            'Copies qubit 1 into qubit 0',
+            'Deletes qubit 1',
+          ],
+          answer: 'Flips qubit 1, but only if qubit 0 is |1> (CNOT)',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every quantum gate is reversible, no information is thrown away.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The CNOT gate is Qiskit\'s two-qubit gate, applied in code as qc.____(control, target).',
+          options: [],
+          answer: 'cx',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Entanglement and Bell States',
+    content: lessonContent(
+      'Entanglement and Bell States',
+      `Combining a Hadamard gate with a CNOT produces one of the most famous states in quantum computing: a **Bell state**, two qubits so correlated that measuring one instantly tells you the other's outcome, no matter how far apart they are.\n\n## Building a Bell state\n\n\`\`\`\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import Statevector\n\nqc = QuantumCircuit(2)\nqc.h(0)      # qubit 0 into superposition\nqc.cx(0, 1)  # entangle qubit 1 with qubit 0\n\nstate = Statevector(qc)\nprint(state)\nprint(state.probabilities())  # ~50% |00>, ~50% |11>, 0% |01>, 0% |10>\n\`\`\`\n\nNotice what's *missing*: \`|01>\` and \`|10>\` have zero probability. Each qubit, measured on its own, is still individually random (50/50), but the two outcomes are **perfectly correlated**, you'll always get \`00\` or \`11\`, never a mismatch.\n\n## Why this isn't just "correlated dice"\n\nTwo classical coins could also be correlated, if you rig them in advance to always land the same way. The difference is that a Bell state's qubits don't have a predetermined outcome *at all* until measured, and yet the correlation still holds perfectly, from any distance, immediately. This is what physicists mean by **entanglement**: a genuinely quantum kind of correlation with no classical equivalent, and it's the resource that powers algorithms like quantum teleportation and superdense coding, and gives many quantum algorithms their speedup.\n\n## Verifying it experimentally\n\nRunning the circuit many times and checking that only \`00\`/\`11\` ever appear (never \`01\`/\`10\`) is exactly how you'd verify entanglement on a real device, where you can't just print the \`Statevector\` directly, covered in the next lesson.\n\n> [!TIP]\n> A Bell state is the simplest possible entangled state, just \`h\` then \`cx\`, but it's the building block nearly every more advanced quantum algorithm relies on. If you understand why \`|01>\`/\`|10>\` have zero probability here, you understand the core idea of entanglement.`
+    ),
+    quiz: {
+      title: 'Entanglement and Bell States Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In the Bell state built with h(0) then cx(0, 1), which outcomes have zero probability?',
+          options: ['00 and 11', '01 and 10', 'Only 00', 'None, all four are equally likely'],
+          answer: '01 and 10',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "In a Bell state, each individual qubit's measurement outcome is still random (50/50) on its own.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A genuinely quantum correlation between qubits, with no classical equivalent, is called ____.',
+          options: [],
+          answer: 'entanglement',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Measurement and Running on a Simulator',
+    content: lessonContent(
+      'Measurement and Running on a Simulator',
+      `\`Statevector\` gives exact probabilities, but that's only possible on a simulator that can peek at the math directly. Real quantum hardware (and a more realistic simulator) only ever gives you **measurement outcomes**, one bitstring per run. This lesson runs a circuit many times and looks at the resulting distribution.\n\n## Running with shots\n\n\`\`\`\nfrom qiskit import QuantumCircuit\nfrom qiskit_aer import AerSimulator\n\nqc = QuantumCircuit(2, 2)\nqc.h(0)\nqc.cx(0, 1)\nqc.measure([0, 1], [0, 1])\n\nsimulator = AerSimulator()\nresult = simulator.run(qc, shots=1024).result()\ncounts = result.get_counts()\nprint(counts)  # e.g. {'00': 512, '11': 512}\n\`\`\`\n\n- \`AerSimulator()\` is a simulator that behaves like real hardware: it doesn't hand you the exact quantum state, only the outcome of measuring it, one **shot** at a time.\n- \`shots=1024\` runs the *entire circuit* 1024 times independently (each one a fresh superposition, fresh measurement), since a single measurement only ever gives you one bitstring, you need many repetitions to see the underlying probability distribution.\n- \`result.get_counts()\` returns a dictionary mapping each observed bitstring to how many of the 1024 shots produced it.\n\n## Statistical noise\n\nRun the code above a few times, the exact counts won't be identically \`512\`/\`512\` every time, maybe \`498\`/\`526\`, this is expected: with a finite number of shots, you're *estimating* the true 50/50 probability, not measuring it exactly. More shots narrow that estimate, at the cost of more computation (or, on real hardware, more time and cost).\n\n\`\`\`\n# fewer shots = noisier estimate of the true probabilities\nresult_small = simulator.run(qc, shots=10).result()\nprint(result_small.get_counts())  # could easily be lopsided, e.g. {'00': 7, '11': 3}\n\`\`\`\n\n> [!NOTE]\n> Notice \`counts\` still only ever contains \`'00'\` and \`'11'\`, exactly the entanglement result predicted in the previous lesson's \`Statevector\` probabilities, just observed empirically through repeated measurement instead of read directly from the math.`
+    ),
+    quiz: {
+      title: 'Measurement and Simulation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does simulator.run(qc, shots=1024) run the circuit 1024 times instead of once?',
+          options: [
+            "It's required by AerSimulator's API for no real reason",
+            'A single measurement only gives one bitstring, many repetitions are needed to estimate the underlying probability distribution',
+            'To make the qubits more entangled',
+            'To reduce the number of gates needed',
+          ],
+          answer: 'A single measurement only gives one bitstring, many repetitions are needed to estimate the underlying probability distribution',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'With a small number of shots, the observed counts can be noticeably lopsided compared to the true probabilities.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'result.get_____() returns a dict mapping each observed bitstring to how many shots produced it.',
+          options: [],
+          answer: 'counts',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Building a Quantum Random Number Generator',
+    content: lessonContent(
+      'Building a Quantum Random Number Generator',
+      `A classical "random" number generator is actually **pseudo-random**: a deterministic algorithm that just looks random, given the same seed, it always produces the same sequence. A qubit in superposition is different, its measurement outcome is fundamentally, physically unpredictable, not just hard to predict. This lesson builds a genuine quantum random number generator (QRNG).\n\n## The idea\n\nPut every qubit into an equal superposition with \`h\`, measure them all, and read the resulting bitstring as a binary number:\n\n\`\`\`\nfrom qiskit import QuantumCircuit\nfrom qiskit_aer import AerSimulator\n\ndef quantum_random_bits(n_bits):\n    qc = QuantumCircuit(n_bits, n_bits)\n    qc.h(range(n_bits))              # put every qubit into superposition\n    qc.measure(range(n_bits), range(n_bits))\n\n    simulator = AerSimulator()\n    result = simulator.run(qc, shots=1).result()  # one measurement, one random bitstring\n    bitstring = list(result.get_counts().keys())[0]\n    return int(bitstring, 2)         # parse the bitstring as base-2\n\nprint(quantum_random_bits(8))   # a random integer from 0 to 255\nprint(quantum_random_bits(8))   # a different one, genuinely unpredictable\n\`\`\`\n\n- \`qc.h(range(n_bits))\` applies \`h\` to *every* qubit at once, \`range(n_bits)\` expands to \`[0, 1, ..., n_bits - 1]\`, and Qiskit accepts a list of qubit indices anywhere a single index is accepted.\n- \`shots=1\` is deliberate here, unlike the last lesson, this isn't about estimating a probability distribution, it's about getting exactly one genuinely random outcome.\n- \`int(bitstring, 2)\` parses the measured bitstring (like \`'10110100'\`) as a base-2 number, converting 8 random bits into a random integer from 0-255.\n\n## Why this matters\n\nReal quantum random number generators are used in cryptography today, precisely because their unpredictability doesn't rely on hiding an algorithm or a seed, it's a fundamental physical property. A classical pseudo-random generator, no matter how sophisticated, is deterministic under the hood, if you know the seed and the algorithm, you can predict every "random" number it will ever produce.\n\n> [!TIP]\n> Try increasing \`n_bits\` and calling \`quantum_random_bits\` several times, on a real quantum computer (not just this ideal simulator), this is genuinely how some production QRNG services work.`
+    ),
+    quiz: {
+      title: 'Quantum RNG Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why is a quantum random number generator fundamentally different from a classical pseudo-random one?',
+          options: [
+            "It's just faster",
+            "A classical generator is a deterministic algorithm, a qubit's measurement outcome is fundamentally, physically unpredictable",
+            'It uses more bits',
+            'It requires an internet connection',
+          ],
+          answer: "A classical generator is a deterministic algorithm, a qubit's measurement outcome is fundamentally, physically unpredictable",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'quantum_random_bits uses shots=1 because it needs exactly one random outcome, not a probability distribution.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'int(bitstring, 2) parses a string of bits as a base-____ number.',
+          options: [],
+          answer: '2',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Running on Real Quantum Hardware',
+    content: lessonContent(
+      'Running on Real Quantum Hardware',
+      `Everything so far has run on \`AerSimulator\`, an ideal simulator with no imperfections. Real quantum computers are a different world: physical qubits are extremely sensitive to their environment, and every gate and measurement introduces a small amount of error.\n\n## Submitting a job to IBM Quantum\n\n\`\`\`\nfrom qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2 as Sampler\n\nservice = QiskitRuntimeService(channel='ibm_quantum', token='YOUR_IBM_QUANTUM_TOKEN')\nbackend = service.least_busy(operational=True, simulator=False)\n\nsampler = Sampler(backend)\njob = sampler.run([qc])\nresult = job.result()\nprint(result[0].data.meas.get_counts())\n\`\`\`\n\n*This needs a free IBM Quantum account, a real API token, and network access, so it's read-only here, sign up at quantum.ibm.com to run this yourself.* \`service.least_busy(...)\` picks whichever real quantum backend currently has the shortest queue, since IBM's quantum hardware is a shared resource, your job runs alongside everyone else's.\n\n## Noise changes your results\n\nOn \`AerSimulator\`, the Bell state from earlier lessons gives *only* \`00\`/\`11\`. On real hardware, you'll typically see a small number of \`01\`/\`10\` results too, not because the physics is wrong, but because of:\n\n- **Gate errors**: a gate doesn't perfectly implement its ideal mathematical operation, there's always a tiny imprecision.\n- **Decoherence**: a qubit's quantum state slowly degrades from interacting with its environment (heat, electromagnetic noise), the longer a circuit takes to run, the more this matters.\n- **Measurement errors**: even reading out the final result isn't perfect, occasionally a \`0\` is misread as \`1\` or vice versa.\n\n## Queueing and cost\n\nUnlike the instant local simulator, a real backend job joins a queue, and depending on the provider and plan, may have limits on how many you can run. This is why every lesson in this course develops and debugges on \`AerSimulator\` first, real hardware is where you *verify* a circuit you already trust, not where you iterate on it.\n\n> [!NOTE]\n> Comparing your Bell-state results between \`AerSimulator\` (this course's earlier lessons) and real hardware (this lesson) is one of the clearest ways to see, empirically, that noise is a real engineering challenge in quantum computing today, not just a theoretical footnote.`
+    ),
+    quiz: {
+      title: 'Real Quantum Hardware Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Why might a Bell state circuit produce a small number of '01'/'10' results on real hardware, when AerSimulator gives only '00'/'11'?",
+          options: [
+            'The circuit code is different on real hardware',
+            'Real hardware has gate errors, decoherence, and measurement errors that an ideal simulator does not model',
+            'Real qubits use a different gate set entirely',
+            'IBM deliberately randomizes results',
+          ],
+          answer: 'Real hardware has gate errors, decoherence, and measurement errors that an ideal simulator does not model',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'service.least_busy(...) selects the real backend with the shortest current queue.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The gradual degradation of a qubit's quantum state from interacting with its environment is called ____.",
+          options: [],
+          answer: 'decoherence',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build and Verify an Entangled Circuit',
+    content: lessonContent(
+      'Final Project: Build and Verify an Entangled Circuit',
+      `Every piece from this course now exists on its own: building circuits, superposition, gates, entanglement, shot-based measurement, and a quantum random number generator. This final project assembles several of them into one small, verifiable quantum program.\n\n## Requirements\n\nYour finished \`quantum_project.py\` should satisfy every one of these:\n\n1. Build a 2-qubit Bell state circuit (\`h\` then \`cx\`).\n2. Inspect it with \`Statevector\` and print its exact probabilities, confirming \`|01>\`/\`|10>\` are (numerically) zero.\n3. Run the same circuit on \`AerSimulator\` with at least 1000 shots, and print the resulting \`counts\`.\n4. Write a Python function \`verify_entanglement(counts)\` that checks every observed bitstring in \`counts\` is either \`'00'\` or \`'11'\` (allow a small tolerance if you experiment with real hardware in the stretch goals), and prints whether entanglement was verified.\n5. Reuse (or rewrite) the \`quantum_random_bits(n_bits)\` function from the RNG lesson, and use it to generate and print 5 random numbers between 0 and 255.\n\n\`\`\`\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import Statevector\nfrom qiskit_aer import AerSimulator\n\ndef build_bell_circuit():\n    qc = QuantumCircuit(2, 2)\n    qc.h(0)\n    qc.cx(0, 1)\n    return qc\n\ndef verify_entanglement(counts):\n    valid = all(bitstring in ('00', '11') for bitstring in counts)\n    print('Entanglement verified!' if valid else 'Unexpected outcome, entanglement broken or noisy hardware.')\n    return valid\n\n# 1-2: build and inspect\nqc = build_bell_circuit()\nstate = Statevector(qc)\nprint('Probabilities:', state.probabilities())\n\n# 3-4: run and verify\nqc.measure([0, 1], [0, 1])\nsimulator = AerSimulator()\ncounts = simulator.run(qc, shots=1000).result().get_counts()\nprint('Counts:', counts)\nverify_entanglement(counts)\n\`\`\`\n\n## Stretch goals\n\n- Run your circuit on real IBM Quantum hardware (free tier) and compare the counts to the ideal simulator, is entanglement still verified within a reasonable tolerance?\n- Build a 3-qubit **GHZ state** (\`h(0)\`, then \`cx(0, 1)\`, then \`cx(1, 2)\`) and extend \`verify_entanglement\` to check that only \`'000'\`/\`'111'\` appear.\n- Add a simple **quantum coin flip** game: use \`quantum_random_bits(1)\` to decide a winner, and explain in a comment why this is fundamentally fairer than \`random.randint(0, 1)\`.\n- Plot the \`counts\` histogram with \`matplotlib\` instead of just printing the dictionary.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const cirqLessons: SeedLesson[] = [
+  {
+    title: 'Setup and Your First Circuit',
+    content: lessonContent(
+      'Setup and Your First Circuit',
+      `**Cirq** is Google's open-source Python SDK for quantum computing. It covers the same core ideas as any quantum SDK, qubits, gates, superposition, entanglement, and measurement, with its own particular style: circuits are built by appending **operations** (a gate applied to specific qubits) rather than calling a method per gate type.\n\n## Installing Cirq\n\nLike Qiskit, Cirq depends on compiled numerical libraries not available in this course's browser sandbox, write and run this project locally with a real Python install.\n\n\`\`\`bash\npip install cirq\n\`\`\`\n\n## Qubits and circuits\n\n\`\`\`\nimport cirq\n\nqubit = cirq.LineQubit(0)\ncircuit = cirq.Circuit()\ncircuit.append(cirq.X(qubit))\ncircuit.append(cirq.measure(qubit, key='result'))\n\nprint(circuit)\n\`\`\`\n\n- \`cirq.LineQubit(0)\` creates a qubit identified by position \`0\` on an imaginary line, Cirq's qubits are explicit objects you create and pass around, rather than implicit indices into a circuit.\n- \`cirq.Circuit()\` starts an empty circuit, and \`.append(...)\` adds **operations** to it, one at a time (or as a list).\n- \`cirq.X(qubit)\` is an **operation**: the \`X\` gate applied to a specific qubit. In Cirq, gates (\`cirq.X\`) and operations (a gate applied to a qubit, \`cirq.X(qubit)\`) are distinct: a gate is reusable and qubit-agnostic, an operation is that gate bound to a specific target.\n- \`cirq.measure(qubit, key='result')\` measures the qubit and tags the result with a string \`key\`, used later to look up that specific measurement's outcome (Cirq doesn't use a separate classical register the way Qiskit does).\n- \`print(circuit)\` renders an ASCII diagram of the circuit, just like Qiskit's \`draw()\`.\n\n> [!NOTE]\n> Every code block in this course needs a real local Python + Cirq install to run, quantum simulation depends on compiled numerical libraries this course's browser sandbox doesn't have. Treat this course like the Pygame or Kivy projects: read, understand, and run the code on your own machine.`
+    ),
+    quiz: {
+      title: 'Setup and Your First Circuit Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In Cirq, what is the difference between a gate and an operation?',
+          options: [
+            "There's no difference, the terms are interchangeable",
+            'A gate is reusable and qubit-agnostic, an operation is that gate applied to specific qubit(s)',
+            'A gate can only be used once',
+            'An operation is a whole circuit',
+          ],
+          answer: 'A gate is reusable and qubit-agnostic, an operation is that gate applied to specific qubit(s)',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "cirq.measure(qubit, key='result') tags a measurement with a string key used to look up its outcome later.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'circuit.____(operation) adds an operation to a Cirq circuit.',
+          options: [],
+          answer: 'append',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Qubits and Superposition',
+    content: lessonContent(
+      'Qubits and Superposition',
+      `Just like Qiskit's Hadamard gate, Cirq's \`cirq.H\` puts a qubit into an equal superposition, a genuine mix of \`0\` and \`1\` until measured.\n\n## Simulating without measuring\n\n\`\`\`\nimport cirq\n\nqubit = cirq.LineQubit(0)\ncircuit = cirq.Circuit()\ncircuit.append(cirq.H(qubit))\n\nsimulator = cirq.Simulator()\nresult = simulator.simulate(circuit)\nprint(result.dirac_notation())          # something like 0.71|0> + 0.71|1>\nprint(abs(result.final_state_vector) ** 2)  # [0.5, 0.5]\n\`\`\`\n\n- \`cirq.Simulator()\` is Cirq's local simulator, \`.simulate(circuit)\` runs a circuit **without any measurement**, returning the exact final quantum state (only possible on a simulator, exactly like Qiskit's \`Statevector\`).\n- \`result.dirac_notation()\` prints the state using physicists' bra-ket notation, \`|0>\` and \`|1>\` are the two basis states, and the numbers in front are amplitudes.\n- \`result.final_state_vector\` is the raw list of complex amplitudes, squaring their absolute values (\`abs(...) ** 2\`) converts each amplitude into a probability, mirroring Qiskit's \`state.probabilities()\`.\n\n## Measurement still collapses the state\n\n\`\`\`\ncircuit_measured = cirq.Circuit()\ncircuit_measured.append(cirq.H(qubit))\ncircuit_measured.append(cirq.measure(qubit, key='result'))\n\nresult = simulator.simulate(circuit_measured)\nprint(result.measurements['result'])  # a single definite outcome, 0 or 1\n\`\`\`\n\n\`result.measurements\` is a dictionary keyed by the measurement \`key\`s you assigned with \`cirq.measure(..., key=...)\`, once a qubit is measured, its superposition is gone, exactly as in Qiskit, the physics doesn't change, only the SDK's syntax does.\n\n> [!TIP]\n> Cirq's \`.simulate()\` (no measurement, exact state) versus \`.run()\` (with measurement, shot-based) map directly onto Qiskit's \`Statevector\` versus \`AerSimulator\`, same two-step teaching approach, different method names.`
+    ),
+    quiz: {
+      title: 'Qubits and Superposition Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does simulator.simulate(circuit) return when the circuit has no measurement?',
+          options: [
+            'A single random bitstring',
+            "The exact final quantum state (amplitudes), only possible on a simulator",
+            'An error, simulate() requires measurement',
+            'The circuit diagram',
+          ],
+          answer: "The exact final quantum state (amplitudes), only possible on a simulator",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "result.measurements is a dictionary keyed by the string 'key' assigned in cirq.measure(...).",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'result.____ ____() prints a quantum state using physicists\' bra-ket notation like 0.71|0> + 0.71|1>.',
+          options: [],
+          answer: 'dirac notation',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Quantum Gates',
+    content: lessonContent(
+      'Quantum Gates',
+      `Cirq ships the same core gate set you'd expect from any quantum SDK, applied through the operation pattern from lesson 1: \`gate(qubit)\`.\n\n## Single-qubit gates\n\n\`\`\`\nimport cirq\n\nq = cirq.LineQubit(0)\ncircuit = cirq.Circuit()\ncircuit.append(cirq.X(q))  # NOT: flips |0> <-> |1>\ncircuit.append(cirq.Z(q))  # flips the sign of the |1> amplitude\ncircuit.append(cirq.H(q))  # Hadamard: creates/undoes superposition\n\nprint(circuit)\n\`\`\`\n\nExactly the same roles as Qiskit's \`x\`, \`z\`, and \`h\`, \`X\` for a classical-style flip, \`H\` for superposition, \`Z\` mostly useful combined with other gates.\n\n## A two-qubit gate: CNOT\n\n\`\`\`\nq0, q1 = cirq.LineQubit.range(2)\n\ncircuit = cirq.Circuit()\ncircuit.append(cirq.H(q0))          # put q0 into superposition\ncircuit.append(cirq.X(q1))          # flip q1 to |1>\ncircuit.append(cirq.CNOT(q0, q1))   # flip q1 IF q0 measures as |1>\n\nprint(circuit)\n\`\`\`\n\n\`cirq.LineQubit.range(2)\` is a convenience for creating multiple qubits at once, equivalent to \`[cirq.LineQubit(0), cirq.LineQubit(1)]\`. \`cirq.CNOT(control, target)\` behaves identically to Qiskit's \`cx\`, it's the gate that lets one qubit's state influence another, the mechanism behind entanglement.\n\n## Chaining operations\n\nAppending accepts a single operation or a list, both build up the circuit the same way:\n\n\`\`\`\nq0, q1, q2 = cirq.LineQubit.range(3)\n\ncircuit = cirq.Circuit([\n    cirq.H(q0),\n    cirq.CNOT(q0, q1),\n    cirq.CNOT(q1, q2),\n    cirq.X(q2),\n])\n\nprint(circuit)\n\`\`\`\n\nPassing a list directly to \`cirq.Circuit([...])\` is a common shorthand once you know every operation you want up front, rather than calling \`.append()\` repeatedly.\n\n> [!NOTE]\n> Cirq operations are just as reversible as Qiskit's, the underlying physics of quantum gates doesn't depend on which SDK you're using, only the Python syntax for expressing it changes.`
+    ),
+    quiz: {
+      title: 'Quantum Gates Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does cirq.CNOT(q0, q1) do?',
+          options: [
+            'Measures q0',
+            'Flips q1, but only if q0 is |1>',
+            'Swaps q0 and q1',
+            'Deletes q1',
+          ],
+          answer: 'Flips q1, but only if q0 is |1>',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'cirq.LineQubit.range(3) is a shorthand for creating 3 LineQubits at once.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'circuit.append(...) accepts either a single operation or a ____ of operations.',
+          options: [],
+          answer: 'list',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Entanglement and Bell States',
+    content: lessonContent(
+      'Entanglement and Bell States',
+      `The same \`H\` + \`CNOT\` combination that builds a Bell state in Qiskit builds one in Cirq too, entanglement is a property of the physics, not of any particular SDK.\n\n## Building and inspecting a Bell state\n\n\`\`\`\nimport cirq\n\nq0, q1 = cirq.LineQubit.range(2)\n\ncircuit = cirq.Circuit([\n    cirq.H(q0),\n    cirq.CNOT(q0, q1),\n])\n\nsimulator = cirq.Simulator()\nresult = simulator.simulate(circuit)\nprint(result.dirac_notation())\nprint(abs(result.final_state_vector) ** 2)  # ~[0.5, 0, 0, 0.5] for |00>, |01>, |10>, |11>\n\`\`\`\n\nThe probability vector has 4 entries, one per possible 2-qubit outcome in order \`00, 01, 10, 11\`. Just like Qiskit's Bell state, only \`00\` and \`11\` have non-zero probability, \`01\`/\`10\` are impossible: measure either qubit and you instantly know the other's outcome.\n\n## Verifying with repeated measurement\n\n\`\`\`\ncircuit_measured = cirq.Circuit([\n    cirq.H(q0),\n    cirq.CNOT(q0, q1),\n    cirq.measure(q0, q1, key='result'),\n])\n\nresult = simulator.run(circuit_measured, repetitions=1000)\nprint(result.histogram(key='result'))\n\`\`\`\n\n\`cirq.measure(q0, q1, key='result')\` measures both qubits under one shared key, and \`.run(circuit, repetitions=1000)\` (Cirq's equivalent of Qiskit's \`shots\`) executes the circuit 1000 times. \`result.histogram(key='result')\` tallies the outcomes, covered in full in the next lesson.\n\n> [!TIP]\n> Whichever SDK you use, the pattern for verifying entanglement is identical: build \`H\` + \`CNOT\`, run it many times, and confirm the "impossible" outcomes (\`01\`/\`10\`) never (or almost never, on noisy real hardware) appear.`
+    ),
+    quiz: {
+      title: 'Entanglement and Bell States Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "In the 4-entry probability vector [00, 01, 10, 11] for a Cirq Bell state, which entries are zero?",
+          options: ['Index 0 and 3 (00 and 11)', 'Index 1 and 2 (01 and 10)', 'Only index 0', 'None are zero'],
+          answer: 'Index 1 and 2 (01 and 10)',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "cirq.Simulator().run(circuit, repetitions=1000) is Cirq's equivalent of Qiskit's shots=1000.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Building a Bell state in any quantum SDK requires an H gate followed by a ____ gate.',
+          options: [],
+          answer: 'CNOT',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Measurement and Running the Simulator',
+    content: lessonContent(
+      'Measurement and Running the Simulator',
+      `Like Qiskit's shot-based \`AerSimulator\`, Cirq's \`.run()\` method executes a circuit with measurement many times and tallies the results, this is what a real device would give you, no direct access to amplitudes.\n\n## Running with repetitions\n\n\`\`\`\nimport cirq\n\nq0, q1 = cirq.LineQubit.range(2)\ncircuit = cirq.Circuit([\n    cirq.H(q0),\n    cirq.CNOT(q0, q1),\n    cirq.measure(q0, q1, key='result'),\n])\n\nsimulator = cirq.Simulator()\nresult = simulator.run(circuit, repetitions=1024)\ncounts = result.histogram(key='result')\nprint(counts)  # Counter({0: ~512, 3: ~512})\n\`\`\`\n\n- \`repetitions=1024\` is Cirq's name for what Qiskit calls \`shots\`, run the whole circuit 1024 independent times.\n- \`result.histogram(key='result')\` tallies outcomes for the measurement tagged \`'result'\`, returned as a \`Counter\`. Notice the keys are **integers**, not bitstrings like Qiskit's \`'00'\`/\`'11'\`, Cirq encodes a multi-qubit measurement as one combined integer (\`0\` = \`00\`, \`3\` = \`11\` for 2 qubits), where Qiskit keeps it as a string.\n\n## Converting to a bitstring, if you want one\n\n\`\`\`\nfor value, count in counts.items():\n    bitstring = format(value, '02b')  # pad to 2 bits\n    print(bitstring, '->', count)\n\`\`\`\n\n\`format(value, '02b')\` converts an integer to its binary string representation, padded to 2 digits, exactly the inverse of the \`int(bitstring, 2)\` conversion from the RNG lesson.\n\n## Statistical noise, same as any SDK\n\n\`\`\`\nresult_small = simulator.run(circuit, repetitions=10)\nprint(result_small.histogram(key='result'))  # could easily be lopsided with so few repetitions\n\`\`\`\n\nExactly like Qiskit, fewer repetitions means a noisier estimate of the true 50/50 distribution, this isn't an SDK quirk, it's the statistics of sampling any random process a small number of times.\n\n> [!NOTE]\n> \`counts\` only ever contains \`0\` (\`00\`) and \`3\` (\`11\`), the same entanglement result from the previous lesson's exact \`Statevector\`-equivalent probabilities, now observed empirically through repeated measurement.`
+    ),
+    quiz: {
+      title: 'Measurement and Simulation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What is Cirq's name for what Qiskit calls 'shots'?",
+          options: ['iterations', 'repetitions', 'trials', 'runs'],
+          answer: 'repetitions',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'result.histogram(key=...) returns outcomes keyed by integer, not bitstring, for a multi-qubit measurement.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "format(value, '02b') converts an integer to a binary string, padded to ____ digits.",
+          options: [],
+          answer: '2',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Building a Quantum Random Number Generator',
+    content: lessonContent(
+      'Building a Quantum Random Number Generator',
+      `The same idea from the Qiskit course, superposition plus measurement equals genuine, physically unpredictable randomness, works identically in Cirq, just with different method names.\n\n## The Cirq version\n\n\`\`\`\nimport cirq\n\ndef quantum_random_bits(n_bits):\n    qubits = cirq.LineQubit.range(n_bits)\n    circuit = cirq.Circuit()\n    circuit.append(cirq.H(q) for q in qubits)               # every qubit into superposition\n    circuit.append(cirq.measure(*qubits, key='result'))\n\n    simulator = cirq.Simulator()\n    result = simulator.run(circuit, repetitions=1)           # one measurement, one random outcome\n    value = result.measurements['result'][0]                 # a length-n_bits array of 0s and 1s\n    bitstring = ''.join(str(bit) for bit in value)\n    return int(bitstring, 2)\n\nprint(quantum_random_bits(8))  # a random integer from 0 to 255\nprint(quantum_random_bits(8))  # a different one, genuinely unpredictable\n\`\`\`\n\n- \`circuit.append(cirq.H(q) for q in qubits)\` appends an \`H\` operation for every qubit in one line, a generator expression works here exactly like the list-of-operations pattern from earlier lessons.\n- \`cirq.measure(*qubits, key='result')\` measures all \`n_bits\` qubits at once under a single key, unpacked with \`*qubits\` since \`measure\` takes qubits as separate positional arguments.\n- \`result.measurements['result']\` is a 2D array (one row per repetition), \`[0]\` grabs the single repetition's row, an array of individual \`0\`/\`1\` bit values, which then gets joined into a bitstring and parsed as base-2, exactly like the Qiskit version.\n\n## Why the physics matters more than the syntax\n\nNotice this lesson is almost a line-by-line translation of the Qiskit RNG function, that's the point: the *physical* source of randomness (measuring a qubit in superposition) is identical regardless of which SDK expresses it. What differs is purely how each library's API is shaped, \`shots\` vs \`repetitions\`, bitstrings vs integer histograms, a classical register vs measurement keys.\n\n> [!TIP]\n> If you've completed both this course and the Qiskit one, try porting a circuit from one SDK to the other from memory, it's one of the best ways to confirm you understand the underlying quantum concepts rather than just one library's syntax.`
+    ),
+    quiz: {
+      title: 'Quantum RNG Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Why does quantum_random_bits use cirq.measure(*qubits, key='result') instead of measuring each qubit separately?",
+          options: [
+            "It's required syntax with no real benefit",
+            'It measures every qubit at once under a single shared key, giving one combined bit array per repetition',
+            'It makes the circuit run faster',
+            'Cirq cannot measure multiple qubits',
+          ],
+          answer: 'It measures every qubit at once under a single shared key, giving one combined bit array per repetition',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The physical source of randomness (measuring superposition) is the same in Cirq and Qiskit, only the API syntax differs.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "cirq.measure(*qubits, key='result') unpacks the qubits list using Python's ____ operator.",
+          options: [],
+          answer: '*',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Running on Real Quantum Hardware',
+    content: lessonContent(
+      'Running on Real Quantum Hardware',
+      `Everything so far has run on \`cirq.Simulator()\`, an ideal, noise-free simulator. Google's real quantum processors exist too, but access works quite differently from IBM's more open model.\n\n## Google Quantum AI access\n\n\`\`\`\nimport cirq_google\n\n# Real hardware access via Google Quantum AI requires an allowlisted Google Cloud\n# project, this is not a self-serve signup the way IBM Quantum's free tier is.\nengine = cirq_google.Engine(project_id='your-google-cloud-project-id')\nprocessor = engine.get_processor('processor_id')\n\nresult = processor.run(circuit, repetitions=1000)\nprint(result.histogram(key='result'))\n\`\`\`\n\n*This needs an allowlisted Google Cloud project and real hardware access, so it's read-only here.* Unlike IBM Quantum's public free tier (sign up and run within minutes), Google Quantum AI hardware access has historically required an approved research or partnership relationship, most learners will develop and run entirely on \`cirq.Simulator()\`.\n\n## Cirq still models noise, without needing real hardware\n\nCirq lets you simulate *with* realistic noise, without needing hardware access at all, useful for understanding what real results would look like:\n\n\`\`\`\nimport cirq\n\nq0, q1 = cirq.LineQubit.range(2)\ncircuit = cirq.Circuit([\n    cirq.H(q0),\n    cirq.CNOT(q0, q1),\n    cirq.measure(q0, q1, key='result'),\n])\n\nnoisy_circuit = circuit.with_noise(cirq.depolarize(p=0.02))  # 2% error rate per operation\n\nsimulator = cirq.Simulator()\nresult = simulator.run(noisy_circuit, repetitions=1000)\nprint(result.histogram(key='result'))  # small numbers of 1 and 2 (01/10) will now appear\n\`\`\`\n\n\`circuit.with_noise(cirq.depolarize(p=0.02))\` returns a *new* circuit where every operation has a small chance (\`p=0.02\`, 2%) of introducing a random error, a simplified model of the real gate errors and decoherence discussed conceptually in the Qiskit course's hardware lesson. Running this noisy circuit will occasionally produce the "impossible" \`01\`/\`10\` outcomes, exactly what you'd expect to see on real, imperfect hardware.\n\n> [!NOTE]\n> Simulating noise like this is genuinely useful even if you never get access to real hardware, it lets you reason about how robust an algorithm is to imperfection before ever submitting a job to any provider.`
+    ),
+    quiz: {
+      title: 'Real Quantum Hardware Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "How does access to Google's real quantum hardware typically differ from IBM Quantum's free tier?",
+          options: [
+            'They are identical, both are instant self-serve signups',
+            "Google Quantum AI hardware access has historically required an approved/allowlisted project, unlike IBM's open free tier",
+            'Google requires payment up front, IBM does not',
+            'Neither offers any hardware access',
+          ],
+          answer: "Google Quantum AI hardware access has historically required an approved/allowlisted project, unlike IBM's open free tier",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'circuit.with_noise(cirq.depolarize(p=0.02)) lets you simulate realistic hardware errors without needing real hardware access.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'cirq.____(p=0.02) is a noise model giving each operation a small chance of a random error.',
+          options: [],
+          answer: 'depolarize',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build and Verify an Entangled Circuit',
+    content: lessonContent(
+      'Final Project: Build and Verify an Entangled Circuit',
+      `Every piece from this course now exists on its own: building circuits, superposition, gates, entanglement, shot-based measurement, and a quantum random number generator. This final project assembles several of them into one small, verifiable quantum program.\n\n## Requirements\n\nYour finished \`quantum_project.py\` should satisfy every one of these:\n\n1. Build a 2-qubit Bell state circuit (\`H\` then \`CNOT\`).\n2. Inspect it with \`simulator.simulate(...)\` and print its exact probabilities, confirming the \`01\`/\`10\` outcomes are (numerically) zero.\n3. Run the same circuit (with measurement added) on \`cirq.Simulator()\` with at least 1000 repetitions, and print the resulting histogram.\n4. Write a Python function \`verify_entanglement(counts)\` that checks every observed outcome in the histogram is either \`0\` or \`3\` (allow a small tolerance if you experiment with noisy simulation in the stretch goals), and prints whether entanglement was verified.\n5. Reuse (or rewrite) the \`quantum_random_bits(n_bits)\` function from the RNG lesson, and use it to generate and print 5 random numbers between 0 and 255.\n\n\`\`\`\nimport cirq\n\ndef build_bell_circuit():\n    q0, q1 = cirq.LineQubit.range(2)\n    circuit = cirq.Circuit([cirq.H(q0), cirq.CNOT(q0, q1)])\n    return circuit, q0, q1\n\ndef verify_entanglement(counts):\n    valid = all(outcome in (0, 3) for outcome in counts)\n    print('Entanglement verified!' if valid else 'Unexpected outcome, entanglement broken or noisy simulation.')\n    return valid\n\n# 1-2: build and inspect\ncircuit, q0, q1 = build_bell_circuit()\nsimulator = cirq.Simulator()\nstate_result = simulator.simulate(circuit)\nprint('Probabilities:', abs(state_result.final_state_vector) ** 2)\n\n# 3-4: run and verify\ncircuit.append(cirq.measure(q0, q1, key='result'))\nrun_result = simulator.run(circuit, repetitions=1000)\ncounts = run_result.histogram(key='result')\nprint('Counts:', counts)\nverify_entanglement(counts)\n\`\`\`\n\n## Stretch goals\n\n- Add \`circuit.with_noise(cirq.depolarize(p=0.02))\` before running, and check how \`verify_entanglement\` handles the occasional \`1\`/\`2\` outcomes noise introduces, does your tolerance need adjusting?\n- Build a 3-qubit **GHZ state** (\`H\` on q0, \`CNOT(q0, q1)\`, \`CNOT(q1, q2)\`) and extend \`verify_entanglement\` to check that only \`0\` (\`000\`) or \`7\` (\`111\`) appear.\n- Add a simple **quantum coin flip** game: use \`quantum_random_bits(1)\` to decide a winner, and explain in a comment why this is fundamentally fairer than \`random.randint(0, 1)\`.\n- If you have access to Google Quantum AI hardware, run your circuit there and compare to both the ideal and noisy-simulated results.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const sklearnLessons: SeedLesson[] = [
+  {
+    title: 'Setup and Your First Model',
+    content: lessonContent(
+      'Setup and Your First Model',
+      `**scikit-learn** is Python's most widely used library for classical machine learning: classification, regression, clustering, and everything around evaluating and tuning those models. Unlike this course's quantum computing or game-development siblings, scikit-learn (along with numpy and pandas) actually runs directly in this course's browser sandbox, every lesson here is genuinely runnable, no local install required.\n\n## What "machine learning" actually means\n\nA traditional program is a set of rules a human writes by hand: "if the email contains these words, mark it as spam." A machine learning model instead **learns** those rules from examples: show it thousands of emails already labeled spam/not-spam, and it figures out the patterns itself. scikit-learn's entire API is built around two verbs that capture this idea:\n\n- \`fit(X, y)\`, learn patterns from labeled training data (\`X\` = inputs, \`y\` = correct answers).\n- \`predict(X)\`, apply what was learned to new, unseen inputs.\n\n## Your first model\n\n\`\`\`python\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.tree import DecisionTreeClassifier\n\niris = load_iris()\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.2, random_state=42\n)\n\nmodel = DecisionTreeClassifier(random_state=42)\nmodel.fit(X_train, y_train)\n\npredictions = model.predict(X_test)\nprint('Predicted:', predictions[:10])\nprint('Actual:   ', y_test[:10])\n\`\`\`\n\n- \`load_iris()\` loads a small, classic dataset (bundled with scikit-learn, no download needed) of 150 flowers, each described by 4 measurements (\`.data\`) and labeled with one of 3 species (\`.target\`).\n- \`train_test_split(...)\` splits the data into a chunk for training and a chunk held back for testing, covered in depth next lesson.\n- \`DecisionTreeClassifier()\` creates an **untrained** model, a decision tree specifically, but every scikit-learn model shares this same \`fit\`/\`predict\` shape regardless of what's happening internally.\n- \`model.fit(X_train, y_train)\` is where the actual learning happens, before this line, \`model\` knows nothing about flowers.\n- \`model.predict(X_test)\` asks the now-trained model to guess the species of flowers it has never seen, comparing its guesses to the real answers is exactly how you'll judge whether it learned anything useful.\n\n> [!NOTE]\n> The first time any lesson in this course imports \`sklearn\`, \`numpy\`, or \`pandas\`, your browser downloads those packages (compiled to WebAssembly), which can take a little while, subsequent runs on the same page are instant. No \`pip install\` needed, this is genuinely different from the Kivy, Qiskit, and Cirq courses.`
+    ),
+    quiz: {
+      title: 'Setup and Your First Model Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What is the core difference between a traditional program and a machine learning model?",
+          options: [
+            'ML models run faster',
+            'A traditional program follows hand-written rules, an ML model learns patterns from labeled examples',
+            'ML models never make mistakes',
+            'There is no real difference',
+          ],
+          answer: 'A traditional program follows hand-written rules, an ML model learns patterns from labeled examples',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every scikit-learn model shares the same fit()/predict() interface, regardless of what algorithm it uses internally.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'model.____(X_train, y_train) is the method call where a scikit-learn model actually learns from training data.',
+          options: [],
+          answer: 'fit',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Data and Train/Test Splits',
+    content: lessonContent(
+      'Data and Train/Test Splits',
+      `The previous lesson split data into training and test sets without explaining why, this lesson makes that explicit: it's arguably the single most important habit in applied machine learning.\n\n## Why you can't evaluate on training data\n\nIf you show a model its own training data and ask "how'd you do?", a sufficiently flexible model can simply **memorize** every example, scoring perfectly, while having learned nothing that generalizes to new data. The only honest way to measure "did this model actually learn something useful?" is to test it on examples it never saw during training.\n\n## Looking at the data with pandas\n\n\`\`\`python\nimport pandas as pd\nfrom sklearn.datasets import load_iris\n\niris = load_iris(as_frame=True)\ndf = iris.frame\nprint(df.head())\nprint('shape:', df.shape)\n\`\`\`\n\n\`load_iris(as_frame=True)\` returns the dataset as a **pandas DataFrame**, a table with named columns, instead of plain numpy arrays, much easier to read and explore. \`df.head()\` prints the first 5 rows, \`df.shape\` gives \`(rows, columns)\`, both standard first steps when looking at any new dataset.\n\n## Splitting properly\n\n\`\`\`python\nfrom sklearn.model_selection import train_test_split\n\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.2, random_state=42\n)\nprint('train size:', len(X_train), '  test size:', len(X_test))\n\`\`\`\n\n- \`test_size=0.2\` holds back 20% of the data for testing, 80% for training, a common default, though the right split depends on how much data you have overall.\n- \`random_state=42\` seeds the random shuffle used to pick which rows go where. Without it, you'd get a different split every run, making results hard to compare or reproduce, setting a fixed seed is standard practice any time you want a repeatable experiment.\n\n> [!WARNING]\n> Never look at your test set while choosing features, tuning models, or making any decision that shapes your final model, if test-set performance influences your choices, it stops being an honest measure of generalization. It should be touched exactly once, at the very end, to report a final number.`
+    ),
+    quiz: {
+      title: 'Data and Train/Test Splits Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why is it misleading to evaluate a model on the same data it was trained on?',
+          options: [
+            "It isn't misleading, that's the standard approach",
+            'A flexible model can simply memorize the training data and score perfectly without learning anything generalizable',
+            'Training data is always corrupted',
+            'scikit-learn forbids it',
+          ],
+          answer: 'A flexible model can simply memorize the training data and score perfectly without learning anything generalizable',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Setting random_state to a fixed number makes a train/test split reproducible across runs.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'test_size=0.____ holds back 20% of the data for the test set.',
+          options: [],
+          answer: '2',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Classification with Decision Trees and k-NN',
+    content: lessonContent(
+      'Classification with Decision Trees and k-NN',
+      `**Classification** means predicting a category (which species? spam or not?) rather than a number. This lesson compares two classic, intuitive classifiers on the same data, and shows off scikit-learn's consistent API in action.\n\n## Two very different ideas, one shared interface\n\n\`\`\`python\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.metrics import accuracy_score\n\niris = load_iris()\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.2, random_state=42\n)\n\ntree = DecisionTreeClassifier(random_state=42)\ntree.fit(X_train, y_train)\ntree_accuracy = accuracy_score(y_test, tree.predict(X_test))\n\nknn = KNeighborsClassifier(n_neighbors=5)\nknn.fit(X_train, y_train)\nknn_accuracy = accuracy_score(y_test, knn.predict(X_test))\n\nprint('Decision Tree accuracy:', tree_accuracy)\nprint('k-NN accuracy:         ', knn_accuracy)\n\`\`\`\n\n- A **decision tree** learns a sequence of yes/no questions ("is petal length < 2.5cm?") that splits the data into increasingly pure groups, similar in spirit to a flowchart you might design by hand, except the tree figures out which questions to ask and in what order.\n- **k-NN** (k-nearest neighbors) works completely differently: to classify a new point, it finds the \`k\` closest points in the training data (by distance) and takes a majority vote among their labels. \`n_neighbors=5\` is a **hyperparameter**, a setting you choose before training, not something the model learns on its own.\n- Despite radically different internal logic, both models are trained and used identically: \`fit(X_train, y_train)\` then \`predict(X_test)\`. This consistency is exactly why scikit-learn is so easy to experiment with, swapping one model for another is often a one-line change.\n\n## accuracy_score\n\n\`accuracy_score(y_true, y_pred)\` simply computes the fraction of predictions that matched the actual label, \`0.0\` (nothing right) to \`1.0\` (everything right). It's the simplest possible evaluation metric, and, as you'll see in a later lesson, sometimes a misleading one.\n\n> [!TIP]\n> Try changing \`n_neighbors\` to \`1\` or \`15\` and re-running, k-NN's accuracy will change, a small preview of hyperparameter tuning, covered properly in the Overfitting and Cross-Validation lesson.`
+    ),
+    quiz: {
+      title: 'Classification Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How does k-NN classify a new data point?',
+          options: [
+            'By asking a sequence of yes/no questions',
+            "By finding the k closest training points and taking a majority vote of their labels",
+            'By computing an average of all training data',
+            'It cannot classify, only regress',
+          ],
+          answer: "By finding the k closest training points and taking a majority vote of their labels",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'n_neighbors is a hyperparameter you choose before training, not something the model learns on its own.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____ predicts a category (like a species or spam/not-spam), as opposed to regression, which predicts a number.',
+          options: [],
+          answer: 'Classification',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Regression',
+    content: lessonContent(
+      'Regression',
+      `Classification predicts a category, **regression** predicts a continuous number, tomorrow's temperature, a house's price, a patient's blood sugar level. The core workflow, \`fit\`/\`predict\`/evaluate, stays the same, only the kind of output and the evaluation metrics change.\n\n## Predicting a number\n\n\`\`\`python\nfrom sklearn.datasets import load_diabetes\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LinearRegression\nfrom sklearn.metrics import mean_squared_error, r2_score\n\ndiabetes = load_diabetes()\nX_train, X_test, y_train, y_test = train_test_split(\n    diabetes.data, diabetes.target, test_size=0.2, random_state=42\n)\n\nmodel = LinearRegression()\nmodel.fit(X_train, y_train)\npredictions = model.predict(X_test)\n\nprint('Predicted:', predictions[:5].round(1))\nprint('Actual:   ', y_test[:5])\n\`\`\`\n\n\`load_diabetes()\` is another small bundled dataset, this one maps patient measurements to a numeric disease progression score, a continuous value, not a category, so classification metrics like accuracy don't apply. \`LinearRegression\` learns a straight-line (technically, a weighted sum) relationship between the input features and that number.\n\n## Regression metrics\n\n\`\`\`python\nmse = mean_squared_error(y_test, predictions)\nr2 = r2_score(y_test, predictions)\nprint('MSE:', mse)\nprint('R^2:', r2)\n\`\`\`\n\n- **MSE** (mean squared error) averages the squared difference between each prediction and the true value, squaring both penalizes big misses more than small ones and keeps the result positive. Lower is better, but MSE alone is hard to interpret since its units are "target units squared".\n- **R²** (R-squared) is easier to read: it's the fraction of the target's variance your model explains, \`1.0\` means perfect predictions, \`0.0\` means your model is no better than always guessing the average, and it can even go negative for a model worse than that baseline.\n\n> [!NOTE]\n> Predicting a *category* and predicting a *number* look almost identical in scikit-learn code, swap \`DecisionTreeClassifier\` for \`DecisionTreeRegressor\`, swap \`accuracy_score\` for \`mean_squared_error\`, everything else follows the same \`fit\`/\`predict\` shape from the first lesson.`
+    ),
+    quiz: {
+      title: 'Regression Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does an R² score of 1.0 mean?',
+          options: [
+            'The model is completely wrong',
+            "The model's predictions perfectly explain all the variance in the target",
+            'The model needs more training data',
+            'The dataset has 1 feature',
+          ],
+          answer: "The model's predictions perfectly explain all the variance in the target",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Regression predicts a continuous number, while classification predicts a category.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Mean squared error penalizes large mistakes more than small ones because the differences are ____ before averaging.',
+          options: [],
+          answer: 'squared',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Evaluating Models',
+    content: lessonContent(
+      'Evaluating Models',
+      `Accuracy is the easiest metric to understand, and one of the easiest to be misled by. This lesson shows exactly how, using a deliberately imbalanced dataset, and introduces the metrics that actually reveal what's going on.\n\n## When accuracy lies\n\n\`\`\`python\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.metrics import accuracy_score\n\n# 95% of samples belong to class 0, only 5% to class 1, a realistic fraud/spam-style imbalance\nX, y = make_classification(n_samples=1000, weights=[0.95, 0.05], random_state=42)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\nmodel = DecisionTreeClassifier(random_state=42)\nmodel.fit(X_train, y_train)\npreds = model.predict(X_test)\n\nprint('Accuracy:', accuracy_score(y_test, preds))\n\`\`\`\n\n\`make_classification(weights=[0.95, 0.05])\` generates a synthetic dataset with a 95/5 class imbalance. A model that lazily predicts "class 0" for *everything*, without learning anything real, would still score around 95% accuracy here, high accuracy alone doesn't prove the model is actually useful.\n\n## Metrics that reveal the truth\n\n\`\`\`python\nfrom sklearn.metrics import confusion_matrix, precision_score, recall_score\n\nprint('Confusion matrix:\\n', confusion_matrix(y_test, preds))\nprint('Precision:', precision_score(y_test, preds))\nprint('Recall:', recall_score(y_test, preds))\n\`\`\`\n\n- The **confusion matrix** breaks predictions into a 2x2 grid: true negatives, false positives, false negatives, and true positives (in that reading order for binary classification). It's the raw material every other classification metric is computed from.\n- **Precision** answers "of everything the model flagged as positive, how much was actually positive?", important when false alarms are costly.\n- **Recall** answers "of everything that was actually positive, how much did the model catch?", important when missing a positive case is costly (like a real fraud case slipping through).\n\nA model can have high accuracy and terrible recall on the minority class simultaneously, that's exactly the trap this lesson demonstrates.\n\n> [!TIP]\n> There's rarely one "correct" metric, a spam filter (annoying to have false positives) and a cancer screening test (dangerous to have false negatives) should be tuned toward completely different tradeoffs between precision and recall, choosing the right metric for the problem is as important as choosing the right model.`
+    ),
+    quiz: {
+      title: 'Evaluating Models Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why can accuracy be a misleading metric on an imbalanced dataset (e.g. 95% class 0, 5% class 1)?',
+          options: [
+            'Accuracy cannot be computed on imbalanced data',
+            "A model that always predicts the majority class can score ~95% accuracy without learning anything useful",
+            'scikit-learn refuses to compute accuracy on imbalanced data',
+            'Accuracy is only defined for regression',
+          ],
+          answer: "A model that always predicts the majority class can score ~95% accuracy without learning anything useful",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Recall measures, of everything that was actually positive, how much the model correctly caught.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The ____ ____ breaks classification results into true negatives, false positives, false negatives, and true positives.',
+          options: [],
+          answer: 'confusion matrix',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Feature Scaling and Pipelines',
+    content: lessonContent(
+      'Feature Scaling and Pipelines',
+      `Some models are sensitive to the *scale* of their input features in ways that have nothing to do with which features actually matter. This lesson covers fixing that with \`StandardScaler\`, and introduces \`Pipeline\`, the tool that chains preprocessing and modeling together safely.\n\n## Why scale matters\n\nImagine two features: "age in years" (roughly 0-100) and "income in dollars" (roughly 0-200,000). A distance-based model like k-NN computes distances using raw numbers, income's much larger range would completely dominate the distance calculation, making age nearly irrelevant, regardless of which one is actually more predictive.\n\n\`\`\`python\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.metrics import accuracy_score\n\niris = load_iris()\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.2, random_state=42\n)\n\npipeline = Pipeline([\n    ('scaler', StandardScaler()),\n    ('knn', KNeighborsClassifier(n_neighbors=5)),\n])\n\npipeline.fit(X_train, y_train)\npreds = pipeline.predict(X_test)\nprint('Accuracy:', accuracy_score(y_test, preds))\n\`\`\`\n\n\`StandardScaler\` transforms every feature to have mean \`0\` and standard deviation \`1\`, putting every feature on the same footing before a distance-based (or regularized linear) model ever sees them.\n\n## Why Pipeline, not just calling StandardScaler manually\n\nYou could call \`scaler.fit_transform(X_train)\` and \`scaler.transform(X_test)\` by hand, but \`Pipeline\` bundles preprocessing and modeling into one object with the exact same \`fit\`/\`predict\` interface as any single model, which prevents a subtle but serious bug: **data leakage**.\n\n\`\`\`python\n# What Pipeline does correctly under the hood:\n# 1. Fit the scaler ONLY on training data (learn its mean/std from X_train)\n# 2. Transform X_train using those training-only statistics\n# 3. Transform X_test using the SAME training-only statistics (never refit on test data)\n\`\`\`\n\nIf you accidentally fit a scaler on the *combined* train+test data, information about the test set (its mean, its spread) leaks into preprocessing before you've ever evaluated anything, quietly inflating your test score. \`Pipeline.fit(X_train, y_train)\` guarantees every preprocessing step only ever learns from training data, exactly like the model itself.\n\n> [!WARNING]\n> Data leakage is one of the most common real-world ML mistakes, and one of the hardest to notice, a leaky pipeline can report great test performance and then fail badly in production, where there's no way to "peek" at future data during preprocessing. \`Pipeline\` is the standard defense against it.`
+    ),
+    quiz: {
+      title: 'Feature Scaling and Pipelines Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What bug does using Pipeline (instead of manually fitting a scaler on all the data) help prevent?',
+          options: [
+            'Syntax errors',
+            'Data leakage, where test-set information leaks into preprocessing statistics before evaluation',
+            'Overfitting the decision tree',
+            'Slow training time',
+          ],
+          answer: 'Data leakage, where test-set information leaks into preprocessing statistics before evaluation',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'StandardScaler transforms features to have mean 0 and standard deviation 1.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A distance-based model like ____ is especially sensitive to unscaled features with very different ranges.',
+          options: [],
+          answer: 'k-NN',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Overfitting and Cross-Validation',
+    content: lessonContent(
+      'Overfitting and Cross-Validation',
+      `A model that performs great on training data but poorly on new data has **overfit**, it memorized noise and quirks specific to the training set instead of learning patterns that generalize. This lesson shows how to spot it, and how to evaluate and tune models more robustly than a single train/test split allows.\n\n## Spotting overfitting\n\n\`\`\`python\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.tree import DecisionTreeClassifier\n\niris = load_iris()\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.2, random_state=42\n)\n\ndeep_tree = DecisionTreeClassifier(random_state=42)  # no depth limit, free to grow as complex as it wants\ndeep_tree.fit(X_train, y_train)\n\nprint('Train accuracy:', deep_tree.score(X_train, y_train))\nprint('Test accuracy: ', deep_tree.score(X_test, y_test))\n\`\`\`\n\n\`model.score(X, y)\` is a shortcut that fits/predicts/scores in one call (accuracy for classifiers, R² for regressors). A wide gap between train accuracy (often near \`1.0\`, an unconstrained tree can memorize the training set almost perfectly) and test accuracy is the classic signature of overfitting.\n\n## Cross-validation: don't trust a single split\n\nA single train/test split can be lucky or unlucky, by chance, the test set might be unusually easy or hard. **k-fold cross-validation** splits the data into \`k\` chunks, trains and evaluates \`k\` times (each time using a different chunk as the "test" fold), and averages the results, a far more reliable estimate.\n\n\`\`\`python\nfrom sklearn.model_selection import cross_val_score\n\nscores = cross_val_score(DecisionTreeClassifier(random_state=42), iris.data, iris.target, cv=5)\nprint('Scores per fold:', scores)\nprint('Mean CV accuracy:', scores.mean())\n\`\`\`\n\n\`cv=5\` means 5-fold cross-validation, the data is split 5 ways, and the model is trained and scored 5 separate times. \`scores\` holds one accuracy per fold, its mean is a much sturdier estimate than any single \`train_test_split\` result.\n\n## Tuning hyperparameters with GridSearchCV\n\n\`\`\`python\nfrom sklearn.model_selection import GridSearchCV\n\nparam_grid = {'max_depth': [1, 2, 3, 4, 5, None]}\ngrid = GridSearchCV(DecisionTreeClassifier(random_state=42), param_grid, cv=5)\ngrid.fit(iris.data, iris.target)\n\nprint('Best max_depth:', grid.best_params_)\nprint('Best CV score:', grid.best_score_)\n\`\`\`\n\n\`GridSearchCV\` automates exactly what you'd otherwise do by hand: try every value in \`param_grid\`, cross-validate each one, and report which setting scored best, \`max_depth\` limits how many yes/no questions deep a tree can grow, a smaller number fights overfitting at the risk of underfitting if set too low.\n\n> [!NOTE]\n> Limiting \`max_depth\` is one of the simplest ways to fight a decision tree's tendency to overfit, an unconstrained tree can always find a rule that perfectly separates the training data, whether or not that rule means anything for new data.`
+    ),
+    quiz: {
+      title: 'Overfitting and Cross-Validation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the classic sign that a model has overfit?',
+          options: [
+            'Training takes a long time',
+            'A wide gap between high train accuracy and much lower test accuracy',
+            'The model has too few features',
+            'Test accuracy is higher than train accuracy',
+          ],
+          answer: 'A wide gap between high train accuracy and much lower test accuracy',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'k-fold cross-validation gives a more reliable performance estimate than a single train/test split by averaging results across multiple splits.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____SearchCV automates trying every hyperparameter combination in a grid and reports the best cross-validated score.',
+          options: [],
+          answer: 'Grid',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Complete Classifier Pipeline',
+    content: lessonContent(
+      'Final Project: Build a Complete Classifier Pipeline',
+      `Every piece from this course now exists on its own: loading and splitting data, training classifiers, evaluating with more than just accuracy, scaling features safely with \`Pipeline\`, and validating robustly with cross-validation and \`GridSearchCV\`. This final project assembles all of it into one complete, defensible ML workflow.\n\n## Requirements\n\nYour finished \`ml_project.py\` should satisfy every one of these:\n\n1. Load a classification dataset (\`load_iris\`, \`load_wine\`, \`load_breast_cancer\`, or your own via \`make_classification\`) and split it with \`train_test_split\`.\n2. Build a \`Pipeline\` combining \`StandardScaler\` with a classifier of your choice.\n3. Fit the pipeline and report accuracy, a confusion matrix, precision, and recall on the held-out test set.\n4. Run \`cross_val_score\` on the same pipeline and print the mean cross-validated accuracy, does it roughly agree with your single-split test accuracy?\n5. Use \`GridSearchCV\` to tune at least one hyperparameter of your classifier, and report the best parameters found.\n\n\`\`\`python\nfrom sklearn.datasets import load_wine\nfrom sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score\n\n# 1. Load and split\ndata = load_wine()\nX_train, X_test, y_train, y_test = train_test_split(\n    data.data, data.target, test_size=0.2, random_state=42\n)\n\n# 2. Build the pipeline\npipeline = Pipeline([\n    ('scaler', StandardScaler()),\n    ('knn', KNeighborsClassifier()),\n])\n\n# 3. Fit and evaluate\npipeline.fit(X_train, y_train)\npreds = pipeline.predict(X_test)\nprint('Accuracy:', accuracy_score(y_test, preds))\nprint('Confusion matrix:\\n', confusion_matrix(y_test, preds))\nprint('Precision (macro):', precision_score(y_test, preds, average='macro'))\nprint('Recall (macro):', recall_score(y_test, preds, average='macro'))\n\n# 4. Cross-validate\ncv_scores = cross_val_score(pipeline, data.data, data.target, cv=5)\nprint('Mean CV accuracy:', cv_scores.mean())\n\n# 5. Tune a hyperparameter\nparam_grid = {'knn__n_neighbors': [1, 3, 5, 7, 9, 11]}\ngrid = GridSearchCV(pipeline, param_grid, cv=5)\ngrid.fit(data.data, data.target)\nprint('Best params:', grid.best_params_)\nprint('Best CV score:', grid.best_score_)\n\`\`\`\n\nNotice \`param_grid\` uses the key \`'knn__n_neighbors'\`, the double-underscore syntax lets \`GridSearchCV\` reach *inside* a \`Pipeline\` and tune a specific step's parameter, \`stepname__paramname\`.\n\n## Stretch goals\n\n- Try a different classifier in the pipeline (\`RandomForestClassifier\`, \`SVC\`, \`LogisticRegression\`) and compare cross-validated scores.\n- Try a different dataset (\`load_breast_cancer\` is a good binary-classification option) and see how precision/recall behave differently from a balanced multi-class problem like wine or iris.\n- Expand \`param_grid\` to tune more than one hyperparameter at once, \`GridSearchCV\` will try every combination.\n- Plot the confusion matrix visually instead of printing raw numbers (matplotlib is available in this sandbox too).\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
   nodejs: [
     {
@@ -6953,6 +8393,42 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       description:
         "Build a clone of the classic Asteroids game using Pygame and object-oriented programming concepts. This guided project will help you understand how to use Pygame to create a game loop, handle user input, and manage game state. You'll also learn how to use object-oriented programming to create game objects and manage their interactions.",
       lessons: pygameAsteroidsLessons,
+    },
+    {
+      title: 'Build a Match-3 Game using Python and Kivy',
+      description:
+        "Build a Candy Crush-style Match-3 puzzle game with Kivy, the Python framework for cross-platform apps and mobile games. You'll model the board as plain Python data, render it with Kivy's layout and button widgets, handle taps to select and swap adjacent gems, detect 3-in-a-row matches, and resolve cascades until the board settles.",
+      lessons: kivyMatch3Lessons,
+    },
+    {
+      title: 'Retrieval-Augmented Generation (RAG) with Python',
+      description:
+        "Build a complete RAG pipeline from scratch in 8 steps: collecting documents, chunking, embedding, vector storage, embedding a query, retrieval, augmentation, and generating a grounded LLM response. You'll write real, runnable Python for every step, no API key required until the very last one.",
+      lessons: ragLessons,
+    },
+    {
+      title: 'Build Your Own AI Coding Agent',
+      description:
+        "Learn how LLMs, function calling, and agent loops actually work by building a real AI coding agent: send prompts via OpenRouter and the OpenAI SDK, write the tool functions your agent needs, wire up function calling, then give it a feedback loop so it can autonomously read, run, and fix a real bug.",
+      lessons: aiAgentLessons,
+    },
+    {
+      title: 'Qiskit Fundamentals',
+      description:
+        "Learn quantum computing with IBM's Qiskit SDK: build circuits, create superposition and entanglement, run shot-based simulations, build a genuine quantum random number generator, and understand how real quantum hardware differs from an ideal simulator.",
+      lessons: qiskitLessons,
+    },
+    {
+      title: 'Cirq Fundamentals',
+      description:
+        "Learn quantum computing with Google's Cirq SDK: build circuits from qubits and operations, create superposition and entanglement, run repetition-based simulations, build a quantum random number generator, and simulate realistic hardware noise.",
+      lessons: cirqLessons,
+    },
+    {
+      title: 'Machine Learning Fundamentals with scikit-learn',
+      description:
+        "Learn classical machine learning with scikit-learn: train classifiers and regressors, split and evaluate data properly, understand precision/recall beyond accuracy, scale features safely with Pipeline, and validate models with cross-validation and GridSearchCV. Every lesson runs live in your browser, no local install needed.",
+      lessons: sklearnLessons,
     },
   ],
   javascript: [

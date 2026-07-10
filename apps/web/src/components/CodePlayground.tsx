@@ -60,6 +60,9 @@ export function CodePlayground({ language, initialCode, sessionKey }: Props) {
       let result: { output: string; error: string | null };
       if (language === 'python') {
         if (isPyodideLoading()) setStatus('Loading Python runtime… (first run only, ~10 MB)');
+        else if (/^\s*(import|from)\s+(numpy|pandas|scipy|sklearn)\b/m.test(code)) {
+          setStatus('Downloading scientific packages… (first use of numpy/pandas/scikit-learn only, may take a while)');
+        }
         result = await runPythonInSession(sessionKey ?? 'default', code);
       } else if (language === 'lua') {
         if (isLuaLoading()) setStatus('Loading Lua runtime… (first run only)');
