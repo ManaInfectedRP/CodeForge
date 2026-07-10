@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { PathCard } from '../components/PathCard';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const DEVOPS_SLUGS = ['docker', 'azure', 'kubernetes', 'aws', 'cicd', 'observability'];
 
 function CourseListItem({ c }: { c: CourseSummaryDto }) {
   return (
@@ -159,7 +160,7 @@ export function Courses() {
             </button>
             <button
               type="button"
-              onClick={() => setSearchParams({ path: 'devops' })}
+              onClick={() => setSearchParams({ category: 'devops' })}
               className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-left transition-all hover:border-forge-600"
             >
               <span className="text-3xl">🚀</span>
@@ -180,7 +181,7 @@ export function Courses() {
 
   // Category view: the language grid, everything except DevOps
   if (!activePath && category === 'programming') {
-    const programmingPaths = (paths ?? []).filter((p) => p.slug !== 'devops');
+    const programmingPaths = (paths ?? []).filter((p) => !DEVOPS_SLUGS.includes(p.slug));
     return (
       <main className="mx-auto max-w-6xl px-4 py-10">
         <button type="button" onClick={() => setSearchParams({})} className="text-sm text-slate-400 hover:text-white">
@@ -203,18 +204,43 @@ export function Courses() {
     );
   }
 
+  // Category view: the DevOps technology grid
+  if (!activePath && category === 'devops') {
+    const devopsPaths = (paths ?? []).filter((p) => DEVOPS_SLUGS.includes(p.slug));
+    return (
+      <main className="mx-auto max-w-6xl px-4 py-10">
+        <button type="button" onClick={() => setSearchParams({})} className="text-sm text-slate-400 hover:text-white">
+          ← All courses
+        </button>
+
+        <h1 className="mt-4 text-3xl font-bold">🚀 DevOps Path</h1>
+        <p className="mt-2 text-slate-400">Choose a technology to see its course roadmap.</p>
+
+        {paths === null ? (
+          <p className="mt-10 text-slate-400">Loading paths…</p>
+        ) : (
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {devopsPaths.map((p) => (
+              <PathCard key={p.id} path={p} onClick={() => setSearchParams({ path: p.slug })} />
+            ))}
+          </div>
+        )}
+      </main>
+    );
+  }
+
   // Path view: a specific path's course list, one card per course
   const currentPath = paths?.find((p) => p.slug === activePath);
-  const isDevops = activePath === 'devops';
+  const isDevopsSubPath = DEVOPS_SLUGS.includes(activePath);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       <button
         type="button"
-        onClick={() => setSearchParams(isDevops ? {} : { category: 'programming' })}
+        onClick={() => setSearchParams({ category: isDevopsSubPath ? 'devops' : 'programming' })}
         className="text-sm text-slate-400 hover:text-white"
       >
-        ← {isDevops ? 'All courses' : 'Programming Path'}
+        ← {isDevopsSubPath ? 'DevOps Path' : 'Programming Path'}
       </button>
 
       <h1 className="mt-4 text-3xl font-bold">
