@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /login
+Allow: /register
+Allow: /verify-email
+Allow: /verify/
+Allow: /blog
+
+Disallow: /dashboard
+Disallow: /courses
+Disallow: /lessons
+Disallow: /challenges
+Disallow: /leaderboard
+Disallow: /achievements
+Disallow: /certificates
+Disallow: /chat
+Disallow: /settings
+Disallow: /teach
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://kodstigen.se/sitemap.xml

@@ -52,9 +52,14 @@ export function Navbar() {
                   📖 Instructor guide
                 </NavLink>
                 {user.role === 'ADMIN' && (
-                  <NavLink to="/admin" className={dropdownItemClass}>
-                    🛡️ Admin
-                  </NavLink>
+                  <>
+                    <NavLink to="/admin" className={dropdownItemClass}>
+                      🛡️ Admin
+                    </NavLink>
+                    <NavLink to="/admin/blog" className={dropdownItemClass}>
+                      📝 Manage Blog
+                    </NavLink>
+                  </>
                 )}
               </Dropdown>
             )}

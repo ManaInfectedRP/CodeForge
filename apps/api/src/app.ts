@@ -18,6 +18,8 @@ import { certificatesRouter } from './routes/certificates.ts';
 import { reviewsRouter } from './routes/reviews.ts';
 import { chatRouter } from './routes/chat.ts';
 import { analyticsRouter } from './routes/analytics.ts';
+import { blogRouter } from './routes/blog.ts';
+import { adminBlogRouter } from './routes/adminBlog.ts';
 import { errorHandler } from './middleware/errors.ts';
 import { UPLOADS_DIR } from './lib/upload.ts';
 import path from 'node:path';
@@ -54,6 +56,8 @@ export function createApp() {
   app.use('/api/reviews', reviewsRouter);
   app.use('/api/chat', chatRouter);
   app.use('/api/analytics', analyticsRouter);
+  app.use('/api/blog', blogRouter);
+  app.use('/api/admin/blog', adminBlogRouter);
 
   // In production (single-service deploys like Render) the API also serves the
   // built frontend; in dev, Vite serves it and this block is skipped.

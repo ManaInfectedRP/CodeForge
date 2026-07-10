@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { PageTracker } from './components/PageTracker';
+import { CanonicalLink } from './components/CanonicalLink';
 import { VerifyEmailBanner } from './components/VerifyEmailBanner';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { RoleRoute } from './components/RoleRoute';
@@ -36,12 +37,17 @@ import { Chat } from './pages/Chat';
 import { Settings } from './pages/Settings';
 import { Certificate } from './pages/Certificate';
 import { VerifyCertificate } from './pages/VerifyCertificate';
+import { Blog } from './pages/Blog';
+import { BlogPost } from './pages/BlogPost';
+import { AdminBlog } from './pages/AdminBlog';
+import { AdminBlogEditor } from './pages/AdminBlogEditor';
 
 export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <PageTracker />
+        <CanonicalLink />
         <div className="flex min-h-screen flex-col">
           <Navbar />
           <VerifyEmailBanner />
@@ -53,6 +59,8 @@ export function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/verify/:code" element={<VerifyCertificate />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/courses" element={<Courses />} />
@@ -82,6 +90,8 @@ export function App() {
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/reviews" element={<AdminReviews />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                <Route path="/admin/blog" element={<AdminBlog />} />
+                <Route path="/admin/blog/:id" element={<AdminBlogEditor />} />
               </Route>
               <Route path="*" element={<main className="p-16 text-center text-slate-400">Page not found</main>} />
             </Routes>
