@@ -15,6 +15,7 @@ const languageLabels: Record<string, string> = {
   TYPESCRIPT: 'TypeScript',
   LUA: 'Lua',
   HTML: 'HTML',
+  C: 'C',
 };
 
 const difficultyRank: Record<ChallengeDifficulty, number> = { EASY: 0, MEDIUM: 1, HARD: 2 };

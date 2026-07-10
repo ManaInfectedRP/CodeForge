@@ -11,7 +11,7 @@ import type { TokenPayload } from '../lib/jwt.ts';
 const challengeSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(120),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']),
-  languages: z.array(z.enum(['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA', 'HTML'])).min(1, 'Pick at least one language'),
+  languages: z.array(z.enum(['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA', 'HTML', 'C'])).min(1, 'Pick at least one language'),
   prompt: z.string().max(5000),
   entryPoint: z
     .string()
@@ -29,7 +29,7 @@ const challengeSchema = z.object({
 const createSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(120),
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']),
-  languages: z.array(z.enum(['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA', 'HTML'])).min(1, 'Pick at least one language'),
+  languages: z.array(z.enum(['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'LUA', 'HTML', 'C'])).min(1, 'Pick at least one language'),
 });
 
 const testCasesSchema = z.object({
