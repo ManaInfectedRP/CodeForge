@@ -93,13 +93,58 @@ const paths = [
     description: 'Query, filter, join, and aggregate relational data with SQL, the language behind virtually every database-backed application.',
   },
   {
-    slug: 'devops',
-    name: 'DevOps',
-    icon: '🚀',
+    slug: 'docker',
+    name: 'Docker',
+    icon: '🐳',
+    difficulty: 3,
+    estimatedHours: 20,
+    projectCount: 6,
+    description: 'Package, ship, and run applications anywhere with containers, images, Dockerfiles, and Docker Compose.',
+  },
+  {
+    slug: 'azure',
+    name: 'Azure',
+    icon: '☁️',
     difficulty: 4,
-    estimatedHours: 150,
-    projectCount: 40,
-    description: 'Ship and run software reliably: containers, cloud infrastructure, CI/CD pipelines, Kubernetes, and observability.',
+    estimatedHours: 30,
+    projectCount: 7,
+    description: 'Deploy, host, and scale real applications in the cloud with Microsoft Azure.',
+  },
+  {
+    slug: 'kubernetes',
+    name: 'Kubernetes',
+    icon: '☸️',
+    difficulty: 4,
+    estimatedHours: 30,
+    projectCount: 7,
+    description: 'Orchestrate containers at scale: Pods, Deployments, Services, config and storage, and real kubectl workflows.',
+  },
+  {
+    slug: 'aws',
+    name: 'AWS',
+    icon: '📦',
+    difficulty: 4,
+    estimatedHours: 30,
+    projectCount: 7,
+    description: 'Regions and IAM, EC2, S3, VPC networking, and serverless with Lambda and API Gateway.',
+  },
+  {
+    slug: 'cicd',
+    name: 'CI/CD',
+    icon: '♾️',
+    difficulty: 3,
+    estimatedHours: 20,
+    projectCount: 6,
+    description: 'Build real pipelines with GitHub Actions: automated testing, Docker image builds, deployment strategies, and pipeline secrets.',
+  },
+  {
+    slug: 'observability',
+    name: 'Observability',
+    icon: '🔭',
+    difficulty: 3,
+    estimatedHours: 20,
+    projectCount: 7,
+    description: 'The three pillars of observability: structured logging, metrics and time-series data, distributed tracing, and alerting that does not burn out your team.',
   },
   {
     slug: 'ai-coding',
@@ -8492,32 +8537,42 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       lessons: nodePrismaLessons,
     },
   ],
-  devops: [
+  docker: [
     {
       title: 'Docker Fundamentals',
       description: 'Package, ship, and run applications anywhere with containers, images, Dockerfiles, and Docker Compose.',
       lessons: dockerLessons,
     },
+  ],
+  azure: [
     {
       title: 'Azure Fundamentals',
       description: 'Deploy, host, and scale real applications in the cloud with Microsoft Azure.',
       lessons: azureLessons,
     },
+  ],
+  kubernetes: [
     {
       title: 'Kubernetes Fundamentals',
       description: 'Orchestrate containers at scale: Pods, Deployments, Services, config and storage, and real kubectl workflows.',
       lessons: kubernetesLessons,
     },
+  ],
+  aws: [
     {
       title: 'AWS Fundamentals',
       description: 'Regions and IAM, EC2, S3, VPC networking, and serverless with Lambda and API Gateway.',
       lessons: awsLessons,
     },
+  ],
+  cicd: [
     {
       title: 'CI/CD Fundamentals',
       description: 'Build real pipelines with GitHub Actions: automated testing, Docker image builds, deployment strategies, and pipeline secrets.',
       lessons: cicdLessons,
     },
+  ],
+  observability: [
     {
       title: 'Logging and Observability',
       description: 'The three pillars of observability: structured logging, metrics and time-series data, distributed tracing, and alerting that does not burn out your team.',
@@ -9067,25 +9122,42 @@ async function main() {
     },
   });
 
+  // DevOps courses used to live under one combined "devops" path; split them back into
+  // individual standalone paths (docker, azure, kubernetes, aws, cicd, observability) so each
+  // gets its own big card on the Courses page and its own marquee logo on the landing page,
+  // moving existing courses (and any real enrollments/progress/certificates already on them)
+  // rather than recreating them, then removing the now-empty combined path.
+  const devopsPath = await prisma.learningPath.findUnique({ where: { slug: 'devops' } });
+  if (devopsPath) {
+    const courseToSlug: Record<string, string> = {
+      'Docker Fundamentals': 'docker',
+      'Azure Fundamentals': 'azure',
+      'Kubernetes Fundamentals': 'kubernetes',
+      'AWS Fundamentals': 'aws',
+      'CI/CD Fundamentals': 'cicd',
+      'Logging and Observability': 'observability',
+    };
+    for (const [title, slug] of Object.entries(courseToSlug)) {
+      const course = await prisma.course.findFirst({ where: { pathId: devopsPath.id, title } });
+      if (!course) continue;
+      const newPathSeed = paths.find((p) => p.slug === slug)!;
+      const newPath = await prisma.learningPath.upsert({ where: { slug }, update: newPathSeed, create: newPathSeed });
+      await prisma.course.update({ where: { id: course.id }, data: { pathId: newPath.id } });
+      console.log(`  ↳ moved "${title}" out of devops into its own "${slug}" path`);
+    }
+    const remaining = await prisma.course.count({ where: { pathId: devopsPath.id } });
+    if (remaining === 0) {
+      await prisma.learningPath.delete({ where: { id: devopsPath.id } });
+      console.log('  ↳ removed the now-empty "devops" path');
+    }
+  }
+
   for (const p of paths) {
     const path = await prisma.learningPath.upsert({
       where: { slug: p.slug },
       update: p,
       create: p,
     });
-
-    if (p.slug === 'devops') {
-      // Docker and Azure used to be their own standalone paths; fold their existing courses
-      // (and any real enrollments/progress/certificates already on them) into DevOps instead
-      // of recreating them, then remove the now-empty standalone path.
-      for (const oldSlug of ['docker', 'azure']) {
-        const oldPath = await prisma.learningPath.findUnique({ where: { slug: oldSlug } });
-        if (!oldPath) continue;
-        await prisma.course.updateMany({ where: { pathId: oldPath.id }, data: { pathId: path.id } });
-        await prisma.learningPath.delete({ where: { id: oldPath.id } });
-        console.log(`  ↳ moved "${oldSlug}" courses into devops, removed the standalone "${oldSlug}" path`);
-      }
-    }
 
     for (const courseSeed of coursesByPath[p.slug] ?? []) {
       const existing = await prisma.course.findFirst({ where: { pathId: path.id, title: courseSeed.title } });
