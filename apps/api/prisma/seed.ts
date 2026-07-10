@@ -219,6 +219,15 @@ const paths = [
     description: 'Statically-typed, object-oriented programming on the JVM: classes, collections, generics, and interfaces.',
   },
   {
+    slug: 'kotlin',
+    name: 'Kotlin',
+    icon: '🟠',
+    difficulty: 3,
+    estimatedHours: 40,
+    projectCount: 7,
+    description: 'A modern, concise language for the JVM and Android: null safety, data classes, extension functions, and idiomatic Java interop.',
+  },
+  {
     slug: 'go',
     name: 'Go',
     icon: '🐹',
@@ -6808,6 +6817,218 @@ const javaLessons: SeedLesson[] = [
   },
 ];
 
+const kotlinLessons: SeedLesson[] = [
+  {
+    title: 'Hello, Kotlin',
+    content: lessonContent(
+      'Hello, Kotlin',
+      `Kotlin is a modern, statically-typed language created by JetBrains that runs on the **JVM**, meaning it compiles to the same bytecode as Java and can call Java code (and be called from it) directly. It's Google's officially preferred language for Android development, but it also runs as backend code, compiles to JavaScript, and even to native binaries.\n\n## Your first program\n\n\`\`\`kotlin\nfun main() {\n    println("Hello, Kodstigen!")\n}\n\`\`\`\n\nCompare this to Java's \`Hello\` example, and the difference is immediate:\n\n- No wrapping class is required, \`fun main()\` is a genuine top-level function, Kotlin doesn't force everything to live inside a class.\n- \`println(...)\` instead of \`System.out.println(...)\`, far less ceremony for something you'll type constantly.\n- No semicolons required at the end of lines (though they're legal if you want them).\n\n## Compiling and running\n\n\`\`\`bash\nkotlinc hello.kt -include-runtime -d hello.jar\njava -jar hello.jar\n\`\`\`\n\n\`kotlinc\` is the Kotlin compiler, \`-include-runtime\` bundles the small Kotlin standard library into the jar so it runs anywhere a JVM exists, without a separate Kotlin install.\n\n> [!TIP]\n> Because Kotlin and Java share the same bytecode target, you can mix \`.kt\` and \`.java\` files in one project and call between them freely, one of the biggest reasons Kotlin caught on so fast: teams could adopt it file by file instead of rewriting everything at once.`
+    ),
+    quiz: {
+      title: 'Hello, Kotlin Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which company created Kotlin?',
+          options: ['Google', 'JetBrains', 'Oracle', 'Microsoft'],
+          answer: 'JetBrains',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In Kotlin, main() must be defined inside a class, like in Java.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The Kotlin compiler command used to compile a .kt file is ____.',
+          options: [],
+          answer: 'kotlinc',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Variables, Null Safety, and String Templates',
+    content: lessonContent(
+      'Variables, Null Safety, and String Templates',
+      `## val vs. var\n\n\`\`\`kotlin\nval name = "Ada"   // read-only, cannot be reassigned\nvar xp = 0           // mutable, can be reassigned\nxp += 10\n\`\`\`\n\n\`val\` is Kotlin's default mindset: prefer values that never change once assigned, reach for \`var\` only when you genuinely need to reassign. Both still support full type inference, or an explicit type when you want one: \`val price: Double = 9.99\`.\n\n## Null safety\n\nKotlin's type system separates types that can hold \`null\` from types that can't, **at compile time**, which eliminates most \`NullPointerException\`s before the code ever runs.\n\n\`\`\`kotlin\nvar username: String = "ada"    // can never be null\nvar nickname: String? = null      // the ? makes it explicitly nullable\n\nusername = null // compile error, not allowed!\n\`\`\`\n\nTo work with a nullable value, Kotlin gives you two key operators:\n\n\`\`\`kotlin\n// Safe call: returns null instead of crashing if nickname is null\nprintln(nickname?.length)\n\n// Elvis operator: provide a fallback when the left side is null\nval length = nickname?.length ?: 0\n\`\`\`\n\n\`nickname?.length\` reads as "if \`nickname\` isn't null, get its \`length\`, otherwise the whole expression is \`null\`", and \`?: 0\` reads as "...or \`0\` if that was null."\n\n## String templates\n\n\`\`\`kotlin\nval xp = 50\nprintln("Hello, $name! You have $xp XP.")\nprintln("Next level in \${100 - xp} XP.")\n\`\`\`\n\n\`$name\` substitutes a variable directly, \`\${...}\` is needed for full expressions, both are far more readable than Java's \`+\`-based string concatenation.\n\n| | val | var |\n|---|---|---|\n| Reassignable | No | Yes |\n| Mindset | Default choice | Only when needed |\n| Java equivalent | final local variable | regular variable |`
+    ),
+    quiz: {
+      title: 'Null Safety Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the ?. safe call operator do when the value on its left is null?',
+          options: [
+            'Throws a NullPointerException immediately',
+            'Returns null instead of crashing',
+            'Silently converts null to an empty string',
+            'It is a syntax error, ?. cannot be used on null',
+          ],
+          answer: 'Returns null instead of crashing',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A variable of type String? can hold null, while a variable of type String cannot.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The keyword for a read-only variable that cannot be reassigned after its first value is ____.',
+          options: [],
+          answer: 'val',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Control Flow: if, when, and Ranges',
+    content: lessonContent(
+      'Control Flow: if, when, and Ranges',
+      `## if as an expression\n\nIn Kotlin, \`if\` can directly produce a value, no separate ternary operator needed:\n\n\`\`\`kotlin\nval xp = 45\nval message = if (xp >= 50) "Level up!" else "Keep going"\n\`\`\`\n\n## when\n\n\`when\` is Kotlin's replacement for \`switch\`, and it's far more flexible, it can match exact values, ranges, types, or arbitrary conditions:\n\n\`\`\`kotlin\nval tier = when {\n    xp >= 100 -> "Platinum"\n    xp >= 50 -> "Gold"\n    xp >= 25 -> "Silver"\n    else -> "Bronze"\n}\n\nval dayName = when (3) {\n    1, 7 -> "Weekend"\n    in 2..6 -> "Weekday"\n    else -> "Invalid"\n}\n\`\`\`\n\nEach branch uses \`->\`, and \`when\` doesn't fall through to the next branch the way older \`switch\` statements in other languages can, only the first matching branch runs.\n\n## Ranges and loops\n\n\`\`\`kotlin\nfor (i in 1..5) {\n    println("Iteration $i")\n}\n\nfor (i in 10 downTo 1 step 2) {\n    println(i) // 10, 8, 6, 4, 2\n}\n\nval scores = listOf(90, 85, 77)\nfor (score in scores) {\n    println(score)\n}\n\nvar tries = 0\nwhile (tries < 3) {\n    tries++\n}\n\`\`\`\n\n\`1..5\` creates a **range**, an inclusive sequence of values, \`downTo\` counts backward, and \`step\` changes the increment. \`for (score in scores)\` reads as "for each \`score\` in \`scores\`", the idiomatic way to iterate a collection.`
+    ),
+    quiz: {
+      title: 'Control Flow Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is 1..5 called in Kotlin?',
+          options: ['A list', 'A range', 'A tuple', 'An array literal'],
+          answer: 'A range',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In Kotlin, if can be used as an expression that produces a value, e.g. val x = if (cond) a else b.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "Kotlin's more flexible replacement for a traditional switch statement is the ____ expression.",
+          options: [],
+          answer: 'when',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Functions and Lambdas',
+    content: lessonContent(
+      'Functions and Lambdas',
+      `## Declaring functions\n\n\`\`\`kotlin\nfun greet(name: String, greeting: String = "Hello"): String {\n    return "$greeting, $name!"\n}\n\ngreet("Ada")                         // "Hello, Ada!" (uses the default)\ngreet("Ada", "Welcome")              // "Welcome, Ada!" (positional)\ngreet(name = "Ada", greeting = "Hi") // "Hi, Ada!" (named, order doesn't matter)\n\`\`\`\n\n\`greeting: String = "Hello"\` is a **default argument**, callers can skip it entirely. **Named arguments** let you pass values by parameter name, useful when a function takes several similarly-typed parameters and you want the call site to stay readable.\n\n## Single-expression functions\n\nWhen a function's body is just one expression, you can skip \`return\` and the braces entirely:\n\n\`\`\`kotlin\nfun square(x: Int) = x * x\n\`\`\`\n\n## Lambdas and higher-order functions\n\nA **lambda** is a function value, one you can store in a variable or pass as an argument:\n\n\`\`\`kotlin\nval double: (Int) -> Int = { x -> x * 2 }\nprintln(double(5)) // 10\n\`\`\`\n\nA function that accepts another function as a parameter is a **higher-order function**:\n\n\`\`\`kotlin\nfun applyTwice(x: Int, op: (Int) -> Int): Int = op(op(x))\n\nprintln(applyTwice(3) { it + 1 }) // 5\n\`\`\`\n\nTwo things happening in that last line:\n\n- When a lambda is the **last** parameter, it can be written outside the parentheses, this is called **trailing lambda syntax**, and it's everywhere in idiomatic Kotlin.\n- Inside a single-parameter lambda, \`it\` is the implicit name for that parameter, so \`{ it + 1 }\` means "take the one argument and add 1", no need to write \`{ x -> x + 1 }\` when there's nothing ambiguous about it.`
+    ),
+    quiz: {
+      title: 'Functions and Lambdas Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Inside a single-parameter lambda, what is the implicit name for that parameter if you don\'t name it yourself?',
+          options: ['self', 'it', 'this', 'arg'],
+          answer: 'it',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Named arguments let you pass arguments in a different order than the function declares them.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A function like "fun square(x: Int) = x * x" that skips return and braces is called a ____-expression function.',
+          options: [],
+          answer: 'single',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Classes, Data Classes, and Objects',
+    content: lessonContent(
+      'Classes, Data Classes, and Objects',
+      `## Classes with a primary constructor\n\n\`\`\`kotlin\nclass Student(val name: String, var xp: Int = 0) {\n    fun gainXp(amount: Int) {\n        xp += amount\n    }\n}\n\nval ada = Student("Ada")\nada.gainXp(50)\nprintln(ada.xp) // 50\n\`\`\`\n\nDeclaring \`val name: String\` directly inside the class header does three things at once: declares a constructor parameter, creates a property, **and** generates its getter (and a setter too, for \`var\` properties), all without writing a single line of boilerplate. Compare that to Java's \`Methods and Classes\` lesson, where the constructor, field, and getter each had to be written out by hand.\n\n## Data classes\n\nWhen a class exists mainly to hold data, \`data class\` generates \`equals()\`, \`hashCode()\`, \`toString()\`, and a handy \`copy()\` for you:\n\n\`\`\`kotlin\ndata class Point(val x: Int, val y: Int)\n\nval p1 = Point(1, 2)\nval p2 = Point(1, 2)\n\nprintln(p1 == p2)        // true, structural equality, not reference equality\nprintln(p1)                // Point(x=1, y=2)\nval p3 = p1.copy(y = 5)  // Point(x=1, y=5), everything else copied as-is\n\`\`\`\n\n\`p1 == p2\` is \`true\` even though they're two separate objects, because \`data class\` compares by **value**, not by memory reference, exactly what you want for simple data-holding types.\n\n## object and companion object\n\n\`object\` declares a class with exactly one instance, a **singleton**, created lazily the first time it's used:\n\n\`\`\`kotlin\nobject Config {\n    val maxRetries = 3\n}\n\nprintln(Config.maxRetries)\n\`\`\`\n\nA \`companion object\` attaches shared, class-level members to a regular class, similar to \`static\` in Java:\n\n\`\`\`kotlin\nclass User(val id: Int) {\n    companion object {\n        fun createGuest() = User(0)\n    }\n}\n\nval guest = User.createGuest()\n\`\`\``
+    ),
+    quiz: {
+      title: 'Classes & Data Classes Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does declaring "class Student(val name: String)" generate automatically that Java requires writing by hand?',
+          options: [
+            'Nothing, it works exactly like Java',
+            'A property with an auto-generated getter, no manual field or getter needed',
+            'A public field only, with no getter',
+            'A static field',
+          ],
+          answer: 'A property with an auto-generated getter, no manual field or getter needed',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Two data class instances with identical property values are == to each other, because data classes get structural equality.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The keyword used to declare a class with exactly one, lazily-created instance (a singleton) is ____.',
+          options: [],
+          answer: 'object',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Collections and Extension Functions',
+    content: lessonContent(
+      'Collections and Extension Functions',
+      `## Read-only vs. mutable collections\n\nKotlin applies the same val/var philosophy to collections: prefer read-only by default.\n\n\`\`\`kotlin\nval languages = listOf("Kotlin", "Java", "Go")        // read-only List\nval mutableLanguages = mutableListOf("Kotlin")          // MutableList\nmutableLanguages.add("Java")\n\`\`\`\n\n\`listOf(...)\` returns a \`List\` with no \`.add()\`/\`.remove()\` at all, not just a convention, the compiler enforces it. Reach for \`mutableListOf(...)\` only when you genuinely need to change the collection after creating it.\n\n## Functional operations\n\n\`\`\`kotlin\nval upper = languages.map { it.uppercase() }        // ["KOTLIN", "JAVA", "GO"]\nval short = languages.filter { it.length <= 4 }      // ["Java", "Go"]\nval total = listOf(1, 2, 3).reduce { acc, n -> acc + n } // 6\n\`\`\`\n\n\`map\` transforms every element into something new, \`filter\` keeps only the elements matching a condition, and \`reduce\` combines every element into a single result by repeatedly applying a function to an accumulator (\`acc\`) and the next element.\n\n## Extension functions\n\nAn **extension function** adds a new function to an existing type, even one you don't own the source code for, without subclassing or modifying it:\n\n\`\`\`kotlin\nfun String.shout(): String = this.uppercase() + "!"\n\nprintln("hello".shout()) // "HELLO!"\n\`\`\`\n\n\`String.shout()\` reads as "an extension function on \`String\`", inside its body, \`this\` refers to the specific \`String\` it was called on ("hello" here). Kotlin's own standard library, including \`map\`, \`filter\`, and \`reduce\` above, is itself built almost entirely out of extension functions on the built-in collection types.\n\n> [!TIP]\n> Extension functions are resolved at compile time based on the declared type, not real "monkey-patching", they're a safe, readable way to add convenience methods without touching the original class.`
+    ),
+    quiz: {
+      title: 'Collections & Extensions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the key difference between listOf() and mutableListOf()?',
+          options: [
+            'listOf() is faster but otherwise identical',
+            'listOf() creates a read-only List, mutableListOf() creates a List you can add/remove from',
+            'mutableListOf() can only hold numbers',
+            'There is no difference, both are mutable',
+          ],
+          answer: 'listOf() creates a read-only List, mutableListOf() creates a List you can add/remove from',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An extension function can be called on a type without modifying that type\'s original source code.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The higher-order function that transforms each element of a collection into a new value is called ____.',
+          options: [],
+          answer: 'map',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Contact Book Console App',
+    content: lessonContent(
+      'Final Project: Contact Book Console App',
+      `Combine everything from this course, null safety, data classes, \`when\`, and extension functions, into a small, real console application: a contact book.\n\n## Requirements\n\n1. Create a \`data class Contact(val name: String, val phone: String, var favorite: Boolean = false)\`.\n2. Create a \`ContactBook\` class holding a \`MutableList<Contact>\`, with methods \`addContact(c: Contact)\`, \`findContact(name: String): Contact?\` (returns \`null\` if not found, don't throw), \`removeContact(name: String)\`, and \`listFavorites(): List<Contact>\`.\n3. In \`main\`, add at least 3 contacts, mark one as a favorite, then call \`findContact\` with a name that doesn't exist and handle the \`null\` result gracefully (using \`?.\` and/or \`?:\`) instead of crashing.\n4. Print all favorite contacts.\n5. Write at least one extension function, e.g. \`fun Contact.displayName() = "$name ($phone)"\`, and use it when printing contacts.\n\n## Stretch goals\n\n- Use a \`when\` expression to group contacts by the first letter of their name.\n- Make lookups in \`findContact\` case-insensitive.\n- Sort the favorites list alphabetically by name before printing it.\n\nSubmit a link to your finished project below, an instructor will review it before you can mark this lesson complete. Good luck!`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const goLessons: SeedLesson[] = [
   {
     title: 'Hello, Go',
@@ -9112,6 +9333,13 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       title: 'Java Foundations',
       description: 'Statically-typed, object-oriented programming on the JVM: classes, collections, generics, and interfaces.',
       lessons: javaLessons,
+    },
+  ],
+  kotlin: [
+    {
+      title: 'Kotlin Foundations',
+      description: 'A modern, concise language for the JVM and Android: null safety, data classes, extension functions, and idiomatic Java interop.',
+      lessons: kotlinLessons,
     },
   ],
   go: [
