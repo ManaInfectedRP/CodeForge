@@ -8105,6 +8105,269 @@ const cirqLessons: SeedLesson[] = [
   },
 ];
 
+const sklearnLessons: SeedLesson[] = [
+  {
+    title: 'Setup and Your First Model',
+    content: lessonContent(
+      'Setup and Your First Model',
+      `**scikit-learn** is Python's most widely used library for classical machine learning: classification, regression, clustering, and everything around evaluating and tuning those models. Unlike this course's quantum computing or game-development siblings, scikit-learn (along with numpy and pandas) actually runs directly in this course's browser sandbox, every lesson here is genuinely runnable, no local install required.\n\n## What "machine learning" actually means\n\nA traditional program is a set of rules a human writes by hand: "if the email contains these words, mark it as spam." A machine learning model instead **learns** those rules from examples: show it thousands of emails already labeled spam/not-spam, and it figures out the patterns itself. scikit-learn's entire API is built around two verbs that capture this idea:\n\n- \`fit(X, y)\`, learn patterns from labeled training data (\`X\` = inputs, \`y\` = correct answers).\n- \`predict(X)\`, apply what was learned to new, unseen inputs.\n\n## Your first model\n\n\`\`\`python\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.tree import DecisionTreeClassifier\n\niris = load_iris()\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.2, random_state=42\n)\n\nmodel = DecisionTreeClassifier(random_state=42)\nmodel.fit(X_train, y_train)\n\npredictions = model.predict(X_test)\nprint('Predicted:', predictions[:10])\nprint('Actual:   ', y_test[:10])\n\`\`\`\n\n- \`load_iris()\` loads a small, classic dataset (bundled with scikit-learn, no download needed) of 150 flowers, each described by 4 measurements (\`.data\`) and labeled with one of 3 species (\`.target\`).\n- \`train_test_split(...)\` splits the data into a chunk for training and a chunk held back for testing, covered in depth next lesson.\n- \`DecisionTreeClassifier()\` creates an **untrained** model, a decision tree specifically, but every scikit-learn model shares this same \`fit\`/\`predict\` shape regardless of what's happening internally.\n- \`model.fit(X_train, y_train)\` is where the actual learning happens, before this line, \`model\` knows nothing about flowers.\n- \`model.predict(X_test)\` asks the now-trained model to guess the species of flowers it has never seen, comparing its guesses to the real answers is exactly how you'll judge whether it learned anything useful.\n\n> [!NOTE]\n> The first time any lesson in this course imports \`sklearn\`, \`numpy\`, or \`pandas\`, your browser downloads those packages (compiled to WebAssembly), which can take a little while, subsequent runs on the same page are instant. No \`pip install\` needed, this is genuinely different from the Kivy, Qiskit, and Cirq courses.`
+    ),
+    quiz: {
+      title: 'Setup and Your First Model Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What is the core difference between a traditional program and a machine learning model?",
+          options: [
+            'ML models run faster',
+            'A traditional program follows hand-written rules, an ML model learns patterns from labeled examples',
+            'ML models never make mistakes',
+            'There is no real difference',
+          ],
+          answer: 'A traditional program follows hand-written rules, an ML model learns patterns from labeled examples',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every scikit-learn model shares the same fit()/predict() interface, regardless of what algorithm it uses internally.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'model.____(X_train, y_train) is the method call where a scikit-learn model actually learns from training data.',
+          options: [],
+          answer: 'fit',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Data and Train/Test Splits',
+    content: lessonContent(
+      'Data and Train/Test Splits',
+      `The previous lesson split data into training and test sets without explaining why, this lesson makes that explicit: it's arguably the single most important habit in applied machine learning.\n\n## Why you can't evaluate on training data\n\nIf you show a model its own training data and ask "how'd you do?", a sufficiently flexible model can simply **memorize** every example, scoring perfectly, while having learned nothing that generalizes to new data. The only honest way to measure "did this model actually learn something useful?" is to test it on examples it never saw during training.\n\n## Looking at the data with pandas\n\n\`\`\`python\nimport pandas as pd\nfrom sklearn.datasets import load_iris\n\niris = load_iris(as_frame=True)\ndf = iris.frame\nprint(df.head())\nprint('shape:', df.shape)\n\`\`\`\n\n\`load_iris(as_frame=True)\` returns the dataset as a **pandas DataFrame**, a table with named columns, instead of plain numpy arrays, much easier to read and explore. \`df.head()\` prints the first 5 rows, \`df.shape\` gives \`(rows, columns)\`, both standard first steps when looking at any new dataset.\n\n## Splitting properly\n\n\`\`\`python\nfrom sklearn.model_selection import train_test_split\n\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.2, random_state=42\n)\nprint('train size:', len(X_train), '  test size:', len(X_test))\n\`\`\`\n\n- \`test_size=0.2\` holds back 20% of the data for testing, 80% for training, a common default, though the right split depends on how much data you have overall.\n- \`random_state=42\` seeds the random shuffle used to pick which rows go where. Without it, you'd get a different split every run, making results hard to compare or reproduce, setting a fixed seed is standard practice any time you want a repeatable experiment.\n\n> [!WARNING]\n> Never look at your test set while choosing features, tuning models, or making any decision that shapes your final model, if test-set performance influences your choices, it stops being an honest measure of generalization. It should be touched exactly once, at the very end, to report a final number.`
+    ),
+    quiz: {
+      title: 'Data and Train/Test Splits Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why is it misleading to evaluate a model on the same data it was trained on?',
+          options: [
+            "It isn't misleading, that's the standard approach",
+            'A flexible model can simply memorize the training data and score perfectly without learning anything generalizable',
+            'Training data is always corrupted',
+            'scikit-learn forbids it',
+          ],
+          answer: 'A flexible model can simply memorize the training data and score perfectly without learning anything generalizable',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Setting random_state to a fixed number makes a train/test split reproducible across runs.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'test_size=0.____ holds back 20% of the data for the test set.',
+          options: [],
+          answer: '2',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Classification with Decision Trees and k-NN',
+    content: lessonContent(
+      'Classification with Decision Trees and k-NN',
+      `**Classification** means predicting a category (which species? spam or not?) rather than a number. This lesson compares two classic, intuitive classifiers on the same data, and shows off scikit-learn's consistent API in action.\n\n## Two very different ideas, one shared interface\n\n\`\`\`python\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.metrics import accuracy_score\n\niris = load_iris()\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.2, random_state=42\n)\n\ntree = DecisionTreeClassifier(random_state=42)\ntree.fit(X_train, y_train)\ntree_accuracy = accuracy_score(y_test, tree.predict(X_test))\n\nknn = KNeighborsClassifier(n_neighbors=5)\nknn.fit(X_train, y_train)\nknn_accuracy = accuracy_score(y_test, knn.predict(X_test))\n\nprint('Decision Tree accuracy:', tree_accuracy)\nprint('k-NN accuracy:         ', knn_accuracy)\n\`\`\`\n\n- A **decision tree** learns a sequence of yes/no questions ("is petal length < 2.5cm?") that splits the data into increasingly pure groups, similar in spirit to a flowchart you might design by hand, except the tree figures out which questions to ask and in what order.\n- **k-NN** (k-nearest neighbors) works completely differently: to classify a new point, it finds the \`k\` closest points in the training data (by distance) and takes a majority vote among their labels. \`n_neighbors=5\` is a **hyperparameter**, a setting you choose before training, not something the model learns on its own.\n- Despite radically different internal logic, both models are trained and used identically: \`fit(X_train, y_train)\` then \`predict(X_test)\`. This consistency is exactly why scikit-learn is so easy to experiment with, swapping one model for another is often a one-line change.\n\n## accuracy_score\n\n\`accuracy_score(y_true, y_pred)\` simply computes the fraction of predictions that matched the actual label, \`0.0\` (nothing right) to \`1.0\` (everything right). It's the simplest possible evaluation metric, and, as you'll see in a later lesson, sometimes a misleading one.\n\n> [!TIP]\n> Try changing \`n_neighbors\` to \`1\` or \`15\` and re-running, k-NN's accuracy will change, a small preview of hyperparameter tuning, covered properly in the Overfitting and Cross-Validation lesson.`
+    ),
+    quiz: {
+      title: 'Classification Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How does k-NN classify a new data point?',
+          options: [
+            'By asking a sequence of yes/no questions',
+            "By finding the k closest training points and taking a majority vote of their labels",
+            'By computing an average of all training data',
+            'It cannot classify, only regress',
+          ],
+          answer: "By finding the k closest training points and taking a majority vote of their labels",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'n_neighbors is a hyperparameter you choose before training, not something the model learns on its own.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____ predicts a category (like a species or spam/not-spam), as opposed to regression, which predicts a number.',
+          options: [],
+          answer: 'Classification',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Regression',
+    content: lessonContent(
+      'Regression',
+      `Classification predicts a category, **regression** predicts a continuous number, tomorrow's temperature, a house's price, a patient's blood sugar level. The core workflow, \`fit\`/\`predict\`/evaluate, stays the same, only the kind of output and the evaluation metrics change.\n\n## Predicting a number\n\n\`\`\`python\nfrom sklearn.datasets import load_diabetes\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LinearRegression\nfrom sklearn.metrics import mean_squared_error, r2_score\n\ndiabetes = load_diabetes()\nX_train, X_test, y_train, y_test = train_test_split(\n    diabetes.data, diabetes.target, test_size=0.2, random_state=42\n)\n\nmodel = LinearRegression()\nmodel.fit(X_train, y_train)\npredictions = model.predict(X_test)\n\nprint('Predicted:', predictions[:5].round(1))\nprint('Actual:   ', y_test[:5])\n\`\`\`\n\n\`load_diabetes()\` is another small bundled dataset, this one maps patient measurements to a numeric disease progression score, a continuous value, not a category, so classification metrics like accuracy don't apply. \`LinearRegression\` learns a straight-line (technically, a weighted sum) relationship between the input features and that number.\n\n## Regression metrics\n\n\`\`\`python\nmse = mean_squared_error(y_test, predictions)\nr2 = r2_score(y_test, predictions)\nprint('MSE:', mse)\nprint('R^2:', r2)\n\`\`\`\n\n- **MSE** (mean squared error) averages the squared difference between each prediction and the true value, squaring both penalizes big misses more than small ones and keeps the result positive. Lower is better, but MSE alone is hard to interpret since its units are "target units squared".\n- **R²** (R-squared) is easier to read: it's the fraction of the target's variance your model explains, \`1.0\` means perfect predictions, \`0.0\` means your model is no better than always guessing the average, and it can even go negative for a model worse than that baseline.\n\n> [!NOTE]\n> Predicting a *category* and predicting a *number* look almost identical in scikit-learn code, swap \`DecisionTreeClassifier\` for \`DecisionTreeRegressor\`, swap \`accuracy_score\` for \`mean_squared_error\`, everything else follows the same \`fit\`/\`predict\` shape from the first lesson.`
+    ),
+    quiz: {
+      title: 'Regression Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does an R² score of 1.0 mean?',
+          options: [
+            'The model is completely wrong',
+            "The model's predictions perfectly explain all the variance in the target",
+            'The model needs more training data',
+            'The dataset has 1 feature',
+          ],
+          answer: "The model's predictions perfectly explain all the variance in the target",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Regression predicts a continuous number, while classification predicts a category.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Mean squared error penalizes large mistakes more than small ones because the differences are ____ before averaging.',
+          options: [],
+          answer: 'squared',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Evaluating Models',
+    content: lessonContent(
+      'Evaluating Models',
+      `Accuracy is the easiest metric to understand, and one of the easiest to be misled by. This lesson shows exactly how, using a deliberately imbalanced dataset, and introduces the metrics that actually reveal what's going on.\n\n## When accuracy lies\n\n\`\`\`python\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.metrics import accuracy_score\n\n# 95% of samples belong to class 0, only 5% to class 1, a realistic fraud/spam-style imbalance\nX, y = make_classification(n_samples=1000, weights=[0.95, 0.05], random_state=42)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\nmodel = DecisionTreeClassifier(random_state=42)\nmodel.fit(X_train, y_train)\npreds = model.predict(X_test)\n\nprint('Accuracy:', accuracy_score(y_test, preds))\n\`\`\`\n\n\`make_classification(weights=[0.95, 0.05])\` generates a synthetic dataset with a 95/5 class imbalance. A model that lazily predicts "class 0" for *everything*, without learning anything real, would still score around 95% accuracy here, high accuracy alone doesn't prove the model is actually useful.\n\n## Metrics that reveal the truth\n\n\`\`\`python\nfrom sklearn.metrics import confusion_matrix, precision_score, recall_score\n\nprint('Confusion matrix:\\n', confusion_matrix(y_test, preds))\nprint('Precision:', precision_score(y_test, preds))\nprint('Recall:', recall_score(y_test, preds))\n\`\`\`\n\n- The **confusion matrix** breaks predictions into a 2x2 grid: true negatives, false positives, false negatives, and true positives (in that reading order for binary classification). It's the raw material every other classification metric is computed from.\n- **Precision** answers "of everything the model flagged as positive, how much was actually positive?", important when false alarms are costly.\n- **Recall** answers "of everything that was actually positive, how much did the model catch?", important when missing a positive case is costly (like a real fraud case slipping through).\n\nA model can have high accuracy and terrible recall on the minority class simultaneously, that's exactly the trap this lesson demonstrates.\n\n> [!TIP]\n> There's rarely one "correct" metric, a spam filter (annoying to have false positives) and a cancer screening test (dangerous to have false negatives) should be tuned toward completely different tradeoffs between precision and recall, choosing the right metric for the problem is as important as choosing the right model.`
+    ),
+    quiz: {
+      title: 'Evaluating Models Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why can accuracy be a misleading metric on an imbalanced dataset (e.g. 95% class 0, 5% class 1)?',
+          options: [
+            'Accuracy cannot be computed on imbalanced data',
+            "A model that always predicts the majority class can score ~95% accuracy without learning anything useful",
+            'scikit-learn refuses to compute accuracy on imbalanced data',
+            'Accuracy is only defined for regression',
+          ],
+          answer: "A model that always predicts the majority class can score ~95% accuracy without learning anything useful",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Recall measures, of everything that was actually positive, how much the model correctly caught.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The ____ ____ breaks classification results into true negatives, false positives, false negatives, and true positives.',
+          options: [],
+          answer: 'confusion matrix',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Feature Scaling and Pipelines',
+    content: lessonContent(
+      'Feature Scaling and Pipelines',
+      `Some models are sensitive to the *scale* of their input features in ways that have nothing to do with which features actually matter. This lesson covers fixing that with \`StandardScaler\`, and introduces \`Pipeline\`, the tool that chains preprocessing and modeling together safely.\n\n## Why scale matters\n\nImagine two features: "age in years" (roughly 0-100) and "income in dollars" (roughly 0-200,000). A distance-based model like k-NN computes distances using raw numbers, income's much larger range would completely dominate the distance calculation, making age nearly irrelevant, regardless of which one is actually more predictive.\n\n\`\`\`python\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.metrics import accuracy_score\n\niris = load_iris()\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.2, random_state=42\n)\n\npipeline = Pipeline([\n    ('scaler', StandardScaler()),\n    ('knn', KNeighborsClassifier(n_neighbors=5)),\n])\n\npipeline.fit(X_train, y_train)\npreds = pipeline.predict(X_test)\nprint('Accuracy:', accuracy_score(y_test, preds))\n\`\`\`\n\n\`StandardScaler\` transforms every feature to have mean \`0\` and standard deviation \`1\`, putting every feature on the same footing before a distance-based (or regularized linear) model ever sees them.\n\n## Why Pipeline, not just calling StandardScaler manually\n\nYou could call \`scaler.fit_transform(X_train)\` and \`scaler.transform(X_test)\` by hand, but \`Pipeline\` bundles preprocessing and modeling into one object with the exact same \`fit\`/\`predict\` interface as any single model, which prevents a subtle but serious bug: **data leakage**.\n\n\`\`\`python\n# What Pipeline does correctly under the hood:\n# 1. Fit the scaler ONLY on training data (learn its mean/std from X_train)\n# 2. Transform X_train using those training-only statistics\n# 3. Transform X_test using the SAME training-only statistics (never refit on test data)\n\`\`\`\n\nIf you accidentally fit a scaler on the *combined* train+test data, information about the test set (its mean, its spread) leaks into preprocessing before you've ever evaluated anything, quietly inflating your test score. \`Pipeline.fit(X_train, y_train)\` guarantees every preprocessing step only ever learns from training data, exactly like the model itself.\n\n> [!WARNING]\n> Data leakage is one of the most common real-world ML mistakes, and one of the hardest to notice, a leaky pipeline can report great test performance and then fail badly in production, where there's no way to "peek" at future data during preprocessing. \`Pipeline\` is the standard defense against it.`
+    ),
+    quiz: {
+      title: 'Feature Scaling and Pipelines Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What bug does using Pipeline (instead of manually fitting a scaler on all the data) help prevent?',
+          options: [
+            'Syntax errors',
+            'Data leakage, where test-set information leaks into preprocessing statistics before evaluation',
+            'Overfitting the decision tree',
+            'Slow training time',
+          ],
+          answer: 'Data leakage, where test-set information leaks into preprocessing statistics before evaluation',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'StandardScaler transforms features to have mean 0 and standard deviation 1.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A distance-based model like ____ is especially sensitive to unscaled features with very different ranges.',
+          options: [],
+          answer: 'k-NN',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Overfitting and Cross-Validation',
+    content: lessonContent(
+      'Overfitting and Cross-Validation',
+      `A model that performs great on training data but poorly on new data has **overfit**, it memorized noise and quirks specific to the training set instead of learning patterns that generalize. This lesson shows how to spot it, and how to evaluate and tune models more robustly than a single train/test split allows.\n\n## Spotting overfitting\n\n\`\`\`python\nfrom sklearn.datasets import load_iris\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.tree import DecisionTreeClassifier\n\niris = load_iris()\nX_train, X_test, y_train, y_test = train_test_split(\n    iris.data, iris.target, test_size=0.2, random_state=42\n)\n\ndeep_tree = DecisionTreeClassifier(random_state=42)  # no depth limit, free to grow as complex as it wants\ndeep_tree.fit(X_train, y_train)\n\nprint('Train accuracy:', deep_tree.score(X_train, y_train))\nprint('Test accuracy: ', deep_tree.score(X_test, y_test))\n\`\`\`\n\n\`model.score(X, y)\` is a shortcut that fits/predicts/scores in one call (accuracy for classifiers, R² for regressors). A wide gap between train accuracy (often near \`1.0\`, an unconstrained tree can memorize the training set almost perfectly) and test accuracy is the classic signature of overfitting.\n\n## Cross-validation: don't trust a single split\n\nA single train/test split can be lucky or unlucky, by chance, the test set might be unusually easy or hard. **k-fold cross-validation** splits the data into \`k\` chunks, trains and evaluates \`k\` times (each time using a different chunk as the "test" fold), and averages the results, a far more reliable estimate.\n\n\`\`\`python\nfrom sklearn.model_selection import cross_val_score\n\nscores = cross_val_score(DecisionTreeClassifier(random_state=42), iris.data, iris.target, cv=5)\nprint('Scores per fold:', scores)\nprint('Mean CV accuracy:', scores.mean())\n\`\`\`\n\n\`cv=5\` means 5-fold cross-validation, the data is split 5 ways, and the model is trained and scored 5 separate times. \`scores\` holds one accuracy per fold, its mean is a much sturdier estimate than any single \`train_test_split\` result.\n\n## Tuning hyperparameters with GridSearchCV\n\n\`\`\`python\nfrom sklearn.model_selection import GridSearchCV\n\nparam_grid = {'max_depth': [1, 2, 3, 4, 5, None]}\ngrid = GridSearchCV(DecisionTreeClassifier(random_state=42), param_grid, cv=5)\ngrid.fit(iris.data, iris.target)\n\nprint('Best max_depth:', grid.best_params_)\nprint('Best CV score:', grid.best_score_)\n\`\`\`\n\n\`GridSearchCV\` automates exactly what you'd otherwise do by hand: try every value in \`param_grid\`, cross-validate each one, and report which setting scored best, \`max_depth\` limits how many yes/no questions deep a tree can grow, a smaller number fights overfitting at the risk of underfitting if set too low.\n\n> [!NOTE]\n> Limiting \`max_depth\` is one of the simplest ways to fight a decision tree's tendency to overfit, an unconstrained tree can always find a rule that perfectly separates the training data, whether or not that rule means anything for new data.`
+    ),
+    quiz: {
+      title: 'Overfitting and Cross-Validation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the classic sign that a model has overfit?',
+          options: [
+            'Training takes a long time',
+            'A wide gap between high train accuracy and much lower test accuracy',
+            'The model has too few features',
+            'Test accuracy is higher than train accuracy',
+          ],
+          answer: 'A wide gap between high train accuracy and much lower test accuracy',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'k-fold cross-validation gives a more reliable performance estimate than a single train/test split by averaging results across multiple splits.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____SearchCV automates trying every hyperparameter combination in a grid and reports the best cross-validated score.',
+          options: [],
+          answer: 'Grid',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Complete Classifier Pipeline',
+    content: lessonContent(
+      'Final Project: Build a Complete Classifier Pipeline',
+      `Every piece from this course now exists on its own: loading and splitting data, training classifiers, evaluating with more than just accuracy, scaling features safely with \`Pipeline\`, and validating robustly with cross-validation and \`GridSearchCV\`. This final project assembles all of it into one complete, defensible ML workflow.\n\n## Requirements\n\nYour finished \`ml_project.py\` should satisfy every one of these:\n\n1. ✅ Load a classification dataset (\`load_iris\`, \`load_wine\`, \`load_breast_cancer\`, or your own via \`make_classification\`) and split it with \`train_test_split\`.\n2. ✅ Build a \`Pipeline\` combining \`StandardScaler\` with a classifier of your choice.\n3. ✅ Fit the pipeline and report accuracy, a confusion matrix, precision, and recall on the held-out test set.\n4. ✅ Run \`cross_val_score\` on the same pipeline and print the mean cross-validated accuracy, does it roughly agree with your single-split test accuracy?\n5. ✅ Use \`GridSearchCV\` to tune at least one hyperparameter of your classifier, and report the best parameters found.\n\n\`\`\`python\nfrom sklearn.datasets import load_wine\nfrom sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.neighbors import KNeighborsClassifier\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score\n\n# 1. Load and split\ndata = load_wine()\nX_train, X_test, y_train, y_test = train_test_split(\n    data.data, data.target, test_size=0.2, random_state=42\n)\n\n# 2. Build the pipeline\npipeline = Pipeline([\n    ('scaler', StandardScaler()),\n    ('knn', KNeighborsClassifier()),\n])\n\n# 3. Fit and evaluate\npipeline.fit(X_train, y_train)\npreds = pipeline.predict(X_test)\nprint('Accuracy:', accuracy_score(y_test, preds))\nprint('Confusion matrix:\\n', confusion_matrix(y_test, preds))\nprint('Precision (macro):', precision_score(y_test, preds, average='macro'))\nprint('Recall (macro):', recall_score(y_test, preds, average='macro'))\n\n# 4. Cross-validate\ncv_scores = cross_val_score(pipeline, data.data, data.target, cv=5)\nprint('Mean CV accuracy:', cv_scores.mean())\n\n# 5. Tune a hyperparameter\nparam_grid = {'knn__n_neighbors': [1, 3, 5, 7, 9, 11]}\ngrid = GridSearchCV(pipeline, param_grid, cv=5)\ngrid.fit(data.data, data.target)\nprint('Best params:', grid.best_params_)\nprint('Best CV score:', grid.best_score_)\n\`\`\`\n\nNotice \`param_grid\` uses the key \`'knn__n_neighbors'\`, the double-underscore syntax lets \`GridSearchCV\` reach *inside* a \`Pipeline\` and tune a specific step's parameter, \`stepname__paramname\`.\n\n## Stretch goals\n\n- Try a different classifier in the pipeline (\`RandomForestClassifier\`, \`SVC\`, \`LogisticRegression\`) and compare cross-validated scores.\n- Try a different dataset (\`load_breast_cancer\` is a good binary-classification option) and see how precision/recall behave differently from a balanced multi-class problem like wine or iris.\n- Expand \`param_grid\` to tune more than one hyperparameter at once, \`GridSearchCV\` will try every combination.\n- Plot the confusion matrix visually instead of printing raw numbers (matplotlib is available in this sandbox too).\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
   nodejs: [
     {
@@ -8160,6 +8423,12 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       description:
         "Learn quantum computing with Google's Cirq SDK: build circuits from qubits and operations, create superposition and entanglement, run repetition-based simulations, build a quantum random number generator, and simulate realistic hardware noise.",
       lessons: cirqLessons,
+    },
+    {
+      title: 'Machine Learning Fundamentals with scikit-learn',
+      description:
+        "Learn classical machine learning with scikit-learn: train classifiers and regressors, split and evaluate data properly, understand precision/recall beyond accuracy, scale features safely with Pipeline, and validate models with cross-validation and GridSearchCV. Every lesson runs live in your browser, no local install needed.",
+      lessons: sklearnLessons,
     },
   ],
   javascript: [

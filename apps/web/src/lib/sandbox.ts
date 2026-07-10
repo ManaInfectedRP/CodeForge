@@ -30,6 +30,10 @@ interface PyodideInterface {
   setStdout(opts: { batched: (s: string) => void }): void;
   setStderr(opts: { batched: (s: string) => void }): void;
   globals: { get(name: string): (() => { destroy(): void }) };
+  /** Scans a code string for top-level imports and downloads any matching Pyodide package
+   * (numpy, pandas, scikit-learn, ...) that isn't loaded yet. A no-op for packages already
+   * loaded or not found in Pyodide's package repository (those just fail at import time as usual). */
+  loadPackagesFromImports(code: string): Promise<void>;
 }
 
 declare global {
@@ -74,6 +78,7 @@ export async function runPython(code: string): Promise<{ output: string; error: 
   // fresh namespace per run, used for challenge grading where each test case must be isolated
   const namespace = py.globals.get('dict')();
   try {
+    await py.loadPackagesFromImports(code);
     await py.runPythonAsync(code, { globals: namespace });
     return { output, error: null };
   } catch (err) {
@@ -115,6 +120,7 @@ export async function runPythonInSession(
   py.setStderr({ batched: (s) => (output += s + '\n') });
   const namespace = getSessionNamespace(py, key);
   try {
+    await py.loadPackagesFromImports(code);
     await py.runPythonAsync(code, { globals: namespace });
     return { output, error: null };
   } catch (err) {
