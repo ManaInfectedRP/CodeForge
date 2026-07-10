@@ -398,6 +398,60 @@ function buildLuaHarness(studentCode: string, entryPoint: string, input: unknown
   ].join('\n');
 }
 
+function cStringLiteral(s: string): string {
+  const escaped = s
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+  return `"${escaped}"`;
+}
+
+// picoc has no struct/array literal syntax and no stdlib JSON, so each argument is rendered as a
+// standalone local declaration (rather than an inline expression) and referenced by name in the
+// call - this sidesteps picoc's missing compound-literal/initializer-list support entirely. Every
+// C challenge is designed to have an int-returning entry point, since the client never sees the
+// test case's expectedOutput (only examples get that), so there's no type info to pick a print
+// format from at harness-build time.
+function cArgDecl(value: unknown, index: number): { decl: string; ref: string } {
+  if (typeof value === 'number') {
+    return { decl: '', ref: String(Math.trunc(value)) };
+  }
+  if (typeof value === 'string') {
+    return { decl: '', ref: cStringLiteral(value) };
+  }
+  if (Array.isArray(value) && value.every((v) => typeof v === 'number')) {
+    const name = `__cf_arg${index}`;
+    const elems = value.map((v) => Math.trunc(v as number)).join(', ');
+    return { decl: `int ${name}[] = { ${elems} };\n`, ref: name };
+  }
+  throw new Error(`Cannot encode ${typeof value} as a C argument`);
+}
+
+function buildCHarness(studentCode: string, entryPoint: string, input: unknown[]): string {
+  const decls: string[] = [];
+  const refs: string[] = [];
+  input.forEach((value, i) => {
+    const { decl, ref } = cArgDecl(value, i);
+    if (decl) decls.push(decl);
+    refs.push(ref);
+  });
+  return [
+    '#include <stdio.h>',
+    '',
+    studentCode,
+    '',
+    'int main(void) {',
+    ...decls.map((d) => '  ' + d),
+    `  int __cf_result = ${entryPoint}(${refs.join(', ')});`,
+    `  printf("${RESULT_PREFIX}%d\\n", __cf_result);`,
+    '  return 0;',
+    '}',
+    '',
+  ].join('\n');
+}
+
 // --- HTML via a sandboxed iframe + postMessage ---
 //
 // HTML challenges have no entry-point function to call, so grading works differently: each test
@@ -502,6 +556,11 @@ export async function runTestCase(
   }
   if (lang === 'html') {
     return runHtmlAssertion(studentCode, input[0] as HtmlAssertion);
+  }
+  if (lang === 'c') {
+    const { output, error } = await runC(buildCHarness(studentCode, entryPoint, input));
+    if (error) return { actualOutput: null, errored: true, errorMessage: error };
+    return extractSentinel(output);
   }
   let js = studentCode;
   if (lang === 'typescript') {

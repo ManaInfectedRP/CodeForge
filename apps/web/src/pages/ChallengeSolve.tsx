@@ -24,6 +24,7 @@ const langToRunnable: Record<ChallengeLanguage, RunnableLang> = {
   TYPESCRIPT: 'typescript',
   LUA: 'lua',
   HTML: 'html',
+  C: 'c',
 };
 
 const langLabels: Record<ChallengeLanguage, string> = {
@@ -32,14 +33,16 @@ const langLabels: Record<ChallengeLanguage, string> = {
   TYPESCRIPT: 'TypeScript',
   LUA: 'Lua',
   HTML: 'HTML',
+  C: 'C',
 };
 
-const starterKeyByLang: Record<ChallengeLanguage, 'python' | 'javascript' | 'typescript' | 'lua' | 'html'> = {
+const starterKeyByLang: Record<ChallengeLanguage, 'python' | 'javascript' | 'typescript' | 'lua' | 'html' | 'c'> = {
   PYTHON: 'python',
   JAVASCRIPT: 'javascript',
   TYPESCRIPT: 'typescript',
   LUA: 'lua',
   HTML: 'html',
+  C: 'c',
 };
 
 // react-simple-code-editor's highlighter takes a Prism grammar name, not a RunnableLang - HTML has
