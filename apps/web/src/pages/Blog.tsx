@@ -12,7 +12,21 @@ export function Blog() {
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-3xl font-bold">Blog</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Blog</h1>
+        <a
+          href="/api/blog/feed.xml"
+          className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white"
+          title="RSS feed"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current">
+            <path d="M4 4v3.5C12.5 7.5 16.5 11.5 16.5 20H20C20 9.5 14.5 4 4 4Z" />
+            <path d="M4 11v3.5C7.5 14.5 9.5 16.5 9.5 20H13C13 14 8.5 11 4 11Z" />
+            <circle cx="6" cy="18" r="2" />
+          </svg>
+          RSS
+        </a>
+      </div>
       <p className="mt-2 text-slate-400">News, deep dives, and updates from the Kodstigen team.</p>
 
       {posts === null ? (
