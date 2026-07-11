@@ -15,6 +15,9 @@ export function Footer() {
           <Link to="/about" className="hover:text-white">
             About
           </Link>
+          <Link to="/faq" className="hover:text-white">
+            FAQ
+          </Link>
           <a href="mailto:Sebbelarsson9601@gmail.com" className="hover:text-white">
             Contact us
           </a>

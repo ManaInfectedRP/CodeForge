@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { BlogPostDetailDto } from '@codeforge/shared';
 import { LessonMarkdown } from '../components/LessonMarkdown';
+import { PageMeta } from '../components/PageMeta';
 import { api, errorMessage } from '../lib/api';
 
 export function BlogPost() {
@@ -32,6 +33,21 @@ export function BlogPost() {
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
+      <PageMeta
+        title={`${post.title} | Kodstigen Blog`}
+        description={post.excerpt}
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          headline: post.title,
+          description: post.excerpt,
+          ...(post.coverImageUrl ? { image: post.coverImageUrl } : {}),
+          datePublished: post.publishedAt,
+          author: { '@type': 'Person', name: post.authorUsername },
+          mainEntityOfPage: `https://kodstigen.se/blog/${post.slug}`,
+        }}
+      />
+
       <Link to="/blog" className="text-sm text-slate-400 hover:text-white">
         ← Blog
       </Link>
