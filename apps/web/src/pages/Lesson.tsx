@@ -10,7 +10,7 @@ import { getChatSocket } from '../lib/socket';
 
 export function Lesson() {
   const { id } = useParams<{ id: string }>();
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [lesson, setLesson] = useState<LessonDetailDto | null>(null);
   const [quizPassed, setQuizPassed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +92,7 @@ export function Lesson() {
         <LessonMarkdown sessionKey={lesson.id}>{lesson.content}</LessonMarkdown>
       </article>
 
-      {lesson.requiresSubmission && (
+      {lesson.requiresSubmission && user && (
         <ProjectSubmissionPanel
           lessonId={lesson.id}
           submission={lesson.mySubmission}
@@ -100,7 +100,7 @@ export function Lesson() {
         />
       )}
 
-      {lesson.quiz && (
+      {lesson.quiz && user && (
         <QuizPlayer
           key={lesson.quiz.id}
           quiz={lesson.quiz}
@@ -108,7 +108,22 @@ export function Lesson() {
         />
       )}
 
-      {!lesson.completed &&
+      {!user ? (
+        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-5 text-center">
+          <p className="text-sm text-slate-400">
+            {lesson.quiz
+              ? 'Create a free account to take the quiz, save your progress, and continue the course.'
+              : 'Create a free account to save your progress and continue the course.'}
+          </p>
+          <Link
+            to="/register"
+            className="mt-4 inline-block rounded-xl bg-forge-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-forge-500"
+          >
+            Create a free account
+          </Link>
+        </div>
+      ) : (
+        !lesson.completed &&
         (!quizPassed ? (
           <p className="mt-8 rounded-xl border border-dashed border-slate-700 px-4 py-3 text-sm text-slate-400">
             Pass the quiz above to unlock lesson completion.
@@ -125,7 +140,8 @@ export function Lesson() {
           >
             {completing ? 'Saving…' : '✓ Mark lesson complete (+10 XP)'}
           </button>
-        ))}
+        ))
+      )}
 
       <nav className="mt-12 flex justify-between border-t border-slate-800 pt-6 text-sm">
         {lesson.prevLessonId ? (

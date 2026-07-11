@@ -254,6 +254,15 @@ const paths = [
     projectCount: 7,
     description: "Godot's built-in scripting language: nodes, the scene tree, signals, and building real gameplay behavior.",
   },
+  {
+    slug: 'public',
+    name: 'Public Paths',
+    icon: '🔓',
+    difficulty: 1,
+    estimatedHours: 2,
+    projectCount: 1,
+    description: 'Free sample courses, no account needed to try the first lesson.',
+  },
 ];
 
 type SeedQuestion = {
@@ -10167,7 +10176,159 @@ const sklearnLessons: SeedLesson[] = [
   },
 ];
 
-const coursesByPath: Record<string, { title: string; description: string; lessons: SeedLesson[] }[]> = {
+const publicSampleLessons: SeedLesson[] = [
+  {
+    title: 'Hello, Programming!',
+    content: lessonContent(
+      'Hello, Programming!',
+      `Welcome! This is your first step into programming, no experience required. We'll use **JavaScript**, the language that runs in every web browser, so you can try it right here without installing anything.\n\n\`\`\`js\n// This is a comment, the computer ignores it, it's a note for humans.\nlet name = "friend";\nconsole.log("Hello, " + name + "!");\n\`\`\`\n\n## Reading it line by line\n\n- \`let name = "friend";\` creates a **variable**, a named box that holds a value, here the text \`"friend"\`.\n- \`console.log(...)\` prints whatever is inside the parentheses, the most common way to see what your code is doing.\n- \`"Hello, " + name + "!"\` **concatenates** (joins) three pieces of text into one: \`"Hello, "\`, the value stored in \`name\`, and \`"!"\`.\n\n## Try it yourself\n\nChange \`"friend"\` to your own name in the code block above, then click **Run** and watch the output update.\n\n## Why variables matter\n\nWithout a variable, you'd have to retype \`"friend"\` everywhere you wanted to use it. With one, you can change the value in a single place and everything that uses it updates. This idea, storing and reusing values, is the foundation everything else in programming builds on.`
+    ),
+    quiz: {
+      title: 'Hello, Programming! Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does console.log(...) do?',
+          options: ['Deletes a variable', 'Prints its contents to the console', 'Creates a new file', 'Runs a quiz'],
+          answer: 'Prints its contents to the console',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'let name = "friend"; creates a ____ that holds the value "friend".',
+          options: [],
+          answer: 'variable',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Text after // on a line is a comment and is ignored by the computer.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Data Types and Operators',
+    content: lessonContent(
+      'Data Types and Operators',
+      `Every value in JavaScript has a **type**, and the type determines what you can do with it.\n\n\`\`\`js\nlet age = 16;               // number\nlet price = 19.99;          // also a number, JS doesn't separate int/float\nlet title = "Space Quest";  // string\nlet isAvailable = true;     // boolean\n\nconsole.log(age + 4);       // 20\nconsole.log(title.length);  // 10\nconsole.log(isAvailable);   // true\n\`\`\`\n\n## Common types\n\n| Type | Example |\n|---|---|\n| number | \`16\`, \`19.99\`, \`-3\` |\n| string | \`"Space Quest"\` |\n| boolean | \`true\` / \`false\` |\n\n## Operators\n\n- Arithmetic: \`+ - * /\` work on numbers as you'd expect. \`+\` on two strings **joins** them instead of adding.\n- Comparison: \`===\` checks if two values are equal (strictly, without converting types), \`!==\` checks if they're not equal, \`<\`, \`>\`, \`<=\`, \`>=\` compare numbers.\n\n\`\`\`js\nconsole.log(5 === 5);     // true\nconsole.log(5 === "5");   // false, different types\nconsole.log(10 > 3);      // true\n\`\`\`\n\n## Why === and not ==\n\nJavaScript also has \`==\`, which converts types before comparing (\`"5" == 5\` is \`true\`), that hidden conversion causes subtle bugs. Prefer \`===\`/\`!==\`, which compare exactly what you wrote.`
+    ),
+    quiz: {
+      title: 'Data Types & Operators Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does === check, unlike ==?',
+          options: [
+            'Nothing, they are identical',
+            'Equality without converting types first',
+            'Only whether both are numbers',
+            'Whether a variable exists',
+          ],
+          answer: 'Equality without converting types first',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '5 === "5" evaluates to ____, since the two values have different types.',
+          options: [],
+          answer: 'false',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Using + on two strings joins (concatenates) them instead of adding.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Making Decisions with if/else',
+    content: lessonContent(
+      'Making Decisions with if/else',
+      `Programs need to react differently depending on the situation, that's what \`if\`/\`else\` is for.\n\n\`\`\`js\nlet score = 72;\n\nif (score >= 90) {\n  console.log("Grade: A");\n} else if (score >= 70) {\n  console.log("Grade: B");\n} else {\n  console.log("Grade: C or below");\n}\n\`\`\`\n\n## The pieces\n\n- \`if (condition) { ... }\` runs its block only when \`condition\` is \`true\`.\n- \`else if (condition) { ... }\` checks another condition, only if every earlier one was \`false\`.\n- \`else { ... }\` runs when none of the earlier conditions matched, it's the fallback.\n- Conditions are usually built from comparison operators (\`>=\`, \`===\`, ...) and can be combined with \`&&\` (**and**, both must be true) and \`||\` (**or**, at least one must be true).\n\n\`\`\`js\nlet age = 20;\nlet hasTicket = true;\n\nif (age >= 18 && hasTicket) {\n  console.log("Welcome in!");\n}\n\`\`\`\n\n## Truthy and falsy\n\nValues other than actual booleans still work inside an \`if\`, \`0\`, \`""\` (empty string), and \`null\` all act like \`false\`, almost everything else acts like \`true\`. This is handy for quick checks like \`if (name) { ... }\` (runs only if \`name\` isn't empty), but can also be surprising if you're not expecting it.`
+    ),
+    quiz: {
+      title: 'if/else Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which operator requires BOTH sides to be true for the whole expression to be true?',
+          options: ['||', '&&', '===', '!'],
+          answer: '&&',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'An ____ block runs only when every earlier if/else if condition was false.',
+          options: [],
+          answer: 'else',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An empty string "" behaves like false inside an if condition.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Loops: Repeating Actions',
+    content: lessonContent(
+      'Loops: Repeating Actions',
+      `Loops let you repeat code without copy-pasting it, essential once you need to process more than a handful of items.\n\n\`\`\`js\nfor (let i = 1; i <= 5; i++) {\n  console.log("Lesson " + i);\n}\n\nlet scores = [80, 92, 67, 100];\nfor (const s of scores) {\n  console.log(s);\n}\n\`\`\`\n\n## for loops\n\nA classic \`for (init; condition; increment)\` loop: \`let i = 1\` runs once at the start, \`i <= 5\` is checked before every pass, \`i++\` runs after every pass. Together they count from 1 to 5, printing a line each time.\n\n## for...of loops\n\n\`for (const s of scores)\` visits every element in an array directly, no counter needed, use it whenever you don't care about the index, just each value.\n\n## while loops\n\n\`\`\`js\nlet attempts = 0;\nwhile (attempts < 3) {\n  console.log("Attempt " + (attempts + 1));\n  attempts++;\n}\n\`\`\`\n\nA \`while (condition) { ... }\` loop keeps running as long as \`condition\` stays \`true\`, checked before every pass. Unlike \`for\`, nothing about a \`while\` loop's structure guarantees it'll ever stop, forgetting to update \`attempts\` here would loop forever, always make sure something inside the loop moves it toward \`false\`.`
+    ),
+    quiz: {
+      title: 'Loops Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which loop is the best fit for visiting every element of an array without needing an index?',
+          options: ['for...of', 'while', 'do', 'switch'],
+          answer: 'for...of',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In for (let i = 1; i <= 5; i++), the i++ part runs ____ every pass through the loop.',
+          options: [],
+          answer: 'after',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A while loop is guaranteed to stop on its own, even if nothing inside it changes the condition.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: FizzBuzz',
+    content: lessonContent(
+      'Final Project: FizzBuzz',
+      `**FizzBuzz** is a classic beginner exercise, and a great way to prove you can combine loops and conditionals.\n\n## Requirements\n\n1. Loop through the numbers 1 to 100.\n2. For multiples of 3, print "Fizz" instead of the number.\n3. For multiples of 5, print "Buzz" instead of the number.\n4. For multiples of both 3 and 5, print "FizzBuzz".\n5. For every other number, print the number itself.\n\n## Getting started\n\n\`\`\`js\nfor (let i = 1; i <= 100; i++) {\n  // your logic here\n}\n\`\`\`\n\nThe \`%\` (modulo) operator gives you the remainder of a division, \`i % 3 === 0\` is \`true\` exactly when \`i\` is a multiple of 3.\n\n## Stretch goals\n\n- Rewrite it as a function \`fizzbuzz(n)\` that returns the array of results instead of printing directly.\n- Support a custom range, e.g. \`fizzbuzz(1, 50)\`.\n- Add a third rule of your own (e.g. multiples of 7 print "Bazz") and combine it correctly with the existing ones.\n\nSubmit your code (a repo link or gist) below when you're done, an instructor will review it before you can mark this lesson complete. Welcome to Kodstigen, ready to keep going? 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const coursesByPath: Record<
+  string,
+  {
+    title: string;
+    description: string;
+    lessons: SeedLesson[];
+    /** a fixed, human-readable id instead of a random cuid, used for the free-sample course so
+      * its URL is stable and can be referenced from robots.txt/sitemap.xml */
+    id?: string;
+    /** when true, the course detail page and its first lesson are viewable without an account */
+    isPublic?: boolean;
+  }[]
+> = {
   nodejs: [
     {
       title: 'Node.js Backend Fundamentals',
@@ -10462,6 +10623,16 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       title: 'GDScript Fundamentals',
       description: "Godot's built-in scripting language: nodes, the scene tree, signals, and building real gameplay behavior.",
       lessons: gdscriptLessons,
+    },
+  ],
+  public: [
+    {
+      id: 'sample-programming-basics',
+      title: 'Programming Basics: Your First Steps',
+      description:
+        'A free introduction to programming with JavaScript, variables, data types, conditionals, and loops, capped off with the classic FizzBuzz exercise. The first lesson is open to everyone, no account required.',
+      lessons: publicSampleLessons,
+      isPublic: true,
     },
   ],
 };
@@ -10959,6 +11130,12 @@ async function main() {
     for (const courseSeed of coursesByPath[p.slug] ?? []) {
       const existing = await prisma.course.findFirst({ where: { pathId: path.id, title: courseSeed.title } });
       if (existing) {
+        if (existing.isPublic !== (courseSeed.isPublic ?? false)) {
+          await prisma.course.update({
+            where: { id: existing.id },
+            data: { isPublic: courseSeed.isPublic ?? false },
+          });
+        }
         // refresh lesson text in place so content updates reach existing installs
         // without touching quizzes, enrollments, or student progress; lessons newly
         // added to the seed (beyond what already exists) are created with their quiz
@@ -11008,9 +11185,11 @@ async function main() {
 
       await prisma.course.create({
         data: {
+          ...(courseSeed.id ? { id: courseSeed.id } : {}),
           title: courseSeed.title,
           description: courseSeed.description,
           status: 'PUBLISHED',
+          isPublic: courseSeed.isPublic ?? false,
           pathId: path.id,
           instructorId: instructor.id,
           lessons: {

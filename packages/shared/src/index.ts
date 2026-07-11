@@ -91,6 +91,8 @@ export interface CourseSummaryDto {
   lessonCount: number;
   enrolled?: boolean;
   completedLessons?: number;
+  /** when true, this course's detail page and first lesson are viewable without an account */
+  isPublic?: boolean;
 }
 
 export interface LessonSummaryDto {
