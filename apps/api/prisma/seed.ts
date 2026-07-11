@@ -2648,6 +2648,1082 @@ const csharpLessons: SeedLesson[] = [
   },
 ];
 
+const csharpIntermediateLessons: SeedLesson[] = [
+  {
+    title: 'Inheritance and Polymorphism',
+    content: lessonContent(
+      'Inheritance and Polymorphism',
+      `**Inheritance** lets one class reuse and extend another's members. A **derived class** inherits fields and methods from a **base class**, and can override its behavior.\n\n\`\`\`csharp\nclass Animal\n{\n    public string Name;\n\n    public Animal(string name) => Name = name;\n\n    public virtual string Speak() => $"{Name} makes a sound.";\n}\n\nclass Dog : Animal\n{\n    public Dog(string name) : base(name) { }\n\n    public override string Speak() => $"{Name} barks.";\n}\n\nAnimal a = new Dog("Rex");\nConsole.WriteLine(a.Speak()); // "Rex barks."\n\`\`\`\n\n## The pieces\n\n- \`class Dog : Animal\` means \`Dog\` inherits from \`Animal\`.\n- \`: base(name)\` calls the base class's constructor.\n- \`virtual\` on a base method marks it as overridable, \`override\` on the derived method replaces it.\n- **Polymorphism**: even though \`a\` is declared as \`Animal\`, calling \`Speak()\` runs \`Dog\`'s version, because the actual object at runtime is a \`Dog\`. That's why the last line prints "Rex barks." and not "Rex makes a sound."\n\n## sealed and base member access\n\n- \`sealed override\` prevents classes that inherit from \`Dog\` from overriding \`Speak()\` any further.\n- Inside an overriding method, \`base.Speak()\` calls the base class's original implementation.`
+    ),
+    quiz: {
+      title: 'Inheritance & Polymorphism Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Which keyword lets a derived class replace a base class's virtual method?",
+          options: ['new', 'override', 'virtual', 'sealed'],
+          answer: 'override',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A method marked ____ in the base class can be replaced by a derived class using override.',
+          options: [],
+          answer: 'virtual',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'In C#, a class can inherit from more than one base class.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Interfaces and Abstract Classes',
+    content: lessonContent(
+      'Interfaces and Abstract Classes',
+      `Two ways to define a contract that other classes must implement, with different tradeoffs.\n\n\`\`\`csharp\ninterface IDamageable\n{\n    void TakeDamage(int amount);\n}\n\nabstract class Character\n{\n    public int Health = 100;\n\n    public abstract void Attack(); // no body, must be implemented\n\n    public void Heal(int amount) => Health += amount; // shared behavior\n}\n\nclass Player : Character, IDamageable\n{\n    public override void Attack() => Console.WriteLine("Player attacks!");\n    public void TakeDamage(int amount) => Health -= amount;\n}\n\`\`\`\n\n## Interfaces\n\n- An \`interface\` declares members with no implementation, any class or struct that implements it must provide one.\n- A class can implement **multiple** interfaces (C# only allows single inheritance from a base class, but unlimited interfaces).\n- Interfaces describe *what* a type can do (\`IDamageable\`, \`IComparable\`), regardless of what it *is*.\n\n## Abstract classes\n\n- An \`abstract class\` can mix fully-implemented members (\`Heal\`) with \`abstract\` members that force derived classes to implement them (\`Attack\`).\n- You cannot create an instance of an abstract class directly (\`new Character()\` is an error), only of a concrete subclass.\n- A class can inherit from only **one** base class (abstract or not), but implement any number of interfaces.\n\n## When to use which\n\n| | Interface | Abstract class |\n|---|---|---|\n| Shared implementation? | No | Yes |\n| Multiple per class? | Yes | No, only one base class |\n| Use for | "can do" contracts | "is a" shared foundation |`
+    ),
+    quiz: {
+      title: 'Interfaces & Abstract Classes Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How many interfaces can a single class implement?',
+          options: ['Zero', 'Exactly one', 'Any number', 'Two at most'],
+          answer: 'Any number',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'You cannot create an instance of an ____ class directly, only of a concrete subclass.',
+          options: [],
+          answer: 'abstract',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An interface can declare instance fields (variables) directly.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Generics',
+    content: lessonContent(
+      'Generics',
+      `A **generic** type or method works with any type, decided when it's used, without giving up type safety or duplicating code.\n\n\`\`\`csharp\nclass Stack<T>\n{\n    private List<T> items = new List<T>();\n\n    public void Push(T item) => items.Add(item);\n\n    public T Pop()\n    {\n        T last = items[^1];\n        items.RemoveAt(items.Count - 1);\n        return last;\n    }\n}\n\nvar numbers = new Stack<int>();\nnumbers.Push(5);\nnumbers.Push(10);\nConsole.WriteLine(numbers.Pop()); // 10\n\nvar names = new Stack<string>();\nnames.Push("Ada");\n\`\`\`\n\n## The pieces\n\n- \`<T>\` is a **type parameter**, a placeholder that gets filled in with a real type (\`int\`, \`string\`, ...) when the class or method is used.\n- \`Stack<int>\` and \`Stack<string>\` are both backed by the same \`Stack<T>\` code, but the compiler enforces that a \`Stack<int>\` only ever holds \`int\`s.\n- Generic **methods** work the same way: \`T Max<T>(T a, T b) where T : IComparable<T>\`.\n- \`where T : SomeConstraint\` restricts what \`T\` can be, e.g. \`where T : class\` (reference types only) or \`where T : IDamageable\`.\n\n## Why not just use object?\n\nA non-generic collection typed as \`object\` would compile but let you push mismatched types, and would need a cast (with a runtime risk) every time you read a value out. Generics catch that mistake at compile time instead.`
+    ),
+    quiz: {
+      title: 'Generics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does <T> represent in a generic class like Stack<T>?',
+          options: ['A namespace', 'A type parameter filled in when the type is used', 'A base class', 'An interface'],
+          answer: 'A type parameter filled in when the type is used',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A clause like where T : IComparable<T> is called a type ____.',
+          options: [],
+          answer: 'constraint',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Generics catch type mismatches at compile time instead of at runtime.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Exception Handling',
+    content: lessonContent(
+      'Exception Handling',
+      `Things go wrong at runtime: a file is missing, a network call times out, a user types letters into a number field. **Exceptions** let you handle that without crashing the whole program.\n\n\`\`\`csharp\ntry\n{\n    int[] scores = { 90, 85, 77 };\n    Console.WriteLine(scores[5]); // out of range\n}\ncatch (IndexOutOfRangeException ex)\n{\n    Console.WriteLine($"Invalid index: {ex.Message}");\n}\nfinally\n{\n    Console.WriteLine("Always runs, whether or not an exception happened.");\n}\n\`\`\`\n\n## The pieces\n\n- \`try\` wraps code that might throw.\n- \`catch (SomeException ex)\` runs if that exception type (or a subclass of it) is thrown inside the \`try\` block, you can stack multiple \`catch\` blocks for different exception types.\n- \`finally\` runs no matter what, whether the \`try\` succeeded, threw, or the catch itself re-threw, use it for cleanup (closing a file, releasing a resource).\n- \`throw\` raises an exception yourself: \`throw new ArgumentException("amount must be positive");\`.\n\n## Custom exceptions\n\n\`\`\`csharp\nclass InsufficientXpException : Exception\n{\n    public InsufficientXpException(string message) : base(message) { }\n}\n\nif (xp < required)\n    throw new InsufficientXpException($"Need {required} XP, only have {xp}.");\n\`\`\`\n\nA custom exception inherits from \`Exception\` (or a more specific built-in one) and gives calling code something precise to catch, instead of catching the broad, generic \`Exception\`.`
+    ),
+    quiz: {
+      title: 'Exception Handling Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which block always runs, whether or not an exception was thrown?',
+          options: ['try', 'catch', 'finally', 'throw'],
+          answer: 'finally',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The ____ keyword raises an exception yourself.',
+          options: [],
+          answer: 'throw',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A custom exception class typically inherits from Exception.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Delegates and Events',
+    content: lessonContent(
+      'Delegates and Events',
+      `A **delegate** is a type-safe reference to a method, it lets you pass a method around like a value, store it in a variable, and call it later.\n\n\`\`\`csharp\ndelegate void Notify(string message);\n\nclass Alarm\n{\n    public event Notify OnTriggered;\n\n    public void Trigger()\n    {\n        Console.WriteLine("Alarm triggered!");\n        OnTriggered?.Invoke("Intruder detected");\n    }\n}\n\nclass Program\n{\n    static void Main()\n    {\n        var alarm = new Alarm();\n        alarm.OnTriggered += message => Console.WriteLine($"Security notified: {message}");\n        alarm.OnTriggered += message => Console.WriteLine($"Logged: {message}");\n\n        alarm.Trigger();\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`delegate void Notify(string message);\` declares a delegate type, any method matching that signature (\`void\`, one \`string\` parameter) can be assigned to it.\n- \`event Notify OnTriggered;\` exposes a delegate as an **event**, code outside \`Alarm\` can subscribe (\`+=\`) or unsubscribe (\`-=\`), but can't invoke it directly or overwrite other subscribers, only \`Alarm\` itself can call \`Invoke\`.\n- \`?.Invoke(...)\` safely calls every subscribed method, and does nothing if nobody has subscribed yet (\`OnTriggered\` would be \`null\`).\n- Multiple methods can subscribe to the same event, they all run, in the order they were added, when it's invoked.\n\n## Why events instead of calling methods directly?\n\nEvents **decouple** the class raising them from whoever reacts to them: \`Alarm\` doesn't need to know that a security system or a logger exists, it just announces "something happened," and anything that cares can subscribe.`
+    ),
+    quiz: {
+      title: 'Delegates & Events Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the event keyword restrict, compared to a plain public delegate field?',
+          options: [
+            'Nothing, they are identical',
+            'Outside code can subscribe or unsubscribe, but not invoke it directly',
+            'Only one method can ever subscribe',
+            'It can only be used with strings',
+          ],
+          answer: 'Outside code can subscribe or unsubscribe, but not invoke it directly',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Subscribing to an event uses the ____ operator, unsubscribing uses -=.',
+          options: [],
+          answer: '+=',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Multiple methods can subscribe to the same event.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Lambda Expressions, Func & Action',
+    content: lessonContent(
+      'Lambda Expressions, Func & Action',
+      `A **lambda expression** is a compact, inline way to write a method, most useful when you need to pass a small piece of behavior somewhere, like a callback or a LINQ predicate.\n\n\`\`\`csharp\nFunc<int, int, int> add = (a, b) => a + b;\nConsole.WriteLine(add(3, 4)); // 7\n\nAction<string> log = message => Console.WriteLine($"[LOG] {message}");\nlog("Server started");\n\nList<int> scores = new List<int> { 55, 82, 91, 40 };\nList<int> passing = scores.Where(s => s >= 70).ToList();\n\`\`\`\n\n## Func and Action\n\n- \`Func<T1, ..., TResult>\` is a built-in delegate type for a method that **returns** a value, the last type parameter is always the return type. \`Func<int, int, int>\` takes two \`int\`s and returns an \`int\`.\n- \`Action<T1, ...>\` is the same idea for a method that returns **nothing** (\`void\`). \`Action<string>\` takes one \`string\` and returns nothing, plain \`Action\` takes no parameters at all.\n- Both are just delegate types the .NET library already defines, so you don't need your own \`delegate\` declaration for common shapes.\n\n## Lambda syntax\n\n- \`(a, b) => a + b\` is shorthand for a method taking \`a\` and \`b\`, and returning \`a + b\`.\n- A single parameter can drop the parentheses: \`s => s >= 70\`.\n- A lambda can capture variables from its surrounding scope (a **closure**), a lambda defined inside a method can still use that method's local variables even after being passed elsewhere.`
+    ),
+    quiz: {
+      title: 'Lambdas, Func & Action Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which built-in delegate type represents a method that returns void?',
+          options: ['Func', 'Action', 'Predicate', 'Delegate'],
+          answer: 'Action',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In Func<int, int, int>, the ____ type parameter is always the return type.',
+          options: [],
+          answer: 'last',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A lambda expression can capture and use variables from its surrounding scope.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Event-Driven Inventory System',
+    content: lessonContent(
+      'Final Project: Event-Driven Inventory System',
+      `Combine interfaces, generics, and events into one small system.\n\n## Requirements\n\n1. Define an \`IItem\` interface with at least a \`Name\` and a \`Value\` property.\n2. Create a generic \`Inventory<T> where T : IItem\` class that can \`Add(T item)\` and \`Remove(T item)\`, backed by a \`List<T>\`.\n3. Add an \`event Action<T> OnItemAdded\` (or a custom delegate) on \`Inventory<T>\` that fires whenever an item is added.\n4. Subscribe to \`OnItemAdded\` from outside the class to print a message like \`"Added: {item.Name} ({item.Value} gold)"\`.\n5. Wrap any invalid operation (e.g. removing an item that isn't in the inventory) in a **custom exception** and handle it with \`try/catch\` where the inventory is used.\n6. Create at least two classes implementing \`IItem\` (e.g. \`Weapon\`, \`Potion\`) and add instances of both to the same \`Inventory<IItem>\`.\n\n## Stretch goals\n\n- Add a \`TotalValue\` property using LINQ's \`Sum\`.\n- Add an \`OnItemRemoved\` event too.\n- Make \`Inventory<T>\` implement \`IEnumerable<T>\` so it can be used directly in a \`foreach\` loop.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const csharpAsyncLessons: SeedLesson[] = [
+  {
+    title: 'Introduction to Asynchronous Programming',
+    content: lessonContent(
+      'Introduction to Asynchronous Programming',
+      `Some operations, reading a file, calling a web API, querying a database, take real time to complete, and don't need the CPU while they wait. **Asynchronous** code lets your program keep doing other work during that wait, instead of blocking a thread that's doing nothing but sitting idle.\n\n\`\`\`csharp\nusing System;\nusing System.Net.Http;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        Console.WriteLine("Starting download...");\n        string content = await DownloadAsync("https://example.com");\n        Console.WriteLine($"Downloaded {content.Length} characters");\n    }\n\n    static async Task<string> DownloadAsync(string url)\n    {\n        using var client = new HttpClient();\n        return await client.GetStringAsync(url);\n    }\n}\n\`\`\`\n\n## Synchronous vs asynchronous\n\n- **Synchronous** code blocks: calling \`GetStringAsync\` the old-fashioned, blocking way would leave the thread sitting frozen, doing nothing, until the network response arrives.\n- **Asynchronous** code frees the thread during the wait, \`await\` pauses this method (without blocking the thread) until the operation completes, then resumes exactly where it left off.\n- A \`Task\` represents work that's in progress, possibly not finished yet. \`Task<T>\` is the same idea but the work eventually produces a value of type \`T\`, like \`DownloadAsync\` returning \`Task<string>\`.\n\n## Why it matters\n\nIn a desktop or mobile app, blocking the main thread freezes the UI, buttons stop responding, the window stops redrawing. On a server, one thread blocked waiting on a database call is one fewer thread available to handle other requests. Async code avoids both problems by giving the thread back while waiting.`
+    ),
+    quiz: {
+      title: 'Async Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does await do to the method it is used in?',
+          options: [
+            'Blocks the calling thread until the operation finishes',
+            'Pauses the method without blocking the thread, resuming when the operation completes',
+            'Immediately cancels the operation',
+            'Runs the method on a new process',
+          ],
+          answer: 'Pauses the method without blocking the thread, resuming when the operation completes',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A ____<T> represents asynchronous work that will eventually produce a value of type T.',
+          options: [],
+          answer: 'Task',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Blocking the main thread in a desktop app can freeze the UI.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'async and await',
+    content: lessonContent(
+      'async and await',
+      `The \`async\` and \`await\` keywords are what actually let you write asynchronous code that reads like ordinary, top-to-bottom synchronous code.\n\n\`\`\`csharp\nusing System;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        int result = await AddAsync(3, 4);\n        Console.WriteLine(result); // 7\n    }\n\n    static async Task<int> AddAsync(int a, int b)\n    {\n        await Task.Delay(1000); // simulate work\n        return a + b;\n    }\n}\n\`\`\`\n\n## The rules\n\n- \`async\` marks a method as containing \`await\` expressions, it doesn't make the method run on a background thread by itself, it just enables the \`await\` keyword inside it.\n- An \`async\` method's return type is almost always \`Task\`, \`Task<T>\`, or (rarely, for event handlers only) \`void\`. Never write \`async void\` for a regular method, exceptions thrown inside it can't be caught by the caller.\n- \`await\` can only be used inside a method marked \`async\`, it unwraps a \`Task<T>\` into its \`T\` result (or just waits for a plain \`Task\` to finish), and lets other work happen on the thread while waiting.\n- \`Task.Delay(1000)\` asynchronously waits about a second without blocking the thread, unlike \`Thread.Sleep(1000)\`, which does block it.\n\n## What "async all the way" means\n\nOnce one method needs to \`await\` something, every method that calls it should usually become \`async\` too, and its callers \`await\` it. Calling \`.Result\` or \`.Wait()\` on a \`Task\` to force synchronous behavior defeats the purpose and can even deadlock in UI applications, prefer \`await\` end to end.`
+    ),
+    quiz: {
+      title: 'async/await Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does marking a method async actually do?',
+          options: [
+            'Runs it on a background thread automatically',
+            'Enables the use of await inside that method',
+            'Makes it run faster',
+            'Prevents it from throwing exceptions',
+          ],
+          answer: 'Enables the use of await inside that method',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Task.____(1000) asynchronously waits about a second without blocking the thread, unlike Thread.Sleep.',
+          options: [],
+          answer: 'Delay',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Calling .Result on a Task instead of awaiting it can cause a deadlock in some applications.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Task.WhenAll and Task.WhenAny',
+    content: lessonContent(
+      'Task.WhenAll and Task.WhenAny',
+      `Awaiting several operations one after another wastes the whole point of async, if they don't depend on each other, start them all at once.\n\n\`\`\`csharp\nusing System;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        Task<string> t1 = DownloadAsync("https://example.com/a");\n        Task<string> t2 = DownloadAsync("https://example.com/b");\n        Task<string> t3 = DownloadAsync("https://example.com/c");\n\n        string[] results = await Task.WhenAll(t1, t2, t3);\n        Console.WriteLine($"Got {results.Length} pages");\n    }\n\n    static async Task<string> DownloadAsync(string url)\n    {\n        using var client = new System.Net.Http.HttpClient();\n        return await client.GetStringAsync(url);\n    }\n}\n\`\`\`\n\n## The pieces\n\n- Calling \`DownloadAsync(...)\` without \`await\` **starts** the task immediately and returns a \`Task<string>\` you can hold onto, the download runs in the background right away.\n- \`await Task.WhenAll(t1, t2, t3)\` waits for all three to finish, and (for \`Task<T>\`) returns an array of their results in the same order they were passed in, even if they finish in a different order.\n- Awaiting each one individually, \`await t1; await t2; await t3;\`, would run them one after another instead of concurrently, three times slower for three independent, equally-long downloads.\n- \`Task.WhenAny(...)\` instead resolves as soon as the **first** task finishes, useful for a timeout pattern: race the real operation against \`Task.Delay(timeout)\` and see which finishes first.\n\n## When not to do this\n\nIf one operation depends on another's result, keep them sequential with separate \`await\`s, \`Task.WhenAll\` is for genuinely independent work, forcing dependent operations to run "concurrently" just creates bugs.`
+    ),
+    quiz: {
+      title: 'WhenAll & WhenAny Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does Task.WhenAll(t1, t2, t3) do?',
+          options: [
+            'Runs the tasks one after another',
+            'Cancels all three tasks',
+            'Waits for all three tasks to complete, running them concurrently',
+            'Returns as soon as the first task finishes',
+          ],
+          answer: 'Waits for all three tasks to complete, running them concurrently',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Task.____ resolves as soon as the first of several tasks finishes, useful for timeout patterns.',
+          options: [],
+          answer: 'WhenAny',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Calling an async method without awaiting it immediately starts the work in the background.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Cancellation with CancellationToken',
+    content: lessonContent(
+      'Cancellation with CancellationToken',
+      `Long-running async work should be cancellable, a user closes a dialog, navigates away, or a timeout expires. \`CancellationToken\` is the standard way to signal that.\n\n\`\`\`csharp\nusing System;\nusing System.Threading;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        using var cts = new CancellationTokenSource();\n        cts.CancelAfter(TimeSpan.FromSeconds(3));\n\n        try\n        {\n            await CountAsync(cts.Token);\n        }\n        catch (OperationCanceledException)\n        {\n            Console.WriteLine("Cancelled!");\n        }\n    }\n\n    static async Task CountAsync(CancellationToken token)\n    {\n        for (int i = 1; i <= 10; i++)\n        {\n            token.ThrowIfCancellationRequested();\n            Console.WriteLine(i);\n            await Task.Delay(1000, token);\n        }\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`CancellationTokenSource\` is the object that can **trigger** cancellation, \`cts.Cancel()\` cancels immediately, \`cts.CancelAfter(...)\` schedules it.\n- \`CancellationToken\` (from \`cts.Token\`) is the read-only signal you pass down into async methods, they check it, they can't cancel anything themselves.\n- \`token.ThrowIfCancellationRequested()\` throws an \`OperationCanceledException\` if cancellation was requested, stopping the method's work at a clean point instead of continuing pointlessly.\n- Passing the token into \`Task.Delay(1000, token)\` lets the delay itself respond to cancellation immediately, instead of finishing its full second first.\n\n## Convention\n\nAny async method that might run for a while should accept an optional \`CancellationToken token = default\` parameter and pass it through to everything it awaits, this makes cancellation flow all the way down a chain of async calls instead of only stopping the top-level one.`
+    ),
+    quiz: {
+      title: 'Cancellation Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is responsible for actually triggering a cancellation?',
+          options: ['CancellationToken', 'CancellationTokenSource', 'Task.Delay', 'OperationCanceledException'],
+          answer: 'CancellationTokenSource',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'token.____() throws an OperationCanceledException if cancellation has been requested.',
+          options: [],
+          answer: 'ThrowIfCancellationRequested',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A CancellationToken can itself cancel work, without needing a CancellationTokenSource.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Exception Handling in Async Code',
+    content: lessonContent(
+      'Exception Handling in Async Code',
+      `Exceptions in async code behave a little differently from synchronous code, especially once multiple tasks are involved.\n\n\`\`\`csharp\nusing System;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        try\n        {\n            await RiskyAsync();\n        }\n        catch (InvalidOperationException ex)\n        {\n            Console.WriteLine($"Caught: {ex.Message}");\n        }\n    }\n\n    static async Task RiskyAsync()\n    {\n        await Task.Delay(500);\n        throw new InvalidOperationException("Something went wrong");\n    }\n}\n\`\`\`\n\n## The pieces\n\n- A regular \`try/catch\` around an \`await\` works exactly like you'd hope, an exception thrown inside the awaited async method surfaces at the \`await\` point, as if it were a normal synchronous call.\n- With \`Task.WhenAll\`, if **multiple** tasks fail, only the first exception is rethrown by the \`await\`, the rest are still available on each individual \`Task.Exception\` property (an \`AggregateException\`) if you need them.\n\n\`\`\`csharp\nTask t1 = FailAsync("A");\nTask t2 = FailAsync("B");\n\ntry\n{\n    await Task.WhenAll(t1, t2);\n}\ncatch\n{\n    Console.WriteLine(t1.Exception?.InnerException?.Message);\n    Console.WriteLine(t2.Exception?.InnerException?.Message);\n}\n\`\`\`\n\n- An exception thrown inside an \`async void\` method (instead of \`async Task\`) can't be caught by a surrounding \`try/catch\` at all, it escapes straight to the app's global unhandled-exception handler, another reason to avoid \`async void\` outside of event handlers.\n\n## Best practice\n\nCatch specific exception types close to where they can meaningfully be handled, exactly like synchronous code, \`async\`/\`await\` doesn't change the fundamentals of exception handling, it just changes *when* the exception surfaces (at the \`await\`, not at the original call).`
+    ),
+    quiz: {
+      title: 'Async Exceptions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Where does an exception thrown inside an awaited async method surface?',
+          options: [
+            'It is silently swallowed',
+            'At the await point, just like a normal synchronous call',
+            'Only in a background log file',
+            'It always crashes the whole application immediately',
+          ],
+          answer: 'At the await point, just like a normal synchronous call',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'An exception thrown inside an async ____ method cannot be caught by a surrounding try/catch.',
+          options: [],
+          answer: 'void',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'When multiple tasks passed to Task.WhenAll fail, only the first exception is rethrown by the await, though the rest remain available on each Task.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Async Streams with IAsyncEnumerable',
+    content: lessonContent(
+      'Async Streams with IAsyncEnumerable',
+      `Sometimes you need to process a **sequence** of items that arrive over time, one at a time, page-by-page results from an API, rows streamed from a database, instead of waiting for the whole thing to complete before touching any of it.\n\n\`\`\`csharp\nusing System;\nusing System.Collections.Generic;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        await foreach (int number in CountUpAsync(5))\n        {\n            Console.WriteLine(number);\n        }\n    }\n\n    static async IAsyncEnumerable<int> CountUpAsync(int max)\n    {\n        for (int i = 1; i <= max; i++)\n        {\n            await Task.Delay(500);\n            yield return i;\n        }\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`IAsyncEnumerable<T>\` is the asynchronous counterpart to \`IEnumerable<T>\`, a sequence where producing the **next** item might itself take time (a network call, a delay), instead of everything being ready up front.\n- \`async IAsyncEnumerable<T>\` combines \`async\` (so the method body can \`await\`) with \`yield return\` (so it can produce items one at a time), the same \`yield return\` you saw with \`IEnumerator\` in Unity coroutines, applied here to an async, awaitable sequence instead.\n- \`await foreach\` consumes an \`IAsyncEnumerable<T>\`, awaiting each item as it becomes available, instead of blocking until the entire sequence is ready.\n\n## When to reach for this\n\nUse \`Task<List<T>>\` (await once, get everything) when you need the whole result before doing anything with it. Reach for \`IAsyncEnumerable<T>\` when items should be processed as they arrive, e.g. displaying search results as each page loads, instead of one blank screen until every page is in.`
+    ),
+    quiz: {
+      title: 'Async Streams Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does IAsyncEnumerable<T> represent?',
+          options: [
+            'A single value that resolves in the future',
+            'A sequence whose items may each take time to produce',
+            'A synchronous collection with no delays',
+            'A type only usable inside Unity',
+          ],
+          answer: 'A sequence whose items may each take time to produce',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____ foreach consumes an IAsyncEnumerable<T>, awaiting each item as it becomes available.',
+          options: [],
+          answer: 'await',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An async IAsyncEnumerable<T> method can use yield return, just like a synchronous iterator.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Async Multi-Source Downloader',
+    content: lessonContent(
+      'Final Project: Async Multi-Source Downloader',
+      `Combine everything from this course into a small but realistic async tool.\n\n## Requirements\n\n1. Write an async method that downloads or fetches data from at least 3 different sources (URLs, files, or simulated delays with \`Task.Delay\`) **concurrently**, using \`Task.WhenAll\`.\n2. Support cancellation: accept a \`CancellationToken\`, and let the user cancel the whole operation (e.g. by pressing a key while it's running).\n3. Handle failures gracefully: if one source fails, log which one and continue reporting results for the others, instead of the whole program crashing.\n4. Add a timeout using \`Task.WhenAny\` racing the real operation against \`Task.Delay(timeout)\`, cancelling and reporting a timeout message if the delay wins.\n5. Use an \`IAsyncEnumerable<T>\` method to stream and print progress updates (e.g. "Source A: 50% done") as they happen, instead of only printing a final summary.\n\n## Stretch goals\n\n- Add retry logic: if a source fails, retry it up to 2 more times with a short delay between attempts before giving up.\n- Track and print total elapsed time, and compare it to what sequential (non-concurrent) execution would have taken.\n- Wrap the whole thing in a small console menu so a user can re-run it with different sources without restarting the program.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const csharpUnityEssentialsLessons: SeedLesson[] = [
+  {
+    title: 'Rigidbody Physics: Collisions and Triggers',
+    content: lessonContent(
+      'Rigidbody Physics: Collisions and Triggers',
+      `Unity's physics engine moves and collides GameObjects for you, once they have a \`Rigidbody\` (3D) or \`Rigidbody2D\` (2D) component and a \`Collider\`.\n\n\`\`\`csharp\nusing UnityEngine;\n\npublic class Bullet : MonoBehaviour\n{\n    public float speed = 20f;\n\n    void Start()\n    {\n        GetComponent<Rigidbody>().linearVelocity = transform.forward * speed;\n    }\n\n    void OnCollisionEnter(Collision collision)\n    {\n        Debug.Log($"Hit {collision.gameObject.name}");\n        Destroy(gameObject);\n    }\n}\n\`\`\`\n\n## Collisions vs triggers\n\n- A regular **collision** (\`OnCollisionEnter/Stay/Exit\`) needs both objects to have solid (non-trigger) colliders, physics stops them from overlapping.\n- A **trigger** collider (\`Is Trigger\` checked) lets objects pass through it, but still fires \`OnTriggerEnter/Stay/Exit\`, useful for pickups, checkpoints, or damage zones that shouldn't physically block anything.\n- Both events only fire if **at least one** of the two objects also has a \`Rigidbody\`.\n\n\`\`\`csharp\nvoid OnTriggerEnter(Collider other)\n{\n    if (other.CompareTag("Player"))\n    {\n        Debug.Log("Player entered the zone");\n    }\n}\n\`\`\`\n\n## Physics update, not Update\n\nMove a \`Rigidbody\` with \`Rigidbody.linearVelocity\` or \`AddForce\` inside \`FixedUpdate()\`, not \`Update()\`, \`FixedUpdate\` runs on physics's fixed timestep, keeping movement consistent regardless of framerate.`
+    ),
+    quiz: {
+      title: 'Physics & Collisions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which method fires when a trigger collider is entered by another collider?',
+          options: ['OnCollisionEnter', 'OnTriggerEnter', 'OnHit', 'OnOverlap'],
+          answer: 'OnTriggerEnter',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Rigidbody movement should be applied inside ____() instead of Update(), so it stays consistent with the physics timestep.',
+          options: [],
+          answer: 'FixedUpdate',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A trigger collider physically blocks other objects from passing through it.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Raycasting',
+    content: lessonContent(
+      'Raycasting',
+      `A **raycast** shoots an invisible line through the scene and reports what it hits, the basis for shooting, line-of-sight checks, and click-to-move.\n\n\`\`\`csharp\nusing UnityEngine;\n\npublic class Shooter : MonoBehaviour\n{\n    public float range = 100f;\n\n    void Update()\n    {\n        if (Input.GetButtonDown("Fire1"))\n            Shoot();\n    }\n\n    void Shoot()\n    {\n        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, range))\n        {\n            Debug.Log($"Hit {hit.collider.gameObject.name} at distance {hit.distance}");\n            hit.collider.GetComponent<IDamageable>()?.TakeDamage(10);\n        }\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`Physics.Raycast(origin, direction, out RaycastHit hit, maxDistance)\` returns \`true\` if the ray hit something within \`maxDistance\`, and fills \`hit\` with details (the collider, exact point, distance, surface normal).\n- \`out\` parameters (like \`RaycastHit hit\`) let a method return extra information beyond its normal return value, \`hit\` is only meaningful if \`Raycast\` returned \`true\`.\n- A **layer mask** (an optional extra parameter) restricts which layers the ray can hit, e.g. ignoring the player's own collider when shooting.\n\n## Debugging rays\n\n\`Debug.DrawRay(origin, direction * range, Color.red, duration)\` draws a visible line in the Scene view (not in the actual game), invaluable for seeing exactly where a raycast is pointing while you're testing.`
+    ),
+    quiz: {
+      title: 'Raycasting Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does Physics.Raycast return?',
+          options: ['The GameObject it hit', 'A bool indicating whether it hit anything', 'The distance travelled', 'Nothing, it is void'],
+          answer: 'A bool indicating whether it hit anything',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The ____ parameter on Raycast lets the method return extra hit details alongside its bool result.',
+          options: [],
+          answer: 'out',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Debug.DrawRay makes a ray visible to players in the built game.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The UI System: Canvas and UGUI',
+    content: lessonContent(
+      'The UI System: Canvas and UGUI',
+      `Unity's built-in UI system (UGUI) renders every on-screen element, buttons, health bars, menus, inside a \`Canvas\`.\n\n\`\`\`csharp\nusing UnityEngine;\nusing UnityEngine.UI;\nusing TMPro;\n\npublic class HealthBar : MonoBehaviour\n{\n    public Slider slider;\n    public TMP_Text label;\n\n    public void SetHealth(int current, int max)\n    {\n        slider.value = (float)current / max;\n        label.text = $"{current} / {max}";\n    }\n}\n\`\`\`\n\n## The pieces\n\n- A \`Canvas\` is the root of any UI, everything inside it (buttons, images, text) is a child GameObject positioned in screen space, not world space.\n- \`Screen Space - Overlay\` draws the UI on top of everything, always facing the camera, most common for HUDs and menus.\n- Wiring a button click to code: select the \`Button\`'s \`OnClick()\` list in the Inspector, drag in the target GameObject, and pick a public method, or do it from code:\n\n\`\`\`csharp\nbutton.onClick.AddListener(() => Debug.Log("Clicked!"));\n\`\`\`\n\n## Data binding in practice\n\nUI elements don't update themselves, your code has to push new values to them, like calling \`SetHealth\` from a health-changed callback whenever health changes. Keep UI update code in dedicated UI scripts (like \`HealthBar\` above) rather than scattering \`slider.value = ...\` across gameplay code, that separation makes both sides easier to change independently.`
+    ),
+    quiz: {
+      title: 'UI System Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What GameObject must every UGUI element live under?',
+          options: ['A Rigidbody', 'A Canvas', 'A NetworkObject', 'A Camera'],
+          answer: 'A Canvas',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'button.onClick.____(() => ...) wires up a click handler from code.',
+          options: [],
+          answer: 'AddListener',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'UI elements like a Slider automatically update themselves whenever a related gameplay value changes, with no code needed.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The Input System',
+    content: lessonContent(
+      'The Input System',
+      `Player input, keyboard, mouse, gamepad, touch, needs to be read every frame and turned into game actions.\n\n\`\`\`csharp\nusing UnityEngine;\n\npublic class LegacyMovement : MonoBehaviour\n{\n    public float speed = 5f;\n\n    void Update()\n    {\n        float h = Input.GetAxis("Horizontal");\n        float v = Input.GetAxis("Vertical");\n        transform.Translate(new Vector3(h, 0, v) * speed * Time.deltaTime);\n\n        if (Input.GetKeyDown(KeyCode.Space))\n            Jump();\n    }\n}\n\`\`\`\n\n## The old way: the Input class\n\n- \`Input.GetAxis("Horizontal")\` returns a smoothed value between -1 and 1, built from whatever keys/sticks are bound to that axis in Project Settings.\n- \`Input.GetKeyDown(KeyCode.Space)\` is true for exactly one frame, the frame the key was pressed, use \`GetKey\` for "is it currently held."\n- \`Input.GetButtonDown("Fire1")\` reads a named action the same way, but through the configurable Input Manager instead of a hardcoded key.\n\n## The new Input System package\n\nUnity's newer **Input System** package models input as **Actions** ("Move", "Jump", "Fire") bound to any device, instead of hardcoded keys, so the same script works with keyboard, gamepad, or touch without changes.\n\n\`\`\`csharp\nusing UnityEngine.InputSystem;\n\npublic class NewMovement : MonoBehaviour\n{\n    public InputAction moveAction;\n\n    void OnEnable() => moveAction.Enable();\n\n    void Update()\n    {\n        Vector2 move = moveAction.ReadValue<Vector2>();\n        transform.Translate(new Vector3(move.x, 0, move.y) * Time.deltaTime);\n    }\n}\n\`\`\`\n\nBoth systems are valid, the legacy \`Input\` class is simpler for small projects, the Input System package scales better for multi-device support and rebindable controls.`
+    ),
+    quiz: {
+      title: 'Input System Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which legacy Input method is true for only the single frame a key was pressed?',
+          options: ['GetKey', 'GetKeyDown', 'GetAxis', 'GetButton'],
+          answer: 'GetKeyDown',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The newer Input System package models input as reusable ____ (like "Move" or "Jump") that can bind to any device.',
+          options: [],
+          answer: 'Actions',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Input.GetAxis('Horizontal') returns a raw, unsmoothed -1/0/1 value.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'ScriptableObjects: Data-Driven Design',
+    content: lessonContent(
+      'ScriptableObjects: Data-Driven Design',
+      `A \`ScriptableObject\` is a data container that lives as an **asset** in your project, not attached to any GameObject, perfect for shared configuration that many objects reference.\n\n\`\`\`csharp\nusing UnityEngine;\n\n[CreateAssetMenu(fileName = "New Enemy", menuName = "Game/Enemy Data")]\npublic class EnemyData : ScriptableObject\n{\n    public string enemyName;\n    public int maxHealth;\n    public float moveSpeed;\n    public GameObject prefab;\n}\n\`\`\`\n\n\`\`\`csharp\npublic class Enemy : MonoBehaviour\n{\n    public EnemyData data;\n    int health;\n\n    void Start()\n    {\n        health = data.maxHealth;\n    }\n}\n\`\`\`\n\n## Why not just fields on the MonoBehaviour?\n\n- \`[CreateAssetMenu]\` adds a menu entry so designers can create new \`EnemyData\` assets (Right-click → Create → Game → Enemy Data) without touching code.\n- Every \`Enemy\` prefab that shares the same \`EnemyData\` asset reads the same values, tweak the asset once, every enemy using it updates, no need to edit each prefab individually.\n- ScriptableObjects aren't part of the scene, so they don't get destroyed when a scene unloads, and they don't duplicate per-instance memory the way fields on a \`MonoBehaviour\` would across hundreds of enemies.\n\n## Common uses\n\nItem databases, enemy/weapon stats, dialogue data, and even shared event channels (a \`ScriptableObject\`-based alternative to C# events that decouples systems that don't reference each other directly).`
+    ),
+    quiz: {
+      title: 'ScriptableObjects Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Where does a ScriptableObject asset live?',
+          options: ['Attached to a GameObject in the scene', 'As a standalone asset in the project', 'Inside the Camera component', 'It only exists at runtime'],
+          answer: 'As a standalone asset in the project',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The [____] attribute adds a menu entry so designers can create new instances of a ScriptableObject without code.',
+          options: [],
+          answer: 'CreateAssetMenu',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Multiple prefabs can reference the same ScriptableObject asset and share its data.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Object Pooling',
+    content: lessonContent(
+      'Object Pooling',
+      `\`Instantiate\` and \`Destroy\` are expensive, especially for things spawned constantly like bullets or particle effects. **Object pooling** reuses a fixed set of objects instead of constantly creating and destroying them.\n\n\`\`\`csharp\nusing System.Collections.Generic;\nusing UnityEngine;\n\npublic class BulletPool : MonoBehaviour\n{\n    public GameObject bulletPrefab;\n    public int poolSize = 20;\n    Queue<GameObject> pool = new Queue<GameObject>();\n\n    void Awake()\n    {\n        for (int i = 0; i < poolSize; i++)\n        {\n            GameObject bullet = Instantiate(bulletPrefab);\n            bullet.SetActive(false);\n            pool.Enqueue(bullet);\n        }\n    }\n\n    public GameObject Get()\n    {\n        GameObject bullet = pool.Count > 0 ? pool.Dequeue() : Instantiate(bulletPrefab);\n        bullet.SetActive(true);\n        return bullet;\n    }\n\n    public void Release(GameObject bullet)\n    {\n        bullet.SetActive(false);\n        pool.Enqueue(bullet);\n    }\n}\n\`\`\`\n\n## The pieces\n\n- Every object the pool will hand out is created **once**, up front, and disabled.\n- \`Get()\` hands out a disabled object (reactivating it) instead of instantiating a new one, \`Release()\` deactivates and returns it to the pool instead of destroying it.\n- A \`Queue<T>\` is a natural fit, \`Enqueue\` adds to the back, \`Dequeue\` removes from the front, first in, first out.\n- Falling back to \`Instantiate\` inside \`Get()\` when the pool is empty avoids ever running out, at the cost of an occasional allocation.\n\n## Why it matters\n\n\`Instantiate\`/\`Destroy\` allocate and garbage-collect memory, doing that dozens of times per second (every bullet fired, every hit particle) causes frame-rate stutters as the garbage collector kicks in. Reusing objects avoids that churn entirely. Unity also ships a built-in \`UnityEngine.Pool.ObjectPool<T>\` that implements this same pattern for you.`
+    ),
+    quiz: {
+      title: 'Object Pooling Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What problem does object pooling mainly solve?',
+          options: ['Networking latency', 'Repeated allocation/garbage collection from frequent Instantiate/Destroy calls', 'Compile-time errors', 'Missing textures'],
+          answer: 'Repeated allocation/garbage collection from frequent Instantiate/Destroy calls',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "Instead of destroying an object, a pool's ____() method deactivates it and returns it to the pool for reuse.",
+          options: [],
+          answer: 'Release',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A pooled object is destroyed and a brand new one is created every time it's needed.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Saving and Loading Data',
+    content: lessonContent(
+      'Saving and Loading Data',
+      `Progress needs to survive closing the game. Unity gives you a couple of straightforward options depending on how much data you're saving.\n\n\`\`\`csharp\nusing UnityEngine;\n\n// Small values: PlayerPrefs\nPlayerPrefs.SetInt("HighScore", 4200);\nPlayerPrefs.SetFloat("MusicVolume", 0.8f);\nPlayerPrefs.Save();\n\nint highScore = PlayerPrefs.GetInt("HighScore", 0); // 0 is the default if missing\n\`\`\`\n\n## PlayerPrefs\n\n- A simple key-value store, backed by the registry on Windows or a plist on Mac, good for small things like settings or a high score.\n- Only stores \`int\`, \`float\`, and \`string\`, and isn't encrypted, don't use it for anything you can't afford a player to see or tamper with.\n\n## Larger or structured data: JSON\n\n\`\`\`csharp\nusing System.IO;\nusing UnityEngine;\n\n[System.Serializable]\npublic class SaveData\n{\n    public int level;\n    public int[] unlockedItems;\n}\n\nvoid Save(SaveData data)\n{\n    string json = JsonUtility.ToJson(data);\n    File.WriteAllText(Application.persistentDataPath + "/save.json", json);\n}\n\nSaveData Load()\n{\n    string path = Application.persistentDataPath + "/save.json";\n    if (!File.Exists(path)) return new SaveData();\n    return JsonUtility.FromJson<SaveData>(File.ReadAllText(path));\n}\n\`\`\`\n\n## The pieces\n\n- \`[System.Serializable]\` marks a plain class so \`JsonUtility\` can convert it to and from JSON text.\n- \`Application.persistentDataPath\` is a writable, platform-correct folder that survives app updates and reinstalls (unlike \`Application.dataPath\`, which lives inside the read-only app install).\n- \`JsonUtility\` only serializes public fields (not properties or \`Dictionary\`s), keep save data structures simple for it to work smoothly.`
+    ),
+    quiz: {
+      title: 'Save Data Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which types can PlayerPrefs store directly?',
+          options: ['Any serializable class', 'int, float, and string only', 'Only GameObjects', 'Only byte arrays'],
+          answer: 'int, float, and string only',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Application.____ is the writable, platform-correct folder for save files that survives app updates.',
+          options: [],
+          answer: 'persistentDataPath',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'PlayerPrefs data is encrypted by default, making it safe to store sensitive values.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Wave-Based Shooter',
+    content: lessonContent(
+      'Final Project: Wave-Based Shooter',
+      `Combine physics, UI, input, ScriptableObjects, pooling, and save data into one small playable slice.\n\n## Requirements\n\n1. Use raycasting (or physics collisions) to detect when the player's shots hit an enemy.\n2. Represent enemy stats (health, speed, prefab) with a \`ScriptableObject\`, so tuning them doesn't require touching code.\n3. Pool your bullets and/or enemies instead of calling \`Instantiate\`/\`Destroy\` on every shot or spawn.\n4. Show the player's health and current score on a \`Canvas\`-based UI, updated live as the game state changes.\n5. Read player input (fire, move) using either the legacy \`Input\` class or the Input System package.\n6. Save the player's best score with \`PlayerPrefs\`, and display "New high score!" when it's beaten.\n\n## Stretch goals\n\n- Use a trigger collider for a pickup (e.g. a health or ammo crate) instead of a raycast hit.\n- Save more detailed run data (wave reached, enemies defeated) as JSON instead of just the high score.\n- Add a pause menu Canvas that disables gameplay input while open.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const csharpUnityLessons: SeedLesson[] = [
+  {
+    title: 'GameObjects, Components, and the MonoBehaviour Lifecycle',
+    content: lessonContent(
+      'GameObjects, Components, and the MonoBehaviour Lifecycle',
+      `In Unity, everything in a scene is a **GameObject**, an empty container that gets its behavior from attached **Components**. A \`MonoBehaviour\` script is a component that hooks into Unity's lifecycle.\n\n\`\`\`csharp\nusing UnityEngine;\n\npublic class PlayerController : MonoBehaviour\n{\n    public float speed = 5f;\n\n    void Start()\n    {\n        Debug.Log($"{gameObject.name} spawned");\n    }\n\n    void Update()\n    {\n        float move = Input.GetAxis("Horizontal") * speed * Time.deltaTime;\n        transform.Translate(move, 0, 0);\n    }\n}\n\`\`\`\n\n## The lifecycle\n\n- \`Awake()\` runs once, before \`Start()\`, even on a disabled component, use it to cache references.\n- \`Start()\` runs once, after every \`Awake()\` has run, right before the first frame.\n- \`Update()\` runs every frame, use \`Time.deltaTime\` so movement stays framerate-independent.\n- \`FixedUpdate()\` runs on a fixed timestep, use it for physics (\`Rigidbody\` forces).\n\n## Getting components\n\n\`GetComponent<T>()\` looks up another component attached to the same GameObject:\n\n\`\`\`csharp\nRigidbody rb = GetComponent<Rigidbody>();\nrb.AddForce(Vector3.up * 10f);\n\`\`\``
+    ),
+    quiz: {
+      title: 'GameObjects & Lifecycle Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which MonoBehaviour method is best for movement, since it runs every frame?',
+          options: ['Awake', 'Start', 'Update', 'OnDestroy'],
+          answer: 'Update',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Multiplying movement by Time.____ keeps it framerate-independent.',
+          options: [],
+          answer: 'deltaTime',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Awake() can run even on a component that starts disabled.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Coroutines and IEnumerator',
+    content: lessonContent(
+      'Coroutines and IEnumerator',
+      `A regular method runs to completion within a single frame. A **coroutine** can pause itself and resume later, spread across multiple frames, without blocking the main thread. Unity coroutines are built on C#'s \`IEnumerator\`.\n\n\`\`\`csharp\nusing System.Collections;\nusing UnityEngine;\n\npublic class FadeIn : MonoBehaviour\n{\n    void Start()\n    {\n        StartCoroutine(Fade());\n    }\n\n    IEnumerator Fade()\n    {\n        CanvasGroup group = GetComponent<CanvasGroup>();\n        float t = 0f;\n        while (t < 1f)\n        {\n            t += Time.deltaTime;\n            group.alpha = t;\n            yield return null; // pause until next frame\n        }\n    }\n}\n\`\`\`\n\n## The pieces\n\n- A coroutine is any method that returns \`IEnumerator\` and contains at least one \`yield return\`.\n- \`StartCoroutine(...)\` begins running it, Unity resumes it each frame from wherever it last \`yield return\`ed.\n- \`yield return null\` pauses for exactly one frame.\n- \`yield return new WaitForSeconds(2f)\` pauses for 2 (scaled) seconds.\n\n## Why not just Update()?\n\n\`Update()\` runs every frame for the entire lifetime of the object. A coroutine only runs while it has work to do, then finishes, better for one-off timed sequences like fades, delays, or spawn waves.`
+    ),
+    quiz: {
+      title: 'Coroutines Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What return type must a coroutine method have?',
+          options: ['void', 'IEnumerator', 'Coroutine', 'Task'],
+          answer: 'IEnumerator',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____(...) is the method you call to begin running a coroutine.',
+          options: [],
+          answer: 'StartCoroutine',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'yield return null pauses a coroutine for exactly one frame.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Advanced Coroutine Patterns',
+    content: lessonContent(
+      'Advanced Coroutine Patterns',
+      `Real coroutines usually need more control than a single loop: waiting on conditions, nesting, and stopping cleanly.\n\n\`\`\`csharp\nIEnumerator SpawnWave(int count)\n{\n    for (int i = 0; i < count; i++)\n    {\n        Instantiate(enemyPrefab, RandomSpawnPoint(), Quaternion.identity);\n        yield return new WaitForSeconds(1.5f);\n    }\n}\n\nIEnumerator WaitForPlayerReady()\n{\n    yield return new WaitUntil(() => player.IsReady);\n    Debug.Log("Player ready, starting match");\n}\n\`\`\`\n\n## Useful yield instructions\n\n| Instruction | Waits for |\n|---|---|\n| \`yield return null\` | next frame |\n| \`yield return new WaitForSeconds(t)\` | t seconds, scaled by \`Time.timeScale\` |\n| \`yield return new WaitForSecondsRealtime(t)\` | t real seconds, ignores pause |\n| \`yield return new WaitUntil(() => condition)\` | condition to become true |\n| \`yield return StartCoroutine(Other())\` | a nested coroutine to finish |\n\n## Stopping coroutines\n\n\`\`\`csharp\nCoroutine handle = StartCoroutine(SpawnWave(5));\n...\nStopCoroutine(handle);   // stop a specific one\nStopAllCoroutines();      // stop everything running on this MonoBehaviour\n\`\`\`\n\nA coroutine also stops automatically if the GameObject it's running on is destroyed or disabled.`
+    ),
+    quiz: {
+      title: 'Advanced Coroutines Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which yield instruction pauses a coroutine until a condition becomes true?',
+          options: ['WaitForSeconds', 'WaitUntil', 'WaitForFixedUpdate', 'WaitForEndOfFrame'],
+          answer: 'WaitUntil',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____() stops every coroutine currently running on a MonoBehaviour.',
+          options: [],
+          answer: 'StopAllCoroutines',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A running coroutine keeps executing even after the GameObject it belongs to is destroyed.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Intro to Multiplayer: Netcode for GameObjects',
+    content: lessonContent(
+      'Intro to Multiplayer: Netcode for GameObjects',
+      `Unity's official networking layer is **Netcode for GameObjects (NGO)**. It uses a client-server model: one instance is the **server** (often also a **host**, meaning server + local client), everyone else connects as **clients**.\n\nTo make a GameObject network-aware, add a \`NetworkObject\` component to its prefab, and give it scripts that inherit from \`NetworkBehaviour\` instead of \`MonoBehaviour\`.\n\n\`\`\`csharp\nusing Unity.Netcode;\n\npublic class PlayerHealth : NetworkBehaviour\n{\n    public override void OnNetworkSpawn()\n    {\n        if (IsOwner)\n            Debug.Log("This is my player!");\n    }\n}\n\`\`\`\n\n## Key concepts\n\n- **NetworkManager** is the singleton that starts hosting/joining and spawns networked prefabs.\n- **NetworkObject** identifies a GameObject across the network, only prefabs with one can be spawned with \`NetworkObject.Spawn()\`.\n- \`IsServer\`, \`IsClient\`, \`IsOwner\`, \`IsHost\` are booleans on every \`NetworkBehaviour\` telling you which role the current instance is playing.\n- Only the server should spawn, despawn, or authoritatively change networked state, clients request changes, the server decides.\n\n\`\`\`csharp\nGameObject enemy = Instantiate(enemyPrefab);\nenemy.GetComponent<NetworkObject>().Spawn(); // server-only\n\`\`\``
+    ),
+    quiz: {
+      title: 'Netcode Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which component must a prefab have before it can be spawned across the network?',
+          options: ['NetworkVariable', 'NetworkObject', 'NetworkManager', 'ServerRpc'],
+          answer: 'NetworkObject',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A networked script inherits from ____ instead of MonoBehaviour.',
+          options: [],
+          answer: 'NetworkBehaviour',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A host is a server and a local client running at the same time.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Server & Client RPCs',
+    content: lessonContent(
+      'Server & Client RPCs',
+      `An **RPC** (Remote Procedure Call) lets one machine trigger a method that runs on another. Netcode gives you two directions.\n\n\`\`\`csharp\npublic class PlayerShooter : NetworkBehaviour\n{\n    [ServerRpc]\n    void FireServerRpc()\n    {\n        // Runs on the server only, the server owns the truth.\n        SpawnBullet();\n        FireClientRpc();\n    }\n\n    [ClientRpc]\n    void FireClientRpc()\n    {\n        // Runs on every client, e.g. to play a muzzle-flash effect.\n        PlayMuzzleFlash();\n    }\n\n    void Update()\n    {\n        if (IsOwner && Input.GetButtonDown("Fire1"))\n            FireServerRpc();\n    }\n}\n\`\`\`\n\n## The rules\n\n- \`[ServerRpc]\` methods are called by a client (usually the owner) but always execute on the server, name them with a \`ServerRpc\` suffix.\n- \`[ClientRpc]\` methods are called by the server and execute on every connected client, suffix \`ClientRpc\`.\n- By default a \`ServerRpc\` can only be called by the object's **owner**, set \`RequireOwnership = false\` to allow any client to call it.\n- Never trust a client to decide game outcomes, a client calls a \`ServerRpc\` to *request* an action, the server validates and applies it, then tells everyone via a \`ClientRpc\`.`
+    ),
+    quiz: {
+      title: 'RPCs Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'A method marked [ServerRpc] always executes on which machine?',
+          options: ["The caller's machine", 'Every client', 'The server', 'A random client'],
+          answer: 'The server',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Setting RequireOwnership = false on a ServerRpc lets ____ client call it, not just the owner.',
+          options: [],
+          answer: 'any',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A client should be trusted to directly decide game-changing outcomes for performance reasons.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'NetworkVariables and State Synchronization',
+    content: lessonContent(
+      'NetworkVariables and State Synchronization',
+      `RPCs are one-shot events. For continuous state, like health, score, or position, that every client should always see the current value of, use a \`NetworkVariable<T>\`.\n\n\`\`\`csharp\npublic class PlayerHealth : NetworkBehaviour\n{\n    public NetworkVariable<int> Health = new NetworkVariable<int>(\n        100,\n        NetworkVariableReadPermission.Everyone,\n        NetworkVariableWritePermission.Server\n    );\n\n    void Start()\n    {\n        Health.OnValueChanged += (oldValue, newValue) =>\n        {\n            Debug.Log($"Health changed: {oldValue} -> {newValue}");\n        };\n    }\n\n    [ServerRpc]\n    public void TakeDamageServerRpc(int amount)\n    {\n        Health.Value -= amount; // only the server may write\n    }\n}\n\`\`\`\n\n## The pieces\n\n- A \`NetworkVariable<T>\` automatically syncs its value from the server to every client, no manual RPC needed.\n- \`ReadPermission\` controls who can see it (usually \`Everyone\`), \`WritePermission\` controls who can change it (almost always \`Server\`, to prevent cheating).\n- \`OnValueChanged\` fires on every machine, server and clients, whenever the value updates, a good place to refresh UI or trigger effects.\n- Combine with coroutines when you need timed, server-authoritative changes, e.g. a coroutine on the server that ticks damage-over-time and writes to a \`NetworkVariable\` each interval.`
+    ),
+    quiz: {
+      title: 'NetworkVariables Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why should WritePermission on a NetworkVariable almost always be Server?',
+          options: [
+            'It runs faster that way',
+            'To prevent clients from cheating by changing shared state directly',
+            'Clients cannot write to variables at all',
+            'It is required for compilation',
+          ],
+          answer: 'To prevent clients from cheating by changing shared state directly',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The ____ event on a NetworkVariable fires on every machine when its value changes.',
+          options: [],
+          answer: 'OnValueChanged',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A NetworkVariable requires you to write a ClientRpc every time its value changes in order to sync it.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Networked Countdown Spawner',
+    content: lessonContent(
+      'Final Project: Networked Countdown Spawner',
+      `Combine everything from this course into one networked feature.\n\n## Requirements\n\n1. Create a networked prefab (\`NetworkObject\` + a \`NetworkBehaviour\` script) representing an enemy spawner.\n2. On the server, run a **coroutine** that counts down from 5 seconds using \`WaitForSeconds\`, syncing the remaining time to clients through a \`NetworkVariable<float>\`.\n3. When the countdown reaches zero, the server should spawn an enemy prefab (\`Instantiate\` + \`NetworkObject.Spawn()\`) and restart the countdown.\n4. Expose a \`[ServerRpc]\` that lets any client request an immediate spawn (e.g. for testing), guarded so it only works before the match starts.\n5. Use a \`[ClientRpc]\` to play a sound or log a message on every client the moment an enemy spawns.\n\n## Stretch goals\n\n- Cap the number of enemies alive at once, checked server-side before spawning.\n- Show the synced countdown in on-screen UI using \`NetworkVariable.OnValueChanged\`.\n- Handle a client that joins mid-countdown, it should immediately see the current value, not start from zero.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const unityPlatformerLessons: SeedLesson[] = [
+  {
+    title: 'Project Setup & the Player Controller',
+    content: lessonContent(
+      'Project Setup & the Player Controller',
+      `A platformer starts with the one thing every level depends on: a player that can move and jump reliably. In 2D Unity, that means \`Rigidbody2D\` and a **ground check**.\n\n\`\`\`csharp\nusing UnityEngine;\n\npublic class PlayerController : MonoBehaviour\n{\n    public float moveSpeed = 6f;\n    public float jumpForce = 12f;\n    public Transform groundCheck;\n    public LayerMask groundLayer;\n\n    Rigidbody2D rb;\n    bool isGrounded;\n\n    void Awake()\n    {\n        rb = GetComponent<Rigidbody2D>();\n    }\n\n    void Update()\n    {\n        isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.2f, groundLayer);\n\n        float move = Input.GetAxisRaw("Horizontal");\n        rb.linearVelocity = new Vector2(move * moveSpeed, rb.linearVelocity.y);\n\n        if (isGrounded && Input.GetButtonDown("Jump"))\n        {\n            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);\n        }\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`Rigidbody2D\` (not the 3D \`Rigidbody\`) handles gravity and movement for 2D games, set its **Body Type** to \`Dynamic\` in the Inspector.\n- \`Physics2D.OverlapCircle(point, radius, layerMask)\` checks whether any collider on \`groundLayer\` overlaps a small circle, a cheap, reliable way to ask "is the player standing on something?" without relying on fragile collision-event timing.\n- \`groundCheck\` is an empty child GameObject positioned at the player's feet, purely there to give the overlap circle a position to check from.\n- \`Input.GetAxisRaw\` (unlike \`GetAxis\`) returns exactly -1, 0, or 1 with no smoothing, snappier and more predictable for platformer movement.\n- Only jump when \`isGrounded\` is true, otherwise the player could jump endlessly in mid-air.\n\n> [!TIP]\n> Put ground and platform tiles on their own **Layer** (e.g. "Ground"), and set \`groundLayer\` to only that layer in the Inspector. Otherwise \`OverlapCircle\` might count the player's own collider or an enemy standing nearby as "ground."`
+    ),
+    quiz: {
+      title: 'Player Controller Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does Physics2D.OverlapCircle check for in the ground-check pattern?',
+          options: [
+            'Whether the player is moving',
+            'Whether any collider on a given layer overlaps a point',
+            "The player's current health",
+            "The camera's position",
+          ],
+          answer: 'Whether any collider on a given layer overlaps a point',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Input.Get____("Horizontal") returns an unsmoothed -1, 0, or 1, better suited to snappy platformer movement than GetAxis.',
+          options: [],
+          answer: 'AxisRaw',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'The player should be able to jump whether or not isGrounded is true.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Tilemaps and Level Design',
+    content: lessonContent(
+      'Tilemaps and Level Design',
+      `Hand-placing hundreds of individual sprite GameObjects for a level doesn't scale. Unity's **Tilemap** system lets you paint a level like a grid-based canvas instead.\n\n## Setting up a Tilemap\n\n1. Right-click in the Hierarchy → **2D Object → Tilemap → Rectangular**, this creates a \`Grid\` GameObject with a \`Tilemap\` child.\n2. Open the **Tile Palette** window (Window → 2D → Tile Palette), create a new palette, and drag your tile sprites into it.\n3. Select the paint brush tool and click on the Tilemap in the Scene view to place tiles.\n\n## Making the tiles solid\n\nOn the Tilemap GameObject, add a \`Tilemap Collider2D\` and a \`Rigidbody2D\` set to Body Type \`Static\`. A \`TilemapCollider2D\` automatically generates a collider shape from whatever tiles are painted, so painting a new platform is enough, no manual collider work needed.\n\n## Reading tile data from code\n\n\`\`\`csharp\nusing UnityEngine;\nusing UnityEngine.Tilemaps;\n\npublic class LevelInfo : MonoBehaviour\n{\n    public Tilemap tilemap;\n\n    public bool IsSolidAt(Vector3 worldPosition)\n    {\n        Vector3Int cell = tilemap.WorldToCell(worldPosition);\n        return tilemap.HasTile(cell);\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`Grid\` defines the cell size and layout that every child \`Tilemap\` shares, a level can have several Tilemaps (ground, background decoration, hazards) stacked on the same Grid.\n- A Tilemap's \`Rigidbody2D\` should be \`Static\`, the level geometry doesn't move.\n- \`WorldToCell\` converts a world-space position (like a GameObject's \`transform.position\`) into the Tilemap's grid coordinates, useful for gameplay logic that needs to know "what tile is under this point."\n\n> [!TIP]\n> Keep hazards (spikes, lava) on a **separate Tilemap** from solid ground, with its own collider set to **Is Trigger**. That way a single \`OnTriggerEnter2D\` check on the player can detect "touched a hazard" without it also being solid ground.`
+    ),
+    quiz: {
+      title: 'Tilemaps Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which component automatically generates a collider shape that matches the tiles painted on a Tilemap?',
+          options: ['Rigidbody2D', 'TilemapCollider2D', 'BoxCollider2D', 'TileRenderer'],
+          answer: 'TilemapCollider2D',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "A Tilemap's Rigidbody2D should be set to Body Type ____, since level geometry doesn't move.",
+          options: [],
+          answer: 'Static',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A single Grid GameObject can have multiple Tilemap children, e.g. one for ground and one for background decoration.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Camera Follow and Bounds',
+    content: lessonContent(
+      'Camera Follow and Bounds',
+      `A platformer camera needs to track the player smoothly, without jittering or showing empty space past the edges of the level.\n\n\`\`\`csharp\nusing UnityEngine;\n\npublic class CameraFollow : MonoBehaviour\n{\n    public Transform target;\n    public float smoothTime = 0.15f;\n    public Vector2 minBounds;\n    public Vector2 maxBounds;\n\n    Vector3 velocity;\n\n    void LateUpdate()\n    {\n        Vector3 desired = new Vector3(target.position.x, target.position.y, transform.position.z);\n        Vector3 smoothed = Vector3.SmoothDamp(transform.position, desired, ref velocity, smoothTime);\n\n        smoothed.x = Mathf.Clamp(smoothed.x, minBounds.x, maxBounds.x);\n        smoothed.y = Mathf.Clamp(smoothed.y, minBounds.y, maxBounds.y);\n\n        transform.position = smoothed;\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`LateUpdate()\` runs after every \`Update()\` this frame, cameras should always follow in \`LateUpdate\`, so they track the player's **final** position for the frame instead of a stale one from before its last movement.\n- \`Vector3.SmoothDamp\` eases the camera toward a target position over \`smoothTime\` seconds, instead of snapping instantly, this is what makes camera movement feel smooth rather than jittery. It needs a \`ref Vector3 velocity\` field that it updates internally between calls, don't reset that field yourself.\n- \`Mathf.Clamp\` on the final x and y keeps the camera from ever showing area outside \`minBounds\`/\`maxBounds\`, set those to the edges of your level so the camera stops panning once it reaches them.\n- The camera's own \`z\` position is preserved (\`transform.position.z\`) rather than copied from the player, since the player lives on the 2D gameplay plane but the camera needs distance from it to actually render anything.\n\n> [!TIP]\n> Unity's **Cinemachine** package does all of this (smoothing, bounds via a Confiner) with no code and far more polish, writing your own follow script first is worth doing once so you understand what Cinemachine is actually doing under the hood.`
+    ),
+    quiz: {
+      title: 'Camera Follow Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why should camera-follow logic run in LateUpdate instead of Update?',
+          options: [
+            'LateUpdate runs faster',
+            "It ensures the camera tracks the player's final position for the frame",
+            'Update cannot read Transform values',
+            'LateUpdate is required for Rigidbody2D',
+          ],
+          answer: "It ensures the camera tracks the player's final position for the frame",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Vector3.____ eases a value toward a target over time instead of snapping to it instantly.',
+          options: [],
+          answer: 'SmoothDamp',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Mathf.Clamp on the camera's position can prevent it from showing area outside the level bounds.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Animator: Idle, Run, and Jump Animations',
+    content: lessonContent(
+      'Animator: Idle, Run, and Jump Animations',
+      `A static sprite makes movement look robotic. Unity's **Animator** system swaps between animation clips based on parameters your code sets every frame.\n\n## Setting up the Animator Controller\n\n1. Create an **Animator Controller** asset, and add three states: \`Idle\`, \`Run\`, \`Jump\`.\n2. Add parameters: a \`float Speed\` and a \`bool IsGrounded\`.\n3. Draw transitions: \`Idle → Run\` when \`Speed > 0.1\`, \`Run → Idle\` when \`Speed <= 0.1\`, and both \`→ Jump\` when \`IsGrounded\` becomes \`false\`.\n4. Assign the Animator Controller to the player's \`Animator\` component.\n\n\`\`\`csharp\nusing UnityEngine;\n\npublic class PlayerAnimation : MonoBehaviour\n{\n    Animator animator;\n    Rigidbody2D rb;\n    SpriteRenderer spriteRenderer;\n\n    void Awake()\n    {\n        animator = GetComponent<Animator>();\n        rb = GetComponent<Rigidbody2D>();\n        spriteRenderer = GetComponent<SpriteRenderer>();\n    }\n\n    void Update()\n    {\n        float speed = Mathf.Abs(rb.linearVelocity.x);\n        animator.SetFloat("Speed", speed);\n        animator.SetBool("IsGrounded", Mathf.Abs(rb.linearVelocity.y) < 0.01f);\n\n        if (rb.linearVelocity.x != 0f)\n        {\n            spriteRenderer.flipX = rb.linearVelocity.x < 0f;\n        }\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`animator.SetFloat(...)\`/\`SetBool(...)\` push values from code into the Animator Controller's parameters every frame, the transitions you drew in the editor react to those values automatically, your code never has to say "play the Run animation" directly.\n- Keeping animation logic in its own \`PlayerAnimation\` script, separate from \`PlayerController\`'s movement logic, means either one can change without touching the other.\n- \`spriteRenderer.flipX\` mirrors the sprite horizontally, a cheap way to make one "Run" animation face both left and right instead of needing separate clips.\n\n> [!WARNING]\n> If a transition's conditions can never actually be reached (e.g. checking \`Speed > 0.1\` but the code only ever sets whole numbers), the Animator gets stuck in one state. Use the Animator window's live preview during Play mode to watch which state is active and debug transitions.`
+    ),
+    quiz: {
+      title: 'Animator Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How does code trigger an Animator transition, like Idle to Run?',
+          options: [
+            'By calling animator.Play("Run") every frame',
+            'By setting parameters (like a float or bool) that the transition conditions check',
+            'Transitions are fully automatic and need no code',
+            'By destroying and re-instantiating the Animator',
+          ],
+          answer: 'By setting parameters (like a float or bool) that the transition conditions check',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'spriteRenderer.____ mirrors a sprite horizontally, useful for reusing one animation for both facing directions.',
+          options: [],
+          answer: 'flipX',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Animation logic and movement logic must always live in the same script.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Collectibles and Enemies',
+    content: lessonContent(
+      'Collectibles and Enemies',
+      `A platformer needs something to collect and something to avoid. Both come from the trigger and collision patterns you already know, applied to specific gameplay roles.\n\n\`\`\`csharp\nusing UnityEngine;\n\npublic class Coin : MonoBehaviour\n{\n    public int value = 10;\n\n    void OnTriggerEnter2D(Collider2D other)\n    {\n        if (!other.CompareTag("Player")) return;\n\n        GameManager.Instance.AddScore(value);\n        Destroy(gameObject);\n    }\n}\n\`\`\`\n\n\`\`\`csharp\nusing UnityEngine;\n\npublic class Patroller : MonoBehaviour\n{\n    public float speed = 2f;\n    public float patrolDistance = 3f;\n\n    Vector3 start;\n    int direction = 1;\n\n    void Start()\n    {\n        start = transform.position;\n    }\n\n    void Update()\n    {\n        transform.Translate(Vector2.right * direction * speed * Time.deltaTime);\n\n        if (Mathf.Abs(transform.position.x - start.x) >= patrolDistance)\n        {\n            direction *= -1;\n            transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, 1f);\n        }\n    }\n\n    void OnCollisionEnter2D(Collision2D collision)\n    {\n        if (collision.gameObject.CompareTag("Player"))\n        {\n            collision.gameObject.GetComponent<PlayerHealth>()?.TakeDamage(1);\n        }\n    }\n}\n\`\`\`\n\n## The pieces\n\n- A coin's collider is a **trigger** (\`Is Trigger\` checked), so the player passes through it while still getting \`OnTriggerEnter2D\`, and it destroys itself once collected.\n- The patroller walks back and forth by tracking distance from its \`start\` position, and flips its \`direction\` (and its sprite, via \`localScale.x\`) at each end.\n- \`OnCollisionEnter2D\` on the enemy fires when the player touches its **solid** collider, that's the difference from the coin: an enemy should physically be there (block/push the player), a coin shouldn't.\n- \`GetComponent<PlayerHealth>()?.TakeDamage(1)\` uses the null-conditional \`?.\` in case the colliding object somehow doesn't have a \`PlayerHealth\` component, avoiding a crash.\n\n> [!TIP]\n> Give enemies and hazards a distinct **Tag** (e.g. "Enemy", "Hazard") and coins a "Collectible" tag. Tag checks (\`CompareTag\`) are far cheaper than \`GetComponent\` calls just to identify what something is.`
+    ),
+    quiz: {
+      title: 'Collectibles & Enemies Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Why is a coin's collider set to Is Trigger instead of a solid collider?",
+          options: [
+            'Triggers are faster to render',
+            'So the player can pass through it while still detecting the overlap',
+            'Trigger colliders cannot be destroyed',
+            'It is required for 2D sprites',
+          ],
+          answer: 'So the player can pass through it while still detecting the overlap',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'CompareTag(...) is a cheaper way to check what a GameObject is than calling ____ just to check if a component exists.',
+          options: [],
+          answer: 'GetComponent',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An enemy that should physically block the player should use a trigger collider instead of a solid one.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'UI: Score, Health, and Level Complete',
+    content: lessonContent(
+      'UI: Score, Health, and Level Complete',
+      `Wire the systems from earlier lessons to a UI a player can actually see, using a small manager class that everything else talks to.\n\n\`\`\`csharp\nusing UnityEngine;\nusing TMPro;\n\npublic class GameManager : MonoBehaviour\n{\n    public static GameManager Instance { get; private set; }\n\n    public TMP_Text scoreText;\n    public GameObject levelCompletePanel;\n\n    int score;\n\n    void Awake()\n    {\n        Instance = this;\n    }\n\n    public void AddScore(int amount)\n    {\n        score += amount;\n        scoreText.text = $"Score: {score}";\n    }\n\n    public void CompleteLevel()\n    {\n        levelCompletePanel.SetActive(true);\n        Time.timeScale = 0f;\n    }\n}\n\`\`\`\n\n## The pieces\n\n- \`public static GameManager Instance { get; private set; }\` is a lightweight **singleton**: any script can reach the one \`GameManager\` in the scene with \`GameManager.Instance\`, instead of every script needing a manually-dragged reference. That's how \`Coin\` called \`GameManager.Instance.AddScore(...)\` in the previous lesson.\n- \`scoreText.text = $"Score: {score}"\` is the same pattern from the Unity Essentials course, code pushes new values into the UI, the UI never updates itself.\n- \`levelCompletePanel\` is a \`Canvas\` child (a panel with a background and text) that starts inactive in the Inspector and gets \`SetActive(true)\` only when the level is finished.\n- \`Time.timeScale = 0f\` pauses all physics and any code using \`Time.deltaTime\` (like the patroller's movement), a simple way to freeze gameplay behind a completion or pause screen without disabling every script individually.\n\n> [!WARNING]\n> Setting \`Time.timeScale = 0f\` also freezes \`Update()\`-based countdowns and animations driven by \`deltaTime\`. Resetting it back to \`1f\` (e.g. when restarting the level) is easy to forget, and leaves the whole game frozen.`
+    ),
+    quiz: {
+      title: 'UI & Game State Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the GameManager.Instance pattern let other scripts do?',
+          options: [
+            'Create a new GameManager each time',
+            'Reach the one GameManager in the scene without a manually-dragged reference',
+            'Automatically destroy themselves',
+            'Skip using the Inspector entirely for all fields',
+          ],
+          answer: 'Reach the one GameManager in the scene without a manually-dragged reference',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Setting Time.____ to 0 pauses physics and any code driven by deltaTime, useful for a level-complete or pause screen.',
+          options: [],
+          answer: 'timeScale',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'UI text updates itself automatically whenever the underlying score variable changes.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Finish Your Platformer',
+    content: lessonContent(
+      'Final Project: Finish Your Platformer',
+      `You now have every piece: a responsive player controller, a tile-based level, a camera that follows smoothly, animated movement, collectibles and enemies, and a UI wired to game state. Put it all together into one complete, playable level.\n\n## Requirements\n\n1. Combine the \`PlayerController\`, \`PlayerAnimation\`, and \`CameraFollow\` scripts from earlier lessons onto a player that can run, jump, and be tracked by the camera across a full level.\n2. Build a level with a Tilemap, including solid ground and at least one gap the player must jump across.\n3. Place at least 5 coins (using the \`Coin\` script) and update the score UI live as they're collected.\n4. Add at least one patrolling enemy that damages the player on contact, and a \`PlayerHealth\` script that ends the run (e.g. reloads the level) when health reaches 0.\n5. Show the level-complete panel when the player reaches an end-of-level trigger zone, and pause gameplay while it's shown.\n\n## Stretch goals\n\n- Add a second enemy type that doesn't patrol, but instead activates and chases the player once it enters an \`OnTriggerEnter2D\` "aggro" radius.\n- Add a simple checkpoint system: touching a checkpoint updates where the player respawns after taking too much damage, instead of always restarting from the beginning.\n- Swap your hand-written \`CameraFollow\` for Unity's **Cinemachine** package, and compare how much of your script it replaces.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const sqlLessons: SeedLesson[] = [
   {
     title: 'Introduction to SQL and SELECT',
@@ -9211,6 +10287,31 @@ const coursesByPath: Record<string, { title: string; description: string; lesson
       title: 'C# Foundations',
       description: 'Learn statically-typed, object-oriented programming with C# and the .NET ecosystem, from your first program to building console applications.',
       lessons: csharpLessons,
+    },
+    {
+      title: 'C# Intermediate: OOP, Interfaces & Events',
+      description: 'Go deeper into object-oriented C#: inheritance and polymorphism, interfaces vs abstract classes, generics, exception handling, delegates and events, and lambda expressions with Func/Action.',
+      lessons: csharpIntermediateLessons,
+    },
+    {
+      title: 'C# Async Programming: Task, async/await & Cancellation',
+      description: 'Master asynchronous C#: what async/await actually do, running work concurrently with Task.WhenAll and Task.WhenAny, cancelling long-running operations with CancellationToken, handling exceptions across async code, and streaming results with IAsyncEnumerable.',
+      lessons: csharpAsyncLessons,
+    },
+    {
+      title: 'Unity Essentials: Physics, UI & Gameplay Systems',
+      description: 'Build real gameplay in Unity: Rigidbody physics with collisions and triggers, raycasting, the UGUI Canvas system, the Input System, data-driven design with ScriptableObjects, object pooling for performance, and saving player data with PlayerPrefs and JSON.',
+      lessons: csharpUnityEssentialsLessons,
+    },
+    {
+      title: 'C# for Unity: Coroutines & Multiplayer Networking',
+      description: 'Go from console apps to game code: GameObjects and the MonoBehaviour lifecycle, coroutines with IEnumerator for timed and multi-frame logic, and multiplayer networking with Netcode for GameObjects (NetworkObject, RPCs, NetworkVariables).',
+      lessons: csharpUnityLessons,
+    },
+    {
+      title: 'Build a 2D Platformer using Unity and C#',
+      description: 'Build a complete, playable platformer from scratch: a Rigidbody2D player controller with a ground check, Tilemap level design, a smooth bounded camera follow, Animator-driven run/jump/idle animations, collectible coins and patrolling enemies, and a UI wired up to score, health, and level completion.',
+      lessons: unityPlatformerLessons,
     },
   ],
   sql: [
