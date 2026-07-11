@@ -61,11 +61,14 @@ export function App() {
               <Route path="/verify/:code" element={<VerifyCertificate />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
+              {/* Not wrapped in ProtectedRoute: a course flagged isPublic (and its first lesson)
+                  is viewable without an account, a free sample to try before signing up. The
+                  pages themselves redirect to /login for courses/lessons that aren't public. */}
+              <Route path="/courses/:id" element={<CourseDetail />} />
+              <Route path="/lessons/:id" element={<Lesson />} />
               <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/courses" element={<Courses />} />
-                <Route path="/courses/:id" element={<CourseDetail />} />
-                <Route path="/lessons/:id" element={<Lesson />} />
                 <Route path="/challenges" element={<Challenges />} />
                 <Route path="/challenges/:id" element={<ChallengeSolve />} />
                 <Route path="/leaderboard" element={<Leaderboard />} />

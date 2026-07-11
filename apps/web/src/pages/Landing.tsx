@@ -184,6 +184,12 @@ export function Landing() {
               Den här sidan visas på svenska, men efter att du registrerar dig eller loggar in fortsätter allt i
               appen på engelska.
             </p>
+            <Link
+              to="/courses/sample-programming-basics"
+              className="mx-auto mt-3 inline-block text-sm font-medium text-forge-400 hover:text-forge-300 hover:underline"
+            >
+              Eller prova en gratis lektion direkt, inget konto behövs →
+            </Link>
           </>
         )}
       </section>

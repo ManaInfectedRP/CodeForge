@@ -4,9 +4,11 @@ import type { CourseDetailDto } from '@codeforge/shared';
 import { api, errorMessage } from '../lib/api';
 import { ProgressBar } from '../components/ProgressBar';
 import { CourseReviewForm } from '../components/CourseReviewForm';
+import { useAuth } from '../context/AuthContext';
 
 export function CourseDetail() {
   const { id } = useParams<{ id: string }>();
+  const { user, loading: authLoading } = useAuth();
   const [course, setCourse] = useState<CourseDetailDto | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
@@ -21,6 +23,14 @@ export function CourseDetail() {
   }, [id]);
 
   useEffect(load, [load]);
+
+  // this route isn't wrapped in ProtectedRoute (public courses need to render for anonymous
+  // visitors), so a non-public course must redirect to login itself once we know it isn't public
+  useEffect(() => {
+    if (!authLoading && course && !course.isPublic && !user) {
+      navigate('/login', { replace: true });
+    }
+  }, [course, user, authLoading, navigate]);
 
   async function enroll() {
     setEnrolling(true);
@@ -49,6 +59,9 @@ export function CourseDetail() {
 
   if (error && !course) return <main className="p-12 text-center text-red-400">{error}</main>;
   if (!course) return <main className="p-12 text-center text-slate-400">Loading course…</main>;
+  if (!authLoading && !course.isPublic && !user) {
+    return <main className="p-12 text-center text-slate-400">Redirecting to login…</main>;
+  }
 
   const percent =
     course.lessonCount === 0 ? 0 : Math.round(((course.completedLessons ?? 0) / course.lessonCount) * 100);
@@ -109,21 +122,29 @@ export function CourseDetail() {
         </section>
       )}
 
-      {!course.enrolled && (
-        <button
-          onClick={enroll}
-          disabled={enrolling}
-          className="mt-6 rounded-xl bg-forge-600 px-8 py-3 font-semibold text-white hover:bg-forge-500 disabled:opacity-50"
-        >
-          {enrolling ? 'Enrolling…' : 'Enroll in this course'}
-        </button>
-      )}
+      {!course.enrolled &&
+        (user ? (
+          <button
+            onClick={enroll}
+            disabled={enrolling}
+            className="mt-6 rounded-xl bg-forge-600 px-8 py-3 font-semibold text-white hover:bg-forge-500 disabled:opacity-50"
+          >
+            {enrolling ? 'Enrolling…' : 'Enroll in this course'}
+          </button>
+        ) : (
+          <Link
+            to="/register"
+            className="mt-6 inline-block rounded-xl bg-forge-600 px-8 py-3 font-semibold text-white hover:bg-forge-500"
+          >
+            Create a free account to enroll
+          </Link>
+        ))}
 
       <section className="mt-10">
         <h2 className="text-xl font-bold">Curriculum</h2>
         <ol className="mt-4 space-y-2">
           {course.lessons.map((l) => {
-            const clickable = course.enrolled && l.unlocked;
+            const clickable = (course.enrolled && l.unlocked) || (course.isPublic && l.order === 1);
             return (
               <li key={l.id}>
                 <Link
@@ -157,7 +178,11 @@ export function CourseDetail() {
           })}
         </ol>
         {!course.enrolled ? (
-          <p className="mt-3 text-sm text-slate-500">Enroll to unlock the lessons.</p>
+          <p className="mt-3 text-sm text-slate-500">
+            {course.isPublic
+              ? 'The first lesson is free to try, no account needed. Create an account to unlock the rest.'
+              : 'Enroll to unlock the lessons.'}
+          </p>
         ) : (
           <p className="mt-3 text-sm text-slate-500">Lessons unlock in order, complete each one to open the next.</p>
         )}

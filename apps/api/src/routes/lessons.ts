@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { LessonDetailDto, ProjectSubmissionDto } from '@codeforge/shared';
 import { prisma } from '../lib/prisma.ts';
 import { h } from '../lib/helpers.ts';
-import { requireAuth } from '../middleware/auth.ts';
+import { optionalAuth, requireAuth } from '../middleware/auth.ts';
 import { HttpError } from '../middleware/errors.ts';
 import { recordActivity, XP_LESSON_COMPLETED } from '../services/gamification.ts';
 
@@ -33,45 +33,57 @@ export const lessonsRouter = Router();
 
 lessonsRouter.get(
   '/:id',
-  requireAuth,
+  optionalAuth,
   h(async (req, res) => {
     const lesson = await prisma.lesson.findUnique({
       where: { id: req.params.id },
       include: {
-        course: { select: { id: true, title: true, status: true } },
+        course: { select: { id: true, title: true, status: true, isPublic: true } },
         quiz: { include: { questions: { orderBy: { order: 'asc' } } } },
       },
     });
     if (!lesson || lesson.course.status !== 'PUBLISHED') throw new HttpError(404, 'Lesson not found');
 
-    const [progress, siblings, submission, passingAttempt] = await Promise.all([
-      prisma.lessonProgress.findUnique({
-        where: { userId_lessonId: { userId: req.auth!.sub, lessonId: lesson.id } },
-      }),
-      prisma.lesson.findMany({
-        where: { courseId: lesson.courseId },
-        select: { id: true, order: true },
-        orderBy: { order: 'asc' },
-      }),
-      prisma.projectSubmission.findUnique({
-        where: { lessonId_userId: { lessonId: lesson.id, userId: req.auth!.sub } },
-      }),
-      lesson.quiz
-        ? prisma.quizAttempt.findFirst({
-            where: { quizId: lesson.quiz.id, userId: req.auth!.sub, passed: true },
-            select: { id: true },
-          })
-        : Promise.resolve(null),
-    ]);
+    // a course's first lesson is a free sample when the course itself is public, viewable
+    // without an account; everything else still requires login
+    const isFreeSample = lesson.course.isPublic && lesson.order === 1;
+    if (!req.auth && !isFreeSample) throw new HttpError(401, 'Log in to view this lesson');
 
+    const siblings = await prisma.lesson.findMany({
+      where: { courseId: lesson.courseId },
+      select: { id: true, order: true },
+      orderBy: { order: 'asc' },
+    });
     const idx = siblings.findIndex((s) => s.id === lesson.id);
-    if (idx > 0) {
-      const previousIds = siblings.slice(0, idx).map((s) => s.id);
-      const completedPreviousCount = await prisma.lessonProgress.count({
-        where: { userId: req.auth!.sub, lessonId: { in: previousIds } },
-      });
-      if (completedPreviousCount < previousIds.length) {
-        throw new HttpError(403, 'Complete the previous lessons in this course before this one');
+
+    let progress: Awaited<ReturnType<typeof prisma.lessonProgress.findUnique>> = null;
+    let submission: Awaited<ReturnType<typeof prisma.projectSubmission.findUnique>> = null;
+    let passingAttempt: { id: string } | null = null;
+
+    if (req.auth) {
+      [progress, submission, passingAttempt] = await Promise.all([
+        prisma.lessonProgress.findUnique({
+          where: { userId_lessonId: { userId: req.auth.sub, lessonId: lesson.id } },
+        }),
+        prisma.projectSubmission.findUnique({
+          where: { lessonId_userId: { lessonId: lesson.id, userId: req.auth.sub } },
+        }),
+        lesson.quiz
+          ? prisma.quizAttempt.findFirst({
+              where: { quizId: lesson.quiz.id, userId: req.auth.sub, passed: true },
+              select: { id: true },
+            })
+          : Promise.resolve(null),
+      ]);
+
+      if (idx > 0) {
+        const previousIds = siblings.slice(0, idx).map((s) => s.id);
+        const completedPreviousCount = await prisma.lessonProgress.count({
+          where: { userId: req.auth.sub, lessonId: { in: previousIds } },
+        });
+        if (completedPreviousCount < previousIds.length) {
+          throw new HttpError(403, 'Complete the previous lessons in this course before this one');
+        }
       }
     }
 

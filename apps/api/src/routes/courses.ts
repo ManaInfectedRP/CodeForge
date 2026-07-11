@@ -39,6 +39,7 @@ coursesRouter.get(
       instructorName: c.instructor.username,
       lessonCount: c._count.lessons,
       enrolled: enrolledIds.has(c.id),
+      isPublic: c.isPublic,
     }));
     res.json(body);
   })
@@ -97,6 +98,7 @@ coursesRouter.get(
       instructorName: course.instructor.username,
       lessonCount: course.lessons.length,
       enrolled,
+      isPublic: course.isPublic,
       completedLessons: completedIds.size,
       lessons: (() => {
         let previousCompleted = true;

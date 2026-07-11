@@ -6,6 +6,7 @@ Allow: /register
 Allow: /verify-email
 Allow: /verify/
 Allow: /blog
+Allow: /courses/sample-programming-basics
 
 Disallow: /dashboard
 Disallow: /courses

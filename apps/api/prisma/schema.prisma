@@ -140,6 +140,9 @@ model Course {
   description  String
   status       CourseStatus @default(DRAFT)
   reviewNote   String?
+  /** when true, the course detail page and its first lesson are viewable without an account,
+    * a free sample to let visitors try the platform before signing up */
+  isPublic     Boolean      @default(false)
   pathId       String
   instructorId String
   createdAt    DateTime     @default(now())
