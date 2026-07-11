@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { BlogPostSummaryDto } from '@codeforge/shared';
+import { PageMeta } from '../components/PageMeta';
 import { api } from '../lib/api';
 
 export function Blog() {
@@ -12,6 +13,11 @@ export function Blog() {
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
+      <PageMeta
+        title="Blog | Kodstigen"
+        description="News, deep dives, and updates from the Kodstigen team."
+      />
+
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Blog</h1>
         <a

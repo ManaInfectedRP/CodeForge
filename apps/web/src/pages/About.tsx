@@ -1,8 +1,14 @@
 import { Link } from 'react-router-dom';
+import { PageMeta } from '../components/PageMeta';
 
 export function About() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-16">
+      <PageMeta
+        title="About | Kodstigen"
+        description="Kodstigen is a solo-built platform for learning programming step by step through interactive lessons, quizzes, and real projects, created by Sebastian Larsson."
+      />
+
       <Link to="/" className="text-sm text-slate-400 hover:text-white">
         ← Back home
       </Link>

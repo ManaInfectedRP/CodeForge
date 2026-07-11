@@ -186,7 +186,7 @@ export function Landing() {
             </p>
             <Link
               to="/courses/sample-programming-basics"
-              className="mx-auto mt-3 inline-block text-sm font-medium text-forge-400 hover:text-forge-300 hover:underline"
+              className="mx-auto mt-3 inline-block text-sm font-medium text-forge-500 hover:text-forge-100 hover:underline"
             >
               Eller prova en gratis lektion direkt, inget konto behövs →
             </Link>
