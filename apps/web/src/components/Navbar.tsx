@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Dropdown, dropdownItemClass } from './Dropdown';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -7,8 +8,15 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
   }`;
 
+const translations = {
+  en: { login: 'Log in', register: 'Start learning' },
+  sv: { login: 'Logga in', register: 'Börja lära dig' },
+};
+
 export function Navbar() {
   const { user, logout } = useAuth();
+  const { language } = useLanguage();
+  const t = translations[language];
   const navigate = useNavigate();
 
   return (
@@ -106,13 +114,13 @@ export function Navbar() {
         ) : (
           <nav className="flex items-center gap-1">
             <NavLink to="/login" className={navLinkClass}>
-              Logga in
+              {t.login}
             </NavLink>
             <Link
               to="/register"
               className="ml-2 rounded-lg bg-forge-600 px-4 py-2 text-sm font-semibold text-white hover:bg-forge-500"
             >
-              Börja lära dig
+              {t.register}
             </Link>
           </nav>
         )}
