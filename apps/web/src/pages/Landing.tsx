@@ -192,7 +192,10 @@ export function Landing() {
   const [reviews, setReviews] = useState<FeaturedReviewDto[]>([]);
 
   useEffect(() => {
-    api.get<LearningPathDto[]>('/paths').then((res) => setPaths(res.data)).catch(() => {});
+    api
+      .get<LearningPathDto[]>('/paths')
+      .then((res) => setPaths(res.data.filter((p) => p.slug !== 'public')))
+      .catch(() => {});
     api
       .get<FeaturedReviewDto[]>('/reviews/featured', { params: { limit: 9 } })
       .then((res) => setReviews(res.data))
