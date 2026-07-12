@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ContactModal } from '../components/ContactModal';
 import { PageMeta } from '../components/PageMeta';
 import { useLanguage, type Language } from '../context/LanguageContext';
 
@@ -828,6 +830,7 @@ export function Faq() {
   const sections = SECTIONS[language];
   const t = pageText[language];
   const structuredData = buildFaqStructuredData(language);
+  const [contactOpen, setContactOpen] = useState(false);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-16">
@@ -840,11 +843,17 @@ export function Faq() {
       <h1 className="mt-6 text-3xl font-bold sm:text-4xl">{t.heading}</h1>
       <p className="mt-3 text-slate-400">
         {t.intro}{' '}
-        <a href="mailto:Sebbelarsson9601@gmail.com" className="text-forge-500 hover:text-forge-100 hover:underline">
+        <button
+          type="button"
+          onClick={() => setContactOpen(true)}
+          className="text-forge-500 hover:text-forge-100 hover:underline"
+        >
           {t.introLink}
-        </a>
+        </button>
         .
       </p>
+
+      {contactOpen && <ContactModal onClose={() => setContactOpen(false)} />}
 
       <div className="mt-10 space-y-10">
         {sections.map((section) => (
