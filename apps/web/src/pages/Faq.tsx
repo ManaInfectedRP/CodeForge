@@ -4,7 +4,7 @@ import { useLanguage, type Language } from '../context/LanguageContext';
 
 type Section = { title: string; items: { q: string; a: string }[] };
 
-const SECTIONS: Record<Language, Section[]> = {
+export const SECTIONS: Record<Language, Section[]> = {
   en: [
     {
       title: 'Getting started',
@@ -231,7 +231,7 @@ const SECTIONS: Record<Language, Section[]> = {
   ],
 };
 
-const pageText = {
+export const pageText = {
   en: {
     metaTitle: 'Frequently Asked Questions | Kodstigen',
     metaDescription:
@@ -252,16 +252,12 @@ const pageText = {
   },
 };
 
-export function Faq() {
-  const { language } = useLanguage();
-  const sections = SECTIONS[language];
-  const t = pageText[language];
-
-  const structuredData = {
+export function buildFaqStructuredData(language: Language) {
+  return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
     inLanguage: language,
-    mainEntity: sections.flatMap((section) =>
+    mainEntity: SECTIONS[language].flatMap((section) =>
       section.items.map((item) => ({
         '@type': 'Question',
         name: item.q,
@@ -269,6 +265,13 @@ export function Faq() {
       }))
     ),
   };
+}
+
+export function Faq() {
+  const { language } = useLanguage();
+  const sections = SECTIONS[language];
+  const t = pageText[language];
+  const structuredData = buildFaqStructuredData(language);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-16">

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { PageMeta } from '../components/PageMeta';
 import { useLanguage } from '../context/LanguageContext';
 
-const translations = {
+export const translations = {
   en: {
     metaTitle: 'About | Kodstigen',
     metaDescription:
