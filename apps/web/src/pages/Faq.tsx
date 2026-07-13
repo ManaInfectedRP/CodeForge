@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ContactModal } from '../components/ContactModal';
+import { FaqOutline, slugifyFaqTitle } from '../components/FaqOutline';
 import { PageMeta } from '../components/PageMeta';
 import { useLanguage, type Language } from '../context/LanguageContext';
 
@@ -855,9 +856,11 @@ export function Faq() {
 
       {contactOpen && <ContactModal onClose={() => setContactOpen(false)} />}
 
+      <FaqOutline titles={sections.map((section) => section.title)} language={language} />
+
       <div className="mt-10 space-y-10">
         {sections.map((section) => (
-          <section key={section.title}>
+          <section key={section.title} id={slugifyFaqTitle(section.title)} className="scroll-mt-24">
             <h2 className="text-xl font-bold text-forge-500">{section.title}</h2>
             <div className="mt-4 space-y-2">
               {section.items.map((item) => (
