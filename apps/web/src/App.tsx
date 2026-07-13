@@ -4,6 +4,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { PageTracker } from './components/PageTracker';
+import { GaPageView } from './components/GaPageView';
 import { CanonicalLink } from './components/CanonicalLink';
 import { VerifyEmailBanner } from './components/VerifyEmailBanner';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -50,6 +51,7 @@ export function App() {
       <LanguageProvider>
         <AuthProvider>
           <PageTracker />
+          <GaPageView />
           <CanonicalLink />
           <div className="flex min-h-screen flex-col">
             <Navbar />

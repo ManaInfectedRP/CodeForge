@@ -46,6 +46,14 @@ export function FaqOutline({ titles, language }: { titles: string[]; language: L
     [titles, query]
   );
 
+  useEffect(() => {
+    if (!query.trim() || typeof window.gtag !== 'function') return;
+    const timer = setTimeout(() => {
+      window.gtag?.('event', 'search', { search_term: query });
+    }, 500); // debounce so GA4 gets one event per pause in typing, not one per keystroke
+    return () => clearTimeout(timer);
+  }, [query]);
+
   function goTo(title: string) {
     document.getElementById(slugifyFaqTitle(title))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setOpen(false);
