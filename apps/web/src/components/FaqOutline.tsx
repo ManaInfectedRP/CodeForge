@@ -9,8 +9,8 @@ export function slugifyFaqTitle(title: string) {
 }
 
 const translations = {
-  en: { label: 'Contents', placeholder: 'Filter headings…', empty: 'No matching sections' },
-  sv: { label: 'Innehåll', placeholder: 'Filtrera rubriker…', empty: 'Inga matchande avsnitt' },
+  en: { label: 'Filter', placeholder: 'Filter headings…', empty: 'No matching sections' },
+  sv: { label: 'Filter', placeholder: 'Filtrera rubriker…', empty: 'Inga matchande avsnitt' },
 };
 
 export function FaqOutline({ titles, language }: { titles: string[]; language: Language }) {
