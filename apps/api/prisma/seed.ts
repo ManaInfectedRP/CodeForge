@@ -1121,6 +1121,177 @@ const jsLessons: SeedLesson[] = [
   },
 ];
 
+const jsonDomLessons: SeedLesson[] = [
+  {
+    title: 'What is JSON?',
+    content: lessonContent(
+      'What is JSON?',
+      `JSON (JavaScript Object Notation) is a lightweight, text-based format for representing structured data. It's how APIs send data over a network, how config files get written, and how you persist data to disk or \`localStorage\`.\n\n## Valid JSON values\n\nJSON supports exactly six types: string, number, boolean, null, object, and array. Notably absent: \`undefined\`, functions, and comments, none of those exist in JSON.\n\n\`\`\`js\nconst config = {\n  name: 'Kodstigen',\n  version: 2,\n  isPublic: true,\n  maintainer: null,\n  tags: ['learning', 'javascript'],\n};\nconsole.log(JSON.stringify(config));\n\`\`\`\n\n## JSON vs a JavaScript object literal\n\nThey look almost identical, but JSON is a *text format*: keys and string values must use double quotes, and it can't contain functions, \`undefined\`, \`Date\` objects, or comments. A JavaScript object literal has none of those restrictions, it's just code.\n\n\`\`\`js\n// Valid JSON text (a string):\nconst jsonText = '{"name":"Ada","active":true}';\n\n// A JS object literal (code, not a string):\nconst obj = { name: 'Ada', active: true };\n\`\`\``
+    ),
+    quiz: {
+      title: 'JSON Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which of these is NOT a valid JSON value type?',
+          options: ['string', 'boolean', 'undefined', 'null'],
+          answer: 'undefined',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'JSON object keys must be wrapped in double quotes.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'JSON stands for JavaScript Object ____.',
+          options: [],
+          answer: 'Notation',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Parsing and Stringifying JSON',
+    content: lessonContent(
+      'Parsing and Stringifying JSON',
+      `Since JSON is just text, JavaScript needs two built-in functions to move between "JSON as a string" and "JSON as real JavaScript values": \`JSON.parse\` and \`JSON.stringify\`.\n\n\`\`\`js\nconst jsonText = '{"title":"Modern JavaScript","lessons":6,"tags":["js","dom"]}';\n\nconst course = JSON.parse(jsonText);\nconsole.log(course.title);\nconsole.log(course.tags[1]);\n\nconst backToText = JSON.stringify(course);\nconsole.log(backToText);\n\nconst pretty = JSON.stringify(course, null, 2);\nconsole.log(pretty);\n\`\`\`\n\n## Reading it\n\n- \`JSON.parse(text)\` turns a JSON string into real JavaScript values (objects, arrays, numbers, ...), throws a \`SyntaxError\` if the text isn't valid JSON.\n- \`JSON.stringify(value)\` turns a JavaScript value into a JSON string.\n- The third argument to \`stringify\`, here \`2\`, adds indentation, handy for logging or writing readable files, it has no effect on parsing.\n- Anything \`JSON.stringify\` can't represent, functions, \`undefined\` values, gets silently dropped from objects (or turned into \`null\` inside arrays).\n\n\`\`\`js\nconst withExtras = { name: 'Ada', greet: () => 'hi', missing: undefined, count: 3 };\nconsole.log(JSON.stringify(withExtras)); // greet and missing both disappear\n\`\`\``
+    ),
+    quiz: {
+      title: 'Parse & Stringify Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which function converts a JSON string into a JavaScript value?',
+          options: ['JSON.stringify', 'JSON.parse', 'JSON.encode', 'JSON.toObject'],
+          answer: 'JSON.parse',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "Calling JSON.parse on text that isn't valid JSON throws a ____.",
+          options: [],
+          answer: 'SyntaxError',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'JSON.stringify keeps function properties in the resulting string.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Selecting and Reading the DOM',
+    content: lessonContent(
+      'Selecting and Reading the DOM',
+      `Before you can change a page with JavaScript, you need to find the elements you want to change. \`document.querySelector\` and \`document.querySelectorAll\` use the same selector syntax as CSS.\n\n\`\`\`\nconst heading = document.querySelector('h1');\nconsole.log(heading.textContent);\n\nconst allCards = document.querySelectorAll('.card');\nconsole.log(allCards.length);\n\nallCards.forEach(function (card) {\n  console.log(card.getAttribute('data-id'));\n});\n\`\`\`\n\n*This needs a real web page to query, so this block is read-only here, you'll get hands-on DOM practice in the final project.*\n\n## Reading it\n\n- \`querySelector(selector)\` returns the **first** matching element, or \`null\` if nothing matches.\n- \`querySelectorAll(selector)\` returns a static list (a \`NodeList\`) of **every** matching element, it has \`.forEach\`, but isn't a real array.\n- \`.textContent\` reads (or sets) an element's text, ignoring any HTML tags inside it.\n- \`.getAttribute(name)\` reads an HTML attribute's raw string value, e.g. \`data-id\`, \`href\`, \`src\`.`
+    ),
+    quiz: {
+      title: 'DOM Selection Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does document.querySelector('.card') return if no element matches?",
+          options: ['An empty array', 'undefined', 'null', 'Throws an error'],
+          answer: 'null',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'querySelectorAll returns a real Array with methods like map and filter.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "element.____ reads or sets an element's visible text, ignoring HTML tags inside it.",
+          options: [],
+          answer: 'textContent',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Creating and Updating DOM Elements',
+    content: lessonContent(
+      'Creating and Updating DOM Elements',
+      `Reading the DOM only gets you so far, real interactivity means creating, modifying, and removing elements as your data changes.\n\n\`\`\`\nconst list = document.querySelector('#tasks');\n\nconst item = document.createElement('li');\nitem.textContent = 'Learn the DOM';\nitem.classList.add('task');\nitem.dataset.done = 'false';\n\nlist.append(item);\n\nitem.classList.toggle('done');\nitem.remove();\n\`\`\`\n\n*Like the previous lesson, this needs a real page with a #tasks list, so it's read-only here.*\n\n## Reading it\n\n- \`document.createElement(tag)\` creates a new, detached element, it doesn't appear on the page until you attach it.\n- \`.append(node)\` (or the older \`.appendChild(node)\`) inserts a node as the last child of another element.\n- \`.classList.add\`/\`.remove\`/\`.toggle\` manage CSS classes without you having to fiddle with the raw \`className\` string.\n- \`.dataset.done\` reads or writes a \`data-done\` attribute, a clean way to stash small bits of state directly on an element.\n- \`.remove()\` deletes the element from the page entirely.`
+    ),
+    quiz: {
+      title: 'DOM Editing Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which method creates a brand-new, detached DOM element?',
+          options: ['document.append()', 'document.createElement()', 'document.newElement()', 'Element.clone()'],
+          answer: 'document.createElement()',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "element.classList.____('done') flips a CSS class on and off.",
+          options: [],
+          answer: 'toggle',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A newly created element is automatically visible on the page as soon as it is created.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Rendering JSON Data into the DOM',
+    content: lessonContent(
+      'Rendering JSON Data into the DOM',
+      `JSON and the DOM meet constantly in real apps: you get data as JSON (from an API, a file, \`localStorage\`), and your job is to turn each item into visible elements.\n\n\`\`\`\nconst productsJson = '[{"id":1,"name":"Keyboard","price":49},{"id":2,"name":"Mouse","price":19}]';\nconst products = JSON.parse(productsJson);\n\nconst list = document.querySelector('#products');\nlist.innerHTML = ''; // clear any placeholder content\n\nproducts.forEach(function (product) {\n  const item = document.createElement('li');\n  item.textContent = product.name + ' — $' + product.price;\n  item.dataset.id = String(product.id);\n  list.append(item);\n});\n\`\`\`\n\n*Needs a real #products element, so it's read-only here, you'll build the runnable version in the final project.*\n\n## The pattern\n\n1. Get JSON (parsed from text, or from \`await res.json()\` after a \`fetch\`).\n2. Loop over the parsed array with \`.forEach\`/\`.map\`.\n3. For each item, \`createElement\`, set its content and attributes from that item's properties, then \`append\` it.\n4. Clear a container first (\`list.innerHTML = ''\`) so re-rendering doesn't duplicate elements.\n\nThis same loop is how every JSON-driven UI works, a to-do list, a product grid, a chat log, only the shape of the JSON and the elements you create change.`
+    ),
+    quiz: {
+      title: 'JSON-to-DOM Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the first step when turning a JSON array into DOM elements?',
+          options: [
+            'Call JSON.stringify on the DOM',
+            'Parse the JSON into real JavaScript values',
+            'Attach event listeners',
+            'Delete the container element',
+          ],
+          answer: 'Parse the JSON into real JavaScript values',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Setting list.innerHTML = '' before re-rendering helps avoid duplicate elements on a second render.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Looping over a parsed array and calling document.____ for each item is how you build DOM elements from JSON.',
+          options: [],
+          answer: 'createElement',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: JSON Product Catalog',
+    content: lessonContent(
+      'Final Project: JSON Product Catalog',
+      `Time to combine everything: parsing JSON, building DOM elements, and keeping data in sync with what's on the page.\n\n## Requirements\n\n1. Start from a JSON array of at least 6 products, each with \`id\`, \`name\`, \`price\`, and \`inStock\`.\n2. Render every product as a card in the DOM (name, price, and an in/out of stock badge) using \`createElement\`, not by writing raw HTML strings.\n3. Add a search input that filters the rendered cards as the user types, matching on product name.\n4. Let the user toggle a product's \`inStock\` state by clicking a button on its card.\n5. Persist the current product list to \`localStorage\` as JSON every time it changes, using \`JSON.stringify\`, and load it back with \`JSON.parse\` on page load if it's there.\n\n## Stretch goals\n\n- Add a form to add a brand-new product.\n- Sort products by price, ascending or descending.\n- Show a running count of how many products are currently in stock.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const tsLessons: SeedLesson[] = [
   {
     title: 'Why TypeScript?',
@@ -10396,6 +10567,12 @@ const coursesByPath: Record<
       title: 'Modern JavaScript Essentials',
       description: 'DOM manipulation, array methods, and async programming, everything the modern web is built on.',
       lessons: jsLessons,
+    },
+    {
+      title: 'JSON & the DOM',
+      description:
+        'Parse and generate JSON, then use it to build and update real DOM elements, the pattern behind every JSON-driven web UI.',
+      lessons: jsonDomLessons,
     },
   ],
   typescript: [
