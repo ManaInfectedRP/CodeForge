@@ -6301,6 +6301,449 @@ const promptEngineeringLessons: SeedLesson[] = [
   },
 ];
 
+const agenticCodingLessons: SeedLesson[] = [
+  {
+    title: 'What Makes an Agent Different from Autocomplete?',
+    content: lessonContent(
+      'What Makes an Agent Different from Autocomplete?',
+      `A prompted assistant answers one question and stops. An **agent** keeps going: it reads files, runs commands, looks at the results, and decides what to do next, on its own, in a loop, until the task is done.
+
+## The agent loop
+
+Most agentic coding tools (Claude Code, Cursor's agent mode, Copilot Workspace) run something like this:
+
+\`\`\`
+1. Read the task and relevant files.
+2. Decide on an action (edit a file, run a command, search the codebase).
+3. Take that action using a tool.
+4. Observe the result (did the test pass? did the command error?).
+5. Repeat, until the task looks done or it needs your input.
+\`\`\`
+
+That "observe and repeat" step is the key difference. A one-shot prompt can't notice that the test it just wrote is failing and go fix it. An agent can.
+
+## Tools are what make this possible
+
+An agent isn't smarter than a chat model, it just has **tools**: functions it can call to read a file, write a file, run a shell command, or search the web. Every action you've seen an assistant take, editing three files, running your test suite, fixing a failure it just caused, is a tool call, not magic.
+
+| | Chat / prompted generation | Agentic loop |
+|---|---|---|
+| Steps | One request, one response | Many steps, chosen by the agent |
+| Sees results? | No, it just produces text | Yes, reads output and reacts |
+| Can fix its own mistakes? | Only if you point them out | Often, before you even see them |
+| Your role | Write the prompt, read the answer | Set the goal, review the plan, approve risky steps |
+
+## Why this changes how you work
+
+Because an agent can take many actions unsupervised, your job shifts earlier in the process: from reviewing a finished answer, to scoping the task well and putting guardrails on *what it's allowed to do*, before it starts. The rest of this course is about that shift.
+
+> [!NOTE]
+> None of this makes the agent less accountable to you. It just means the checkpoints move: instead of only reviewing the output, you'll also review the plan, the tools it's allowed to use, and the diff, at different points along the way.`
+    ),
+    quiz: {
+      title: 'Agent Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the key difference between a one-shot prompted response and an agentic loop?',
+          options: [
+            'Agents use a larger model',
+            'Agents observe the results of their actions and decide what to do next',
+            'Agents cannot make mistakes',
+            'Agents only work with Python',
+          ],
+          answer: 'Agents observe the results of their actions and decide what to do next',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What lets an agent take actions like editing files or running commands?',
+          options: ['A bigger context window', 'Tools it can call', 'A faster GPU', 'Vibe coding'],
+          answer: 'Tools it can call',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The agent loop is: read, decide, act, ____, and repeat.',
+          options: [],
+          answer: 'observe',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An agent can notice that a test it just wrote is failing and attempt to fix it without you re-prompting it.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Because agents can act unsupervised, your role shifts partly to scoping tasks and setting guardrails before the agent starts.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Plan Mode: Scoping and Approving Work Before It Starts',
+    content: lessonContent(
+      'Plan Mode: Scoping and Approving Work Before It Starts',
+      `The cheapest place to catch a bad approach is before any code has been written. That's what plan mode is for.
+
+## What a plan mode does
+
+Instead of immediately editing files, a planning step asks the agent to first explain: what it thinks the task is, which files it expects to touch, and the approach it intends to take, all in plain language, before making a single change. You read that plan and either approve it, or redirect it.
+
+\`\`\`
+❌ Skipping straight to execution:
+"Add search to the FAQ page." → agent immediately starts editing
+five files, three of which you didn't expect it to touch.
+
+✅ Plan first:
+"Add search to the FAQ page." → agent proposes: add a search input
+to FaqOutline.tsx, filter the existing question list client-side,
+no new dependencies, no changes to the API. You confirm, then it builds.
+\`\`\`
+
+## What a good plan includes
+
+- **Understanding of the goal**, restated in its own words, so you can catch a misread requirement immediately.
+- **Files it expects to touch**, so scope creep is visible before it happens, not after.
+- **The approach**, not full code, but enough that you'd know if it picked a bad pattern (e.g. adding a new dependency when the codebase already solves this elsewhere).
+- **Open questions**, a good plan flags ambiguity ("should search be case-sensitive?") instead of silently guessing.
+
+## Redirecting a plan is cheap
+
+Correcting a plan takes one sentence. Correcting a 12-file diff that took the wrong approach takes much longer, and by then you've already spent the time reviewing code you're about to throw away. If something in the plan looks off, whether it's touching a file it shouldn't, or picking an approach you don't want, say so before approving it.
+
+> [!TIP]
+> Treat an agent's plan the way you'd treat a design doc from a teammate: quick to read, cheap to push back on, and much cheaper than reviewing the implementation of the wrong idea.
+
+## When to skip planning
+
+For genuinely tiny, unambiguous changes ("rename this variable," "fix this typo"), a planning step is overhead. Plan mode earns its keep on anything multi-file, anything touching code you didn't write yourself, or anything where you're not 100% sure what "done" looks like yet.`
+    ),
+    quiz: {
+      title: 'Plan Mode Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the main benefit of reviewing a plan before an agent starts editing code?',
+          options: [
+            'It makes the agent faster',
+            'Mistakes and scope creep are caught before any code is written, when they are cheapest to fix',
+            'It is required by law',
+            'It removes the need to ever review the diff',
+          ],
+          answer: 'Mistakes and scope creep are caught before any code is written, when they are cheapest to fix',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which of these belongs in a good plan?',
+          options: [
+            'The complete final source code',
+            'Which files it expects to touch and the approach it intends to take',
+            'Nothing, plans should be one word',
+            'A list of unrelated features to add later',
+          ],
+          answer: 'Which files it expects to touch and the approach it intends to take',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A good plan should flag ____ ("should search be case-sensitive?") instead of silently guessing.',
+          options: [],
+          answer: 'ambiguity',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Redirecting a plan before execution is generally cheaper than reviewing and undoing a large diff built on the wrong approach.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Plan mode is equally valuable for a one-line typo fix and a multi-file feature.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Tool Permissions and the Blast Radius of Autonomous Actions',
+    content: lessonContent(
+      'Tool Permissions and the Blast Radius of Autonomous Actions',
+      `Not every action an agent can take is equally risky. A good agentic workflow treats permissions as a real safety mechanism, not a nuisance to click through.
+
+## Reversible vs. irreversible
+
+| Reversible, low blast radius | Irreversible or wide blast radius |
+|---|---|
+| Editing a file in your working directory | Force-pushing over shared git history |
+| Running a test suite | Dropping a database table |
+| Reading logs or searching the codebase | Sending a real email or executing a payment |
+| Creating a new branch | Deleting files outside version control |
+
+Reversible actions are safe to let an agent take with light or no supervision, you can always look at the diff, or revert. Irreversible ones deserve your explicit, specific approval every time, not a blanket "yes" given once at the start of the session.
+
+## Why agents ask before risky commands
+
+If an agent pauses to confirm before running \`rm -rf\`, a force-push, or a production deploy, that's not the tool being overly cautious, it's the last checkpoint before an action that can't be undone. Approving that prompt should mean you actually read what it's about to do, not that you've learned to reflexively click "yes."
+
+\`\`\`
+Agent: "This will run: git push --force origin main. Proceed?"
+
+❌ Reflexively approving without reading it
+✅ Reading it, realizing main is a shared branch, and declining
+\`\`\`
+
+## Principle of least privilege
+
+The same idea that applies to giving a new hire access applies here: an agent working on a frontend bug doesn't need access to your production database credentials or deploy scripts. Scope what an agent *can* reach, not just what you hope it *won't* touch. Fewer available tools means fewer categories of mistake are even possible.
+
+> [!WARNING]
+> Never let an agent run a destructive or irreversible command (deleting data, force-pushing, dropping a table, sending a real message or payment) without reading and approving that *specific* action first. A prior approval for a different action doesn't carry over.
+
+## Sandboxing
+
+Where available, run agents in an isolated environment, a container, a disposable branch, a scratch directory, so that even a fully autonomous run's worst-case outcome is "I have to throw this away and start over," not "I broke something in production."`
+    ),
+    quiz: {
+      title: 'Tool Permissions Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which of these actions has the highest "blast radius" if an agent gets it wrong?',
+          options: [
+            'Reading a log file',
+            'Running the existing test suite',
+            'Force-pushing over a shared branch',
+            'Creating a new git branch',
+          ],
+          answer: 'Force-pushing over a shared branch',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does the principle of least privilege suggest for agent tool access?',
+          options: [
+            'Give the agent access to everything so it never gets stuck',
+            'Only give the agent access to what the current task actually needs',
+            'Never give an agent any tools',
+            'Grant production database access by default',
+          ],
+          answer: 'Only give the agent access to what the current task actually needs',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Approving a confirmation prompt should mean you actually ____ what the agent is about to do, not that you reflexively click yes.',
+          options: [],
+          answer: 'read',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Approving one risky action means all similar future actions in the session are automatically pre-approved.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Running an agent in a sandboxed or disposable environment limits the worst-case outcome of a fully autonomous run.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Closing the Loop: Verification, Tests, and Feedback',
+    content: lessonContent(
+      'Closing the Loop: Verification, Tests, and Feedback',
+      `An agent that stops as soon as the code "looks right" is still just guessing. The most valuable thing an agentic workflow can do is close the loop: actually run the change and look at what happens.
+
+## "It compiles" is not "it works"
+
+Code that type-checks or compiles has only cleared the lowest bar. It hasn't been run, hasn't been tested against real input, and hasn't been looked at by a human. A change that passes a type checker can still be completely wrong.
+
+## What closing the loop looks like
+
+- **Run the test suite.** If it fails, read the actual failure, not just "tests failed," and let that feedback drive the next fix.
+- **Run the app.** For a backend change, hit the endpoint. For a UI change, load it in a browser and look at it, don't assume a component renders correctly just because the JSX looks plausible.
+- **Check logs and console output.** Warnings and errors that don't crash the process are still worth reading.
+- **Try the edge case, not just the happy path.** Empty input, a zero, a missing field, the case most likely to have been overlooked.
+
+\`\`\`
+❌ "I've implemented the search filter." (never actually run)
+✅ "I've implemented the search filter, ran the existing tests
+(all pass), and manually tried searching for a term that appears
+in zero results, which correctly shows an empty state."
+\`\`\`
+
+## Let failures drive the next step
+
+The real power of an agentic loop is using a failure as input: a failing test's stack trace, a browser console error, an API's 400 response, each tells the agent (and you) exactly what's still wrong. An agent that reads and reacts to that feedback will converge on a correct solution far faster than one that just tries something once and stops.
+
+## You still verify the parts automation can't see
+
+Automated tests and compilers won't tell you if a feature actually solves the user's problem, if the UI looks right, or if the "fix" just papers over the real bug. Skimming a diff and seeing green checkmarks is not the same as using the feature yourself.
+
+> [!TIP]
+> A useful habit: before marking any agent-driven task done, ask "did I (or the agent) actually run this, or does it just look plausible?" If the honest answer is "just looks plausible," that's not done yet.`
+    ),
+    quiz: {
+      title: 'Verification Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why is "the code compiles" not sufficient proof that a change works?',
+          options: [
+            'Compilers are always buggy',
+            'It only means the code is syntactically and type valid, not that it behaves correctly when run',
+            'Compiling takes too long',
+            'Compilers cannot check JavaScript',
+          ],
+          answer: 'It only means the code is syntactically and type valid, not that it behaves correctly when run',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What should drive an agent\'s next step after a test fails?',
+          options: [
+            'Ignoring it and moving to the next task',
+            'The actual failure message and stack trace',
+            'Rewriting the whole feature from scratch every time',
+            'Disabling the failing test',
+          ],
+          answer: 'The actual failure message and stack trace',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Besides the happy path, a thorough verification should also try at least one ____ case.',
+          options: [],
+          answer: 'edge',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Automated tests passing guarantees that a UI change looks and behaves correctly for a real user.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Reading a failing test\'s actual error output is more useful to an agent than simply being told "tests failed."',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Reviewing Multi-File Agent Diffs and Using Git as a Safety Net',
+    content: lessonContent(
+      'Reviewing Multi-File Agent Diffs and Using Git as a Safety Net',
+      `A single agentic task can touch far more files than a human would change for the same request. Reviewing that well, and having an easy way back out, matters more as the diff grows.
+
+## Reviewing a large diff
+
+- **Look at the file list first.** Before reading a single line of code, check *which* files changed. Does that match the plan you approved? A change to a file you didn't expect is worth questioning before you even read it.
+- **Read for intent, not just correctness.** Does each changed file serve the stated goal, or did something unrelated sneak in alongside it?
+- **Prioritize risk.** Spend your closest attention on auth, data handling, and anything touching money or user data. A typo in a comment and a broken permission check are not equally important to catch.
+- **Don't approve diffs you didn't actually read.** A 400-line diff you skimmed in ten seconds isn't reviewed, it's just accepted.
+
+## Commit checkpoints as an undo button
+
+Before letting an agent start a large, multi-step change, commit your current state. If the agent's approach goes sideways three files in, you want "revert to the last commit" available, not "manually untangle which of these forty changed lines were actually part of the original request."
+
+\`\`\`
+1. git commit your clean starting point
+2. Let the agent work
+3. If the result is wrong: git diff to see everything that changed,
+   or git checkout/restore to throw it away and try a different prompt
+4. If the result is right: review, then commit it as its own change
+\`\`\`
+
+Checkpointing between meaningful steps (not just at the very start) means a bad turn later in a long session doesn't force you to lose everything that came before it.
+
+## Small increments review better than big ones
+
+The same request can be given as one giant task, or broken into a few smaller ones. Smaller increments produce smaller diffs, and a small diff is one you can actually read carefully in the time you have. If an agent's first attempt at a large feature produces an enormous diff, it's often worth asking for it in stages instead, rather than trying to review it all at once.
+
+> [!WARNING]
+> Never let uncommitted work pile up underneath multiple rounds of agent changes. If something goes wrong, you want a clean, recent commit to fall back to, not a tangle of your changes and the agent's changes with no clear boundary between them.`
+    ),
+    quiz: {
+      title: 'Reviewing Diffs Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What should you check first when reviewing a large agent-generated diff?',
+          options: [
+            'The exact wording of every code comment',
+            'Which files changed, and whether that matches the plan you approved',
+            'Whether the agent used your favorite variable names',
+            'Nothing, large diffs should be approved automatically',
+          ],
+          answer: 'Which files changed, and whether that matches the plan you approved',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why commit your working state before a large agentic change?',
+          options: [
+            'It makes the agent run faster',
+            'It gives you a clean point to revert to if the change goes wrong',
+            'It is required to use an AI coding tool',
+            'It prevents the agent from reading your files',
+          ],
+          answer: 'It gives you a clean point to revert to if the change goes wrong',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A 400-line diff you skimmed in ten seconds isn\'t reviewed, it\'s just ____.',
+          options: [],
+          answer: 'accepted',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Breaking a large task into smaller increments generally produces diffs that are easier to review carefully.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every changed file in a diff deserves exactly the same amount of review attention, regardless of what it touches.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Ship a Feature End-to-End With an Agentic Workflow',
+    content: lessonContent(
+      'Final Project: Ship a Feature End-to-End With an Agentic Workflow',
+      `Time to run the whole workflow yourself: plan, guardrails, execution, verification, and review.
+
+## Requirements
+
+1. Pick a small feature or bug fix that touches at least two files in a project of your choice (new or existing).
+2. Using an agentic coding tool, have it produce a plan before making any changes. Write down the plan it proposed, and note anything you changed or clarified before approving it.
+3. Commit your working state before letting the agent execute the approved plan.
+4. Identify at least one action in the task that would have been irreversible or high blast radius (e.g. running a migration, deleting a file, pushing to a branch), and describe how you handled approving or avoiding it.
+5. After the agent finishes, verify the result yourself: run the test suite if one exists, exercise the feature manually, and try at least one edge case.
+6. Review the full diff file-by-file and write down anything you rejected, changed, or asked the agent to redo before accepting it.
+
+## Stretch goals
+
+- Deliberately skip the planning step once, let the agent go straight to execution, and compare the resulting diff and review effort against doing it with a plan first.
+- Practice the checkpoint workflow: commit, let the agent make a change you don't like, then revert cleanly using git instead of manually undoing it.
+- If your tool supports scoped or restricted tool permissions, configure it to deny one category of action (e.g. running destructive shell commands) and confirm the restriction actually holds.
+
+Submit a link to your plan, diff, and review notes (a repo, gist, or doc) below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const htmlLessons: SeedLesson[] = [
   {
     title: 'What Is HTML? Structure of a Web Page',
@@ -10713,6 +11156,12 @@ const coursesByPath: Record<
       description:
         'What to think about before, during, and after using an AI coding assistant: writing effective prompts, giving the right context, and reviewing what it builds.',
       lessons: promptEngineeringLessons,
+    },
+    {
+      title: 'Agentic Coding Workflows',
+      description:
+        'Work with autonomous coding agents, not just chat: plan mode, tool permissions and blast radius, closing the verification loop, and reviewing multi-file diffs safely.',
+      lessons: agenticCodingLessons,
     },
   ],
   html: [
