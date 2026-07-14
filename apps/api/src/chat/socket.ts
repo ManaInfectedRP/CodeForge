@@ -60,10 +60,11 @@ export function setupChat(io: Server) {
 
     socket.on('chat:send', async (payload: unknown, ack?: (r: { ok: boolean; error?: string }) => void) => {
       try {
-        const { room, content } = (payload ?? {}) as { room?: unknown; content?: unknown };
+        const { room, content, imageUrl } = (payload ?? {}) as { room?: unknown; content?: unknown; imageUrl?: unknown };
         if (!isRoom(room)) throw new Error('Unknown room');
         const text = typeof content === 'string' ? content.trim() : '';
-        if (!text) throw new Error('Message is empty');
+        const image = typeof imageUrl === 'string' && imageUrl.startsWith('/uploads/') ? imageUrl : null;
+        if (!text && !image) throw new Error('Message is empty');
         if (text.length > MAX_MESSAGE_LENGTH) throw new Error(`Message too long (max ${MAX_MESSAGE_LENGTH} characters)`);
 
         // blocked users may keep reading, but their posts are rejected
@@ -77,7 +78,7 @@ export function setupChat(io: Server) {
         }
 
         const message = await prisma.chatMessage.create({
-          data: { room, content: text, userId: socket.data.auth!.sub },
+          data: { room, content: text, imageUrl: image, userId: socket.data.auth!.sub },
           include: { user: { select: { username: true, avatarUrl: true, role: true } } },
         });
 
@@ -89,6 +90,7 @@ export function setupChat(io: Server) {
           avatarUrl: message.user.avatarUrl,
           role: message.user.role,
           content: message.content,
+          imageUrl: message.imageUrl,
           createdAt: message.createdAt.toISOString(),
         };
         io.to(room).emit('chat:message', dto);

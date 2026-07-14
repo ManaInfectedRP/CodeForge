@@ -4,6 +4,7 @@ import { prisma } from '../lib/prisma.ts';
 import { h } from '../lib/helpers.ts';
 import { requireAuth } from '../middleware/auth.ts';
 import { HttpError } from '../middleware/errors.ts';
+import { imageUpload } from '../lib/upload.ts';
 import { CHAT_ROOMS } from '../chat/socket.ts';
 
 export const chatRouter = Router();
@@ -14,6 +15,23 @@ chatRouter.get(
   '/rooms',
   h(async (_req, res) => {
     res.json(CHAT_ROOMS);
+  })
+);
+
+chatRouter.post(
+  '/upload',
+  imageUpload.single('image'),
+  h(async (req, res) => {
+    if (!req.file) throw new HttpError(400, 'No image file received');
+
+    const sender = await prisma.user.findUniqueOrThrow({
+      where: { id: req.auth!.sub },
+      select: { bannedAt: true, chatBlockedAt: true },
+    });
+    if (sender.bannedAt) throw new HttpError(403, 'Your account has been banned');
+    if (sender.chatBlockedAt) throw new HttpError(403, 'You are blocked from posting in chat, an admin can lift this');
+
+    res.status(201).json({ url: `/uploads/${req.file.filename}` });
   })
 );
 
@@ -38,6 +56,7 @@ chatRouter.get(
       avatarUrl: m.user.avatarUrl,
       role: m.user.role,
       content: m.content,
+      imageUrl: m.imageUrl,
       createdAt: m.createdAt.toISOString(),
     }));
     res.json(body);

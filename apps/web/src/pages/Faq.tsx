@@ -370,6 +370,10 @@ export const SECTIONS: Record<Language, Section[]> = {
           q: 'How do I start a career in AI?',
           a: 'Build a solid programming foundation first, Python is the standard, then learn the math and concepts behind machine learning: linear algebra, statistics, and how models are trained. From there, build real projects, contribute to open source, or take on data-related work to get hands-on experience, since most AI roles value demonstrated projects as much as formal credentials.',
         },
+        {
+          q: 'What’s the difference between prompt engineering and autocomplete?',
+          a: 'Autocomplete predicts the next few words or lines based on what you’ve already typed, it’s reactive and works with almost no input from you, like an AI coding assistant finishing a function you’ve started. Prompt engineering is you proactively writing a clear, detailed instruction, upfront, describing the goal, constraints, and context, to get a complete, specific result in one go, generating a whole function, class, or explanation from a description rather than a few keystrokes. In practice they’re complementary: a good prompt gets you further than a good prompt engineer, autocomplete keeps momentum going once you’re mid-task, and most AI coding workflows lean on both.',
+        },
       ],
     },
     {
@@ -759,6 +763,10 @@ export const SECTIONS: Record<Language, Section[]> = {
         {
           q: 'Hur börjar jag en karriär inom AI?',
           a: 'Bygg en stabil grund i programmering först, Python är standarden, lär dig sedan matematiken och koncepten bakom maskininlärning: linjär algebra, statistik och hur modeller tränas. Bygg därefter riktiga projekt, bidra till öppen källkod, eller ta datarelaterade uppdrag för att få praktisk erfarenhet, eftersom de flesta AI-roller värdesätter visade projekt lika mycket som formella meriter.',
+        },
+        {
+          q: 'Vad är skillnaden mellan prompt engineering och autocomplete?',
+          a: 'Autocomplete förutsäger nästa ord eller rad utifrån det du redan skrivit, det är reaktivt och kräver nästan ingen input från dig, som en AI-kodassistent som färdigställer en funktion du redan börjat på. Prompt engineering är att du proaktivt skriver en tydlig, detaljerad instruktion i förväg, som beskriver målet, begränsningarna och sammanhanget, för att få ett komplett, specifikt resultat direkt, en hel funktion, klass eller förklaring genereras utifrån en beskrivning istället för några tangenttryckningar. I praktiken kompletterar de varandra: en bra prompt tar dig längre än en bra promptskrivare, autocomplete håller farten uppe mitt i en uppgift, och de flesta AI-kodarbetsflöden använder båda.',
         },
       ],
     },

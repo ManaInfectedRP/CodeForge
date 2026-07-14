@@ -56,6 +56,7 @@ export interface ChatMessageDto {
   avatarUrl: string | null;
   role: Role;
   content: string;
+  imageUrl: string | null;
   createdAt: string;
 }
 

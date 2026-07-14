@@ -2662,6 +2662,408 @@ const tetrisExpoLessons: SeedLesson[] = [
   },
 ];
 
+const skiaLessons: SeedLesson[] = [
+  {
+    title: "Setting Up Skia: Canvas and Your First Shape",
+    content: lessonContent(
+      "Setting Up Skia: Canvas and Your First Shape",
+      `Skia is the same 2D graphics engine that powers Chrome, Android, and Flutter, drawing directly on the GPU instead of going through React Native's normal \`View\`/\`Text\` tree. **React Native Skia** (\`@shopify/react-native-skia\`) brings that engine into your Expo app, and it's the tool of choice whenever you need buttery-smooth custom graphics or animation that plain React Native views can't keep up with.
+
+## Installing Skia in an Expo app
+
+\`\`\`bash
+npx expo install @shopify/react-native-skia
+\`\`\`
+
+## The Canvas
+
+Everything Skia draws lives inside a \`<Canvas>\`, a special component that owns its own GPU surface. Shapes are its children, described declaratively just like regular JSX:
+
+\`\`\`tsx
+import { Canvas, Circle } from '@shopify/react-native-skia';
+import { StyleSheet } from 'react-native';
+
+export function FirstShape() {
+  return (
+    <Canvas style={styles.canvas}>
+      <Circle cx={100} cy={100} r={50} color="#22d3ee" />
+    </Canvas>
+  );
+}
+
+const styles = StyleSheet.create({
+  canvas: { flex: 1 },
+});
+\`\`\`
+
+\`cx\`/\`cy\` set the circle's center, \`r\` its radius, both in the Canvas's own coordinate space, not the screen, so a \`Canvas\` sized 300x300 has its own local (0,0) to (300,300) grid regardless of where it sits on screen.
+
+> [!WARNING]
+> A \`<Canvas>\` needs an explicit size (from \`style\` or a parent with a fixed size) to render anything. An unconstrained Canvas (e.g. inside a \`View\` with no \`flex\` or dimensions) draws nothing.
+
+## Why not just use View and CSS-like styles?
+
+Regular React Native views re-render through the normal React/Yoga layout pipeline on every change, fine for UI, too slow for continuous animation like particle effects or a physics-driven loading spinner. Skia shapes are drawn straight to the GPU and can update at 60-120fps without ever touching React's render cycle, that's the whole point of the rest of this course.`
+    ),
+    quiz: {
+      title: "Skia Setup Quiz",
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What package brings the Skia 2D graphics engine into a React Native/Expo app?",
+          options: ["react-native-svg","@shopify/react-native-skia","react-native-reanimated","expo-gl"],
+          answer: "@shopify/react-native-skia",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "Every shape Skia draws must be a child of the ____ component.",
+          options: [],
+          answer: "Canvas",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A Canvas with no explicit size will still render its shapes at a default 100x100 size.",
+          options: ["True","False"],
+          answer: "False",
+        },
+      ],
+    },
+  },
+  {
+    title: "Drawing Shapes and Paths",
+    content: lessonContent(
+      "Drawing Shapes and Paths",
+      `Skia ships a handful of built-in shape components, and one flexible escape hatch, \`Path\`, for anything more custom.
+
+## Built-in shapes
+
+\`\`\`tsx
+import { Canvas, Circle, Rect, RoundedRect } from '@shopify/react-native-skia';
+
+export function Shapes() {
+  return (
+    <Canvas style={{ flex: 1 }}>
+      <Circle cx={60} cy={60} r={40} color="#f97316" />
+      <Rect x={140} y={20} width={80} height={80} color="#22c55e" />
+      <RoundedRect x={20} y={140} width={100} height={60} r={16} color="#a855f7" />
+    </Canvas>
+  );
+}
+\`\`\`
+
+Multiple shapes as siblings inside a \`Canvas\` are simply drawn in order, later children paint on top of earlier ones, exactly like layered \`View\`s.
+
+## Fill vs. stroke
+
+By default every shape is filled. Pass \`style="stroke"\` and a \`strokeWidth\` to draw just an outline instead:
+
+\`\`\`tsx
+<Circle cx={100} cy={100} r={50} color="#22d3ee" style="stroke" strokeWidth={4} />
+\`\`\`
+
+## Paths, for anything custom
+
+\`Path\` takes an SVG-style path string, and Skia gives you \`Skia.Path.Make()\` to build one programmatically:
+
+\`\`\`tsx
+import { Canvas, Path, Skia } from '@shopify/react-native-skia';
+
+const triangle = Skia.Path.Make();
+triangle.moveTo(50, 0);
+triangle.lineTo(100, 100);
+triangle.lineTo(0, 100);
+triangle.close();
+
+export function Triangle() {
+  return (
+    <Canvas style={{ flex: 1 }}>
+      <Path path={triangle} color="#facc15" />
+    </Canvas>
+  );
+}
+\`\`\`
+
+\`moveTo\` lifts the "pen" to a starting point without drawing, \`lineTo\` draws a straight segment to the next point, and \`close()\` connects back to the start. Curves are available too, via \`cubicTo\`/\`quadTo\`, for anything that isn't made of straight lines.`
+    ),
+    quiz: {
+      title: "Shapes & Paths Quiz",
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "When two Skia shapes overlap, which one is drawn on top?",
+          options: ["The larger one","The one declared later in JSX","The one declared first in JSX","Skia picks automatically based on color"],
+          answer: "The one declared later in JSX",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "To draw just the outline of a shape instead of filling it, set style to ____.",
+          options: [],
+          answer: "stroke",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Skia.Path.Make() lets you build a custom shape out of straight lines and curves.",
+          options: ["True","False"],
+          answer: "True",
+        },
+      ],
+    },
+  },
+  {
+    title: "Animated Values: useValue, useComputedValue & runTiming",
+    content: lessonContent(
+      "Animated Values: useValue, useComputedValue & runTiming",
+      `Updating shape props from \`useState\` works, but every change re-renders the component. Skia has its own lightweight value system that updates the GPU surface directly, skipping React entirely, which is how you get smooth 60fps+ animation.
+
+## useValue
+
+\`\`\`tsx
+import { Canvas, Circle, useValue } from '@shopify/react-native-skia';
+
+export function PulsingDot() {
+  const radius = useValue(30);
+
+  return (
+    <Canvas style={{ flex: 1 }}>
+      <Circle cx={100} cy={100} r={radius} color="#22d3ee" />
+    </Canvas>
+  );
+}
+\`\`\`
+
+\`radius\` is a mutable "Skia value" (a \`SkiaValue<number>\`), passing it straight into \`r\` tells Skia to re-read \`radius.current\` on every frame, changing \`radius.current = 50\` updates the drawing immediately, with zero React re-render.
+
+## Animating with runTiming
+
+\`\`\`tsx
+import { runTiming, Easing } from '@shopify/react-native-skia';
+
+runTiming(radius, 60, { duration: 500, easing: Easing.inOut(Easing.ease) });
+\`\`\`
+
+\`runTiming(value, toValue, config)\` smoothly animates a Skia value from its current number to \`toValue\` over \`duration\` milliseconds, using the given easing curve, call it from a button press, a \`useEffect\`, or a gesture handler.
+
+## Deriving one value from another
+
+\`useComputedValue\` recomputes automatically whenever a value it depends on changes, useful for keeping two animated properties in sync without duplicating the animation:
+
+\`\`\`tsx
+import { useComputedValue } from '@shopify/react-native-skia';
+
+const opacity = useComputedValue(() => radius.current / 60, [radius]);
+\`\`\`
+
+Here \`opacity\` always tracks \`radius\`, growing towards \`1\` as the circle grows towards its max radius, with no separate \`runTiming\` call needed for it.`
+    ),
+    quiz: {
+      title: "Animated Values Quiz",
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What's the main advantage of a Skia useValue over React's useState for animation?",
+          options: ["It supports negative numbers","Updating it doesn't trigger a React re-render","It automatically loops forever","It only works with colors"],
+          answer: "Updating it doesn't trigger a React re-render",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "____ animates a Skia value from its current number to a target value over a given duration.",
+          options: [],
+          answer: "runTiming",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "useComputedValue automatically recalculates whenever a Skia value it depends on changes.",
+          options: ["True","False"],
+          answer: "True",
+        },
+      ],
+    },
+  },
+  {
+    title: "Transforms: Translate, Rotate & Scale",
+    content: lessonContent(
+      "Transforms: Translate, Rotate & Scale",
+      `Every Skia shape (and \`Group\` of shapes) accepts a \`transform\` prop, an array of transform operations applied in order, exactly like a CSS \`transform\` list.
+
+## Transforming a single shape
+
+\`\`\`tsx
+<Rect x={0} y={0} width={40} height={40} color="#22d3ee" transform={[{ rotate: Math.PI / 4 }]} />
+\`\`\`
+
+Rotation is in **radians**, not degrees, \`Math.PI / 4\` is 45 degrees. By default a shape rotates/scales around its own top-left origin (0,0), use the \`origin\` prop to rotate around its actual center instead:
+
+\`\`\`tsx
+<Rect x={80} y={80} width={40} height={40} color="#f97316"
+  origin={{ x: 100, y: 100 }}
+  transform={[{ rotate: Math.PI / 4 }]}
+/>
+\`\`\`
+
+## Grouping shapes
+
+\`Group\` lets several shapes share one transform, moving and rotating together as a single unit, without repeating the same \`transform\` prop on each child:
+
+\`\`\`tsx
+import { Canvas, Group, Circle, Rect } from '@shopify/react-native-skia';
+
+<Canvas style={{ flex: 1 }}>
+  <Group transform={[{ translateX: 50 }, { translateY: 50 }, { scale: 1.5 }]}>
+    <Circle cx={0} cy={0} r={20} color="#22d3ee" />
+    <Rect x={-10} y={30} width={20} height={20} color="#f97316" />
+  </Group>
+</Canvas>
+\`\`\`
+
+## Animating a transform
+
+Combine what you learned last lesson, drive the rotation off a \`useValue\` and animate it with \`runTiming\` for a continuously spinning shape:
+
+\`\`\`tsx
+const angle = useValue(0);
+
+useEffect(() => {
+  runTiming(angle, Math.PI * 2, { duration: 2000 }, () => {
+    angle.current = 0;
+  });
+}, []);
+
+// ...
+<Group transform={[{ rotate: angle }]}>...</Group>
+\`\`\``
+    ),
+    quiz: {
+      title: "Transforms Quiz",
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What unit does Skia's rotate transform use?",
+          options: ["Degrees","Radians","Percent","Turns"],
+          answer: "Radians",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The ____ component lets multiple shapes share a single transform.",
+          options: [],
+          answer: "Group",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "By default, a shape rotates around its own center rather than its top-left origin.",
+          options: ["True","False"],
+          answer: "False",
+        },
+      ],
+    },
+  },
+  {
+    title: "Gestures: Dragging and Spring Animation",
+    content: lessonContent(
+      "Gestures: Dragging and Spring Animation",
+      `Pairing Skia with \`react-native-gesture-handler\` is how you build draggable, physics-feeling graphics, a slider, a drag-to-dismiss card, or a springy button.
+
+## Reading a pan gesture into a Skia value
+
+\`\`\`tsx
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Canvas, Circle, useValue } from '@shopify/react-native-skia';
+
+export function DraggableDot() {
+  const cx = useValue(100);
+  const cy = useValue(100);
+
+  const pan = Gesture.Pan().onChange((e) => {
+    cx.current += e.changeX;
+    cy.current += e.changeY;
+  });
+
+  return (
+    <GestureDetector gesture={pan}>
+      <Canvas style={{ flex: 1 }}>
+        <Circle cx={cx} cy={cy} r={30} color="#22d3ee" />
+      </Canvas>
+    </GestureDetector>
+  );
+}
+\`\`\`
+
+\`onChange\` fires on every frame of the gesture with the delta since the last event (\`changeX\`/\`changeY\`), adding that delta straight to the Skia values moves the circle in perfect sync with the finger, again with zero React re-renders.
+
+## Springing back on release
+
+\`runSpring\` animates a value using spring physics (mass, damping, stiffness) instead of a fixed duration, ideal for "let go and it snaps back":
+
+\`\`\`tsx
+import { runSpring } from '@shopify/react-native-skia';
+
+const pan = Gesture.Pan()
+  .onChange((e) => {
+    cx.current += e.changeX;
+    cy.current += e.changeY;
+  })
+  .onEnd(() => {
+    runSpring(cx, 100, { mass: 1, damping: 10, stiffness: 150 });
+    runSpring(cy, 100, { mass: 1, damping: 10, stiffness: 150 });
+  });
+\`\`\`
+
+Higher \`damping\` settles faster with less bounce, higher \`stiffness\` snaps back faster, tune both to taste.`
+    ),
+    quiz: {
+      title: "Gestures Quiz",
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Which gesture-handler event fires on every frame of a pan gesture with the movement delta?",
+          options: ["onStart","onChange","onFinalize","onTouchesDown"],
+          answer: "onChange",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "____ animates a Skia value using spring physics instead of a fixed duration.",
+          options: [],
+          answer: "runSpring",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Reading gesture deltas straight into a Skia useValue still causes a React re-render on every frame.",
+          options: ["True","False"],
+          answer: "False",
+        },
+      ],
+    },
+  },
+  {
+    title: "Final Project: Build an Animated Loading Spinner",
+    content: lessonContent(
+      "Final Project: Build an Animated Loading Spinner",
+      `Time to combine shapes, animated values, transforms, and gestures into one real piece of UI: a custom animated loading spinner.
+
+## Requirements
+
+1. Render at least two Skia shapes inside a single \`Canvas\` (for example an outer ring built from a stroked \`Circle\` and an inner accent shape).
+2. Drive a continuous rotation using a \`useValue\` and \`runTiming\`, looping forever (re-triggering the animation each time it completes, as shown in the transforms lesson).
+3. Animate at least one more property besides rotation, radius, opacity, or color, using \`useComputedValue\` to derive it from your rotation value.
+4. Add a tappable/draggable element (even a simple \`GestureDetector\` wrapping the whole \`Canvas\`) that triggers a \`runSpring\` animation, a "pulse" on tap is enough.
+5. Wrap the whole thing in a reusable \`<Spinner />\` component that accepts a \`size\` prop and works at any size.
+
+## Stretch goals
+
+- Add a second, independent ring rotating in the opposite direction at a different speed.
+- Fade the spinner in with \`runTiming\` on an opacity value when it first mounts.
+- Turn it into a progress ring: accept a \`progress\` prop (0-1) and animate the stroke's arc length to match instead of spinning forever.
+
+Submit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck!`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const csharpLessons: SeedLesson[] = [
   {
     title: 'Hello, C#',
@@ -8516,6 +8918,373 @@ const javaLessons: SeedLesson[] = [
   },
 ];
 
+const minecraftModdingLessons: SeedLesson[] = [
+  {
+    title: "Setting Up a Forge Mod Development Environment",
+    content: lessonContent(
+      "Setting Up a Forge Mod Development Environment",
+      `Minecraft mods written in Java are built against **Forge**, a modding API and loader that hooks into the base game. Forge ships a **Mod Development Kit (MDK)**, a ready-to-go Gradle project you build your mod on top of instead of starting from nothing.
+
+## What you'll need
+
+- A Java Development Kit matching your target Minecraft version (JDK 17 for modern 1.20.x Forge).
+- The Forge MDK for the Minecraft version you're targeting, downloaded from Forge's files page and unzipped into your project folder.
+- An IDE with Gradle support, IntelliJ IDEA or Eclipse both work well.
+
+## Getting the MDK running
+
+From inside the unzipped MDK folder:
+
+\`\`\`bash
+./gradlew genIntellijRuns
+\`\`\`
+
+(\`genEclipseRuns\` for Eclipse instead), this generates run configurations for launching Minecraft with your mod loaded. Then launch the game itself:
+
+\`\`\`bash
+./gradlew runClient
+\`\`\`
+
+The first run downloads a full Minecraft client and Forge's patched sources, expect it to take a while. If it succeeds, you'll see the normal Minecraft title screen with your (currently empty) mod already loaded.
+
+## mods.toml
+
+Every Forge mod describes itself in \`src/main/resources/META-INF/mods.toml\`:
+
+\`\`\`
+modLoader="javafml"
+loaderVersion="[47,)"
+
+[[mods]]
+modId="examplemod"
+version="1.0.0"
+displayName="Example Mod"
+\`\`\`
+
+\`modId\` is the mod's unique internal identifier, lowercase, no spaces, you'll reference it constantly in code and in every resource file path.`
+    ),
+    quiz: {
+      title: "Forge Setup Quiz",
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does Forge's MDK provide?",
+          options: ["A finished example mod with no code to write","A ready-to-go Gradle project to build a mod on top of","A Minecraft server hosting service","A texture editor"],
+          answer: "A ready-to-go Gradle project to build a mod on top of",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "A mod's unique internal identifier, declared in mods.toml, is called its ____.",
+          options: [],
+          answer: "modId",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "The Gradle task runClient launches Minecraft with your mod already loaded.",
+          options: ["True","False"],
+          answer: "True",
+        },
+      ],
+    },
+  },
+  {
+    title: "The Main Mod Class and the Event Bus",
+    content: lessonContent(
+      "The Main Mod Class and the Event Bus",
+      `Every Forge mod has one main class, annotated with \`@Mod\`, that Forge instantiates automatically when the game loads.
+
+\`\`\`java
+package com.example.examplemod;
+
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+
+@Mod("examplemod")
+public class ExampleMod {
+    public ExampleMod() {
+        FMLJavaModLoadingContext.get().getModEventBus()
+            .addListener(this::commonSetup);
+    }
+
+    private void commonSetup(final FMLCommonSetupEvent event) {
+        // runs once, early, on both client and dedicated server
+    }
+}
+\`\`\`
+
+The string passed to \`@Mod\` **must match \`modId\`** in \`mods.toml\`, that's how Forge connects the class to the mod's metadata.
+
+## The mod event bus
+
+Forge fires setup and registration events through a **mod event bus**, retrieved with \`FMLJavaModLoadingContext.get().getModEventBus()\`. Registering a listener in the constructor, as above, is the standard place to hook into it, you'll register items and blocks here in the next two lessons.
+
+\`FMLCommonSetupEvent\` fires once, after all registries have finished registering, the right place for setup logic that depends on other mods' content already existing (like inter-mod compatibility), but too early for anything requiring a running world.
+
+> [!WARNING]
+> There's a second, separate bus, the **game/Forge event bus** (\`MinecraftForge.EVENT_BUS\`), used for gameplay events like a player breaking a block. Setup and registration events use the *mod* bus, gameplay events use the *Forge* bus, mixing them up is one of the most common beginner mistakes.`
+    ),
+    quiz: {
+      title: "Mod Class & Event Bus Quiz",
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What must the string passed to @Mod match?",
+          options: ["The Java package name","The modId in mods.toml","The main class name","The Minecraft version"],
+          answer: "The modId in mods.toml",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "Registration and setup listeners are attached to the mod event bus inside the mod's ____.",
+          options: [],
+          answer: "constructor",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Gameplay events, like a player breaking a block, are fired on the same bus as registration events.",
+          options: ["True","False"],
+          answer: "False",
+        },
+      ],
+    },
+  },
+  {
+    title: "Registering a Custom Item",
+    content: lessonContent(
+      "Registering a Custom Item",
+      `Forge mods don't create game objects directly, everything (items, blocks, sounds, and more) goes through a **registry**, so the game knows about it consistently across saves, mods, and multiplayer.
+
+## DeferredRegister
+
+\`DeferredRegister\` is the standard, modern pattern for registering content:
+
+\`\`\`java
+package com.example.examplemod;
+
+import net.minecraft.world.item.Item;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+
+public class ModItems {
+    public static final DeferredRegister<Item> ITEMS =
+        DeferredRegister.create(ForgeRegistries.ITEMS, "examplemod");
+
+    public static final RegistryObject<Item> RUBY =
+        ITEMS.register("ruby", () -> new Item(new Item.Properties()));
+}
+\`\`\`
+
+Then hook \`ModItems.ITEMS\` into the mod event bus from the main class constructor:
+
+\`\`\`java
+ModItems.ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
+\`\`\`
+
+\`RegistryObject<Item>\` is a lazy reference, it isn't a real, usable \`Item\` until registration actually completes, call \`.get()\` on it later once the game has finished loading (never at class-load time).
+
+## Making it show up in-game
+
+A registered item exists, but without two more pieces it's invisible and unnamed in the inventory:
+
+1. **A lang file entry**, \`src/main/resources/assets/examplemod/lang/en_us.json\`:
+   \`\`\`json
+   { "item.examplemod.ruby": "Ruby" }
+   \`\`\`
+2. **An item model**, \`src/main/resources/assets/examplemod/models/item/ruby.json\`, pointing at a texture in \`assets/examplemod/textures/item/ruby.png\`.
+
+## Creative tab
+
+To make the item easy to find in creative mode, add it to a \`CreativeModeTab\` via a \`BuildCreativeModeTabContentsEvent\` listener, or simply add it to an existing vanilla tab for now, that's a detail you can refine once the basics work.`
+    ),
+    quiz: {
+      title: "Registering Items Quiz",
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What's the standard modern pattern for registering a new item in Forge?",
+          options: ["Calling new Item() directly in main()","DeferredRegister","Editing Minecraft's source code directly","A JSON-only registration, no Java needed"],
+          answer: "DeferredRegister",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "A RegistryObject is a ____ reference, it isn't a usable item until registration completes.",
+          options: [],
+          answer: "lazy",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "An item's display name in the inventory comes from a lang file, not from its registry name.",
+          options: ["True","False"],
+          answer: "True",
+        },
+      ],
+    },
+  },
+  {
+    title: "Creating a Custom Block",
+    content: lessonContent(
+      "Creating a Custom Block",
+      `Blocks follow the same \`DeferredRegister\` pattern as items, with a bit more configuration for how they behave in the world.
+
+\`\`\`java
+package com.example.examplemod;
+
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+
+public class ModBlocks {
+    public static final DeferredRegister<Block> BLOCKS =
+        DeferredRegister.create(ForgeRegistries.BLOCKS, "examplemod");
+
+    public static final RegistryObject<Block> RUBY_ORE =
+        BLOCKS.register("ruby_ore", () ->
+            new Block(Block.Properties.of()
+                .mapColor(MapColor.STONE)
+                .strength(3.0f, 3.0f)
+                .requiresCorrectToolForDrops()));
+}
+\`\`\`
+
+\`strength(hardness, resistance)\` controls mining time and explosion resistance, and \`requiresCorrectToolForDrops()\` means the block only drops an item if broken with a tool that meets its harvest level (a pickaxe, in this case), just like vanilla ore.
+
+## Registering the matching BlockItem
+
+A registered block has no inventory representation on its own, you need a companion \`BlockItem\` so it can actually be picked up and placed:
+
+\`\`\`java
+public static final RegistryObject<Item> RUBY_ORE_ITEM =
+    ModItems.ITEMS.register("ruby_ore", () ->
+        new BlockItem(ModBlocks.RUBY_ORE.get(), new Item.Properties()));
+\`\`\`
+
+## Blockstates and models
+
+Like items, blocks need JSON resources to actually render:
+
+- \`assets/examplemod/blockstates/ruby_ore.json\`, maps the block's state(s) to a model.
+- \`assets/examplemod/models/block/ruby_ore.json\`, describes its geometry and textures (a simple cube uses the built-in \`block/cube_all\` parent).
+- \`assets/examplemod/models/item/ruby_ore.json\`, usually just points back at the block model, so it looks the same in the inventory as it does placed.`
+    ),
+    quiz: {
+      title: "Custom Blocks Quiz",
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does requiresCorrectToolForDrops() control?",
+          options: ["How fast the block breaks","Whether the block drops an item unless mined with an adequate tool","The block's color","Whether the block can be placed underwater"],
+          answer: "Whether the block drops an item unless mined with an adequate tool",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "A block needs a companion ____ registered so it can be picked up and placed like a normal inventory item.",
+          options: [],
+          answer: "BlockItem",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Blocks are registered with the exact same DeferredRegister pattern used for items, just against a different registry.",
+          options: ["True","False"],
+          answer: "True",
+        },
+      ],
+    },
+  },
+  {
+    title: "Adding a Crafting Recipe",
+    content: lessonContent(
+      "Adding a Crafting Recipe",
+      `Forge recipes are plain JSON data, no Java required, living under \`data/<modid>/recipes/\`.
+
+## A shaped recipe
+
+\`src/main/resources/data/examplemod/recipes/ruby_block.json\`:
+
+\`\`\`json
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RRR",
+    "RRR",
+    "RRR"
+  ],
+  "key": {
+    "R": { "item": "examplemod:ruby" }
+  },
+  "result": {
+    "item": "examplemod:ruby_block",
+    "count": 1
+  }
+}
+\`\`\`
+
+\`pattern\` is a 3x3 (or smaller) grid where each character maps to an ingredient in \`key\`, blank rows/columns are allowed for recipes smaller than a full crafting grid. The \`type\` tells the game which recipe serializer to use, \`minecraft:crafting_shaped\` respects the exact layout, while \`minecraft:crafting_shapeless\` (no \`pattern\`/\`key\`, just an \`ingredients\` array) ignores placement entirely.
+
+## Recipe advancements
+
+Recipes only show up in a player's recipe book once they've been "unlocked", normally the moment they first obtain one of the ingredients. That unlock condition lives in a matching advancement file, \`data/examplemod/advancements/recipes/.../ruby_block.json\`, with a \`minecraft:recipe_unlocked\` trigger, generated projects and mod-dev tooling can scaffold this for you, but it's worth understanding it's a separate file from the recipe itself.
+
+## Testing it
+
+Rebuild and relaunch with \`./gradlew runClient\`, resource and data files under \`src/main/resources\` are picked up automatically, open your inventory's crafting grid in-game and confirm the recipe actually works.`
+    ),
+    quiz: {
+      title: "Crafting Recipes Quiz",
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Where do Forge crafting recipes live?",
+          options: ["Inside the main mod Java class","As JSON files under data/<modid>/recipes/","In mods.toml","They are generated automatically from item names"],
+          answer: "As JSON files under data/<modid>/recipes/",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "A recipe that ignores item placement in the crafting grid uses the type minecraft:crafting_____.",
+          options: [],
+          answer: "shapeless",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A recipe automatically appears in a player's recipe book with no additional configuration.",
+          options: ["True","False"],
+          answer: "False",
+        },
+      ],
+    },
+  },
+  {
+    title: "Final Project: Build a Mini Ore Mod",
+    content: lessonContent(
+      "Final Project: Build a Mini Ore Mod",
+      `Combine registration, blocks, items, and recipes from this course into one small but complete mod: a new ore, and something to craft with it.
+
+## Requirements
+
+1. Register a new item, a raw gem or ingot (e.g. \`ruby\`), using \`DeferredRegister<Item>\`.
+2. Register a new ore block (e.g. \`ruby_ore\`) using \`DeferredRegister<Block>\`, with sensible \`strength()\` and \`requiresCorrectToolForDrops()\`, plus its matching \`BlockItem\`.
+3. Give both a lang file entry and basic item/block model JSON so they have a name and texture in-game (a solid-color texture is fine, this course is about the code, not art).
+4. Add at least one crafting recipe involving your new item, turning it into a block (like a decorative storage block) or a simple tool.
+5. Confirm everything works by running \`./gradlew runClient\`, mining your ore, picking up the item, and crafting the recipe in-game.
+
+## Stretch goals
+
+- Add a second tier item/tool that requires your new material plus an existing vanilla one (like sticks) in its recipe.
+- Register a custom \`CreativeModeTab\` for your mod instead of relying on vanilla tabs.
+- Add a smelting recipe (\`minecraft:smelting\`) that turns your raw ore item into a refined version.
+
+Submit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck!`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const kotlinLessons: SeedLesson[] = [
   {
     title: 'Hello, Kotlin',
@@ -11062,6 +11831,11 @@ const coursesByPath: Record<
       description: 'Build the classic block-stacking game for mobile with Expo and TypeScript: a 10x20 board, all 7 tetrominoes with rotation, a gravity-driven game loop, touch controls, line-clearing, scoring, and a fair 7-bag next-piece queue.',
       lessons: tetrisExpoLessons,
     },
+    {
+      title: 'Animating with React Native Skia',
+      description: 'High-performance 2D graphics and animation for React Native: the Skia Canvas, shapes and paths, animated values, transforms, and gesture-driven motion.',
+      lessons: skiaLessons,
+    },
   ],
   csharp: [
     {
@@ -11221,6 +11995,11 @@ const coursesByPath: Record<
       title: 'Java Foundations',
       description: 'Statically-typed, object-oriented programming on the JVM: classes, collections, generics, and interfaces.',
       lessons: javaLessons,
+    },
+    {
+      title: 'Modding Minecraft with Forge',
+      description: 'Get a Forge mod running, then build your own custom item, block, and crafting recipe for Minecraft using Java and the Forge modding API.',
+      lessons: minecraftModdingLessons,
     },
   ],
   kotlin: [
