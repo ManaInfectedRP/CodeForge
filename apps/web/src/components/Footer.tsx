@@ -67,14 +67,6 @@ export function Footer() {
           <button type="button" onClick={() => setContactOpen(true)} className="hover:text-white">
             {t.contact}
           </button>
-          <a
-            href="https://www.linkedin.com/in/sebastian-larsson-b45803246/"
-            target="_blank"
-            rel="noreferrer"
-            className="hover:text-white"
-          >
-            LinkedIn
-          </a>
           <LanguageToggle />
         </nav>
       </div>
