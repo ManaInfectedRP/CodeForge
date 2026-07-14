@@ -399,6 +399,10 @@ export const SECTIONS: Record<Language, Section[]> = {
           q: 'Can AI be trusted for important decisions?',
           a: 'AI can support a decision, summarizing data, surfacing options, checking for errors, but it shouldn’t be the final word on anything with real financial, legal, medical, or safety consequences. Treat it as a second opinion or research assistant, and have a human make and take responsibility for high-stakes decisions.',
         },
+        {
+          q: 'Can AI be biased?',
+          a: 'Yes. AI models learn from large amounts of existing text and data, and they can pick up and repeat biases present in that data, whether cultural, gender, racial, or political. Reputable providers work to reduce this through curated training data and testing, but no model is fully neutral, so it’s worth treating AI output like any single source: cross-check anything sensitive or consequential rather than assuming it’s objective.',
+        },
       ],
     },
   ],
@@ -792,6 +796,10 @@ export const SECTIONS: Record<Language, Section[]> = {
         {
           q: 'Kan man lita på AI för viktiga beslut?',
           a: 'AI kan stötta ett beslut, sammanfatta data, ta fram alternativ, kontrollera för fel, men bör inte vara det slutgiltiga ordet i något med verkliga ekonomiska, juridiska, medicinska eller säkerhetsmässiga konsekvenser. Se det som en second opinion eller research-assistent, och låt en människa fatta och ta ansvar för beslut med höga insatser.',
+        },
+        {
+          q: 'Kan AI vara partisk?',
+          a: 'Ja. AI-modeller lär sig från stora mängder befintlig text och data, och de kan plocka upp och upprepa fördomar som finns i den datan, oavsett om det handlar om kulturella, köns-, ras- eller politiska skevheter. Seriösa leverantörer arbetar för att minska detta genom att granska träningsdata och testa modellerna, men ingen modell är helt neutral, så det är värt att behandla AI-svar som vilken enskild källa som helst: dubbelkolla allt känsligt eller viktigt istället för att anta att det är objektivt.',
         },
       ],
     },
