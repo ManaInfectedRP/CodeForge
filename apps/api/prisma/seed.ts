@@ -25,8 +25,8 @@ const paths = [
     name: 'Python',
     icon: '🐍',
     difficulty: 2,
-    estimatedHours: 80,
-    projectCount: 21,
+    estimatedHours: 88,
+    projectCount: 22,
     description: 'The friendliest way into programming, scripting, automation, data, and AI with Python.',
   },
   {
@@ -43,8 +43,8 @@ const paths = [
     name: 'TypeScript',
     icon: '🔵',
     difficulty: 3,
-    estimatedHours: 40,
-    projectCount: 14,
+    estimatedHours: 46,
+    projectCount: 15,
     description: 'JavaScript with superpowers, static types, safer refactors, and scalable codebases.',
   },
   {
@@ -145,6 +145,15 @@ const paths = [
     estimatedHours: 20,
     projectCount: 7,
     description: 'The three pillars of observability: structured logging, metrics and time-series data, distributed tracing, and alerting that does not burn out your team.',
+  },
+  {
+    slug: 'grc',
+    name: 'GRC',
+    icon: '📋',
+    difficulty: 3,
+    estimatedHours: 20,
+    projectCount: 6,
+    description: 'Governance, Risk, and Compliance for engineers: policies and accountability, risk registers, SOC 2/ISO 27001/GDPR, and audit-ready controls.',
   },
   {
     slug: 'ai-coding',
@@ -11699,6 +11708,1253 @@ const publicSampleLessons: SeedLesson[] = [
   },
 ];
 
+const grcLessons: SeedLesson[] = [
+  {
+    title: 'What Is GRC? Governance, Risk, and Compliance',
+    content: lessonContent(
+      'What Is GRC? Governance, Risk, and Compliance',
+      `GRC stands for **Governance, Risk, and Compliance**, three related disciplines that, together, answer one question: is this organization doing what it says it does, aware of what could go wrong, and able to prove it to someone outside the company? Engineers usually meet GRC indirectly, through the access reviews, audit logs, and approval gates that show up in a well-run system, this course builds the vocabulary and mental model behind them.
+
+## The three pillars
+
+- **Governance**: the policies, roles, and decision-making structures that define how the organization is supposed to operate, who is accountable for what, and how choices get made and enforced.
+- **Risk**: the practice of identifying what could go wrong (a breach, an outage, a regulatory fine), estimating how likely and how bad it would be, and deciding what to do about it.
+- **Compliance**: proving, with evidence, that the organization actually meets the laws, regulations, contracts, and standards it's subject to, not just that it intends to.
+
+## Why bundle these three together?
+
+They reinforce each other in a loop:
+
+\`\`\`
+Governance sets the rules → Risk finds what threatens the rules → Compliance proves the rules are followed
+\`\`\`
+
+A policy with no enforcement is just a document. A risk assessment with no governance behind it has no authority to act on its findings. And compliance with no underlying governance or risk process is just paperwork, technically passing an audit while the actual system stays unsafe.
+
+## Where engineers actually touch GRC
+
+- **Access reviews**: someone periodically confirms that every person with access to a system still needs it, a governance and compliance control at the same time.
+- **Audit logs**: recording who did what, and when, exists specifically so compliance claims ("only authorized staff can change production data") can be verified after the fact, not just asserted.
+- **Change management**: requiring a second approver before a production deploy reduces risk (a bad change reaching users) and satisfies a compliance requirement (separation of duties) simultaneously.
+
+> [!NOTE]
+> None of this is optional busywork bolted onto engineering, GRC failures (a breach that regulators fine you for, a customer contract you can't legally fulfill) are business-ending events, the processes in this course exist to catch problems long before they become one.`
+    ),
+    quiz: {
+      title: 'GRC Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Which pillar of GRC is responsible for proving, with evidence, that an organization meets the laws and standards it's subject to?",
+          options: ['Governance', 'Risk', 'Compliance', 'Audit'],
+          answer: 'Compliance',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does an access review most directly serve as an example of?',
+          options: [
+            "A risk that hasn't been treated yet",
+            'A control that serves both governance and compliance at once',
+            'A compliance framework',
+            'An unrelated engineering task',
+          ],
+          answer: 'A control that serves both governance and compliance at once',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A policy with no enforcement behind it functions the same as an enforced one.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: '____ management, requiring a second approver before a production deploy, reduces risk and satisfies separation of duties at the same time.',
+          options: [],
+          answer: 'Change',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Governance: Policies, Roles, and Accountability',
+    content: lessonContent(
+      'Governance: Policies, Roles, and Accountability',
+      `Governance is the layer that decides, on paper, how an organization is supposed to run, and who is on the hook when it doesn't. Without it, risk and compliance work have no foundation to stand on: nobody has the authority to approve a control, and no policy exists for an audit to check against.
+
+## Policies, standards, and procedures
+
+These three terms get used loosely, but they mean different things and sit at different altitudes:
+
+| Level | Answers | Example |
+|---|---|---|
+| **Policy** | What must always be true, and why | "All customer data must be encrypted at rest." |
+| **Standard** | The specific, measurable requirement | "Encryption must use AES-256 or stronger." |
+| **Procedure** | The step-by-step how | "Run \`terraform apply\` with the \`encrypted-storage\` module to provision a new encrypted bucket." |
+
+A policy rarely changes, it states an intent. Standards and procedures change more often, as tools and best practices evolve, while still satisfying the same policy above them.
+
+## The three lines of defense
+
+A common model for assigning accountability across an organization:
+
+1. **First line**: the people doing the work day to day (engineers writing code, ops running infrastructure), responsible for managing risk as part of their normal job.
+2. **Second line**: risk, security, and compliance teams who set standards, monitor the first line, and provide oversight, without doing the first line's work for them.
+3. **Third line**: internal audit, independent of both the first and second lines, verifying that the whole system actually works as described.
+
+> [!TIP]
+> If you're an engineer, you are almost always the **first line of defense**, the controls and policies described in this course exist to guide decisions you're already making, like who gets access to a database or how a secret gets stored.
+
+## RACI: who's Responsible, Accountable, Consulted, Informed
+
+A RACI matrix assigns one of four roles to each person or team for a given decision or process, and critically, **only one person or team can be Accountable** for a given item, even if several are Responsible for doing the work. Ambiguity about who is actually accountable is one of the most common root causes behind a control silently failing.`
+    ),
+    quiz: {
+      title: 'Governance Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Which of the following best fits the definition of a 'standard' rather than a 'policy'?",
+          options: [
+            'All customer data must be encrypted at rest.',
+            'Encryption must use AES-256 or stronger.',
+            'Data protection matters to this company.',
+            'We take security seriously.',
+          ],
+          answer: 'Encryption must use AES-256 or stronger.',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "In a RACI matrix, more than one person or team can be 'Accountable' for the same item.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In the three lines of defense model, the ____ line is the engineers and operators doing the day-to-day work.',
+          options: [],
+          answer: 'first',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Risk Management: Identifying, Assessing, and Treating Risk',
+    content: lessonContent(
+      'Risk Management: Identifying, Assessing, and Treating Risk',
+      `Risk management is how an organization decides, deliberately, which problems are worth spending time and money to prevent, and which ones it can live with. Skipping this step doesn't make risk disappear, it just means nobody chose which risks to prioritize.
+
+## The risk register
+
+A **risk register** is the central artifact of risk management, a living list of identified risks, each with:
+
+- A description of what could go wrong (e.g. "an employee's laptop with an unencrypted disk is lost or stolen").
+- **Likelihood**: how probable is this, on some agreed scale (e.g. Low/Medium/High, or 1-5).
+- **Impact**: how bad would it be if it happened, on the same kind of scale.
+- An **owner**: a specific person accountable for tracking and treating it, never "the team."
+- A **treatment plan** and status.
+
+## Likelihood × impact
+
+Multiplying (or combining) likelihood and impact gives a rough risk score, used to prioritize attention, a risk that's both likely and severe (an internet-facing service with no authentication) needs addressing before a risk that's rare and minor (a typo in an internal wiki page).
+
+\`\`\`
+Risk Score = Likelihood × Impact
+\`\`\`
+
+This is deliberately approximate, the goal is a consistent way to rank many risks against each other, not a precise financial forecast.
+
+## The four ways to treat a risk
+
+1. **Avoid**: stop doing the thing that creates the risk entirely (e.g. don't collect data you don't need).
+2. **Mitigate**: reduce the likelihood or impact (e.g. add encryption, add monitoring, add a code review requirement).
+3. **Transfer**: shift the impact to someone else (e.g. cyber insurance, a vendor's SLA).
+4. **Accept**: consciously decide the risk is small enough, or expensive enough to fix, that the organization will live with it as-is, this must be a deliberate, documented decision, not silence.
+
+> [!WARNING]
+> "We haven't gotten around to it yet" is not the same as "we accepted this risk." A real risk acceptance has an owner, a documented reason, and (usually) a review date, otherwise it's just an unmanaged risk wearing a friendlier label.
+
+## Risk appetite
+
+An organization's **risk appetite** is how much risk it's willing to tolerate in pursuit of its goals, a startup shipping fast might accept risks a bank never would, appetite isn't right or wrong in the abstract, it just needs to be an explicit, leadership-level decision rather than whatever the last person in the room happened to prefer.`
+    ),
+    quiz: {
+      title: 'Risk Management Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which risk treatment option means consciously deciding to live with a risk as-is, with a documented reason?',
+          options: ['Avoid', 'Mitigate', 'Transfer', 'Accept'],
+          answer: 'Accept',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does a risk score in a risk register typically approximate?',
+          options: [
+            'Likelihood combined with impact',
+            'The exact dollar cost of a breach',
+            'The number of people affected',
+            'How old the risk is',
+          ],
+          answer: 'Likelihood combined with impact',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A risk register entry should have a specific owner rather than being assigned to 'the team.'",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "An organization's ____ describes how much risk it's willing to tolerate in pursuit of its goals.",
+          options: [],
+          answer: 'appetite',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Compliance Frameworks: SOC 2, ISO 27001, and GDPR',
+    content: lessonContent(
+      'Compliance Frameworks: SOC 2, ISO 27001, and GDPR',
+      `Compliance frameworks give organizations (and their customers, regulators, and auditors) a shared, agreed-upon checklist for "secure and responsible enough." Different frameworks exist because different industries, regions, and data types come with different legal and contractual obligations.
+
+## SOC 2
+
+**SOC 2** (System and Organization Controls 2) is the framework most B2B SaaS companies in the US get asked about, especially by enterprise customers during procurement. It's built around five **Trust Service Criteria**, of which Security is mandatory and the rest are chosen based on relevance:
+
+- **Security** (always required): protection against unauthorized access.
+- **Availability**: the system is available for operation as agreed.
+- **Processing Integrity**: system processing is complete, accurate, and timely.
+- **Confidentiality**: information designated confidential is protected.
+- **Privacy**: personal information is collected, used, and disposed of properly.
+
+A SOC 2 report isn't a pass/fail certificate the way some frameworks are, it's an independent auditor's opinion on whether your controls are suitably designed (**Type I**, a point in time) and operating effectively over a period, usually 6-12 months (**Type II**, the one most customers actually want to see).
+
+## ISO 27001
+
+**ISO 27001** is an international standard for an **Information Security Management System (ISMS)**, a systematic, ongoing process for managing information security risk, rather than a fixed checklist. Getting certified means an accredited auditor confirms your ISMS meets the standard's requirements, and certification is periodically reassessed, it's a process you maintain, not a one-time achievement.
+
+## GDPR
+
+The **General Data Protection Regulation** is EU law governing how organizations handle the personal data of people in the EU, regardless of where the organization itself is based. Unlike SOC 2 or ISO 27001, it isn't something you get "certified" in, it's a legal requirement with real regulatory enforcement (fines up to 4% of global annual revenue), key concepts include:
+
+- **Data subject rights**: people can request access to, correction of, or deletion of their data.
+- **Lawful basis**: you need a legitimate reason (consent, contract, legal obligation, etc.) to process personal data at all.
+- **Data breach notification**: many breaches must be reported to a regulator within 72 hours of discovery.
+
+> [!NOTE]
+> These frameworks overlap heavily in practice, a strong access control policy, an incident response plan, and encryption at rest and in transit satisfy pieces of all three at once. Most organizations build one solid internal control set and map it to whichever frameworks their customers or regulators actually require.`
+    ),
+    quiz: {
+      title: 'Compliance Frameworks Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which SOC 2 Trust Service Criterion is always required, regardless of which others are chosen?',
+          options: ['Availability', 'Security', 'Privacy', 'Confidentiality'],
+          answer: 'Security',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is the key difference between a SOC 2 Type I and Type II report?',
+          options: [
+            'Type I covers a period of months, Type II a single day',
+            'Type I checks control design at a point in time, Type II checks operating effectiveness over a period',
+            'There is no difference',
+            'Type II is only for government agencies',
+          ],
+          answer: 'Type I checks control design at a point in time, Type II checks operating effectiveness over a period',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'GDPR applies only to organizations legally based in the European Union.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "ISO 27001 certifies an organization's Information Security Management ____, an ongoing process rather than a one-time checklist.",
+          options: [],
+          answer: 'System',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Controls, Audits, and Evidence',
+    content: lessonContent(
+      'Controls, Audits, and Evidence',
+      `A **control** is any specific mechanism, technical or procedural, put in place to reduce a risk or satisfy a compliance requirement. Everything discussed so far (policies, risk treatments, framework requirements) eventually has to turn into actual controls someone can point to, and eventually prove are working.
+
+## Types of controls
+
+- **Preventive**: stops a problem before it happens (e.g. requiring multi-factor authentication, restricting production database access by role).
+- **Detective**: notices a problem after it starts (e.g. intrusion detection, anomaly alerts on login patterns, audit logging).
+- **Corrective**: fixes things once a problem is found (e.g. an incident response runbook, automatic rollback on a failed health check).
+
+A mature control environment layers all three, prevention reduces how often something goes wrong, detection catches what gets through, and correction limits the damage once it does.
+
+## What auditors actually want: evidence
+
+An auditor (internal or external) doesn't take "we have a policy for that" at face value, they want **evidence** that a control operated as described, consistently, over the audit period. Common evidence types:
+
+- **Screenshots or exported configuration** showing a setting is actually enabled (e.g. MFA enforced org-wide).
+- **Logs or tickets** showing a process ran on schedule (e.g. a quarterly access review, with named approvers and dates).
+- **System-generated reports**, generally trusted more than a manually maintained spreadsheet, since they're harder to quietly fall out of date.
+
+> [!TIP]
+> The best time to think about evidence is when you *design* a control, not months later scrambling before an audit. A quarterly access review that isn't logged anywhere might as well not have happened, from an auditor's point of view.
+
+## The audit lifecycle
+
+1. **Scoping**: agreeing which systems, controls, and time period the audit covers.
+2. **Fieldwork**: the auditor requests evidence and interviews control owners.
+3. **Findings**: any gap between what a control is supposed to do and what the evidence actually shows.
+4. **Remediation**: fixing findings, sometimes before the final report, sometimes tracked as a documented exception with a deadline.
+5. **Report**: the final opinion (e.g. a SOC 2 report, an ISO 27001 certificate) that gets shared with customers or regulators.`
+    ),
+    quiz: {
+      title: 'Controls & Audits Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which control type is designed to notice a problem after it has already started?',
+          options: ['Preventive', 'Detective', 'Corrective', 'Compliance'],
+          answer: 'Detective',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why do auditors generally prefer system-generated reports over manually maintained spreadsheets as evidence?',
+          options: [
+            'They look more professional',
+            "They're harder to quietly fall out of date or edit after the fact",
+            'They are required by law',
+            'Spreadsheets are not allowed in audits',
+          ],
+          answer: "They're harder to quietly fall out of date or edit after the fact",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A gap between what a control is supposed to do and what the evidence shows is called a finding.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Requiring multi-factor authentication is an example of a ____ control, since it stops a problem before it happens.',
+          options: [],
+          answer: 'preventive',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Mini Risk Register and Control Mapping',
+    content: lessonContent(
+      'Final Project: Build a Mini Risk Register and Control Mapping',
+      `Bring governance, risk, and compliance together the way you would on a real team: pick a small, realistic system (a side project, a fictional startup, or a system you already know well) and build a mini GRC artifact set for it.
+
+## Requirements
+
+1. **Describe the system**: two or three sentences on what it does and what data it handles (e.g. "a to-do list app that stores user emails and task text in a hosted Postgres database").
+2. **Risk register**: identify at least 5 realistic risks. For each, include a likelihood (Low/Medium/High), an impact (Low/Medium/High), an owner (a role, e.g. "Backend Lead"), and a chosen treatment (Avoid/Mitigate/Transfer/Accept) with a one-sentence justification.
+3. **Control mapping**: for each risk you chose to Mitigate, name one specific, concrete control that addresses it (not "add security", something a control could actually check, like "enforce MFA for all admin accounts" or "encrypt the database at rest with AES-256").
+4. **Evidence plan**: for two of your controls, describe what evidence would prove to an auditor that the control is actually working (a log, a config export, a signed-off review), not just that it exists on paper.
+5. **One accepted risk**: pick exactly one risk you deliberately choose to Accept rather than treat, and write the documented justification a real risk acceptance would need (why, who signed off, and when it should be reviewed again).
+
+## Stretch goals
+
+- Map two or three of your controls to a real framework's language (e.g. "this satisfies SOC 2's Security criterion" or "this supports GDPR's breach notification requirement").
+- Add a simple RACI table for who is Responsible, Accountable, Consulted, and Informed for your incident response process.
+- Write a one-paragraph policy statement (the "what and why") that one of your controls exists to enforce.
+
+Submit your risk register and control mapping (a document, spreadsheet, or markdown file, a repo link or gist is fine) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const langchainPythonLessons: SeedLesson[] = [
+  {
+    title: 'Why LangChain? Prompt Templates and Chat Models',
+    content: lessonContent(
+      'Why LangChain? Prompt Templates and Chat Models',
+      `Calling an LLM API directly (as in the RAG and AI Agent courses) works, but every real application ends up rebuilding the same pieces: swappable prompts, a consistent interface across model providers, and a way to chain steps together. **LangChain** is a Python framework that standardizes those pieces so you're not reinventing them for every project.
+
+## Chat models: one interface, many providers
+
+\`\`\`python
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(model='gpt-4o-mini', api_key='YOUR_API_KEY')
+response = model.invoke('What is a large language model?')
+print(response.content)
+\`\`\`
+
+*This needs a real API key and network access, so it's read-only here.* The point of \`ChatOpenAI\` (and its siblings, \`ChatAnthropic\`, \`ChatGoogleGenerativeAI\`, and others) is that they all implement the same \`.invoke()\` interface, swapping providers later means changing one constructor call, not rewriting your application logic.
+
+## Prompt templates
+
+Hardcoding a prompt as a plain string works until you need to reuse it with different inputs, a \`PromptTemplate\` (or \`ChatPromptTemplate\` for chat models) separates the fixed wording from the variables that change per call:
+
+\`\`\`python
+from langchain_core.prompts import ChatPromptTemplate
+
+prompt = ChatPromptTemplate.from_messages([
+    ('system', 'You are a helpful assistant that explains topics simply.'),
+    ('human', 'Explain {topic} in two sentences.'),
+])
+
+messages = prompt.invoke({'topic': 'recursion'})
+print(messages)
+\`\`\`
+
+\`{topic}\` is a placeholder filled in by whatever dictionary you pass to \`.invoke()\`, the same template can be reused with \`{'topic': 'closures'}\` or \`{'topic': 'binary search'}\` without touching the wording itself.
+
+## Why this matters over raw API calls
+
+- **Consistency**: the same \`.invoke()\` shape works whether the underlying model is from OpenAI, Anthropic, or a local model.
+- **Reusability**: a prompt template is a first-class object you can store, version, and reuse across an app, instead of a string interpolated in twelve different places.
+- **Composability**: templates and models are designed to be chained together, which is exactly what the next lesson builds on.
+
+> [!TIP]
+> \`.invoke()\` runs synchronously and returns a single result, LangChain's models also support \`.stream()\` (token-by-token output) and \`.batch()\` (many inputs at once), same interface, different execution mode.`
+    ),
+    quiz: {
+      title: 'LangChain Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What is the main benefit of LangChain's ChatOpenAI, ChatAnthropic, etc. all sharing the same .invoke() interface?",
+          options: [
+            'They all run for free',
+            'Switching model providers means changing one constructor call instead of rewriting application logic',
+            'They only work with OpenAI',
+            'It removes the need for prompts entirely',
+          ],
+          answer: 'Switching model providers means changing one constructor call instead of rewriting application logic',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In a ChatPromptTemplate, a value like {topic} is a ____ filled in from the dictionary passed to .invoke().',
+          options: [],
+          answer: 'placeholder',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A PromptTemplate lets you reuse the same wording with different input variables instead of hardcoding a new string each time.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Chains: Composing Prompts, Models, and Output Parsers with LCEL',
+    content: lessonContent(
+      'Chains: Composing Prompts, Models, and Output Parsers with LCEL',
+      `A single call to a model is rarely the whole story, real applications format a prompt, send it to a model, then parse the result into something usable. **LCEL** (LangChain Expression Language) is the syntax for wiring these steps into a single, reusable **chain** using the \`|\` (pipe) operator.
+
+## Building a chain with the pipe operator
+
+\`\`\`python
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+prompt = ChatPromptTemplate.from_messages([
+    ('system', 'You are a helpful assistant that explains topics simply.'),
+    ('human', 'Explain {topic} in two sentences.'),
+])
+model = ChatOpenAI(model='gpt-4o-mini')
+parser = StrOutputParser()
+
+chain = prompt | model | parser
+result = chain.invoke({'topic': 'recursion'})
+print(result)
+\`\`\`
+
+*This needs a real API key, so it's read-only here.* \`prompt | model | parser\` reads left to right: the input dictionary flows into \`prompt\`, its output (a list of chat messages) flows into \`model\`, and the model's response object flows into \`parser\`, which extracts just the plain text string, \`result\` is a \`str\`, not a message object you'd need to unwrap yourself.
+
+## Why a pipe instead of manual function calls
+
+Every piece in a chain (prompts, models, parsers, and more) implements the same \`Runnable\` interface: \`.invoke()\`, \`.stream()\`, and \`.batch()\`. That's what makes \`|\` work at all, it's building a new \`Runnable\` out of smaller ones, and the composed chain gets \`.stream()\` and \`.batch()\` for free, without you writing any extra code for them.
+
+\`\`\`python
+topics = [{'topic': 'recursion'}, {'topic': 'closures'}, {'topic': 'binary search'}]
+results = chain.batch(topics)
+\`\`\`
+
+*Also read-only here, since it calls the model.* \`.batch()\` runs the whole chain, prompt formatting, model call, and parsing, once per item in the list.
+
+## Output parsers beyond plain text
+
+\`StrOutputParser\` just extracts text, but parsers can do more structured work, \`JsonOutputParser\` validates and parses the model's output straight into a Python object, catching malformed output before it reaches the rest of your application.
+
+> [!NOTE]
+> A chain is just a \`Runnable\` built from other \`Runnable\`s, once you see that, LCEL stops looking like special syntax, \`prompt | model | parser\` is exactly as composable as chaining any other typed pipeline stages together.`
+    ),
+    quiz: {
+      title: 'LCEL Chains Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "In chain = prompt | model | parser, what does the model's output get passed to next?",
+          options: ['Back to the prompt', 'The parser', 'Nothing, the chain ends there', 'The original input dictionary'],
+          answer: 'The parser',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Because every step in a chain implements the same Runnable interface, the whole composed chain automatically gets .stream() and .batch() as well.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'LCEL stands for LangChain ____ Language, the syntax for composing Runnables with the | operator.',
+          options: [],
+          answer: 'Expression',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Retrieval-Augmented Generation with LangChain',
+    content: lessonContent(
+      'Retrieval-Augmented Generation with LangChain',
+      `This course's earlier ancestor, plain RAG, is common enough that LangChain provides ready-built pieces for every step: loading documents, splitting them, embedding, storing, and retrieving. This lesson wires those pieces into a chain instead of hand-writing each step.
+
+## Loading and splitting documents
+
+\`\`\`python
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+text = 'LangChain is a framework for building applications with LLMs...'
+splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=20)
+chunks = splitter.split_text(text)
+print(len(chunks), chunks[0])
+\`\`\`
+
+\`RecursiveCharacterTextSplitter\` tries to split on paragraph breaks first, falling back to sentences, then words, so chunks stay as semantically coherent as possible instead of cutting mid-sentence at a fixed character count. \`chunk_overlap\` repeats a few characters between adjacent chunks so a fact split across a chunk boundary still appears whole in at least one chunk.
+
+## Embedding and storing in a vector store
+
+\`\`\`python
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+
+embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
+vectorstore = FAISS.from_texts(chunks, embeddings)
+retriever = vectorstore.as_retriever(search_kwargs={'k': 3})
+\`\`\`
+
+*This needs a real API key to compute embeddings, so it's read-only here.* \`FAISS.from_texts\` embeds every chunk and stores the resulting vectors for similarity search, \`.as_retriever()\` wraps the vector store as a \`Runnable\`, so it fits directly into an LCEL chain, \`search_kwargs={'k': 3}\` returns the 3 most similar chunks for a given query.
+
+## Wiring retrieval into a chain
+
+\`\`\`python
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
+prompt = ChatPromptTemplate.from_template(
+    'Answer the question using only this context:\\n{context}\\n\\nQuestion: {question}'
+)
+
+def format_docs(docs):
+    return '\\n\\n'.join(doc.page_content for doc in docs)
+
+rag_chain = (
+    {'context': retriever | format_docs, 'question': RunnablePassthrough()}
+    | prompt
+    | model
+    | StrOutputParser()
+)
+
+answer = rag_chain.invoke('What is LangChain?')
+\`\`\`
+
+*Read-only, needs a real model and vector store.* The dictionary \`{'context': ..., 'question': ...}\` runs both branches in parallel on the same input: \`retriever | format_docs\` turns the raw question into retrieved, formatted context, while \`RunnablePassthrough()\` just forwards the original question unchanged, both results land in \`prompt\`'s two placeholders.
+
+> [!WARNING]
+> The prompt explicitly says "using only this context", this is what keeps the model **grounded**, without it, a model will happily answer from its own training data instead of your retrieved documents, defeating the entire purpose of RAG.`
+    ),
+    quiz: {
+      title: 'LangChain RAG Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does RecursiveCharacterTextSplitter try paragraph and sentence boundaries before falling back to a fixed character count?',
+          options: [
+            "It's faster",
+            'To keep chunks semantically coherent instead of cutting text mid-sentence',
+            'It is required by FAISS',
+            'To make chunks bigger',
+          ],
+          answer: 'To keep chunks semantically coherent instead of cutting text mid-sentence',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'RunnablePassthrough() forwards its input unchanged, useful for passing the original question through alongside retrieved context.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "Telling the model to answer 'using only this context' keeps its answer ____ in the retrieved documents instead of its own training data.",
+          options: [],
+          answer: 'grounded',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Tools and Agents: Giving a Chain the Ability to Act',
+    content: lessonContent(
+      'Tools and Agents: Giving a Chain the Ability to Act',
+      `Everything so far produces text. A LangChain **tool** is a Python function wrapped so a model can request it be called, and an **agent** is a chain that repeatedly decides which tool (if any) to call, based on the model's own reasoning, closing the loop between "the model wants to act" and "code actually executes that action."
+
+## Defining a tool
+
+\`\`\`python
+from langchain_core.tools import tool
+
+@tool
+def get_word_length(word: str) -> int:
+    """Return the number of characters in a word."""
+    return len(word)
+
+print(get_word_length.name, get_word_length.description)
+\`\`\`
+
+The \`@tool\` decorator turns a normal, type-annotated function into something LangChain can describe to a model automatically, the function's **docstring becomes the tool's description**, exactly what the model reads to decide when this tool is relevant, a vague docstring produces a model that doesn't know when to reach for the tool.
+
+## Binding tools to a model
+
+\`\`\`python
+model_with_tools = model.bind_tools([get_word_length])
+response = model_with_tools.invoke('How many letters are in the word "LangChain"?')
+print(response.tool_calls)
+\`\`\`
+
+*This needs a real API key, so it's read-only here.* \`.bind_tools()\` returns a new model that, when it decides a tool is useful, responds with a \`tool_calls\` list instead of (or alongside) plain text, exactly like the raw function-calling mechanics from the AI Agent course, LangChain just standardizes the description and binding step.
+
+## The agent loop
+
+\`\`\`python
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+
+agent = create_tool_calling_agent(model, [get_word_length], prompt)
+executor = AgentExecutor(agent=agent, tools=[get_word_length])
+
+result = executor.invoke({'input': 'How many letters are in the word "LangChain"?'})
+print(result['output'])
+\`\`\`
+
+*Read-only, needs a real model.* \`AgentExecutor\` is the loop: call the model, check for \`tool_calls\`, execute any requested tools, feed the results back, and repeat until the model responds with a final answer instead of another tool call, the exact same feedback loop from the AI Agent course's \`run_agent()\`, just packaged as a reusable class.
+
+> [!NOTE]
+> A tool with a bad or missing description is invisible to the model in practice, even if the code works perfectly, the model can only decide to use a tool based on what it's told the tool does.`
+    ),
+    quiz: {
+      title: 'Tools & Agents Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does a tool function's docstring become, once wrapped with @tool?",
+          options: [
+            "Nothing, it's ignored",
+            "The tool's description, which the model reads to decide when to use it",
+            "The tool's name",
+            'A code comment only',
+          ],
+          answer: "The tool's description, which the model reads to decide when to use it",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'AgentExecutor implements essentially the same call-model, execute-tools, feed-back-results loop as a hand-written agent loop.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'model.bind_tools([...]) returns a new model that can respond with a ____ list when it decides a tool should be called.',
+          options: [],
+          answer: 'tool_calls',
+        },
+      ],
+    },
+  },
+  {
+    title: 'LangGraph: Stateful, Multi-Step Agent Workflows',
+    content: lessonContent(
+      'LangGraph: Stateful, Multi-Step Agent Workflows',
+      `\`AgentExecutor\` works well for a simple "call tools until done" loop, but real workflows often need more control: conditional branches, loops that revisit earlier steps, or multiple cooperating steps that each need to see and update a shared state. **LangGraph** (from the LangChain team) models an application as an explicit **graph** of steps (nodes) and transitions (edges) over a shared state object, instead of an implicit loop.
+
+## State: the shared object every node reads and updates
+
+\`\`\`python
+from typing import TypedDict
+
+class ResearchState(TypedDict):
+    question: str
+    search_results: str
+    answer: str
+\`\`\`
+
+Every node in a LangGraph graph receives the current state and returns a dictionary of updates to merge into it, this is what makes multi-step workflows explicit and inspectable: at any point, \`state\` is a plain, printable object describing exactly where the workflow is.
+
+## Defining nodes
+
+\`\`\`python
+def search_node(state: ResearchState) -> dict:
+    query = state['question']
+    results = f'(pretend search results for: {query})'
+    return {'search_results': results}
+
+def answer_node(state: ResearchState) -> dict:
+    prompt_text = f"Question: {state['question']}\\nResearch: {state['search_results']}\\nAnswer:"
+    return {'answer': f'(pretend model answer based on: {prompt_text})'}
+\`\`\`
+
+Each node is a plain Python function, \`search_node\` would call a real search tool and a model call would live in \`answer_node\`, kept as placeholders here since both need real API access, the graph structure around them is what this lesson is actually teaching.
+
+## Wiring the graph
+
+\`\`\`python
+from langgraph.graph import StateGraph, END
+
+graph = StateGraph(ResearchState)
+graph.add_node('search', search_node)
+graph.add_node('answer', answer_node)
+graph.set_entry_point('search')
+graph.add_edge('search', 'answer')
+graph.add_edge('answer', END)
+
+app = graph.compile()
+result = app.invoke({'question': 'What is LangGraph?', 'search_results': '', 'answer': ''})
+print(result['answer'])
+\`\`\`
+
+\`add_edge('search', 'answer')\` is a fixed transition, always go from \`search\` to \`answer\`. \`add_edge('answer', END)\` marks \`answer\` as a terminal step, \`END\` is a special LangGraph constant meaning "the graph is finished."
+
+## Conditional edges: branching based on state
+
+\`\`\`python
+def needs_more_research(state: ResearchState) -> str:
+    if len(state['search_results']) < 20:
+        return 'search'
+    return 'answer'
+
+graph.add_conditional_edges('search', needs_more_research, {'search': 'search', 'answer': 'answer'})
+\`\`\`
+
+\`add_conditional_edges\` routes to a *different* next node depending on a function of the current state, here, looping back to \`search\` again if the results look too thin, this is the core capability \`AgentExecutor\`'s simple loop doesn't give you directly: an explicit, inspectable decision about what happens next, rather than an implicit "keep calling tools until the model stops."
+
+> [!TIP]
+> Think of \`AgentExecutor\` as one specific, common pattern (loop until no more tool calls), and LangGraph as the general-purpose tool for building that pattern, and any other control flow (branches, loops, multiple cooperating agents) your workflow actually needs.`
+    ),
+    quiz: {
+      title: 'LangGraph Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does every node in a LangGraph graph receive and return?',
+          options: [
+            'A raw string prompt',
+            'The current state, and a dictionary of updates to merge into it',
+            'A tool_calls list only',
+            'Nothing, nodes are stateless',
+          ],
+          answer: 'The current state, and a dictionary of updates to merge into it',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'add_conditional_edges lets a graph route to different next nodes based on the current state, unlike a fixed add_edge transition.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In LangGraph, ____ is the special constant used to mark a node as the terminal step of the graph.',
+          options: [],
+          answer: 'END',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Multi-Step Research Assistant with LangChain and LangGraph',
+    content: lessonContent(
+      'Final Project: Build a Multi-Step Research Assistant with LangChain and LangGraph',
+      `Combine everything from this course, chains, retrieval, tools, and LangGraph, into one working assistant: given a question, it should decide whether it needs to search for more information, retrieve from a small local knowledge base, and produce a final grounded answer.
+
+## Requirements
+
+1. Set up a real API key (OpenAI, or any provider LangChain supports) and install \`langchain\`, \`langchain-openai\` (or your provider's package), and \`langgraph\`.
+2. Build a small local knowledge base (3-5 short text documents on any topic you like) and set up a retriever for it, using the text splitting and vector store pattern from the Retrieval lesson.
+3. Define a \`TypedDict\` state with at least a \`question\`, a \`context\`, and an \`answer\` field.
+4. Build a LangGraph graph with at least three nodes: one that retrieves context for the question, one that decides (via a conditional edge) whether the retrieved context is sufficient or another retrieval pass is needed, and one that generates the final answer using an LCEL chain (prompt | model | parser) grounded in the retrieved context.
+5. Compile and run the graph on at least three different questions, one that's clearly answerable from your knowledge base, and one that isn't, confirm the assistant behaves sensibly in both cases (e.g. says it doesn't know, rather than making something up).
+
+## Stretch goals
+
+- Add a tool (e.g. a calculator, or a fake "current date" function) and a node that lets the model call it when relevant, on top of retrieval.
+- Add a loop limit (a step counter in state) so a conditional edge can't send the graph back to retrieval forever.
+- Visualize your graph with \`app.get_graph().print_ascii()\` and include it in your submission.
+
+Submit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const langchainTsLessons: SeedLesson[] = [
+  {
+    title: 'Why LangChain.js? Chat Models and Prompt Templates',
+    content: lessonContent(
+      'Why LangChain.js? Chat Models and Prompt Templates',
+      `Everything LangChain does in Python, standardizing prompts, models, and chains behind one interface, has a first-class TypeScript port: **LangChain.js**. If you already know TypeScript's type system, this course reuses that strength directly, chains here are typed end to end.
+
+## Chat models
+
+\`\`\`ts
+import { ChatOpenAI } from '@langchain/openai';
+
+const model = new ChatOpenAI({ model: 'gpt-4o-mini', apiKey: 'YOUR_API_KEY' });
+const response = await model.invoke('What is a large language model?');
+console.log(response.content);
+\`\`\`
+
+*This needs a real API key and network access, so it's read-only here.* \`model.invoke(...)\` is \`async\`, every LangChain.js call that talks to a model returns a \`Promise\`, matching how you'd already call any other network API in TypeScript.
+
+## Prompt templates
+
+\`\`\`ts
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', 'You are a helpful assistant that explains topics simply.'],
+  ['human', 'Explain {topic} in two sentences.'],
+]);
+
+const messages = await prompt.invoke({ topic: 'recursion' });
+console.log(messages);
+\`\`\`
+
+\`{topic}\` is a placeholder, filled in from whatever object you pass to \`.invoke()\`, the same \`prompt\` object is reusable with \`{ topic: 'closures' }\` or any other value, without rewriting the wording.
+
+## Why not just template strings yourself?
+
+You could interpolate a plain TypeScript template string instead, and for a single, throwaway prompt, that's fine. \`ChatPromptTemplate\` starts paying off once you need to: reuse the same prompt in multiple places, compose it with a model and parser (next lesson), or swap the underlying model without touching the prompt at all.
+
+> [!TIP]
+> \`.invoke()\` is the one method every LangChain.js "Runnable" (models, prompts, chains, retrievers) implements. Once you've learned it once, you already know how to call any piece in the library.`
+    ),
+    quiz: {
+      title: 'LangChain.js Basics Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does model.invoke(...) return in LangChain.js?',
+          options: [
+            'A plain string, synchronously',
+            'A Promise, since it calls out to a model over the network',
+            "It's fire-and-forget, nothing is returned",
+            'A generator function',
+          ],
+          answer: 'A Promise, since it calls out to a model over the network',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In a ChatPromptTemplate, {topic} is a ____ filled in from the object passed to .invoke().',
+          options: [],
+          answer: 'placeholder',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every LangChain.js Runnable, models, prompts, chains, and retrievers, implements the same .invoke() method.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Chains with LCEL: Composing Runnables in TypeScript',
+    content: lessonContent(
+      'Chains with LCEL: Composing Runnables in TypeScript',
+      `LCEL (LangChain Expression Language) composes in TypeScript the same way it does in Python, except instead of the \`|\` operator (which TypeScript doesn't let you overload), LangChain.js uses an explicit \`.pipe()\` method to chain \`Runnable\`s together.
+
+## Building a chain with .pipe()
+
+\`\`\`ts
+import { ChatOpenAI } from '@langchain/openai';
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+
+const prompt = ChatPromptTemplate.fromMessages([
+  ['system', 'You are a helpful assistant that explains topics simply.'],
+  ['human', 'Explain {topic} in two sentences.'],
+]);
+const model = new ChatOpenAI({ model: 'gpt-4o-mini' });
+const parser = new StringOutputParser();
+
+const chain = prompt.pipe(model).pipe(parser);
+const result = await chain.invoke({ topic: 'recursion' });
+console.log(result);
+\`\`\`
+
+*This needs a real API key, so it's read-only here.* \`prompt.pipe(model).pipe(parser)\` reads left to right, exactly like Python's \`prompt | model | parser\`: the input object flows into \`prompt\`, its output flows into \`model\`, and the model's response flows into \`parser\`, which extracts a plain \`string\`. \`result\` is typed as \`string\`, not a message object you'd need to unwrap.
+
+## Batching
+
+\`\`\`ts
+const topics = [{ topic: 'recursion' }, { topic: 'closures' }, { topic: 'binary search' }];
+const results = await chain.batch(topics);
+\`\`\`
+
+*Also read-only here, since it calls the model.* Because \`chain\` is itself a \`Runnable\`, it gets \`.batch()\` (many inputs) and \`.stream()\` (token-by-token output) automatically, the same three methods every piece in the pipeline already had.
+
+## Why types matter here
+
+Each piece in a \`.pipe()\` chain is generically typed by its input and output, \`ChatPromptTemplate\` outputs a message type that \`ChatOpenAI\` accepts as input, and \`StringOutputParser\` narrows that model's response down to \`string\`. If you tried to pipe two incompatible pieces together, TypeScript's compiler catches the mismatch before you ever run the code, one of the concrete advantages of building LLM chains in a typed language.
+
+> [!NOTE]
+> \`.pipe()\` and Python's \`|\` do exactly the same thing: build a new \`Runnable\` from smaller ones. The syntax differs because operator overloading isn't available in TypeScript, the composition model underneath is identical.`
+    ),
+    quiz: {
+      title: 'LCEL in TypeScript Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "In LangChain.js, what replaces Python's | operator for composing a chain?",
+          options: ['The + operator', 'The .pipe() method', 'A special JSX syntax', 'There is no equivalent'],
+          answer: 'The .pipe() method',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Because a LangChain.js chain is itself a Runnable, it automatically gets .batch() and .stream() without extra code.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "TypeScript's compiler can catch a mismatch between two incompatible pieces piped together, because each Runnable is generically typed by its input and ____ type.",
+          options: [],
+          answer: 'output',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Retrieval-Augmented Generation with LangChain.js',
+    content: lessonContent(
+      'Retrieval-Augmented Generation with LangChain.js',
+      `LangChain.js ships the same RAG building blocks as its Python counterpart: text splitters, embeddings, vector stores, and retrievers, all typed and composable with \`.pipe()\`.
+
+## Splitting text
+
+\`\`\`ts
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
+
+const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 200, chunkOverlap: 20 });
+const chunks = await splitter.splitText('LangChain is a framework for building applications with LLMs...');
+console.log(chunks.length, chunks[0]);
+\`\`\`
+
+Like its Python counterpart, \`RecursiveCharacterTextSplitter\` prefers splitting on paragraph and sentence boundaries before falling back to a fixed size, keeping chunks semantically coherent, \`chunkOverlap\` repeats a few characters between adjacent chunks so a fact near a boundary isn't cut cleanly in half.
+
+## Embedding and storing
+
+\`\`\`ts
+import { OpenAIEmbeddings } from '@langchain/openai';
+import { MemoryVectorStore } from 'langchain/vectorstores/memory';
+
+const embeddings = new OpenAIEmbeddings({ model: 'text-embedding-3-small' });
+const vectorstore = await MemoryVectorStore.fromTexts(
+  chunks,
+  chunks.map((_, i) => ({ id: i })),
+  embeddings
+);
+const retriever = vectorstore.asRetriever({ k: 3 });
+\`\`\`
+
+*This needs a real API key to compute embeddings, so it's read-only here.* \`MemoryVectorStore.fromTexts\` takes the chunks, per-chunk metadata (here, just an \`id\`), and the embeddings model, embedding every chunk and keeping the vectors in memory for similarity search. \`.asRetriever({ k: 3 })\` wraps it as a \`Runnable\` returning the 3 most similar chunks for a given query.
+
+## Wiring retrieval into a chain
+
+\`\`\`ts
+import { ChatPromptTemplate } from '@langchain/core/prompts';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+import { RunnableSequence, RunnablePassthrough } from '@langchain/core/runnables';
+import type { Document } from '@langchain/core/documents';
+
+const prompt = ChatPromptTemplate.fromTemplate(
+  'Answer the question using only this context:\\n{context}\\n\\nQuestion: {question}'
+);
+
+const formatDocs = (docs: Document[]) => docs.map((d) => d.pageContent).join('\\n\\n');
+
+const ragChain = RunnableSequence.from([
+  { context: retriever.pipe(formatDocs), question: new RunnablePassthrough() },
+  prompt,
+  model,
+  new StringOutputParser(),
+]);
+
+const answer = await ragChain.invoke('What is LangChain?');
+\`\`\`
+
+*Read-only, needs a real model and vector store.* \`RunnableSequence.from([...])\` is the explicit, array-based way to build a multi-step chain, the object in the first step runs both branches on the same input in parallel: \`retriever.pipe(formatDocs)\` turns the question into formatted context, while \`new RunnablePassthrough()\` forwards the original question unchanged, exactly mirroring the Python version's dictionary syntax.
+
+> [!WARNING]
+> "Using only this context" in the prompt is what keeps the model grounded in your retrieved documents instead of answering from its own training data, drop that instruction and you've built a chatbot that ignores the very documents you retrieved.`
+    ),
+    quiz: {
+      title: 'LangChain.js RAG Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does RunnableSequence.from([...]) do?',
+          options: [
+            'Runs steps in a random order',
+            'Builds an explicit, array-based multi-step chain',
+            'Only works with a single step',
+            'Replaces the need for a prompt template',
+          ],
+          answer: 'Builds an explicit, array-based multi-step chain',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'new RunnablePassthrough() forwards its input unchanged, useful for passing the original question alongside retrieved context.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "chunkOverlap repeats a few characters between adjacent chunks so a fact near a boundary isn't ____ in half.",
+          options: [],
+          answer: 'cut',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Tools and Agents in LangChain.js',
+    content: lessonContent(
+      'Tools and Agents in LangChain.js',
+      `A LangChain.js **tool** wraps a TypeScript function with a name, description, and typed schema so a model can request it, and an **agent executor** repeatedly calls the model, executes any requested tools, and feeds results back, until the model gives a final answer.
+
+## Defining a tool
+
+\`\`\`ts
+import { tool } from '@langchain/core/tools';
+import { z } from 'zod';
+
+const getWordLength = tool(
+  async ({ word }) => word.length,
+  {
+    name: 'get_word_length',
+    description: 'Return the number of characters in a word.',
+    schema: z.object({ word: z.string() }),
+  }
+);
+\`\`\`
+
+The \`schema\` uses **Zod**, a TypeScript-first validation library, to describe exactly what arguments the tool accepts, LangChain.js converts that schema into the JSON Schema the model actually sees, and validates the model's arguments against it before your function ever runs, malformed input is rejected before it reaches your code, not after.
+
+## Binding tools to a model
+
+\`\`\`ts
+const modelWithTools = model.bindTools([getWordLength]);
+const response = await modelWithTools.invoke('How many letters are in the word "LangChain"?');
+console.log(response.tool_calls);
+\`\`\`
+
+*This needs a real API key, so it's read-only here.* \`.bindTools()\` returns a new model that can respond with a \`tool_calls\` array when it decides a tool is relevant, the model never runs \`getWordLength\` itself, it only requests that your code do so.
+
+## The agent executor
+
+\`\`\`ts
+import { createToolCallingAgent, AgentExecutor } from 'langchain/agents';
+
+const agent = await createToolCallingAgent({ llm: model, tools: [getWordLength], prompt });
+const executor = new AgentExecutor({ agent, tools: [getWordLength] });
+
+const result = await executor.invoke({ input: 'How many letters are in the word "LangChain"?' });
+console.log(result.output);
+\`\`\`
+
+*Read-only, needs a real model.* \`AgentExecutor\` is the loop: call the model, check for \`tool_calls\`, run any requested tools, append their results, and repeat until the model returns a final plain-text answer instead of another tool request.
+
+> [!NOTE]
+> A Zod schema does double duty here: it's what generates the tool's JSON Schema description for the model, and it's what validates the model's arguments before your function runs, one source of truth instead of two things to keep in sync by hand.`
+    ),
+    quiz: {
+      title: 'Tools & Agents in TS Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What library does LangChain.js use to define a tool's argument schema?",
+          options: ['Joi', 'Zod', 'Yup', 'class-validator'],
+          answer: 'Zod',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "LangChain.js validates a model's tool call arguments against the Zod schema before the tool function runs.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'model.bindTools([...]) returns a new model that can respond with a ____ array when it decides to call a tool.',
+          options: [],
+          answer: 'tool_calls',
+        },
+      ],
+    },
+  },
+  {
+    title: 'LangGraph.js: Stateful, Multi-Step Workflows',
+    content: lessonContent(
+      'LangGraph.js: Stateful, Multi-Step Workflows',
+      `Just like its Python counterpart, **LangGraph.js** models a workflow as an explicit graph of typed state, nodes, and edges, instead of an implicit "loop until done." It's the tool to reach for once \`AgentExecutor\`'s simple loop isn't enough, when you need branches, loops back to an earlier step, or several cooperating steps.
+
+## Defining typed state
+
+\`\`\`ts
+import { Annotation } from '@langchain/langgraph';
+
+const ResearchState = Annotation.Root({
+  question: Annotation<string>,
+  searchResults: Annotation<string>,
+  answer: Annotation<string>,
+});
+\`\`\`
+
+\`Annotation.Root\` defines the shape of the state every node reads and updates, typed just like any other TypeScript object, at any point in the graph's execution, the current state is a plain, inspectable, fully-typed value.
+
+## Defining nodes
+
+\`\`\`ts
+async function searchNode(state: typeof ResearchState.State) {
+  const results = \`(pretend search results for: \${state.question})\`;
+  return { searchResults: results };
+}
+
+async function answerNode(state: typeof ResearchState.State) {
+  const promptText = \`Question: \${state.question}\nResearch: \${state.searchResults}\nAnswer:\`;
+  return { answer: \`(pretend model answer based on: \${promptText})\` };
+}
+\`\`\`
+
+Each node is a plain async function that receives the current state and returns a partial object of updates to merge in, a real \`searchNode\` would call a search tool and \`answerNode\` would run an LCEL chain, kept as placeholders here since both need real API access.
+
+## Wiring the graph
+
+\`\`\`ts
+import { StateGraph, END } from '@langchain/langgraph';
+
+const graph = new StateGraph(ResearchState)
+  .addNode('search', searchNode)
+  .addNode('answer', answerNode)
+  .addEdge('__start__', 'search')
+  .addEdge('search', 'answer')
+  .addEdge('answer', END);
+
+const app = graph.compile();
+const result = await app.invoke({ question: 'What is LangGraph.js?', searchResults: '', answer: '' });
+console.log(result.answer);
+\`\`\`
+
+\`addEdge('search', 'answer')\` is a fixed transition, \`addEdge('answer', END)\` marks \`answer\` as terminal, \`END\` is a special constant meaning "the graph is finished here."
+
+## Conditional edges
+
+\`\`\`ts
+function needsMoreResearch(state: typeof ResearchState.State): 'search' | 'answer' {
+  return state.searchResults.length < 20 ? 'search' : 'answer';
+}
+
+graph.addConditionalEdges('search', needsMoreResearch, { search: 'search', answer: 'answer' });
+\`\`\`
+
+\`addConditionalEdges\` routes to a different next node based on a function of the current state, here looping back to \`search\` if results still look too thin, this explicit, typed branching is what a plain \`AgentExecutor\` loop doesn't give you directly.
+
+> [!TIP]
+> The return type \`'search' | 'answer'\` on \`needsMoreResearch\` is doing real work: TypeScript checks that the routing function can only return names of nodes that actually exist in the graph.`
+    ),
+    quiz: {
+      title: 'LangGraph.js Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does Annotation.Root define in LangGraph.js?',
+          options: [
+            "A single node's logic",
+            'The typed shape of the state every node reads and updates',
+            'The final output parser',
+            'A database connection',
+          ],
+          answer: 'The typed shape of the state every node reads and updates',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'addConditionalEdges lets a graph route to a different next node depending on the current state, unlike a fixed addEdge.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In LangGraph.js, ____ is the special constant marking a node as the terminal step of the graph.',
+          options: [],
+          answer: 'END',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Typed RAG Assistant with LangChain.js and LangGraph.js',
+    content: lessonContent(
+      'Final Project: Build a Typed RAG Assistant with LangChain.js and LangGraph.js',
+      `Combine everything from this course, typed chains, retrieval, tools, and LangGraph.js, into one working research assistant, given a question, it should decide whether it needs more retrieved context, pull from a small local knowledge base, and produce a final grounded, typed answer.
+
+## Requirements
+
+1. Set up a real API key and install \`@langchain/core\`, \`@langchain/openai\` (or your provider's package), and \`@langchain/langgraph\`.
+2. Build a small local knowledge base (3-5 short text documents on any topic you like) and set up a retriever for it, using the splitting and vector store pattern from the Retrieval lesson.
+3. Define a typed state with \`Annotation.Root\`, at least a \`question\`, \`context\`, and \`answer\` field.
+4. Build a LangGraph.js graph with at least three nodes: one that retrieves context for the question, one that decides (via \`addConditionalEdges\`) whether the retrieved context is sufficient or another retrieval pass is needed, and one that generates the final answer using an LCEL chain (\`.pipe()\`) grounded in the retrieved context.
+5. Compile and run the graph on at least three different questions, one clearly answerable from your knowledge base and one that isn't, confirm the assistant behaves sensibly in both cases (e.g. says it doesn't know, rather than making something up).
+
+## Stretch goals
+
+- Add a Zod-defined tool (e.g. a calculator, or a fake "current date" function) and a node that lets the model call it when relevant, on top of retrieval.
+- Add a loop limit (a counter field in state) so a conditional edge can't send the graph back to retrieval forever.
+- Type the graph's final result end to end, so \`result.answer\` is a \`string\` your calling code can rely on without a cast.
+
+Submit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const coursesByPath: Record<
   string,
   {
@@ -11773,6 +13029,12 @@ const coursesByPath: Record<
         "Learn classical machine learning with scikit-learn: train classifiers and regressors, split and evaluate data properly, understand precision/recall beyond accuracy, scale features safely with Pipeline, and validate models with cross-validation and GridSearchCV. Every lesson runs live in your browser, no local install needed.",
       lessons: sklearnLessons,
     },
+    {
+      title: 'LangChain: Building LLM Applications with Python',
+      description:
+        'Build real LLM applications with LangChain: prompt templates and chat models, LCEL chains, retrieval-augmented generation, tools and agents, and stateful multi-step workflows with LangGraph.',
+      lessons: langchainPythonLessons,
+    },
   ],
   javascript: [
     {
@@ -11792,6 +13054,12 @@ const coursesByPath: Record<
       title: 'TypeScript from JavaScript',
       description: 'Level up your JavaScript with static types, interfaces, and compiler-driven confidence.',
       lessons: tsLessons,
+    },
+    {
+      title: 'LangChain.js: Building LLM Applications with TypeScript',
+      description:
+        'Build real, typed LLM applications with LangChain.js: chat models and prompt templates, LCEL chains with .pipe(), retrieval-augmented generation, tools and agents, and stateful multi-step workflows with LangGraph.js.',
+      lessons: langchainTsLessons,
     },
   ],
   cpp: [
@@ -11922,6 +13190,14 @@ const coursesByPath: Record<
       title: 'Logging and Observability',
       description: 'The three pillars of observability: structured logging, metrics and time-series data, distributed tracing, and alerting that does not burn out your team.',
       lessons: observabilityLessons,
+    },
+  ],
+  grc: [
+    {
+      title: 'GRC Fundamentals',
+      description:
+        'Governance, Risk, and Compliance for engineers: policies and accountability, risk registers, SOC 2/ISO 27001/GDPR, and building audit-ready controls with real evidence.',
+      lessons: grcLessons,
     },
   ],
   'ai-coding': [
