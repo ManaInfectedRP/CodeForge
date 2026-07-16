@@ -93,6 +93,14 @@ export function Register() {
         Continue with GitHub
       </a>
 
+      <p className="mt-6 text-center text-xs text-slate-500">
+        By signing up, you agree to our{' '}
+        <Link to="/consent" className="text-forge-500 hover:underline">
+          User Consent
+        </Link>
+        .
+      </p>
+
       <p className="mt-6 text-sm text-slate-400">
         Already have an account?{' '}
         <Link to="/login" className="text-forge-500 hover:underline">

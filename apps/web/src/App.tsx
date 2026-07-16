@@ -47,6 +47,7 @@ import { AdminBlog } from './pages/AdminBlog';
 import { AdminBlogEditor } from './pages/AdminBlogEditor';
 import { Faq } from './pages/Faq';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { Consent } from './pages/Consent';
 
 export function App() {
   return (
@@ -72,6 +73,7 @@ export function App() {
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/faq" element={<Faq />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/consent" element={<Consent />} />
                 {/* Not wrapped in ProtectedRoute: a course flagged isPublic (and its first lesson)
                     is viewable without an account, a free sample to try before signing up. The
                     pages themselves redirect to /login for courses/lessons that aren't public. */}
