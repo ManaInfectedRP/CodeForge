@@ -1,10 +1,12 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { CookieConsentProvider } from './context/CookieConsentContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { PageTracker } from './components/PageTracker';
 import { GaPageView } from './components/GaPageView';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
 import { CanonicalLink } from './components/CanonicalLink';
 import { VerifyEmailBanner } from './components/VerifyEmailBanner';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -44,12 +46,14 @@ import { BlogPost } from './pages/BlogPost';
 import { AdminBlog } from './pages/AdminBlog';
 import { AdminBlogEditor } from './pages/AdminBlogEditor';
 import { Faq } from './pages/Faq';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
 
 export function App() {
   return (
     <BrowserRouter>
       <LanguageProvider>
         <AuthProvider>
+          <CookieConsentProvider>
           <PageTracker />
           <GaPageView />
           <CanonicalLink />
@@ -67,6 +71,7 @@ export function App() {
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/faq" element={<Faq />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
                 {/* Not wrapped in ProtectedRoute: a course flagged isPublic (and its first lesson)
                     is viewable without an account, a free sample to try before signing up. The
                     pages themselves redirect to /login for courses/lessons that aren't public. */}
@@ -107,6 +112,8 @@ export function App() {
             </div>
             <Footer />
           </div>
+          <CookieConsentBanner />
+          </CookieConsentProvider>
         </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>
