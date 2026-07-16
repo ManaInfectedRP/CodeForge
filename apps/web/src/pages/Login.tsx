@@ -90,6 +90,14 @@ export function Login() {
         Continue with GitHub
       </a>
 
+      <p className="mt-6 text-center text-xs text-slate-500">
+        Read our{' '}
+        <Link to="/consent" className="text-forge-500 hover:underline">
+          User Consent
+        </Link>{' '}
+        terms at any time.
+      </p>
+
       <p className="mt-6 text-sm text-slate-400">
         New here?{' '}
         <Link to="/register" className="text-forge-500 hover:underline">
