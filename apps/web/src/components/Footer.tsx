@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ContactModal } from './ContactModal';
 import { useLanguage, type Language } from '../context/LanguageContext';
+import { useCookieConsent } from '../context/CookieConsentContext';
 
 const translations = {
   en: {
@@ -11,6 +12,8 @@ const translations = {
     about: 'About',
     faq: 'FAQ',
     contact: 'Contact us',
+    privacy: 'Privacy Policy',
+    cookieSettings: 'Cookie settings',
   },
   sv: {
     tagline: 'Kodstigen, en väg framåt inom kodning, av Sebastian Larsson.',
@@ -19,6 +22,8 @@ const translations = {
     about: 'Om',
     faq: 'Vanliga frågor',
     contact: 'Kontakta oss',
+    privacy: 'Integritetspolicy',
+    cookieSettings: 'Cookie-inställningar',
   },
 };
 
@@ -46,6 +51,7 @@ export function Footer() {
   const { language } = useLanguage();
   const t = translations[language];
   const [contactOpen, setContactOpen] = useState(false);
+  const { openSettings } = useCookieConsent();
 
   return (
     <footer className="border-t border-slate-800 py-8 text-sm text-slate-500">
@@ -64,8 +70,14 @@ export function Footer() {
           <Link to="/faq" className="hover:text-white">
             {t.faq}
           </Link>
+          <Link to="/privacy" className="hover:text-white">
+            {t.privacy}
+          </Link>
           <button type="button" onClick={() => setContactOpen(true)} className="hover:text-white">
             {t.contact}
+          </button>
+          <button type="button" onClick={openSettings} className="hover:text-white">
+            {t.cookieSettings}
           </button>
           <LanguageToggle />
         </nav>

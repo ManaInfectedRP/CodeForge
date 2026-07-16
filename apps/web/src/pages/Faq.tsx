@@ -283,6 +283,10 @@ export const SECTIONS: Record<Language, Section[]> = {
           a: 'CI (continuous integration) automatically builds and tests your code every time you push a change, catching problems early instead of finding them later, and CD (continuous delivery/deployment) automatically ships that code to staging or production once it passes. Together they let teams ship changes frequently and with confidence instead of relying on big, risky manual releases.',
         },
         {
+          q: 'What is GRC?',
+          a: 'GRC stands for Governance, Risk, and Compliance, the practices that keep an organization’s technology decisions aligned with its policies (governance), aware of and prepared for what could go wrong (risk), and provably meeting external laws, regulations, and standards like SOC 2 or GDPR (compliance). It matters to engineers because things like access reviews, audit logs, and change-management approvals usually exist to satisfy GRC requirements, not just as extra process for its own sake.',
+        },
+        {
           q: 'How do I deploy a website or app to production?',
           a: 'At a minimum you need somewhere to host it (a server or a platform like Vercel, Netlify, or a cloud provider), a build step that produces the final code, and a way to push new versions live, often through CI/CD so deploys are automatic and repeatable. For anything beyond a static site, you’ll also need to think about environment variables, a database connection, and monitoring for when something breaks in production.',
         },
@@ -675,6 +679,10 @@ export const SECTIONS: Record<Language, Section[]> = {
         {
           q: 'Vad är Docker, och varför använder utvecklare det?',
           a: 'Docker paketerar en applikation tillsammans med allt den behöver för att köras, kod, beroenden, systembibliotek, i en "container" som beter sig likadant på vilken maskin som helst. Det löser det klassiska "det funkar på min dator"-problemet och gör det mycket lättare att utveckla, testa och driftsätta mjukvara konsekvent i olika miljöer.',
+        },
+        {
+          q: 'Vad är GRC?',
+          a: 'GRC står för Governance, Risk och Compliance (styrning, risk och regelefterlevnad), praxis som håller en organisations tekniska beslut i linje med sina policyer (styrning), medveten om och förberedd på vad som kan gå fel (risk), och bevisligen uppfyller externa lagar, regler och standarder som SOC 2 eller GDPR (regelefterlevnad). Det spelar roll för utvecklare eftersom saker som åtkomstgranskningar, granskningsloggar och godkännanden i ändringshanteringen oftast finns för att uppfylla GRC-krav, inte bara som extra process för sin egen skull.',
         },
         {
           q: 'Vad är CI/CD?',

@@ -10,16 +10,8 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="alternate" type="application/rss+xml" title="Kodstigen Blog" href="/api/blog/feed.xml" />
     <title>Kodstigen</title>
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-P9YBE3DENC"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-P9YBE3DENC');
-    </script>
+    <!-- Google Analytics (gtag.js) is loaded from src/lib/analytics.ts, only after the user
+         accepts the cookie consent banner, never unconditionally on page load. -->
   </head>
   <body>
     <div id="root"></div>

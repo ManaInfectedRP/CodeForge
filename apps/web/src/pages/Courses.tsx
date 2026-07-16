@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 import { PathCard } from '../components/PathCard';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const DEVOPS_SLUGS = ['docker', 'azure', 'kubernetes', 'aws', 'cicd', 'observability'];
+const DEVOPS_SLUGS = ['docker', 'azure', 'kubernetes', 'aws', 'cicd', 'observability', 'grc'];
 
 function CourseListItem({ c }: { c: CourseSummaryDto }) {
   return (
