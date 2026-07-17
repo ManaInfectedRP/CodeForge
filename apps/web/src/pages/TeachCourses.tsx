@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import type { LearningPathDto, TeachCourseSummaryDto } from '@codeforge/shared';
 import { api, errorMessage } from '../lib/api';
@@ -19,6 +19,7 @@ export function TeachCourses() {
   const [pathSlug, setPathSlug] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     api.get<TeachCourseSummaryDto[]>('/instructor/courses').then((res) => setCourses(res.data));
@@ -27,6 +28,15 @@ export function TeachCourses() {
       if (res.data.length > 0) setPathSlug(res.data[0].slug);
     });
   }, []);
+
+  const filteredCourses = useMemo(() => {
+    if (!courses) return [];
+    const q = query.trim().toLowerCase();
+    if (!q) return courses;
+    return courses.filter(
+      (c) => c.title.toLowerCase().includes(q) || c.pathName.toLowerCase().includes(q),
+    );
+  }, [courses, query]);
 
   async function createCourse(e: FormEvent) {
     e.preventDefault();
@@ -120,15 +130,31 @@ export function TeachCourses() {
         </form>
       )}
 
+      {courses !== null && courses.length > 0 && (
+        <div className="mt-6">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search your courses…"
+            className="w-full max-w-md rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm focus:border-forge-500 focus:outline-none"
+          />
+        </div>
+      )}
+
       {courses === null ? (
         <p className="mt-10 text-slate-400">Loading…</p>
       ) : courses.length === 0 ? (
         <p className="mt-10 rounded-2xl border border-dashed border-slate-700 p-10 text-center text-slate-400">
           No courses yet, create your first draft.
         </p>
+      ) : filteredCourses.length === 0 ? (
+        <p className="mt-10 rounded-2xl border border-dashed border-slate-700 p-10 text-center text-slate-400">
+          No courses match "{query}".
+        </p>
       ) : (
         <div className="mt-8 space-y-3">
-          {courses.map((c) => (
+          {filteredCourses.map((c) => (
             <Link
               key={c.id}
               to={`/teach/courses/${c.id}`}
