@@ -2638,6 +2638,648 @@ const sfmlBreakoutLessons: SeedLesson[] = [
   },
 ];
 
+const horseRaceSkipListLessons: SeedLesson[] = [
+  {
+    title: 'Why a Skip List? From Sorted Arrays to Layered Lists',
+    content: lessonContent(
+      'Why a Skip List? From Sorted Arrays to Layered Lists',
+      `A horse race needs a **live leaderboard**, at every instant, which horse is in 1st place, which is in 2nd, and so on, while every horse's distance is changing dozens of times per second. That's really just one operation, repeated constantly: keep a collection sorted by a changing value, and read the sorted order back out cheaply. The data structure you pick for that decides whether your leaderboard is instant or a bottleneck.
+
+## Why the obvious choices fall short
+
+- **A sorted array**: reading the current standings is trivial, it's already in order. But every time a horse's distance changes, you need to remove it and reinsert it at the right spot, which means shifting every element after it, an O(n) operation, once per horse, every single frame.
+- **A plain linked list**: inserting or removing a node is O(1) *once you know where*, no shifting required. But finding where a given distance belongs means walking from the front one node at a time, O(n) again, you've just moved the cost from "shifting" to "searching."
+- **A balanced binary search tree** (AVL, red-black): genuinely fixes both problems, O(log n) search *and* O(log n) insert/delete. The catch is implementing one correctly, rotations, rebalancing rules, and edge cases make a from-scratch balanced tree one of the fussier data structures to get right.
+
+## The skip list's trick: add shortcut lanes
+
+A **skip list** gets the same O(log n) search, insert, and delete as a balanced tree, but without any rebalancing logic at all. The idea: start with an ordinary sorted linked list (this is "level 0"), then build extra linked lists on top of it that skip over multiple nodes at once, like express lanes above a local road.
+
+\`\`\`
+Level 2:  HEAD ────────────────────────► 40 ─────────────► NULL
+Level 1:  HEAD ─────────► 20 ──────────► 40 ─────────────► NULL
+Level 0:  HEAD ──► 10 ──► 20 ──► 30 ──► 40 ──► 50 ──► 60 ──► NULL
+\`\`\`
+
+Searching for \`50\` starts at the top level and moves forward as long as the next value is still less than what you're looking for, only dropping down a level when the next hop would overshoot. Instead of visiting every node one at a time, the search skips whole stretches of the list at once, and the fewer nodes you visit, the fewer comparisons the whole operation costs.
+
+## Where the levels come from
+
+Here's the part that replaces a balanced tree's rebalancing rules entirely: **randomness**. Every time a node is inserted, it gets promoted to a higher level with a coin flip, heads, promote and flip again, tails, stop. That means roughly half of all nodes only exist at level 0, a quarter reach level 1, an eighth reach level 2, and so on. No node is ever explicitly "rebalanced," the express lanes just naturally thin out the higher you go, and that thinning is exactly what makes search, insert, and delete all expected O(log n), with dramatically simpler code than a balanced tree.
+
+> [!NOTE]
+> This isn't a toy technique, Redis implements its sorted sets (the data structure behind real-time leaderboards in games and dashboards) with a skip list, for exactly the reason you're about to build one: cheap search *and* cheap insert/delete on a collection that's constantly being reordered.`
+    ),
+    quiz: {
+      title: 'Why a Skip List Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why is a sorted array a poor fit for a constantly-updating leaderboard?',
+          options: [
+            'Arrays cannot be sorted at all',
+            'Updating one value means shifting every element after it, an O(n) cost per update',
+            'Arrays cannot store floating-point numbers',
+            'Reading the current order is slow',
+          ],
+          answer: 'Updating one value means shifting every element after it, an O(n) cost per update',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A balanced binary search tree gets the same big-O as a skip list, but is typically fussier to implement correctly due to rebalancing.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A skip list is a sorted linked list with extra ____ lanes built on top, so searches can skip over multiple nodes at once.',
+          options: [],
+          answer: 'express',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What decides how many levels a newly inserted node is promoted to?",
+          options: [
+            'A fixed rule based on the list size',
+            'A random coin flip per level, repeated until it comes up tails',
+            'The node is always promoted to every level',
+            'The node with the smallest value is always promoted highest',
+          ],
+          answer: 'A random coin flip per level, repeated until it comes up tails',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Building the Skip List: Node, Insert & the Coin Flip',
+    content: lessonContent(
+      'Building the Skip List: Node, Insert & the Coin Flip',
+      `Time to turn the diagram from the last lesson into real C++. A skip list node is a value plus **an array of forward pointers**, one per level that node was promoted to.
+
+\`\`\`cpp
+struct SkipNode {
+    int horseId;
+    float key;                          // the value the list is sorted by
+    std::vector<SkipNode*> forward;      // forward[i] = next node at level i
+
+    SkipNode(int id, float k, int level) : horseId(id), key(k), forward(level, nullptr) {}
+};
+\`\`\`
+
+A node promoted to level 3 has \`forward.size() == 3\`, three separate "next" pointers, one per lane it participates in. A node that only exists at level 0 (the common case) has just one.
+
+## The skip list itself
+
+\`\`\`cpp
+const int MAX_LEVEL = 16;
+
+class SkipList {
+public:
+    SkipList() : head(new SkipNode(-1, 0.f, MAX_LEVEL)), currentLevel(1) {}
+
+    int randomLevel() {
+        int level = 1;
+        while (((float) rand() / RAND_MAX) < 0.5f && level < MAX_LEVEL) {
+            level++;
+        }
+        return level;
+    }
+
+private:
+    SkipNode* head;      // sentinel: never holds real data, only points into the list
+    int currentLevel;    // how many levels are actually in use right now
+};
+\`\`\`
+
+\`head\` is a **sentinel node**, allocated once at \`MAX_LEVEL\` so it always has enough forward pointers, but its own \`horseId\`/\`key\` are never read, it exists purely as a fixed starting point every search and insert begins from. \`currentLevel\` tracks how many levels are actually in use, there's no reason to search levels 5 through 16 if nothing has ever been promoted that high yet.
+
+## Insert: find the spot at every level, then splice in
+
+\`\`\`cpp
+void insert(int horseId, float key) {
+    std::vector<SkipNode*> update(MAX_LEVEL, head); // update[i] = the node to splice after, at level i
+    SkipNode* current = head;
+
+    for (int level = currentLevel - 1; level >= 0; level--) {
+        while (current->forward[level] != nullptr && current->forward[level]->key > key) {
+            current = current->forward[level];
+        }
+        update[level] = current; // the last node before key at this level
+    }
+
+    int newLevel = randomLevel();
+    if (newLevel > currentLevel) {
+        for (int level = currentLevel; level < newLevel; level++) {
+            update[level] = head; // new top levels start empty, so head is the predecessor
+        }
+        currentLevel = newLevel;
+    }
+
+    SkipNode* newNode = new SkipNode(horseId, key, newLevel);
+    for (int level = 0; level < newLevel; level++) {
+        newNode->forward[level] = update[level]->forward[level];
+        update[level]->forward[level] = newNode;
+    }
+}
+\`\`\`
+
+Note the comparison: this list is sorted **descending** by \`key\`, the horse in the lead (highest distance) belongs at the front. \`current->forward[level]->key > key\` keeps moving forward while the next node is still ahead of the value being inserted.
+
+The \`update\` array is the key idea: while walking down from the top level to find the insertion point, record the last node visited **at every level**, that's exactly the set of nodes whose \`forward\` pointers need to change once the new node exists. Once \`newLevel\` is decided, splicing in is just: for each level from 0 up to \`newLevel\`, point the new node at whatever \`update[level]\` used to point to, then point \`update[level]\` at the new node, the standard "insert into a linked list" pattern, just repeated once per level.
+
+> [!TIP]
+> \`randomLevel()\`'s \`0.5f\` is the coin-flip probability. Lowering it (say, to \`0.25f\`) makes higher levels rarer and searches slightly less predictable but uses less memory overall, real implementations tune this, but \`0.5\` is the standard textbook choice and works well here.`
+    ),
+    quiz: {
+      title: 'Skip List Insert Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What is stored in a SkipNode's forward vector?",
+          options: [
+            'A copy of every node in the list',
+            'One "next node" pointer per level the node was promoted to',
+            'The node\'s previous position',
+            'A count of how many horses are ahead',
+          ],
+          answer: 'One "next node" pointer per level the node was promoted to',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "The head sentinel node's own key/horseId values are read and compared against during search.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In insert(), the ____ array records, for every level, the last node visited before the insertion point, exactly what needs its forward pointer updated.',
+          options: [],
+          answer: 'update',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does this skip list compare with `> key` instead of `< key` while searching for the insertion point?',
+          options: [
+            'It is a mistake in the code',
+            'The list is sorted descending, so the horse with the highest key (most distance) is at the front',
+            'It only matters for the head node',
+            'C++ requires > for float comparisons',
+          ],
+          answer: 'The list is sorted descending, so the horse with the highest key (most distance) is at the front',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Search, Delete & Ordered Traversal',
+    content: lessonContent(
+      'Search, Delete & Ordered Traversal',
+      `Insert already does the hard part, walking down through the levels to find a position. Search and delete reuse that exact same traversal.
+
+## Search
+
+\`\`\`cpp
+bool search(float key) {
+    SkipNode* current = head;
+
+    for (int level = currentLevel - 1; level >= 0; level--) {
+        while (current->forward[level] != nullptr && current->forward[level]->key > key) {
+            current = current->forward[level];
+        }
+    }
+
+    current = current->forward[0]; // level 0 always lands exactly on the target, if it exists
+    return current != nullptr && current->key == key;
+}
+\`\`\`
+
+This is the same "drop down a level each time the next hop would overshoot" walk from the last lesson, just without recording an \`update\` array, search doesn't need to modify anything, so there's nothing to remember on the way down.
+
+## Delete
+
+\`\`\`cpp
+void erase(float key) {
+    std::vector<SkipNode*> update(MAX_LEVEL, head);
+    SkipNode* current = head;
+
+    for (int level = currentLevel - 1; level >= 0; level--) {
+        while (current->forward[level] != nullptr && current->forward[level]->key > key) {
+            current = current->forward[level];
+        }
+        update[level] = current;
+    }
+
+    SkipNode* target = update[0]->forward[0];
+    if (target != nullptr && target->key == key) {
+        for (int level = 0; level < currentLevel; level++) {
+            if (update[level]->forward[level] != target) break; // target doesn't exist at this level
+            update[level]->forward[level] = target->forward[level];
+        }
+        delete target;
+    }
+}
+\`\`\`
+
+\`erase\` is \`insert\`'s mirror image: find the \`update\` array the same way, but instead of splicing a new node in, unlink \`target\` from every level it actually participates in, then \`delete\` it. The \`break\` matters, once a level is reached where \`target\` isn't the next node (because \`target\` wasn't promoted that high), no higher level needs touching either.
+
+## Ordered traversal: reading the leaderboard back out
+
+\`\`\`cpp
+std::vector<int> leaderboard() {
+    std::vector<int> order;
+    SkipNode* current = head->forward[0];
+
+    while (current != nullptr) {
+        order.push_back(current->horseId);
+        current = current->forward[0];
+    }
+
+    return order;
+}
+\`\`\`
+
+This is the payoff for keeping level 0 a complete, ordered linked list at all times, walking it front to back visits every horse in current rank order, 1st place first, with no sorting step required. The upper levels exist purely to make *getting to* a position fast, level 0 is what makes *reading the whole order back out* trivial.
+
+> [!WARNING]
+> \`erase\` looks up a node by exact \`key\` equality (\`target->key == key\`). Two horses that happen to land on the *exact* same distance at the same moment would be ambiguous to tell apart this way, the next lesson heads that off entirely by giving every horse a key that's guaranteed unique.`
+    ),
+    quiz: {
+      title: 'Search, Delete & Traversal Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does search() not need an update array the way insert() and erase() do?',
+          options: [
+            'Search is not allowed to use arrays',
+            'Search never modifies the list, so there is nothing to remember on the way down',
+            'update is only needed at level 0',
+            'search() actually does use one internally',
+          ],
+          answer: 'Search never modifies the list, so there is nothing to remember on the way down',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Walking head->forward[0] to the end visits every node in the skip list, in sorted order.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "In erase(), the loop stops promoting the unlink to higher levels once update[level]->forward[level] no longer equals ____.",
+          options: [],
+          answer: 'target',
+        },
+      ],
+    },
+  },
+  {
+    title: 'SFML Setup: The Track and the Horses',
+    content: lessonContent(
+      'SFML Setup: The Track and the Horses',
+      `With the skip list working, it's time to give it something to sort: a window, a track, and a row of horses. This lesson follows the same **SFML** setup as the Breakout course (install \`libsfml-dev\`/\`brew install sfml\`, compile with \`-lsfml-graphics -lsfml-window -lsfml-system\`), if you've built that course already, the window boilerplate below will look familiar.
+
+## Opening the window and drawing lanes
+
+\`\`\`cpp
+#include <SFML/Graphics.hpp>
+#include <vector>
+
+const int LANE_COUNT = 6;
+const float LANE_HEIGHT = 80.f;
+const float TRACK_WIDTH = 900.f;
+
+int main() {
+    sf::RenderWindow window(sf::VideoMode(1000, LANE_COUNT * LANE_HEIGHT + 40), "Horse Race");
+    window.setFramerateLimit(60);
+
+    std::vector<sf::RectangleShape> lanes;
+    for (int i = 0; i < LANE_COUNT; i++) {
+        sf::RectangleShape lane(sf::Vector2f(TRACK_WIDTH, LANE_HEIGHT - 4.f));
+        lane.setPosition(50.f, i * LANE_HEIGHT + 20.f);
+        lane.setFillColor(i % 2 == 0 ? sf::Color(60, 60, 60) : sf::Color(45, 45, 45));
+        lanes.push_back(lane);
+    }
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) window.close();
+        }
+
+        window.clear(sf::Color::Black);
+        for (auto& lane : lanes) window.draw(lane);
+        window.display();
+    }
+
+    return 0;
+}
+\`\`\`
+
+Alternating lane colors (\`i % 2 == 0\`) is purely cosmetic, it makes it easy to tell one horse's lane from its neighbor's at a glance once horses are moving.
+
+## The Horse struct
+
+\`\`\`cpp
+struct Horse {
+    int id;
+    sf::CircleShape shape;
+    float distance = 0.f;   // how far this horse has traveled
+    float raceKey = 0.f;    // the value actually stored in the skip list
+
+    Horse(int horseId, int lane, sf::Color color) : id(horseId) {
+        shape.setRadius(12.f);
+        shape.setFillColor(color);
+        shape.setPosition(50.f, lane * LANE_HEIGHT + 20.f + (LANE_HEIGHT - 4.f) / 2.f - 12.f);
+    }
+};
+\`\`\`
+
+\`distance\` is the honest, human-meaningful value, how far along the track this horse actually is. \`raceKey\` is what the skip list will be sorted by, and the next lesson gives it a small twist: two horses can legitimately end up at the exact same \`distance\` on the same frame, and \`erase()\`'s exact-key lookup from the last lesson can't tell those apart. Rather than teach the skip list to break ties, it's simpler to make ties impossible in the first place.
+
+\`\`\`cpp
+std::vector<Horse> createHorses(int count) {
+    std::vector<Horse> horses;
+    std::vector<sf::Color> colors = {
+        sf::Color::Red, sf::Color::Blue, sf::Color::Green,
+        sf::Color::Yellow, sf::Color::Magenta, sf::Color::Cyan
+    };
+
+    for (int i = 0; i < count; i++) {
+        Horse horse(i, i, colors[i % colors.size()]);
+        horse.raceKey = horse.id * 0.0001f; // tiny, unique tiebreaker baked in from the start
+        horses.push_back(horse);
+    }
+    return horses;
+}
+\`\`\`
+
+Every horse's \`raceKey\` starts as \`distance + id * 0.0001f\`, an offset so small it never changes which horse is actually in the lead, but large enough that no two horses can ever produce an identical float. The skip list only ever sees unique keys, no tie-handling logic required anywhere in it.
+
+> [!TIP]
+> Keep \`horses\` in a \`std::vector<Horse>\`, indexed by \`id\`, alongside the skip list. The skip list is what determines *rank order*, the vector is what lets you look up "horse 3"'s sprite directly by index to move or draw it, each structure does the job the other one is bad at.`
+    ),
+    quiz: {
+      title: 'Track & Horses Setup Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Why give each horse's raceKey a tiny offset like id * 0.0001f?",
+          options: [
+            'To make horses move faster',
+            'To guarantee every key is unique, so the skip list never has to handle duplicate keys',
+            'It is required by SFML',
+            'To randomize starting positions',
+          ],
+          answer: 'To guarantee every key is unique, so the skip list never has to handle duplicate keys',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'distance and raceKey are meant to be the same value, tracked twice for no reason.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Alongside the skip list, horses are also kept in a std::vector<Horse> indexed by id, so a specific horse can be looked up directly to move or ____ it.',
+          options: [],
+          answer: 'draw',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The Race Loop: Moving Horses and Updating the Skip List',
+    content: lessonContent(
+      'The Race Loop: Moving Horses and Updating the Skip List',
+      `Every tick, each horse's distance changes by a random amount, and every time that happens, its position in the skip list needs to change too. This is the moment the two structures actually connect.
+
+## Why you can't just edit the key in place
+
+It's tempting to just reach into the skip list and change a node's \`key\` field directly. That silently breaks the list: a node's position in \`forward[]\` chains was decided by *where its old key belonged*, changing the key without re-splicing leaves the node sitting in the wrong spot, sorted for a value it no longer holds. The list looks fine, walking it in order would now visit horses out of their real rank.
+
+## Erase, update, reinsert
+
+\`\`\`cpp
+void updateHorsePosition(SkipList& track, Horse& horse) {
+    track.erase(horse.raceKey); // remove the old (now stale) position
+
+    float increment = 40.f + static_cast<float>(rand() % 60); // random speed this tick, 40-99 px/sec worth
+    horse.distance += increment * (1.f / 60.f); // scaled by a fixed 60fps tick, matching setFramerateLimit(60)
+
+    horse.raceKey = horse.distance + horse.id * 0.0001f; // recompute the key, tiebreaker included
+    track.insert(horse.id, horse.raceKey); // reinsert at the correct new position
+}
+\`\`\`
+
+\`erase\` then \`insert\` is two O(log n) operations instead of one, but that's still dramatically cheaper than a sorted array's O(n) shift, and it's the same "remove, then add back correctly sorted" pattern any ordered structure needs when a stored value changes. \`rand() % 60\` gives each horse a different random burst of speed every tick, so the race isn't a predictable straight line, some horses will pull ahead, fall back, and trade the lead.
+
+## Updating the sprite
+
+\`\`\`cpp
+const float PIXELS_PER_UNIT = 6.f;
+
+void updateHorseSprite(Horse& horse) {
+    float x = 50.f + horse.distance * PIXELS_PER_UNIT;
+    horse.shape.setPosition(x, horse.shape.getPosition().y);
+}
+\`\`\`
+
+The skip list tracks *rank*, it has no idea what a pixel is. Converting \`distance\` into an x-coordinate is a separate, simple concern: multiply by a scale factor and keep the y-coordinate (the lane) exactly where it started.
+
+## Wiring it into the game loop
+
+\`\`\`cpp
+SkipList track;
+std::vector<Horse> horses = createHorses(LANE_COUNT);
+for (auto& horse : horses) {
+    track.insert(horse.id, horse.raceKey);
+}
+
+// inside the game loop, once per frame:
+for (auto& horse : horses) {
+    updateHorsePosition(track, horse);
+    updateHorseSprite(horse);
+}
+
+for (auto& horse : horses) {
+    window.draw(horse.shape);
+}
+\`\`\`
+
+Every horse is seeded into \`track\` once, up front, at its starting \`raceKey\` (all effectively \`0\`, tiebroken by \`id\`). From then on, every frame runs the same three steps for every horse: update its position in the skip list, update where it's drawn, then draw it, keeping the skip list and the screen in sync on every single tick.
+
+> [!WARNING]
+> \`updateHorsePosition\` must call \`track.erase(horse.raceKey)\` **before** changing \`horse.distance\`. Erasing after the key has already changed would search for a key that no longer matches anything in the list, silently leaving the stale node behind forever.`
+    ),
+    quiz: {
+      title: 'Race Loop Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "Why not just reach into a skip list node and change its key field directly?",
+          options: [
+            "C++ doesn't allow modifying struct fields",
+            "The node's forward pointers were positioned for its old key, so the list would no longer be correctly sorted",
+            'It would make the program crash immediately',
+            'raceKey is a constant and cannot change',
+          ],
+          answer: "The node's forward pointers were positioned for its old key, so the list would no longer be correctly sorted",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "updateHorsePosition must erase the horse's old raceKey from the skip list before changing horse.distance.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Converting horse.distance into an x pixel coordinate is done by multiplying it by a ____ factor.',
+          options: [],
+          answer: 'scale',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Live Leaderboard & the Finish Line',
+    content: lessonContent(
+      'Live Leaderboard & the Finish Line',
+      `The race is moving, every horse's position in the skip list stays correct frame to frame. Now use that to show the standings live, and to actually end the race.
+
+## Rendering the leaderboard
+
+\`\`\`cpp
+void drawLeaderboard(sf::RenderWindow& window, SkipList& track, sf::Font& font) {
+    std::vector<int> order = track.leaderboard(); // horse IDs, 1st place first
+
+    for (std::size_t rank = 0; rank < order.size(); rank++) {
+        sf::Text entry;
+        entry.setFont(font);
+        entry.setCharacterSize(16);
+        entry.setFillColor(sf::Color::White);
+        entry.setPosition(970.f, 20.f + rank * 22.f);
+        entry.setString(std::to_string(rank + 1) + ". Horse " + std::to_string(order[rank] + 1));
+        window.draw(entry);
+    }
+}
+\`\`\`
+
+\`track.leaderboard()\` does all the real work, it's the level-0 traversal from two lessons ago, called once per frame. Nothing here re-sorts anything, the list was already kept sorted the entire time \`updateHorsePosition\` was running, this function's only job is turning that order into text on screen.
+
+## Detecting the finish line
+
+\`\`\`cpp
+const float FINISH_LINE = 800.f;
+
+int checkForWinner(std::vector<Horse>& horses) {
+    for (auto& horse : horses) {
+        if (horse.distance >= FINISH_LINE) {
+            return horse.id;
+        }
+    }
+    return -1; // nobody has finished yet
+}
+\`\`\`
+
+This loops \`horses\` directly rather than the skip list, since the question here is "has *any* horse crossed \`FINISH_LINE\`", not "who's currently ahead", a plain scan is simpler and just as fast for a handful of horses. Once a winner is found, stop calling \`updateHorsePosition\` for every horse (freeze the race) and display the result.
+
+\`\`\`cpp
+bool raceOver = false;
+int winnerId = -1;
+
+// inside the game loop, once per frame:
+if (!raceOver) {
+    for (auto& horse : horses) {
+        updateHorsePosition(track, horse);
+        updateHorseSprite(horse);
+    }
+
+    winnerId = checkForWinner(horses);
+    if (winnerId != -1) {
+        raceOver = true;
+    }
+}
+
+drawLeaderboard(window, track, font);
+
+if (raceOver) {
+    sf::Text winnerText;
+    winnerText.setFont(font);
+    winnerText.setCharacterSize(28);
+    winnerText.setFillColor(sf::Color::Yellow);
+    winnerText.setPosition(300.f, 10.f);
+    winnerText.setString("Horse " + std::to_string(winnerId + 1) + " wins!");
+    window.draw(winnerText);
+}
+\`\`\`
+
+Guarding the movement update with \`if (!raceOver)\` freezes every horse exactly where it was the instant someone crossed the line, while \`drawLeaderboard\` and the window's own \`clear\`/\`display\` calls keep running either way, so the final standings and the winner banner both stay visible instead of the screen going blank.
+
+> [!TIP]
+> Because \`checkForWinner\` scans in \`id\` order, not skip list order, two horses crossing on the *exact same frame* would always report the lower \`id\` as the winner. Detecting a genuine photo finish (comparing exact distances, not just who's checked first) is a good stretch goal for the final project.`
+    ),
+    quiz: {
+      title: 'Leaderboard & Finish Line Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why does drawLeaderboard not need to sort anything itself?',
+          options: [
+            'It sorts using std::sort internally',
+            'The skip list is already kept in sorted order every frame, leaderboard() just reads that order out',
+            'Leaderboards do not need to be sorted',
+            'SFML sorts sf::Text automatically',
+          ],
+          answer: 'The skip list is already kept in sorted order every frame, leaderboard() just reads that order out',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'checkForWinner scans the horses vector directly rather than querying the skip list.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Guarding the per-frame movement update with if (!raceOver) freezes every horse in place once a ____ has been found.',
+          options: [],
+          answer: 'winner',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Finish Your Horse Race Simulator',
+    content: lessonContent(
+      'Final Project: Finish Your Horse Race Simulator',
+      `Every piece is built: a skip list that stays correctly sorted as keys change, a track and horses drawn with SFML, a race loop that keeps the two in sync every frame, a live leaderboard, and finish-line detection. Combine them into one complete, playable simulator.
+
+## Requirements
+
+1. Run at least 6 horses simultaneously, each in its own lane, each advancing by an independent random amount every tick.
+2. Every horse's movement must go through \`erase\` + \`insert\` on the skip list, exactly like the race loop lesson, no shortcuts that bypass the skip list to fake the leaderboard.
+3. Display a live leaderboard (built from \`track.leaderboard()\`) that updates every frame while the race is running.
+4. Detect the finish line and freeze the race the instant a horse crosses it, showing a clear "Horse N wins!" message.
+5. Add a "Press SPACE to restart" flow that resets every horse's distance to \`0\`, rebuilds the skip list from scratch, and starts a new race without closing the window.
+
+## Stretch goals
+
+- Give each horse a "stamina" stat that shifts its random speed range over the course of the race (e.g. a burst early, a slower stretch mid-race), instead of every horse pulling from the exact same range the whole time.
+- Handle a genuine photo finish: if two or more horses cross \`FINISH_LINE\` within the same frame, compare their exact \`distance\` values (not just loop order) to pick the real winner.
+- Add a small debug overlay that draws each skip list level as its own row of dots, one per node present at that level, so you can *see* the express lanes thin out as you go up, exactly like the diagram from the first lesson.
+- Track and display each horse's best-ever finishing time across multiple races in the same session.
+
+Submit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const gitLessons: SeedLesson[] = [
   {
     title: 'Introduction to Git',
@@ -13900,6 +14542,12 @@ const coursesByPath: Record<
       description:
         "Build a classic Breakout/Arkanoid clone with SFML, C++'s go-to library for 2D graphics and games. You'll open a window and run a real-time game loop, build a keyboard-controlled paddle and a bouncing ball as classes, lay out a grid of destructible bricks, detect collisions with SFML's rectangle intersection, and track score and lives until you win or lose.",
       lessons: sfmlBreakoutLessons,
+    },
+    {
+      title: 'Build a Horse Race Simulator using C++, SFML & a Skip List',
+      description:
+        "Build a live horse race with a real data structure powering it: a skip list keeps every horse's rank correctly sorted as distances change dozens of times a second, the same technique Redis uses for sorted-set leaderboards. Covers skip list theory, insert/search/delete from scratch, and wiring it into an SFML race loop with a live leaderboard and finish-line detection.",
+      lessons: horseRaceSkipListLessons,
     },
   ],
   git: [
