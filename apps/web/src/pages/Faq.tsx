@@ -640,6 +640,221 @@ export const SECTIONS: Record<Language, Section[]> = {
       ],
     },
     {
+      title: 'AI and the future of programming',
+      items: [
+        {
+          q: 'How is AI changing software development?',
+          a: 'AI is changing software development by automating repetitive parts of the job, generating boilerplate code, suggesting entire functions as you type, and speeding up debugging and code review. The developer’s role is shifting increasingly toward defining problems, reviewing and validating the AI’s suggestions, and making the architectural decisions, rather than writing every line by hand.',
+        },
+        {
+          q: 'Do you still need to learn to code?',
+          a: 'Yes, understanding the fundamentals of programming is still essential, even with AI assistance, because you need to be able to read, review, and debug the code AI generates, and understand why a solution works in order to trust it. AI makes writing code faster, but it doesn’t remove the need to understand logic, data structures, and how systems fit together, it just changes which parts of the job take up the most time.',
+        },
+        {
+          q: 'Which programming jobs are most affected by AI?',
+          a: 'Roles with a lot of repetitive, pattern-based coding, like writing basic CRUD functionality, standard tests, or boilerplate integrations, are affected the most since AI already handles these tasks well. Roles that require system design, deep domain knowledge, security judgment, or navigating complex, undocumented legacy systems stay more protected, since they demand context and judgment AI still can’t handle independently.',
+        },
+        {
+          q: 'What will the developer of the future look like?',
+          a: 'The developer of the future will likely spend less time writing code line by line and more time defining requirements, reviewing AI-generated solutions, designing systems, and ensuring quality and security. The ability to clearly frame problems, reason about architecture, and effectively steer AI tools will matter at least as much as knowing the syntax of a specific language.',
+        },
+        {
+          q: 'Which programming languages will matter most with AI?',
+          a: 'Python remains central since it dominates machine learning and AI development, while JavaScript/TypeScript continues to be the standard for the web and AI-powered interfaces. Languages with strong type systems, like TypeScript or Rust, may also grow in importance since they make it easier to catch errors in AI-generated code early, rather than discovering them first in production.',
+        },
+        {
+          q: 'Will AI write all code in the future?',
+          a: 'Unlikely for the foreseeable future, AI can already generate large amounts of common, well-defined code, but real software development involves unclear requirements, trade-offs, and decisions that require human judgment and accountability. The more likely scenario is that AI writes a growing share of the code while humans retain final responsibility for what gets built, why, and whether it’s actually correct and safe.',
+        },
+        {
+          q: 'How do developers collaborate with AI?',
+          a: 'Most developers today use AI as a pair programmer, they describe what they want to build, get a suggestion or a first implementation, and then review, test, and adjust the result rather than writing everything from scratch. This collaboration works best when the developer keeps control over architecture and key decisions, and uses AI to speed up the more mechanical parts of the work.',
+        },
+      ],
+    },
+    {
+      title: 'AI development',
+      items: [
+        {
+          q: 'How do you build AI applications?',
+          a: 'Building an AI application usually starts with picking an existing model via an API (like OpenAI, Anthropic, or an open source alternative) rather than training your own from scratch, then building logic around it to handle prompts, context, and any tool calls, and finally a regular application layer (frontend, backend, database) around the AI piece. Most AI applications are really ordinary software projects with an AI model as one component, not an entirely separate discipline.',
+        },
+        {
+          q: 'How does agentic AI work?',
+          a: 'Agentic AI refers to AI systems that act more independently toward a goal, rather than just responding to a single question, by planning multiple steps, using tools, and evaluating their own results before moving forward. It’s the same core idea as an AI agent, but "agentic AI" is often used as a broader term for the whole shift toward more autonomous AI systems, rather than one specific implementation.',
+        },
+        {
+          q: 'How do you develop AI-driven systems?',
+          a: 'Developing an AI-driven system means, beyond the model integration itself, building infrastructure to handle prompts and responses at scale, monitoring cost and latency, logging and evaluating response quality over time, and building in guardrails for incorrect or unwanted outputs. Unlike traditional software, where the same input always produces the same output, AI-driven systems also have to account for the model’s responses varying slightly between runs.',
+        },
+        {
+          q: 'How do you test AI applications?',
+          a: 'AI applications get tested partly as regular software (unit tests, integration tests for the application logic itself), and partly with evaluations specific to the model’s behavior, so-called "evals," where you run a set of representative examples through the model and judge the quality of the responses, often with a mix of automated metrics and human review. Since the model’s output isn’t always identical between runs, testing is often done against an acceptable range of correct answers rather than one single exact expected result.',
+        },
+        {
+          q: 'How do you debug AI-generated code?',
+          a: 'Treat AI-generated code the way you’d treat code written by a new colleague, read through it before running it, run existing tests and add new ones for the specific case, and pay extra attention to edges like error handling, security, and performance, areas where AI often misses subtle details. If the code doesn’t behave as expected, ask the model to explain its own reasoning step by step, that often quickly reveals where it made a faulty assumption.',
+        },
+        {
+          q: 'How do you deploy AI models?',
+          a: 'Deploying an AI model usually means running it behind an API, either through a cloud provider’s managed service (simplest, but less control) or by self-hosting the model on your own or rented hardware with enough GPU capacity (more control and often lower cost at large scale, but significantly more operational responsibility). The choice mostly depends on how sensitive the data is, how large a scale you’re running at, and how much infrastructure work you’re willing to take on.',
+        },
+      ],
+    },
+    {
+      title: 'Programming with AI',
+      items: [
+        {
+          q: 'How do you use ChatGPT for programming?',
+          a: 'Describe the problem with enough context, which language, framework, and part of the code is involved, rather than just pasting an error message with no context, and ask for an explanation of the fix, not just the code, so you understand what changed and why. It also works well to ask ChatGPT to review your existing code for bugs or improvements, or explain an unfamiliar piece of code line by line, rather than only generating something new from scratch.',
+        },
+        {
+          q: 'What are the best AI tools for developers?',
+          a: 'GitHub Copilot and Claude Code are strong choices for AI-assisted coding directly in the editor or terminal, ChatGPT and Claude are good for reasoning through design and debugging more complex problems in a chat, and specialized tools exist for everything from generating tests to reviewing code in pull requests. Most developers end up with a combination, a tool integrated into the editor for the daily workflow, and a chat-based tool for deeper reasoning.',
+        },
+        {
+          q: 'Can AI write entire applications?',
+          a: 'AI can generate a working first version of a simpler application, especially for common patterns like a CRUD app or a standard interface, but real, production-ready applications still require human review of architecture, security, performance, and edge cases the model likely missed. The more complex or unique the application, the more human guidance and iteration is needed, rather than generating everything in one shot.',
+        },
+        {
+          q: 'Can AI generate tests?',
+          a: 'Yes, AI is good at generating unit tests based on existing code, including reasonable edge cases and error scenarios you might miss yourself, which often saves significant time compared to writing every test by hand. It’s still worth reviewing that the tests actually verify the right behavior and aren’t just mirroring back the code they’re testing, a common mistake is tests that pass regardless of what the code does.',
+        },
+        {
+          q: 'Can AI document code?',
+          a: 'Yes, AI is good at generating documentation, comments, README files, and API references from existing code, by reading signatures, logic, and context and describing what the code does in plain language. It’s still worth reviewing that the documentation matches the actual intent behind the code, not just what the code happens to do right now, especially for subtle or unusual logic.',
+        },
+        {
+          q: 'Can AI refactor code?',
+          a: 'Yes, AI can suggest refactors like extracting duplicated logic, simplifying conditionals, replacing outdated patterns, or improving naming, often faster than doing it by hand. It’s important to run existing tests after an AI-suggested refactor to confirm the behavior is actually unchanged, since a refactor that looks clean can still introduce subtle regressions.',
+        },
+        {
+          q: 'How do you review AI-generated code?',
+          a: 'Review AI-generated code exactly the way you’d review a colleague’s pull request, understand what each part does before approving it, run tests and look specifically for bugs in edge cases, security, and assumptions about input the model may have guessed wrong. Be extra alert to code that looks convincing but does something subtly wrong, AI-generated code tends to look confident and well-formatted even when it’s incorrect.',
+        },
+      ],
+    },
+    {
+      title: 'AI and software architecture',
+      items: [
+        {
+          q: 'How does AI affect system architecture?',
+          a: 'AI introduces new architectural considerations like handling non-deterministic responses, cost and latency per AI call, the need to store and search data for RAG, and guardrails for incorrect or unsafe responses, on top of the usual application architecture. Many teams now add a separate "AI layer" to their architecture that handles prompts, model selection, and evaluation, rather than mixing AI calls directly into business logic.',
+        },
+        {
+          q: 'How do you build AI-native applications?',
+          a: 'An AI-native application is designed from the ground up around AI as a core part of the product, not bolted on afterward, which often means building context and memory management, tool calling, and evaluation of the AI’s responses in as fundamental building blocks in the architecture rather than an add-on feature. It also requires treating edge cases, like the AI giving a wrong answer or no answer at all, as a normal part of the system’s flow, not an exceptional case.',
+        },
+        {
+          q: 'What is Model Context Protocol (MCP)?',
+          a: 'MCP (Model Context Protocol) is an open standard, developed by Anthropic, for how AI models can connect to external tools and data sources in a unified way, instead of every application needing to build its own custom integration for each tool. It works roughly like a USB port for AI tools: an MCP server built once can be used by any AI client that supports the protocol, making it easier to connect AI models to things like file systems, databases, or internal company tools.',
+        },
+        {
+          q: 'How do you integrate LLMs into existing systems?',
+          a: 'The most common approach is adding LLM calls via an API behind a clear boundary in the existing architecture, often as a separate service or module, rather than spreading AI calls throughout the codebase. That makes it easier to swap models later, measure cost and quality in isolation, and add guardrails without touching the rest of the system.',
+        },
+        {
+          q: 'How do you build secure AI solutions?',
+          a: 'Secure AI solutions limit what data the model has access to, validate and sanitize all input (especially if users can influence the prompt, to guard against prompt injection), log and audit the AI’s actions, and require human approval for anything with real consequences. It’s also important not to blindly trust the model’s output, especially if it’s used to make decisions or generate code that runs automatically.',
+        },
+        {
+          q: 'How do you combine APIs with AI?',
+          a: 'AI models can call external APIs as tools, usually by giving the model a description of which APIs exist and what parameters they take, and then letting it decide to call the right API based on the user’s request. This pattern, often called "function calling" or "tool use," is the foundation of how most AI agents actually take action in the world, rather than just generating text.',
+        },
+      ],
+    },
+    {
+      title: 'Career and skills',
+      items: [
+        {
+          q: 'Which AI skills are most in demand?',
+          a: 'Employers demand practical experience building with LLM APIs, prompt engineering, RAG, and AI agents the most, rather than deep theoretical knowledge of how the models themselves are trained, unless the role is specifically research-focused. Being able to show concrete projects where you’ve integrated AI into a real application usually carries more weight than certificates or courses on your resume.',
+        },
+        {
+          q: 'How do you become an AI developer?',
+          a: 'Start by building a solid foundation in regular programming, especially Python, then learn to use LLM APIs, prompt engineering, and the basics of RAG and AI agents by actually building projects, rather than just reading about it. Most people working as AI developers today are regular software developers who added AI integration as a specialization, not an entirely separate career path.',
+        },
+        {
+          q: 'Do frontend developers need to know AI?',
+          a: 'Increasingly yes, since more products build AI-powered features into the interface, like chat UIs, streaming responses, or AI-assisted forms, which requires frontend developers to understand how to handle these patterns (like displaying responses as they’re generated) well. It’s rarely necessary to understand how the models work internally, though, it’s usually enough to consume an AI API well.',
+        },
+        {
+          q: 'Do backend developers need to know AI?',
+          a: 'Yes, increasingly so, since backend developers are often the ones building the integration with LLM APIs, managing cost and latency, setting up RAG pipelines, and building guardrails around AI calls. It doesn’t require knowing how to train models yourself, but it does require understanding how to work with APIs, handle non-deterministic responses, and build robust systems around them.',
+        },
+        {
+          q: 'How is DevOps changing because of AI?',
+          a: 'DevOps is expanding with new responsibilities like monitoring AI models’ cost, latency, and response quality in production, versioning prompts and models the same way you version code, and setting up pipelines to evaluate model updates before rolling them out. This area is often called "LLMOps" or "MLOps," combining traditional DevOps skills with new metrics specific to AI systems.',
+        },
+        {
+          q: 'Which AI certifications are worth getting?',
+          a: 'Certifications generally play a smaller role in AI development than in many other IT fields, employers usually value real projects and hands-on experience more. If you still want a certification, vendor-specific courses from providers like AWS, Google Cloud, or Microsoft covering their AI/ML services are useful if you’re already working in that ecosystem, but they don’t replace actually having built something with AI.',
+        },
+      ],
+    },
+    {
+      title: 'Future and trends',
+      items: [
+        {
+          q: 'What will programming look like in 2030?',
+          a: 'Programming in 2030 will likely involve more time defining requirements, reviewing and steering AI-generated code, and designing systems, and less time writing boilerplate by hand, but humans will still make the final calls on architecture, security, and what actually gets built. Exactly how big the shift turns out to be is hard to predict, the technology’s progress over the last few years has surprised most forecasters, both in pace and direction.',
+        },
+        {
+          q: 'Which AI trends will dominate?',
+          a: 'Agentic AI, AI systems that can independently plan and carry out multi-step tasks, is one of the clearest trends right now, along with ever-longer context windows, cheaper and faster models, and standards like Model Context Protocol that make it easier to connect AI to external tools. Multimodal models that seamlessly handle text, images, audio, and video within the same system are also growing quickly.',
+        },
+        {
+          q: 'What comes after Generative AI?',
+          a: 'Many see agentic AI, systems that don’t just generate content but independently plan and carry out tasks toward a goal, as the next big shift after the pure generative wave. Others point to deeper integration between AI and specific tools or data (through things like RAG and MCP), along with more reliable, fact-checked models, as the areas that will define the next phase.',
+        },
+        {
+          q: 'How does AI affect cybersecurity?',
+          a: 'AI is used on both sides: attackers use it to write more convincing phishing emails, find vulnerabilities faster, and automate attacks, while defenders use it to detect anomalies, analyze logs at scale, and automate security reviews. AI also introduces entirely new security risks specific to AI systems themselves, like prompt injection and data poisoning, that traditional cybersecurity historically hasn’t had to deal with.',
+        },
+        {
+          q: 'How do quantum computers affect AI?',
+          a: 'Quantum computers are still at an early stage and don’t affect today’s AI models in practice, but in the long run, quantum computing could potentially speed up certain types of training and optimization that underpin AI models. It’s still a research area far from mature, practical application, though, rather than something changing how AI is built and used today.',
+        },
+        {
+          q: 'How will AI change SaaS?',
+          a: 'SaaS products are increasingly building AI-powered features directly into their interfaces, from smart search and automatic summaries to chat-based assistants that can take actions on the user’s behalf, rather than just displaying data. This is also driving a shift in pricing models, from fixed license fees toward more usage-based pricing that reflects the actual AI cost per customer.',
+        },
+        {
+          q: 'What does AI-first development mean?',
+          a: 'AI-first development means designing a product with AI as a fundamental part of the user experience from the start, rather than bolting an AI feature onto an existing product afterward. It affects everything from how the interface is designed (to handle the AI’s non-deterministic responses naturally) to what data and infrastructure gets built in from day one to support the AI features.',
+        },
+      ],
+    },
+    {
+      title: 'Business perspective',
+      items: [
+        {
+          q: 'How is AI affecting the startup world?',
+          a: 'AI has significantly lowered the bar for building a working product, a small team today can build features that used to require an entire research team, making it cheaper and faster to start an AI-powered company. At the same time, it’s increased competition since the same tools are available to everyone, which means durable competitive advantage more often comes from distribution, data, or deep domain expertise rather than the AI technology itself.',
+        },
+        {
+          q: 'Which AI business ideas have the most potential?',
+          a: 'The strongest AI business ideas usually solve one specific, narrow problem really well for a clear audience, rather than being a general "AI tool," since broad platforms already cover the general use cases. Combining AI with access to unique data, an existing customer network, or deep expertise in a specific industry usually gives a more durable edge than the AI model itself.',
+        },
+        {
+          q: 'How do you build an AI company?',
+          a: 'Building an AI company largely follows the same steps as any product launch, find a real problem, build a simple first version, and test it with real users, but with extra focus on picking the right model and API provider early, keeping an eye on the cost per AI call as you scale, and building trust around data handling and reliability. Most successful AI companies build on an existing model via API rather than training their own from scratch.',
+        },
+        {
+          q: 'Which industries get automated first?',
+          a: 'Industries with a lot of text- and rule-based work, like customer service, legal document review, bookkeeping, and basic content production, get automated first since AI is already strong at these tasks. Industries that require physical presence, hands-on craftsmanship, or heavily regulated, high-stakes decisions, like healthcare and heavy industry, automate more slowly since they demand significantly more reliability and human oversight.',
+        },
+        {
+          q: 'How does AI affect the consulting industry?',
+          a: 'AI is driving down the price of tasks that used to take consultants many hours, like first drafts of reports, data analysis, or code, forcing consulting firms to shift their value from doing the mechanical work to offering judgment, strategy, and accountability that a client can’t get from an AI tool alone. The consulting firms doing best are usually the ones actively using AI to make their own consultants faster, rather than treating it as a threat.',
+        },
+        {
+          q: 'How do companies make money from AI?',
+          a: 'Companies make money from AI in a few different ways: selling AI-powered products or features directly to customers (often as a subscription), using AI internally to cut their own costs and boost productivity, or building infrastructure and tools that other companies use to build their own AI solutions. The most profitable AI companies today usually combine several of these, rather than relying on a single revenue stream.',
+        },
+      ],
+    },
+    {
       title: 'AI privacy, ethics & safety',
       items: [
         {
@@ -1317,6 +1532,221 @@ export const SECTIONS: Record<Language, Section[]> = {
         {
           q: 'Hur påverkar AI framtidens arbete?',
           a: 'AI kommer sannolikt att förändra vilka uppgifter de flesta jobb innehåller snarare än att utplåna hela yrken, rutinmässiga och mönsterbaserade delar av ett jobb automatiseras först, medan uppgifter som kräver omdöme, kreativitet eller mänsklig kontakt blir kvar längre. Precis som tidigare teknologiska skiften kommer det sannolikt skapa nya roller som inte finns idag, samtidigt som det kräver att många arbetstagare löpande lär om och lär sig arbeta tillsammans med AI-verktyg för att förbli konkurrenskraftiga.',
+        },
+      ],
+    },
+    {
+      title: 'AI och framtidens programmering',
+      items: [
+        {
+          q: 'Hur förändrar AI mjukvaruutveckling?',
+          a: 'AI förändrar mjukvaruutveckling genom att automatisera repetitiva delar av jobbet, generera boilerplate-kod, föreslå hela funktioner medan du skriver, och snabba upp felsökning och kodgranskning. Utvecklarens roll skiftar alltmer mot att definiera problem, granska och validera AI:ns förslag, och fatta de arkitektoniska besluten, snarare än att skriva varje rad för hand.',
+        },
+        {
+          q: 'Behöver man fortfarande lära sig programmering?',
+          a: 'Ja, att förstå grunderna i programmering är fortfarande avgörande, även med AI-assistans, eftersom du behöver kunna läsa, granska och felsöka koden AI:n genererar, och förstå varför en lösning fungerar för att kunna lita på den. AI gör det snabbare att skriva kod, men det ersätter inte behovet av att förstå logik, datastrukturer och hur system hänger ihop, det förändrar bara vilka delar av jobbet som tar mest tid.',
+        },
+        {
+          q: 'Vilka programmeringsjobb påverkas mest av AI?',
+          a: 'Roller med mycket repetitiv, mönsterbaserad kodning, som att skriva enkel CRUD-funktionalitet, standardtester eller boilerplate-integrationer, påverkas mest eftersom AI redan klarar dessa uppgifter bra. Roller som kräver systemdesign, djup domänkunskap, säkerhetsbedömningar eller att navigera komplexa, odokumenterade legacy-system förblir mer skyddade, eftersom de kräver kontext och omdöme AI ännu inte klarar självständigt.',
+        },
+        {
+          q: 'Hur ser framtidens utvecklare ut?',
+          a: 'Framtidens utvecklare kommer sannolikt att spendera mindre tid på att skriva kod rad för rad och mer tid på att definiera krav, granska AI-genererade lösningar, designa system och säkerställa kvalitet och säkerhet. Förmågan att formulera problem tydligt, resonera om arkitektur, och effektivt styra AI-verktyg blir minst lika viktig som att kunna syntaxen i ett specifikt språk.',
+        },
+        {
+          q: 'Vilka programmeringsspråk blir viktigast med AI?',
+          a: 'Python förblir centralt eftersom det dominerar inom maskininlärning och AI-utveckling, medan JavaScript/TypeScript fortsätter vara standard för webb och AI-drivna gränssnitt. Språk med starkt typsystem, som TypeScript eller Rust, kan också växa i betydelse eftersom de gör det lättare att fånga fel i AI-genererad kod tidigt, snarare än att upptäcka dem först i produktion.',
+        },
+        {
+          q: 'Kommer AI att skriva all kod i framtiden?',
+          a: 'Osannolikt inom överskådlig framtid, AI kan redan generera stora delar av vanlig, väldefinierad kod, men verklig mjukvaruutveckling involverar oklara krav, avvägningar och beslut som kräver mänskligt omdöme och ansvar. Det troligare scenariot är att AI skriver en allt större andel av koden medan människor tar det slutgiltiga ansvaret för vad som byggs, varför, och om det faktiskt är korrekt och säkert.',
+        },
+        {
+          q: 'Hur samarbetar utvecklare med AI?',
+          a: 'De flesta utvecklare använder idag AI som en parprogrammerare, de beskriver vad de vill bygga, får ett förslag eller en första implementation, och sedan granskar, testar och justerar resultatet snarare än att skriva allt från grunden. Detta samarbete fungerar bäst när utvecklaren behåller kontrollen över arkitektur och avgörande beslut, och använder AI för att snabba upp de mer mekaniska delarna av arbetet.',
+        },
+      ],
+    },
+    {
+      title: 'AI-utveckling',
+      items: [
+        {
+          q: 'Hur bygger man AI-applikationer?',
+          a: 'Att bygga en AI-applikation börjar oftast med att välja en befintlig modell via ett API (som OpenAI, Anthropic eller ett open source-alternativ) snarare än att träna en egen från grunden, sedan bygga logik runt den för att hantera prompts, kontext och eventuella verktygsanrop, och till sist ett vanligt applikationslager (frontend, backend, databas) runt AI-delen. De flesta AI-applikationer är alltså vanliga mjukvaruprojekt med en AI-modell som en komponent, inte en helt egen disciplin.',
+        },
+        {
+          q: 'Hur fungerar agentisk AI (Agentic AI)?',
+          a: 'Agentisk AI syftar på AI-system som agerar mer självständigt mot ett mål, snarare än att bara svara på en enskild fråga, genom att planera flera steg, använda verktyg och utvärdera sina egna resultat innan de går vidare. Det är samma grundidé som en AI-agent, men "agentic AI" används ofta som ett bredare paradigmnamn för hela förskjutningen mot mer autonoma AI-system, snarare än en specifik implementation.',
+        },
+        {
+          q: 'Hur utvecklar man AI-drivna system?',
+          a: 'Att utveckla ett AI-drivet system innebär utöver själva modellintegrationen att bygga infrastruktur för att hantera prompts och svar i skala, övervaka kostnad och latens, logga och utvärdera kvaliteten på svaren över tid, och bygga in skyddsräcken för felaktiga eller oönskade svar. Till skillnad från traditionell mjukvara, där samma indata alltid ger samma utdata, måste AI-drivna system också hantera att modellens svar kan variera något mellan körningar.',
+        },
+        {
+          q: 'Hur testar man AI-applikationer?',
+          a: 'AI-applikationer testas dels som vanlig mjukvara (enhetstester, integrationstester för själva applikationslogiken), och dels med utvärderingar specifika för modellens beteende, så kallade "evals", där man kör en uppsättning representativa exempel genom modellen och bedömer kvaliteten på svaren, ofta med en kombination av automatiska mått och mänsklig granskning. Eftersom modellens svar inte alltid är identiska mellan körningar testar man ofta mot ett acceptabelt intervall av korrekta svar, snarare än ett enda exakt förväntat resultat.',
+        },
+        {
+          q: 'Hur felsöker man AI-genererad kod?',
+          a: 'Behandla AI-genererad kod som du skulle behandla kod skriven av en ny kollega, läs igenom den innan du kör den, kör befintliga tester samt lägg till nya för det specifika fallet, och var extra uppmärksam på kanter som felhantering, säkerhet och prestanda, områden där AI ofta missar subtila detaljer. Om koden inte fungerar som väntat, be modellen förklara sitt eget resonemang steg för steg, det avslöjar ofta snabbt var den gjort ett felaktigt antagande.',
+        },
+        {
+          q: 'Hur distribuerar man AI-modeller?',
+          a: 'Att distribuera (deploya) en AI-modell innebär vanligtvis att köra den bakom ett API, antingen genom en molnleverantörs hanterade tjänst (enklast, men mindre kontroll) eller genom att själv hosta modellen på egen eller hyrd hårdvara med tillräcklig GPU-kapacitet (mer kontroll och ofta lägre kostnad i stor skala, men betydligt mer driftsansvar). Valet beror mest på hur känslig datan är, hur stor skala man kör i, och hur mycket infrastrukturarbete man är beredd att ta på sig.',
+        },
+      ],
+    },
+    {
+      title: 'Programmering med AI',
+      items: [
+        {
+          q: 'Hur använder man ChatGPT för programmering?',
+          a: 'Beskriv problemet med tillräcklig kontext, vilket språk, ramverk och del av koden det gäller, snarare än att bara klistra in ett felmeddelande utan sammanhang, och be om en förklaring av lösningen, inte bara koden, så att du förstår vad som ändrats och varför. Det fungerar också bra att be ChatGPT granska din befintliga kod för buggar eller förbättringar, eller förklara ett obekant kodavsnitt rad för rad, snarare än att bara generera nytt från grunden.',
+        },
+        {
+          q: 'Vilka AI-verktyg är bäst för utvecklare?',
+          a: 'GitHub Copilot och Claude Code är starka val för AI-assisterad kodning direkt i editorn eller terminalen, ChatGPT och Claude är bra för att resonera kring design och felsöka mer komplexa problem i en chatt, och specialiserade verktyg finns för allt från att generera tester till att granska kod i pull requests. De flesta utvecklare landar i en kombination, ett verktyg integrerat i editorn för det dagliga flödet, och ett chattbaserat verktyg för djupare resonemang.',
+        },
+        {
+          q: 'Kan AI skriva hela applikationer?',
+          a: 'AI kan generera en fungerande första version av en enklare applikation, särskilt för vanliga mönster som en CRUD-app eller ett standardgränssnitt, men för verkliga, produktionsklara applikationer krävs fortfarande mänsklig granskning av arkitektur, säkerhet, prestanda och kanter modellen troligen missat. Ju mer komplex eller unik applikationen är, desto mer mänsklig vägledning och iteration krävs, snarare än att generera allt i ett enda skott.',
+        },
+        {
+          q: 'Kan AI generera tester?',
+          a: 'Ja, AI är bra på att generera enhetstester utifrån befintlig kod, inklusive rimliga kanter och felfall du kanske missar själv, vilket ofta sparar betydande tid jämfört med att skriva alla tester manuellt. Det är dock värt att granska att testerna faktiskt verifierar rätt beteende och inte bara speglar tillbaka koden de testar, ett vanligt misstag är tester som passerar oavsett vad koden gör.',
+        },
+        {
+          q: 'Kan AI dokumentera kod?',
+          a: 'Ja, AI är bra på att generera dokumentation, kommentarer, README-filer och API-referenser utifrån befintlig kod, genom att läsa signaturer, logik och sammanhang och beskriva vad koden gör i klartext. Det är fortfarande värt att granska att dokumentationen stämmer med den faktiska avsikten bakom koden, inte bara vad koden råkar göra just nu, särskilt för subtil eller ovanlig logik.',
+        },
+        {
+          q: 'Kan AI refaktorera kod?',
+          a: 'Ja, AI kan föreslå refaktorering som att bryta ut duplicerad logik, förenkla villkorssatser, byta ut föråldrade mönster eller förbättra namngivning, ofta snabbare än att göra det manuellt. Det är viktigt att köra befintliga tester efter en AI-föreslagen refaktorering för att säkerställa att beteendet faktiskt är oförändrat, eftersom en refaktorering som ser ren ut kan ändå introducera subtila regressioner.',
+        },
+        {
+          q: 'Hur granskar man AI-genererad kod?',
+          a: 'Granska AI-genererad kod precis som du skulle granska en kollegas pull request, förstå vad varje del gör innan du godkänner den, kör tester och leta särskilt efter fel i kantfall, säkerhet och antaganden om indata som modellen kan ha gissat fel på. Var extra vaksam på kod som ser övertygande ut men gör något subtilt fel, AI-genererad kod tenderar att se självsäker och välformaterad ut även när den är felaktig.',
+        },
+      ],
+    },
+    {
+      title: 'AI och mjukvaruarkitektur',
+      items: [
+        {
+          q: 'Hur påverkar AI systemarkitektur?',
+          a: 'AI introducerar nya arkitektoniska hänsyn som hantering av icke-deterministiska svar, kostnad och latens per AI-anrop, behovet av att lagra och söka i data för RAG, och skyddsräcken för felaktiga eller osäkra svar, utöver den vanliga applikationsarkitekturen. Många team lägger nu till ett separat "AI-lager" i sin arkitektur som hanterar prompts, modellval och utvärdering, snarare än att blanda in AI-anrop direkt i affärslogiken.',
+        },
+        {
+          q: 'Hur bygger man AI-native applikationer?',
+          a: 'En AI-native applikation designas från grunden kring AI som en central del av produkten, inte tillagd i efterhand, vilket ofta innebär att bygga in kontext- och minneshantering, verktygsanrop och utvärdering av AI:ns svar som grundläggande byggstenar i arkitekturen istället för en tilläggsfunktion. Det kräver också att tänka på gränsfall som att AI:n ger fel svar, eller inte svarar alls, som en normal del av systemets flöde, inte ett undantagsfall.',
+        },
+        {
+          q: 'Vad är Model Context Protocol (MCP)?',
+          a: 'MCP (Model Context Protocol) är en öppen standard, utvecklad av Anthropic, för hur AI-modeller kan koppla upp sig mot externa verktyg och datakällor på ett enhetligt sätt, istället för att varje applikation behöver bygga sin egen anpassade integration för varje verktyg. Det fungerar ungefär som ett USB-uttag för AI-verktyg: en gång byggd MCP-server kan användas av vilken AI-klient som helst som stödjer protokollet, vilket gör det enklare att koppla ihop AI-modeller med t.ex. filsystem, databaser eller interna företagsverktyg.',
+        },
+        {
+          q: 'Hur integrerar man LLM:er i befintliga system?',
+          a: 'Det vanligaste sättet är att lägga till LLM-anrop via ett API bakom en tydlig gräns i den befintliga arkitekturen, ofta som en separat tjänst eller modul, snarare än att sprida AI-anrop över hela kodbasen. Det gör det lättare att byta modell senare, mäta kostnad och kvalitet isolerat, och lägga till skyddsräcken utan att röra resten av systemet.',
+        },
+        {
+          q: 'Hur bygger man säkra AI-lösningar?',
+          a: 'Säkra AI-lösningar begränsar vilken data modellen har tillgång till, validerar och sanerar all indata (särskilt om användare kan påverka prompten, för att skydda mot prompt injection), loggar och granskar AI:ns handlingar, och kräver mänskligt godkännande för allt med verkliga konsekvenser. Det är också viktigt att inte lita blint på modellens utdata, särskilt om den används för att fatta beslut eller generera kod som körs automatiskt.',
+        },
+        {
+          q: 'Hur kombinerar man API:er med AI?',
+          a: 'AI-modeller kan anropa externa API:er som verktyg, oftast genom att modellen får en beskrivning av vilka API:er som finns och vilka parametrar de tar, och sedan själv väljer att anropa rätt API baserat på användarens fråga. Detta mönster, ofta kallat "function calling" eller "tool use", är grunden för hur de flesta AI-agenter faktiskt utför handlingar i världen, snarare än att bara generera text.',
+        },
+      ],
+    },
+    {
+      title: 'Karriär och kompetens',
+      items: [
+        {
+          q: 'Vilka AI-kunskaper efterfrågas mest?',
+          a: 'Arbetsgivare efterfrågar mest praktisk erfarenhet av att bygga med LLM-API:er, prompt engineering, RAG och AI-agenter, snarare än djup teoretisk kunskap om hur modellerna tränas, om rollen inte specifikt är forskningsinriktad. Att kunna visa konkreta projekt där du integrerat AI i en verklig applikation väger ofta tyngre än certifikat eller kurser i CV:t.',
+        },
+        {
+          q: 'Hur blir man AI-utvecklare?',
+          a: 'Bygg först en solid grund i vanlig programmering, särskilt Python, lär dig sedan hur man använder LLM-API:er, prompt engineering och grunderna i RAG och AI-agenter genom att faktiskt bygga projekt, snarare än att bara läsa om det. De flesta som jobbar som AI-utvecklare idag är vanliga mjukvaruutvecklare som lagt till AI-integration som en specialisering, inte en helt separat karriärväg.',
+        },
+        {
+          q: 'Behöver frontend-utvecklare kunna AI?',
+          a: 'Alltmer ja, eftersom fler produkter bygger in AI-drivna funktioner i gränssnittet, som chattgränssnitt, strömmande svar, eller AI-assisterade formulär, vilket kräver att frontend-utvecklare förstår hur man hanterar dessa mönster (som att visa svar allteftersom de genereras) på ett bra sätt. Det är dock sällan nödvändigt att förstå hur modellerna själva fungerar internt, det räcker oftast att kunna konsumera ett AI-API väl.',
+        },
+        {
+          q: 'Behöver backend-utvecklare kunna AI?',
+          a: 'Ja, i allt högre grad, eftersom backend-utvecklare ofta är de som bygger integrationen mot LLM-API:er, hanterar kostnad och latens, sätter upp RAG-pipelines, och bygger skyddsräcken kring AI-anrop. Det kräver inte kunskap om att träna modeller själv, men väl förståelse för hur man arbetar med API:er, hanterar icke-deterministiska svar, och bygger robusta system runt dem.',
+        },
+        {
+          q: 'Hur förändras DevOps av AI?',
+          a: 'DevOps utökas med nya ansvarsområden som att övervaka AI-modellers kostnad, latens och svarskvalitet i produktion, hantera versioner av prompts och modeller precis som man hanterar kodversioner, och sätta upp pipelines för att utvärdera modelluppdateringar innan de rullas ut. Detta område kallas ofta "LLMOps" eller "MLOps", och kombinerar traditionell DevOps-kompetens med nya mått specifika för AI-system.',
+        },
+        {
+          q: 'Vilka AI-certifieringar är värda att ta?',
+          a: 'Certifieringar spelar generellt en mindre roll inom AI-utveckling än inom många andra IT-områden, arbetsgivare värdesätter oftast verkliga projekt och praktisk erfarenhet högre. Om du ändå vill ha en certifiering är leverantörsspecifika kurser från exempelvis AWS, Google Cloud eller Microsoft kring deras AI/ML-tjänster användbara om du redan jobbar i det ekosystemet, men de ersätter inte att faktiskt ha byggt något med AI.',
+        },
+      ],
+    },
+    {
+      title: 'Framtid och trender',
+      items: [
+        {
+          q: 'Hur ser programmering ut år 2030?',
+          a: 'Programmering år 2030 kommer sannolikt att innebära mer tid på att definiera krav, granska och styra AI-genererad kod, och designa system, och mindre tid på att skriva boilerplate för hand, men människor kommer fortfarande att ta de slutgiltiga besluten om arkitektur, säkerhet och vad som faktiskt ska byggas. Exakt hur stor förändringen blir är svårt att förutsäga, teknikens utveckling de senaste åren har överraskat de flesta bedömare, både i takt och riktning.',
+        },
+        {
+          q: 'Vilka AI-trender kommer att dominera?',
+          a: 'Agentisk AI, AI-system som självständigt kan planera och utföra flerstegsuppgifter, är en av de tydligaste trenderna just nu, tillsammans med allt längre kontextfönster, billigare och snabbare modeller, och standarder som Model Context Protocol som gör det enklare att koppla ihop AI med externa verktyg. Multimodala modeller som sömlöst hanterar text, bild, ljud och video i samma system växer också snabbt.',
+        },
+        {
+          q: 'Vad är nästa steg efter Generativ AI?',
+          a: 'Många ser agentisk AI, system som inte bara genererar innehåll utan självständigt planerar och utför uppgifter mot ett mål, som nästa stora skifte efter den rena generativa vågen. Andra pekar på djupare integration mellan AI och specifika verktyg eller data (genom till exempel RAG och MCP) samt mer pålitliga, faktakontrollerade modeller, som de områden som kommer definiera nästa fas.',
+        },
+        {
+          q: 'Hur påverkar AI cybersäkerhet?',
+          a: 'AI används på båda sidorna: angripare använder det för att skriva mer övertygande phishing-mejl, hitta sårbarheter snabbare och automatisera attacker, medan försvarare använder det för att upptäcka avvikelser, analysera loggar i skala och automatisera säkerhetsgranskningar. AI introducerar också helt nya säkerhetsrisker specifika för AI-system själva, som prompt injection och dataförgiftning, som traditionell cybersäkerhet inte historiskt behövt hantera.',
+        },
+        {
+          q: 'Hur påverkar kvantdatorer AI?',
+          a: 'Kvantdatorer är fortfarande i ett tidigt stadium och påverkar inte dagens AI-modeller i praktiken, men på sikt skulle kvantberäkning potentiellt kunna snabba upp vissa typer av träning och optimering som ligger bakom AI-modeller. Det är dock ett forskningsområde långt ifrån mogen, praktisk tillämpning, snarare än något som förändrar hur AI byggs och används idag.',
+        },
+        {
+          q: 'Hur kommer AI att förändra SaaS?',
+          a: 'SaaS-produkter bygger alltmer in AI-drivna funktioner direkt i sina gränssnitt, från smarta sökfunktioner och automatiska sammanfattningar till chattbaserade assistenter som kan utföra handlingar åt användaren, snarare än att bara visa data. Detta driver också en förändring i prismodeller, från fasta licensavgifter mot mer användningsbaserad prissättning som speglar den faktiska AI-kostnaden per kund.',
+        },
+        {
+          q: 'Vad innebär AI-first utveckling?',
+          a: 'AI-first utveckling innebär att designa en produkt med AI som en grundläggande del av användarupplevelsen från start, snarare än att lägga till en AI-funktion i efterhand på en befintlig produkt. Det påverkar allt från hur gränssnittet är utformat (för att hantera AI:ns icke-deterministiska svar på ett naturligt sätt) till vilken data och infrastruktur som byggs in från dag ett för att stödja AI-funktionerna.',
+        },
+      ],
+    },
+    {
+      title: 'Affärsperspektiv',
+      items: [
+        {
+          q: 'Hur påverkar AI startup-världen?',
+          a: 'AI har sänkt tröskeln för att bygga en fungerande produkt betydligt, ett litet team kan idag bygga funktioner som tidigare krävde ett helt forskningsteam, vilket gjort det billigare och snabbare att starta ett AI-drivet företag. Samtidigt har det ökat konkurrensen eftersom samma verktyg är tillgängliga för alla, vilket gör att uthållig konkurrensfördel oftare kommer från distribution, data eller djup domänkunskap snarare än själva AI-tekniken.',
+        },
+        {
+          q: 'Vilka AI-affärsidéer har störst potential?',
+          a: 'De starkaste AI-affärsidéerna löser oftast ett specifikt, smalt problem riktigt bra för en tydlig målgrupp, snarare än att vara ett allmänt "AI-verktyg", eftersom breda plattformar redan täcker de generella användningsfallen. Att kombinera AI med tillgång till unik data, ett existerande kundnätverk, eller djup kunskap inom en specifik bransch ger ofta ett mer hållbart försprång än själva AI-modellen.',
+        },
+        {
+          q: 'Hur bygger man ett AI-företag?',
+          a: 'Att bygga ett AI-företag följer i stort samma steg som vilken produktstart som helst, hitta ett verkligt problem, bygg en enkel första version, och testa den mot riktiga användare, men med extra fokus på att välja rätt modell och API-leverantör tidigt, hålla koll på kostnaden per AI-anrop i takt med att man skalar, och bygga förtroende kring datahantering och tillförlitlighet. De flesta framgångsrika AI-företag bygger på en befintlig modell via API snarare än att träna en egen från grunden.',
+        },
+        {
+          q: 'Vilka branscher automatiseras först?',
+          a: 'Branscher med mycket text- och regelbaserat arbete, som kundtjänst, juridisk dokumentgranskning, bokföring och grundläggande innehållsproduktion, automatiseras oftast först eftersom AI redan är starkt på dessa uppgifter. Branscher som kräver fysisk närvaro, hands-on hantverk, eller starkt reglerade beslut med höga risker, som sjukvård och tung industri, automatiseras långsammare eftersom där krävs betydligt mer tillförlitlighet och mänsklig tillsyn.',
+        },
+        {
+          q: 'Hur påverkar AI konsultbranschen?',
+          a: 'AI pressar ner priset på uppgifter som tidigare tog konsulter många timmar, som första utkast av rapporter, dataanalys eller kod, vilket tvingar konsultbolag att flytta värdet från att utföra det mekaniska arbetet till att erbjuda omdöme, strategi och ansvarstagande som klienten inte kan få från ett AI-verktyg själv. De konsultbolag som lyckas bäst är ofta de som aktivt använder AI för att göra sina egna konsulter snabbare, snarare än att se det som ett hot.',
+        },
+        {
+          q: 'Hur tjänar företag pengar på AI?',
+          a: 'Företag tjänar pengar på AI på några olika sätt: att sälja AI-drivna produkter eller funktioner direkt till kunder (ofta som ett abonnemang), att använda AI internt för att sänka egna kostnader och öka produktiviteten, eller att bygga infrastruktur och verktyg som andra företag använder för att bygga sina egna AI-lösningar. De mest lönsamma AI-företagen idag kombinerar oftast flera av dessa, snarare än att förlita sig på ett enda intäktsslag.',
         },
       ],
     },
