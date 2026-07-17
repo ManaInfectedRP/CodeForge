@@ -1465,6 +1465,821 @@ const tsLessons: SeedLesson[] = [
   },
 ];
 
+const tsIntermediateLessons: SeedLesson[] = [
+  {
+    title: 'Utility Types: Partial, Pick, Omit & Record',
+    content: lessonContent(
+      'Utility Types: Partial, Pick, Omit & Record',
+      `TypeScript ships a set of **utility types** that build new types out of ones you already have, instead of writing everything from scratch. Four of the most common: \`Partial\`, \`Pick\`, \`Omit\`, and \`Record\`.\n\n\`\`\`ts\ninterface Task {\n  id: string;\n  title: string;\n  done: boolean;\n  priority: 'low' | 'medium' | 'high';\n}\n\ntype TaskDraft = Partial<Omit<Task, 'id'>>;\n// every field optional, and 'id' isn't part of the type at all\n\nfunction updateTask(task: Task, changes: TaskDraft): Task {\n  return { ...task, ...changes };\n}\n\nupdateTask({ id: '1', title: 'Write lesson', done: false, priority: 'high' }, { done: true });\n\`\`\`\n\n## The four utility types\n\n| Utility | What it does |\n|---|---|\n| \`Partial<T>\` | Makes every property of \`T\` optional |\n| \`Pick<T, K>\` | Keeps only the listed keys \`K\` |\n| \`Omit<T, K>\` | Keeps everything except the listed keys \`K\` |\n| \`Record<K, V>\` | Builds an object type with keys \`K\`, all mapped to value type \`V\` |\n\n\`Partial<Omit<Task, 'id'>>\` above composes two of them: drop \`id\` entirely, then make what's left optional, exactly what an "update" function needs, callers shouldn't be able to change a task's \`id\`, and shouldn't have to repeat every other field just to change one.\n\n## Record for lookup tables\n\n\`\`\`ts\nconst board: Record<Task['priority'], Task[]> = {\n  low: [],\n  medium: [],\n  high: [],\n};\n\nboard.low.push({ id: '2', title: 'Sort backlog', done: false, priority: 'low' });\n\`\`\`\n\n\`Task['priority']\` reads the type of the \`priority\` property directly off \`Task\`, so \`board\` is guaranteed to have exactly the three keys the union allows, no more, no less. Try \`board.urgent\` and the compiler rejects it before the code runs.\n\n> [!NOTE]\n> None of these are special compiler magic, \`Partial<T>\`, \`Pick<T, K>\`, and friends are themselves just TypeScript types defined in the standard library using **mapped types**, the tool you'll build your own versions of in the next lesson.`
+    ),
+    quiz: {
+      title: 'Utility Types Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does `Omit<Task, 'id'>` produce?",
+          options: ['A copy of Task with only id', 'Task without the id property', 'An empty type', "A union of Task's keys"],
+          answer: 'Task without the id property',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The utility type that makes every property of an existing type optional is ____.',
+          options: [],
+          answer: 'Partial',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Record<K, V> requires K to be a string, number, or symbol (or a union of them).',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which utility type keeps only the listed keys of an existing type?',
+          options: ['Omit', 'Pick', 'Partial', 'Record'],
+          answer: 'Pick',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Task['priority'] reads the type of Task's priority property directly off the interface.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Type Narrowing: unknown, Guards & Predicates',
+    content: lessonContent(
+      'Type Narrowing: unknown, Guards & Predicates',
+      `Not every value flowing through a program has a known type up front, JSON parsed from a network response, user input, data from a library without types. TypeScript gives you \`unknown\` for exactly that, plus tools to **narrow** it down safely.\n\n\`\`\`ts\nfunction parseConfig(raw: unknown) {\n  if (typeof raw !== 'object' || raw === null) {\n    throw new Error('Config must be an object');\n  }\n  // raw is narrowed from unknown to \`object\` here, but its properties still aren't known\n  console.log(raw);\n}\n\`\`\`\n\n## unknown vs any\n\n\`any\` turns off type checking entirely, \`unknown\` still forces you to prove what a value is before you can use it.\n\n\`\`\`ts\nfunction useAny(value: any) {\n  value.toUpperCase(); // ✅ compiles, but crashes at runtime if value isn't a string\n}\n\nfunction useUnknown(value: unknown) {\n  value.toUpperCase(); // ❌ compile error: value is still 'unknown'\n  if (typeof value === 'string') {\n    value.toUpperCase(); // ✅ narrowed to string, now this is safe\n  }\n}\n\`\`\`\n\n\`unknown\` is the type-safe way to accept "could be anything," it makes the compiler force every caller to check before touching the value, \`any\` just gets out of the way and hopes for the best.\n\n## Narrowing with typeof, instanceof, and in\n\n\`\`\`ts\ntype Input = string | number | Date;\n\nfunction describe(value: Input): string {\n  if (typeof value === 'string') return value.toUpperCase();      // typeof narrows primitives\n  if (value instanceof Date) return value.toISOString();          // instanceof narrows classes\n  return value.toFixed(2);                                        // only number is left\n}\n\ninterface Cat { meow(): void }\ninterface Dog { bark(): void }\n\nfunction speak(pet: Cat | Dog) {\n  if ('meow' in pet) pet.meow();  // 'in' narrows by checking for a property\n  else pet.bark();\n}\n\`\`\`\n\n## Custom type predicates\n\nFor shapes \`typeof\`/\`instanceof\`/\`in\` can't fully describe, write your own narrowing function with an \`is\` return type.\n\n\`\`\`ts\ninterface Task {\n  id: string;\n  title: string;\n}\n\nfunction isTask(value: unknown): value is Task {\n  return (\n    typeof value === 'object' &&\n    value !== null &&\n    'id' in value &&\n    'title' in value\n  );\n}\n\nfunction handle(value: unknown) {\n  if (isTask(value)) {\n    console.log(value.title); // narrowed to Task, .title is safe here\n  }\n}\n\`\`\`\n\n\`value is Task\` tells the compiler: "if this function returns \`true\`, treat \`value\` as a \`Task\` from this point on." It's not checked for correctness, a wrong \`isTask\` will lie to the compiler, so the logic inside still has to be right.\n\n> [!WARNING]\n> Reach for \`unknown\`, not \`any\`, whenever a value's type genuinely isn't known yet (parsed JSON, a library return value). \`any\` is easy in the moment but silently reintroduces every bug static types exist to prevent.`
+    ),
+    quiz: {
+      title: 'Narrowing Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What's the key difference between unknown and any?",
+          options: [
+            'They behave identically',
+            'unknown must be narrowed before use, any bypasses type checking entirely',
+            'any is only for primitives',
+            "unknown can't hold objects",
+          ],
+          answer: 'unknown must be narrowed before use, any bypasses type checking entirely',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "A function with return type 'value is Task' is a custom type predicate.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The operator used to narrow a union by checking whether a property exists on an object is ____.',
+          options: [],
+          answer: 'in',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Which keyword narrows a union to a specific class instance?',
+          options: ['typeof', 'instanceof', 'keyof', 'satisfies'],
+          answer: 'instanceof',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A custom type predicate is checked for logical correctness by the compiler, so a wrong one is impossible to write.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Mapped & Template Literal Types',
+    content: lessonContent(
+      'Mapped & Template Literal Types',
+      `The last lesson used \`unknown\` and narrowing to make individual *values* safer. Mapped types and template literal types do the same for *building new types themselves* out of existing ones.\n\n## Mapped types\n\nA mapped type loops over the keys of an existing type and transforms each one.\n\n\`\`\`ts\ninterface Task {\n  id: string;\n  title: string;\n  priority: 'low' | 'medium' | 'high';\n}\n\ntype ReadonlyTask = { readonly [K in keyof Task]: Task[K] };\n// every property is now readonly, same shape otherwise\n\ntype TaskFlags = { [K in keyof Task]: boolean };\n// { id: boolean; title: boolean; priority: boolean } — useful for tracking "which fields changed"\n\`\`\`\n\n\`keyof Task\` produces a union of Task's property names (\`'id' | 'title' | 'priority'\`), and \`[K in keyof Task]\` loops over that union, building one new property per key. This is exactly how \`Partial<T>\` and \`Readonly<T>\` are implemented in TypeScript's own standard library, they're just mapped types with a \`?\` or \`readonly\` added.\n\n## Template literal types\n\nTemplate literal types build new string-literal types the same way JS template strings build new strings, except entirely at the type level.\n\n\`\`\`ts\ntype Priority = 'low' | 'medium' | 'high';\n\ntype PriorityChangeEvent = \`\${Priority}Changed\`;\n// 'lowChanged' | 'mediumChanged' | 'highChanged'\n\ntype EventName<T extends string> = \`on\${Capitalize<T>}Change\`;\n\ntype TaskEvents = EventName<'title' | 'priority'>;\n// 'onTitleChange' | 'onPriorityChange'\n\`\`\`\n\n\`\${Priority}Changed\` distributes over every member of the \`Priority\` union, producing one literal string type per member. \`Capitalize<T>\` is a built-in intrinsic type that uppercases the first letter, useful for deriving conventional names like event handlers straight from a union you already have, instead of typing each one out by hand and letting them drift out of sync.\n\n> [!TIP]\n> If you find yourself hand-writing a list of string literals that's really just "every value in this union, with a prefix or suffix," that's a template literal type waiting to replace it, one source of truth instead of two lists that can disagree.`
+    ),
+    quiz: {
+      title: 'Mapped & Template Literal Types Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'FILL_BLANK',
+          prompt: "____ Task produces a union of all of Task's property names.",
+          options: [],
+          answer: 'keyof',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does the [K in keyof Task] syntax do inside a mapped type?",
+          options: [
+            'Deletes every key',
+            "Loops over each of Task's property names, building one new property per key",
+            'Only keeps required keys',
+            'Converts Task to a tuple',
+          ],
+          answer: "Loops over each of Task's property names, building one new property per key",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Partial<T> and Readonly<T> are implemented internally as mapped types.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: "What does `${Priority}Changed` produce when Priority is 'low' | 'medium' | 'high'?",
+          options: [
+            'A single string type, "PriorityChanged"',
+            "A union of one literal per member: 'lowChanged' | 'mediumChanged' | 'highChanged'",
+            'A compile error',
+            'The Priority type unchanged',
+          ],
+          answer: "A union of one literal per member: 'lowChanged' | 'mediumChanged' | 'highChanged'",
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The built-in intrinsic type that uppercases the first letter of a string literal type is ____.',
+          options: [],
+          answer: 'Capitalize',
+        },
+      ],
+    },
+  },
+  {
+    title: 'The satisfies Operator & Const Assertions',
+    content: lessonContent(
+      'The satisfies Operator & Const Assertions',
+      `Two common problems when writing typed object literals: annotate them and you lose their exact inferred shape, don't annotate them and the compiler won't check they match what you meant. \`satisfies\` and \`as const\` solve both.\n\n## The problem with a plain annotation\n\n\`\`\`ts\ntype Setting = number | string;\n\nconst configAnnotated: Record<string, Setting> = {\n  retries: 3,\n  mode: 'dark',\n};\n\nconfigAnnotated.retries.toFixed(0); // ❌ retries is typed as \`number | string\`, not number\n\`\`\`\n\nAnnotating with \`Record<string, Setting>\` checks that every value is a valid \`Setting\`, but then widens every property to the *whole* union \`number | string\`, TypeScript forgets that \`retries\` specifically was a number.\n\n## satisfies keeps the precise type\n\n\`\`\`ts\nconst config = {\n  retries: 3,\n  mode: 'dark',\n} satisfies Record<string, Setting>;\n\nconfig.retries.toFixed(0); // ✅ retries is still known as number\nconfig.mode.toUpperCase(); // ✅ mode is still known as string\n\`\`\`\n\n\`satisfies\` checks the object against \`Record<string, Setting>\` the same way the annotation did, rejecting anything that doesn't fit, but it doesn't replace the object's own inferred type afterward. Each property keeps its own specific type.\n\n## const assertions\n\n\`\`\`ts\nconst directions = ['up', 'down', 'left', 'right'];\n// inferred as string[], any string could be pushed in later\n\nconst fixedDirections = ['up', 'down', 'left', 'right'] as const;\n// inferred as readonly ["up", "down", "left", "right"]\n\ntype Direction = typeof fixedDirections[number];\n// 'up' | 'down' | 'left' | 'right'\n\`\`\`\n\n\`as const\` tells the compiler "infer the narrowest possible type," a literal tuple of exact strings, marked \`readonly\`, instead of the general \`string[]\`. Combined with \`typeof ...[number]\`, it's a common way to derive a union type from an array of values you already have, one list instead of a list plus a hand-written union that can drift apart.\n\n> [!NOTE]\n> \`satisfies\` and \`as const\` solve different problems and combine well: \`as const\` narrows a literal's own inferred type, \`satisfies\` checks that literal against some other type without widening it. Reach for \`satisfies\` whenever you're about to write \`: SomeType\` and would lose useful precision by doing so.`
+    ),
+    quiz: {
+      title: 'satisfies & as const Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does satisfies do that a plain type annotation does not?',
+          options: [
+            "Nothing, they're identical",
+            'Checks the value against a type while keeping its own precise inferred type',
+            'Disables type checking',
+            'Converts the value to that type at runtime',
+          ],
+          answer: 'Checks the value against a type while keeping its own precise inferred type',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'as const widens an array literal\'s type to string[].',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "typeof someArray[number] extracts a union type of the array's ____.",
+          options: [],
+          answer: 'elements',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Without `as const`, what type does `[\'up\', \'down\']` infer to?',
+          options: ["readonly ['up', 'down']", 'string[]', 'never[]', 'unknown'],
+          answer: 'string[]',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'satisfies and as const solve the same problem and are interchangeable.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Generic Constraints & Default Type Parameters',
+    content: lessonContent(
+      'Generic Constraints & Default Type Parameters',
+      `The beginner course's \`firstElement<T>\` worked for *any* \`T\`, but plenty of generic functions only make sense for types that have something specific about them. **Constraints** narrow what \`T\` is allowed to be.
+
+\`\`\`ts
+interface HasId {
+  id: string;
+}
+
+function findById<T extends HasId>(items: T[], id: string): T | undefined {
+  return items.find((item) => item.id === id);
+}
+
+interface Task extends HasId {
+  title: string;
+}
+
+const tasks: Task[] = [{ id: '1', title: 'Write lesson' }];
+findById(tasks, '1'); // ✅ Task has an id, so it satisfies HasId
+
+findById([{ title: 'no id here' }], '1'); // ❌ compile error: missing id
+\`\`\`
+
+\`T extends HasId\` doesn't mean inheritance the way a class \`extends\` does, it means "whatever \`T\` ends up being, it must have at least the shape of \`HasId\`." Inside the function, \`item.id\` is safe to access precisely because the constraint guarantees it exists, no matter which concrete type \`T\` turns out to be.
+
+## Constraining with keyof
+
+A very common constraint ties a generic parameter to the keys of another generic parameter.
+
+\`\`\`ts
+function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
+  return obj[key];
+}
+
+const task = { id: '1', title: 'Write lesson', done: false };
+
+getProperty(task, 'title'); // ✅ inferred as string
+getProperty(task, 'nope');  // ❌ 'nope' isn't a key of task, compile error
+\`\`\`
+
+\`K extends keyof T\` means "K can only be one of T's actual property names," so \`getProperty\` can never be called with a key that doesn't exist, and its return type (\`T[K]\`) is exactly the type of that specific property, not a generic \`unknown\`.
+
+## Default type parameters
+
+Generics can also supply a default, used when the caller doesn't specify one explicitly.
+
+\`\`\`ts
+interface ApiResponse<T = unknown> {
+  status: number;
+  data: T;
+}
+
+function ok(): ApiResponse {
+  return { status: 200, data: null }; // T defaults to unknown here
+}
+
+function okWithTask(task: Task): ApiResponse<Task> {
+  return { status: 200, data: task }; // T explicitly set to Task
+}
+\`\`\`
+
+\`T = unknown\` means \`ApiResponse\` (with no type argument at all) still compiles, falling back to \`unknown\` for \`data\`, while callers that care can still specify exactly what they're returning.
+
+> [!NOTE]
+> Constraints and defaults are how library-quality generic functions stay both flexible and safe, flexible enough to work with many types, safe enough that the compiler still catches misuse instead of silently allowing anything.`
+    ),
+    quiz: {
+      title: 'Generic Constraints Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does `T extends HasId` mean for a generic type parameter?',
+          options: [
+            'T must be a subclass of HasId',
+            'Whatever T is, it must have at least the shape of HasId',
+            'T is optional',
+            'T is ignored at compile time',
+          ],
+          answer: 'Whatever T is, it must have at least the shape of HasId',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: '`K extends keyof T` restricts K to only the actual property names of T.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In `interface ApiResponse<T = unknown>`, `unknown` is the ____ type parameter, used when the caller supplies none.',
+          options: [],
+          answer: 'default',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Given `getProperty<T, K extends keyof T>(obj: T, key: K): T[K]`, what does the return type T[K] guarantee?',
+          options: [
+            'It always returns a string',
+            'It returns exactly the type of the specific property that was requested',
+            'It returns unknown',
+            'It returns the whole object T',
+          ],
+          answer: 'It returns exactly the type of the specific property that was requested',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Function Overloads & Call Signatures',
+    content: lessonContent(
+      'Function Overloads & Call Signatures',
+      `Some functions genuinely behave differently depending on the *shape* of the arguments passed in, not just their values. A single generic signature can't always express that precisely, **overloads** let you describe several valid call shapes for the same function.
+
+\`\`\`ts
+function createTask(title: string): { id: string; title: string };
+function createTask(title: string, priority: 'low' | 'medium' | 'high'): { id: string; title: string; priority: string };
+function createTask(title: string, priority?: 'low' | 'medium' | 'high') {
+  const base = { id: crypto.randomUUID(), title };
+  return priority ? { ...base, priority } : base;
+}
+
+const a = createTask('Write lesson');                 // typed as { id: string; title: string }
+const b = createTask('Write lesson', 'high');          // typed as { id: string; title: string; priority: string }
+\`\`\`
+
+The first two signatures are **overload signatures**, they describe the valid ways to call \`createTask\` from the outside. The third, with a body, is the **implementation signature**, it must be compatible with every overload above it, but callers never see it directly, only the overloads are checked against call sites. This is how \`a\` and \`b\` end up with two genuinely different, more precise return types instead of one overly-broad union.
+
+## Typing callable objects
+
+A type can also describe something that's callable, not just an object with properties.
+
+\`\`\`ts
+interface Logger {
+  (message: string): void;      // Logger itself is callable...
+  level: 'debug' | 'info' | 'error'; // ...and also has a property
+}
+
+const log: Logger = Object.assign(
+  (message: string) => console.log(\`[\${log.level}] \${message}\`),
+  { level: 'info' as const }
+);
+
+log('server started'); // calling it directly
+log.level;              // and reading a property off it
+\`\`\`
+
+A **call signature** inside an interface, \`(message: string): void\` with no name, describes "this thing can be invoked like a function." Combined with an ordinary property, it types values that are both callable and carry extra data, a real pattern for loggers, event emitters, and similar utilities.
+
+> [!TIP]
+> Reach for overloads sparingly, only when a single generic signature genuinely can't express how the return type depends on which arguments were passed. Most of the time, optional parameters or a union parameter type are simpler and just as safe.`
+    ),
+    quiz: {
+      title: 'Overloads & Call Signatures Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'In a set of function overloads, which signature do callers actually see and get checked against?',
+          options: [
+            'Only the implementation signature',
+            'Only the overload signatures, not the implementation signature',
+            'All of them, merged into one',
+            'None, overloads are purely documentation',
+          ],
+          answer: 'Only the overload signatures, not the implementation signature',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'An interface can describe something that is both callable and has properties, using a call signature.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The signature with a function body, which every overload must be compatible with, is called the ____ signature.',
+          options: [],
+          answer: 'implementation',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Typed Settings Validator',
+    content: lessonContent(
+      'Final Project: Build a Typed Settings Validator',
+      `Combine utility types, narrowing, mapped/template literal types, and \`satisfies\` into one small but real module: a settings validator.\n\n## Requirements\n\n1. Define a \`Settings\` interface with at least four fields of mixed types (e.g. \`theme: 'light' | 'dark'\`, \`fontSize: number\`, \`autoSave: boolean\`, \`username: string\`).\n2. Write an \`isSettings(value: unknown): value is Settings\` type predicate that validates an untrusted value (e.g. something parsed from \`JSON.parse\`) before it's ever treated as \`Settings\`.\n3. Write an \`updateSettings(current: Settings, changes: Partial<Settings>): Settings\` function, changes should be optional and partial, not a full replacement.\n4. Use a mapped type to derive a \`SettingsChanged\` type, \`{ [K in keyof Settings]: boolean }\`, and a function that compares two \`Settings\` objects and returns one, flagging exactly which fields differ.\n5. Build a \`defaultSettings\` object typed with \`satisfies Settings\`, so each default value keeps its own precise type instead of being widened to a single union.\n\n## Stretch goals\n\n- Add a template literal type deriving an event name per settings key, e.g. \`on\` + the capitalized key + \`Change\`, and a tiny typed event emitter that only accepts those names.\n- Use \`Pick\`/\`Omit\` to derive a "public settings" type that hides one internal-only field from an exported API.\n- Add a \`resetSettings(): Settings\` that returns a fresh copy of \`defaultSettings\`, and verify at the type level that \`defaultSettings\` itself can't be mutated by accident.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
+const tsExpressZodLessons: SeedLesson[] = [
+  {
+    title: 'Why Express + TypeScript + Zod?',
+    content: lessonContent(
+      'Why Express + TypeScript + Zod?',
+      `Express by itself is untyped JavaScript, \`req.body\` is \`any\`, and nothing stops a malformed request from reaching your business logic. TypeScript alone doesn't fix that either, types are checked at compile time and stripped away entirely before the code runs, they can't catch bad data arriving over the network at 2am.\n\n\`\`\`ts\nimport { z } from 'zod';\n\nconst CreateTaskSchema = z.object({\n  title: z.string().min(1),\n  priority: z.enum(['low', 'medium', 'high']),\n});\n\ntype CreateTaskInput = z.infer<typeof CreateTaskSchema>;\n// { title: string; priority: 'low' | 'medium' | 'high' }\n\nconst parsed = CreateTaskSchema.parse({ title: 'Ship it', priority: 'high' });\n// parsed is typed as CreateTaskInput, AND was actually checked against the schema just now\n\`\`\`\n\n**Zod** is a runtime validation library, \`.parse()\` (or \`.safeParse()\`) actually inspects the value while the program is running and throws (or reports) if it doesn't match, exactly what TypeScript's compile-time types can't do on their own.\n\n## One schema, two guarantees\n\n\`z.infer<typeof CreateTaskSchema>\` derives a TypeScript type directly from the schema, so the compile-time type and the runtime check can never drift apart, there's one source of truth instead of a hand-written interface that quietly stops matching what you actually validate.\n\n\`\`\`\nUntyped Express          Express + TypeScript          Express + TypeScript + Zod\n─────────────────        ──────────────────────        ────────────────────────────\nreq.body: any             req.body: any (still!)         req.body validated + typed\nNo compile-time            Compile-time types only,       Compile-time types AND\nchecks at all               nothing checks the network      a runtime boundary check\n\`\`\`\n\n> [!NOTE]\n> TypeScript's own types genuinely disappear when your code compiles to JavaScript, they're a build-time tool. Zod schemas are ordinary JavaScript objects that keep working after compilation, that's *why* they're the right tool for validating anything crossing a real boundary: an HTTP request, a file read from disk, a response from another service.`
+    ),
+    quiz: {
+      title: 'Express + TypeScript + Zod Intro Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'TRUE_FALSE',
+          prompt: "TypeScript's compile-time types alone validate incoming request data at runtime.",
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does z.infer<typeof Schema> do?',
+          options: [
+            "Runs the schema's validation once",
+            'Derives a static TypeScript type directly from a Zod schema',
+            'Converts a TS interface into a Zod schema',
+            'Deletes unused fields',
+          ],
+          answer: 'Derives a static TypeScript type directly from a Zod schema',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "The Zod method that validates a value and throws if it doesn't match the schema is .____().",
+          options: [],
+          answer: 'parse',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What happens to TypeScript types when code is compiled to JavaScript?',
+          options: [
+            'They stay in the output as runtime checks',
+            'They are stripped away entirely, they never run',
+            'They become Zod schemas automatically',
+            'They throw a compile error',
+          ],
+          answer: 'They are stripped away entirely, they never run',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: "Without Zod, req.body in an Express handler is typed as `any` by default.",
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Setting Up an Express + TypeScript Project',
+    content: lessonContent(
+      'Setting Up an Express + TypeScript Project',
+      `Before writing any routes, get a minimal Express + TypeScript project compiling and running.\n\n## Install dependencies\n\n\`\`\`bash\nnpm init -y\nnpm install express zod\nnpm install -D typescript @types/express @types/node tsx\nnpx tsc --init\n\`\`\`\n\n\`express\` and \`zod\` are runtime dependencies, your server actually needs them once it's running. \`typescript\` and \`@types/express\`/\`@types/node\` are dev-only, they exist purely to type-check your code before it ships. \`tsx\` runs \`.ts\` files directly during development without a separate build step.\n\n## Key tsconfig.json options\n\n\`\`\`json\n{\n  "compilerOptions": {\n    "target": "ES2022",\n    "module": "commonjs",\n    "strict": true,\n    "esModuleInterop": true,\n    "skipLibCheck": true,\n    "outDir": "dist"\n  }\n}\n\`\`\`\n\n\`"strict": true\` turns on every strict type-checking flag at once (including the \`unknown\`-forcing narrowing rules from the last course), it's the setting that makes TypeScript actually catch bugs instead of just documenting types. Leave it on for anything beyond a throwaway script.\n\n## A minimal server\n\n\`\`\`ts\nimport express from 'express';\n\nconst app = express();\napp.use(express.json()); // parses JSON request bodies into req.body\n\napp.get('/health', (_req, res) => {\n  res.json({ status: 'ok' });\n});\n\napp.listen(3000, () => console.log('Server running on http://localhost:3000'));\n\`\`\`\n\nThe leading underscore in \`_req\` is a convention (not a language feature) for "this parameter is required by the function signature but isn't used in the body," it keeps an unused-parameter lint rule quiet without disabling the check entirely.\n\n> [!TIP]\n> Add \`"dev": "tsx watch src/index.ts"\` and \`"build": "tsc"\` scripts to \`package.json\`, \`tsx watch\` re-runs the server on every save during development, \`tsc\` produces the compiled \`dist/\` folder you'd actually deploy.`
+    ),
+    quiz: {
+      title: 'Project Setup Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why install @types/express as a dev dependency?',
+          options: [
+            'It is required for Express to run at all',
+            "It provides TypeScript type definitions for Express's API, with no effect at runtime",
+            'It replaces the express package',
+            'It validates request bodies',
+          ],
+          answer: "It provides TypeScript type definitions for Express's API, with no effect at runtime",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: '"strict": true in tsconfig.json enables every strict type-checking flag at once.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'app.use(express.____()) parses incoming JSON request bodies into req.body.',
+          options: [],
+          answer: 'json',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What tool runs a .ts file directly during development, without a separate compile step?',
+          options: ['tsc', 'tsx', '@types/node', 'esModuleInterop'],
+          answer: 'tsx',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'express and zod should be installed as regular (non-dev) dependencies, since the running server needs them.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Defining Schemas with Zod & Inferring Types',
+    content: lessonContent(
+      'Defining Schemas with Zod & Inferring Types',
+      `With the project running, model the actual data the API will accept and return, starting from Zod schemas instead of hand-written interfaces.\n\n\`\`\`ts\nimport { z } from 'zod';\n\nconst TaskSchema = z.object({\n  id: z.string().uuid(),\n  title: z.string().min(1).max(200),\n  done: z.boolean().default(false),\n  priority: z.enum(['low', 'medium', 'high']),\n  tags: z.array(z.string()).optional(),\n});\n\ntype Task = z.infer<typeof TaskSchema>;\n\`\`\`\n\nEach field reads like a description of the constraint, \`z.string().min(1).max(200)\` isn't just "a string," it's "a string between 1 and 200 characters," checked for real when \`.parse()\` runs, not just documented in a comment.\n\n## Deriving request schemas from the base schema\n\n\`\`\`ts\nconst CreateTaskSchema = TaskSchema.omit({ id: true, done: true });\n// clients shouldn't set id or done themselves when creating a task\n\nconst UpdateTaskSchema = TaskSchema.partial().omit({ id: true });\n// every field optional (a client only sends what's changing), id still can't be changed\n\ntype CreateTaskInput = z.infer<typeof CreateTaskSchema>;\ntype UpdateTaskInput = z.infer<typeof UpdateTaskSchema>;\n\`\`\`\n\n\`.omit()\` and \`.partial()\` on a Zod schema work exactly like \`Omit<T, K>\` and \`Partial<T>\` from the intermediate TypeScript course, except they reshape the *runtime validator*, not just the compile-time type, and \`z.infer\` immediately gives you the matching TypeScript type for free.\n\n## Custom validation with refine\n\n\`\`\`ts\nconst CreateTaskSchemaStrict = CreateTaskSchema.refine(\n  (data) => data.title.trim().length > 0,\n  { message: 'Title cannot be only whitespace', path: ['title'] }\n);\n\`\`\`\n\n\`.refine()\` adds a check \`.min()\`/\`.max()\`/\`.enum()\` can't express on their own, an arbitrary function returning \`true\`/\`false\`, with a custom error message attached to a specific field.\n\n> [!NOTE]\n> Notice there's still only one place \`Task\`'s shape is written down, the \`TaskSchema\`. \`CreateTaskInput\`, \`UpdateTaskInput\`, and the runtime checks for all three all derive from it, change one field once and everything downstream stays in sync automatically.`
+    ),
+    quiz: {
+      title: 'Zod Schemas Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does TaskSchema.omit({ id: true, done: true }) produce?',
+          options: ['A new schema missing id and done', 'The same schema with id and done required', 'A TypeScript interface', 'An error'],
+          answer: 'A new schema missing id and done',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: '.refine() lets you add a custom validation rule beyond what built-in checks like .min() express.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: "TaskSchema.____() (with no arguments) makes every field of the schema optional, matching TypeScript's Partial.",
+          options: [],
+          answer: 'partial',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does .refine() add that .min()/.max()/.enum() cannot express alone?',
+          options: [
+            'A second Zod schema',
+            'An arbitrary custom validation function with its own error message',
+            'A TypeScript interface',
+            'Automatic retries',
+          ],
+          answer: 'An arbitrary custom validation function with its own error message',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'z.infer<typeof TaskSchema> has to be kept manually in sync with TaskSchema by hand.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Typed Request Handlers & Middleware',
+    content: lessonContent(
+      'Typed Request Handlers & Middleware',
+      `Express's own types describe the *shape* of a request/response, but leave \`req.body\`, \`req.params\`, and \`req.query\` as loosely typed by default. This lesson tightens that up and builds a reusable pattern for async route handlers.\n\n## Typing params, body, and query explicitly\n\n\`\`\`ts\nimport { Request, Response, NextFunction } from 'express';\n\napp.get('/tasks/:id', (req: Request<{ id: string }>, res: Response) => {\n  const id = req.params.id; // typed as string, not string | undefined\n  res.json({ id });\n});\n\`\`\`\n\n\`Request\`'s first generic parameter types \`req.params\`. Left as plain \`Request\`, \`req.params.id\` would be typed loosely, spelling it out here catches a typo like \`req.params.taskId\` at compile time instead of at 2am in production logs.\n\n## A reusable async handler wrapper\n\nExpress doesn't automatically catch a rejected Promise from an \`async\` route handler, an unhandled rejection just hangs or crashes the process.\n\n\`\`\`ts\nfunction asyncHandler(\n  fn: (req: Request, res: Response) => Promise<void>\n) {\n  return (req: Request, res: Response, next: NextFunction) => {\n    fn(req, res).catch(next);\n  };\n}\n\napp.get('/tasks/:id', asyncHandler(async (req, res) => {\n  const task = await findTask(req.params.id);\n  res.json(task);\n}));\n\`\`\`\n\n\`asyncHandler\` wraps any \`async\` function, catches whatever it throws or rejects with, and forwards it to \`next(err)\`, Express's normal error-handling path, instead of letting it disappear silently.\n\n## Typed error-handling middleware\n\n\`\`\`ts\nfunction errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {\n  console.error(err);\n  const message = err instanceof Error ? err.message : 'Unknown error';\n  res.status(500).json({ error: message });\n}\n\napp.use(errorHandler);\n\`\`\`\n\nExpress recognizes error-handling middleware by its **four** parameters, \`err\` first, note it's typed \`unknown\`, not \`Error\`, anything can technically be thrown in JavaScript, so \`instanceof Error\` narrowing is what makes reading \`.message\` safe.\n\n> [!TIP]\n> Register \`app.use(errorHandler)\` *after* every route. Express matches error middleware in registration order too, one placed too early simply never gets reached.`
+    ),
+    quiz: {
+      title: 'Typed Handlers & Middleware Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Express automatically catches a rejected Promise thrown inside an async route handler.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'How does Express recognize error-handling middleware?',
+          options: ['By a special function name', 'By having exactly four parameters, starting with err', 'By its file location', 'By a decorator'],
+          answer: 'By having exactly four parameters, starting with err',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'In Request<{ id: string }>, the generic parameter types req.____.',
+          options: [],
+          answer: 'params',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What does asyncHandler do with a rejected Promise from the wrapped function?',
+          options: [
+            'Ignores it',
+            "Catches it and forwards it to next(err), Express's error-handling path",
+            'Retries the request automatically',
+            'Crashes the server intentionally',
+          ],
+          answer: "Catches it and forwards it to next(err), Express's error-handling path",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'app.use(errorHandler) should be registered before the routes it is meant to catch errors from.',
+          options: ['True', 'False'],
+          answer: 'False',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Validating Requests and Building REST Endpoints',
+    content: lessonContent(
+      'Validating Requests and Building REST Endpoints',
+      `Combine Zod schemas, typed handlers, and the async wrapper into full, validated REST endpoints.\n\n## A validation middleware factory\n\n\`\`\`ts\nimport { Request, Response, NextFunction } from 'express';\nimport { z } from 'zod';\n\nfunction validateBody<T extends z.ZodTypeAny>(schema: T) {\n  return (req: Request, res: Response, next: NextFunction) => {\n    const result = schema.safeParse(req.body);\n    if (!result.success) {\n      res.status(400).json({ error: result.error.flatten() });\n      return;\n    }\n    req.body = result.data; // now the validated, typed value\n    next();\n  };\n}\n\`\`\`\n\n\`safeParse\` never throws, it returns \`{ success: true, data }\` or \`{ success: false, error }\`, which suits middleware better than \`.parse()\`'s throw-based style, a bad request is an expected outcome here, not an exceptional one. \`<T extends z.ZodTypeAny>\` makes \`validateBody\` reusable for *any* schema, not just one hard-coded shape.\n\n## Wiring up the endpoints\n\n\`\`\`ts\nconst tasks: Task[] = [];\n\napp.get('/tasks', (_req, res) => {\n  res.json(tasks);\n});\n\napp.get('/tasks/:id', asyncHandler(async (req: Request<{ id: string }>, res) => {\n  const task = tasks.find((t) => t.id === req.params.id);\n  if (!task) {\n    res.status(404).json({ error: 'Task not found' });\n    return;\n  }\n  res.json(task);\n}));\n\napp.post('/tasks', validateBody(CreateTaskSchema), asyncHandler(async (req, res) => {\n  const task: Task = { id: crypto.randomUUID(), done: false, ...req.body };\n  tasks.push(task);\n  res.status(201).json(task);\n}));\n\`\`\`\n\nEvery layer does one job: \`validateBody\` rejects malformed input before the handler ever runs, \`asyncHandler\` catches anything the handler itself throws, and the handler is left to assume \`req.body\` is already a valid \`CreateTaskInput\`, because by the time it runs, Zod already checked that.\n\n## Status codes that mean something\n\n| Code | When |\n|---|---|\n| \`200\` | Successful GET/PATCH |\n| \`201\` | Successful POST that created something |\n| \`400\` | The request body failed validation |\n| \`404\` | The requested resource doesn't exist |\n| \`500\` | An unexpected server error (caught by \`errorHandler\`) |\n\n> [!WARNING]\n> Validating *inputs* (\`req.body\`, \`req.params\`) is the priority, but don't skip checks on values you construct yourself either, \`tasks.find(...)\` returning \`undefined\` is exactly the kind of case the \`404\` branch above exists to catch, TypeScript's \`strict\` mode will actually force you to handle it.`
+    ),
+    quiz: {
+      title: 'Validated Endpoints Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why use safeParse instead of parse inside validation middleware?',
+          options: [
+            'safeParse is faster',
+            "safeParse returns a result object instead of throwing, which suits handling an expected 'bad request' case",
+            'safeParse skips validation',
+            'There is no difference',
+          ],
+          answer: "safeParse returns a result object instead of throwing, which suits handling an expected 'bad request' case",
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A 201 status code conventionally indicates a successful POST that created a new resource.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'A request that fails Zod validation should typically respond with HTTP status ____.',
+          options: [],
+          answer: '400',
+        },
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'What is <T extends z.ZodTypeAny> on validateBody for?',
+          options: [
+            'It restricts validateBody to only work with TaskSchema',
+            'It makes validateBody reusable for any Zod schema, not one hard-coded shape',
+            'It disables type checking on the schema',
+            'It is required syntax with no effect',
+          ],
+          answer: 'It makes validateBody reusable for any Zod schema, not one hard-coded shape',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A 404 response is appropriate when a GET /tasks/:id request references an id that does not exist.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Environment Variables & Configuration with Zod',
+    content: lessonContent(
+      'Environment Variables & Configuration with Zod',
+      `\`process.env\` is where an Express app's real configuration lives, database URLs, API keys, ports, but TypeScript types every property on \`process.env\` as \`string | undefined\`, and nothing stops a typo'd or missing variable from reaching production. Validate it with Zod the same way you validate a request body.
+
+\`\`\`ts
+import { z } from 'zod';
+
+const EnvSchema = z.object({
+  PORT: z.coerce.number().int().positive().default(3000),
+  DATABASE_URL: z.string().url(),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+});
+
+const env = EnvSchema.parse(process.env);
+// env.PORT is typed as number, env.DATABASE_URL as string, both actually checked
+\`\`\`
+
+\`z.coerce.number()\` converts the incoming string (everything in \`process.env\` is a string) to a number *before* validating it, exactly what an environment variable needs, \`PORT\` arrives as the string \`"3000"\`, not the number \`3000\`. Calling \`EnvSchema.parse(process.env)\` **once**, at startup, means a missing or malformed \`DATABASE_URL\` crashes the app immediately with a clear error, instead of failing mysteriously the first time a database query runs, minutes or hours later.
+
+## A typed config module
+
+\`\`\`ts
+// config.ts
+import { z } from 'zod';
+
+const EnvSchema = z.object({
+  PORT: z.coerce.number().int().positive().default(3000),
+  DATABASE_URL: z.string().url(),
+});
+
+export const config = EnvSchema.parse(process.env);
+\`\`\`
+
+\`\`\`ts
+// index.ts
+import { config } from './config';
+
+app.listen(config.PORT, () => console.log(\`Listening on \${config.PORT}\`));
+\`\`\`
+
+Importing \`config\` instead of reading \`process.env\` directly anywhere else in the codebase means every other file gets a fully typed, already-validated object, no \`string | undefined\` and no repeated validation.
+
+> [!WARNING]
+> Never commit real secrets (database passwords, API keys) to source control, even in a \`.env.example\` file, real \`.env\` files belong in \`.gitignore\`. Zod validates the *shape* of your configuration, it doesn't protect a secret that's already been checked in.`
+    ),
+    quiz: {
+      title: 'Environment Config Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why use z.coerce.number() for an environment variable like PORT?',
+          options: [
+            'It has no effect, PORT is already a number',
+            'process.env values are always strings, coerce converts before validating',
+            'It disables validation',
+            'It only works with Zod v1',
+          ],
+          answer: 'process.env values are always strings, coerce converts before validating',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'Every property on process.env is typed as string | undefined by TypeScript, without extra validation.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'Calling EnvSchema.parse(process.env) once at ____ crashes the app immediately on bad config instead of failing later.',
+          options: [],
+          answer: 'startup',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Testing a Typed API with Vitest & Supertest',
+    content: lessonContent(
+      'Testing a Typed API with Vitest & Supertest',
+      `Everything so far has been validated by the compiler and by Zod at runtime, but neither one confirms the API actually behaves correctly end to end. That's what integration tests are for.
+
+\`\`\`bash
+npm install -D vitest supertest @types/supertest
+\`\`\`
+
+**Supertest** sends real HTTP requests to your Express app in-process, no separate server or port needed, and **Vitest** runs the assertions, both fully typed against your existing \`app\`.
+
+## Testing a validated endpoint
+
+\`\`\`ts
+import { describe, it, expect } from 'vitest';
+import request from 'supertest';
+import { app } from './app'; // the Express app, exported without calling .listen()
+
+describe('POST /tasks', () => {
+  it('creates a task with valid input', async () => {
+    const response = await request(app)
+      .post('/tasks')
+      .send({ title: 'Write tests', priority: 'medium' });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({ title: 'Write tests', priority: 'medium', done: false });
+    expect(typeof response.body.id).toBe('string');
+  });
+
+  it('rejects an invalid priority with 400', async () => {
+    const response = await request(app)
+      .post('/tasks')
+      .send({ title: 'Write tests', priority: 'urgent' }); // not in the enum
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBeDefined();
+  });
+});
+\`\`\`
+
+Splitting \`app\` (the Express application) from the code that calls \`app.listen()\` is what makes this possible, Supertest talks to \`app\` directly in memory, no real network socket or port conflict involved. The second test is just as important as the first: it proves the \`400\`/Zod-validation path from the earlier lesson actually fires for bad input, not just that the happy path works.
+
+## Testing the full lifecycle
+
+\`\`\`ts
+it('creates, fetches, and deletes a task', async () => {
+  const created = await request(app).post('/tasks').send({ title: 'Temp task', priority: 'low' });
+  const id = created.body.id;
+
+  await request(app).get(\`/tasks/\${id}\`).expect(200);
+  await request(app).delete(\`/tasks/\${id}\`).expect(200);
+  await request(app).get(\`/tasks/\${id}\`).expect(404); // gone after delete
+});
+\`\`\`
+
+One test walking through create → read → delete catches a class of bug unit tests on individual functions miss entirely: whether the pieces actually agree with each other once wired together as real HTTP requests.
+
+> [!TIP]
+> Test both the happy path (valid input, expected status) and at least one failure path (invalid input, missing resource) for every endpoint, a suite that only exercises success cases won't catch a broken validation rule or a wrong error status code.`
+    ),
+    quiz: {
+      title: 'Testing with Vitest & Supertest Quiz',
+      passingScore: 70,
+      questions: [
+        {
+          type: 'MULTIPLE_CHOICE',
+          prompt: 'Why export the Express app separately from the code that calls .listen()?',
+          options: [
+            "It's required by TypeScript",
+            'So Supertest can send requests to it in-process, without a real network port',
+            'It makes the app faster',
+            'It disables Zod validation during tests',
+          ],
+          answer: 'So Supertest can send requests to it in-process, without a real network port',
+        },
+        {
+          type: 'TRUE_FALSE',
+          prompt: 'A good test suite for a validated endpoint should include at least one request that is expected to fail validation.',
+          options: ['True', 'False'],
+          answer: 'True',
+        },
+        {
+          type: 'FILL_BLANK',
+          prompt: 'The library used in this lesson to send real HTTP requests to an Express app in tests is ____.',
+          options: [],
+          answer: 'supertest',
+        },
+      ],
+    },
+  },
+  {
+    title: 'Final Project: Build a Typed Task API',
+    content: lessonContent(
+      'Final Project: Build a Typed Task API',
+      `Put every piece from this course together into one working, fully typed REST API for managing tasks.\n\n## Requirements\n\n1. Define a \`TaskSchema\` with Zod (\`id\`, \`title\`, \`done\`, \`priority\`, and at least one more field of your choice), derive \`Task\` with \`z.infer\`.\n2. Derive \`CreateTaskSchema\` (omit \`id\`/\`done\`) and \`UpdateTaskSchema\` (fully partial, \`id\` omitted) from \`TaskSchema\`, the way the earlier lesson did.\n3. Implement all five endpoints against an in-memory array: \`GET /tasks\`, \`GET /tasks/:id\`, \`POST /tasks\`, \`PATCH /tasks/:id\`, \`DELETE /tasks/:id\`.\n4. Use the \`validateBody\` middleware on \`POST\` and \`PATCH\`, returning \`400\` with the flattened Zod error on invalid input.\n5. Use the \`asyncHandler\` wrapper on every route, and register a typed \`errorHandler\` (four-parameter, \`err: unknown\`) after all routes.\n6. Return \`404\` for \`GET\`/\`PATCH\`/\`DELETE\` on a task id that doesn't exist.\n\n## Stretch goals\n\n- Add a \`GET /tasks?priority=high\` filter using a Zod schema to validate the query string too.\n- Add pagination (\`?page=\`, \`?limit=\`) with sensible defaults.\n- Split schemas, routes, and the in-memory store into separate files, importing/exporting types and schemas between them.\n- Write a small script (or use a REST client) that sends an intentionally invalid request and confirms you get a \`400\` with a useful error message back.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀`
+    ),
+    requiresSubmission: true,
+  },
+];
+
 const cppLessons: SeedLesson[] = [
   {
     title: 'Hello, C++',
@@ -13060,6 +13875,18 @@ const coursesByPath: Record<
       description:
         'Build real, typed LLM applications with LangChain.js: chat models and prompt templates, LCEL chains with .pipe(), retrieval-augmented generation, tools and agents, and stateful multi-step workflows with LangGraph.js.',
       lessons: langchainTsLessons,
+    },
+    {
+      title: 'TypeScript Intermediate: Utility Types, Narrowing & Advanced Types',
+      description:
+        'Go beyond the basics: compose types with Partial, Pick, Omit & Record, narrow unknown values safely with type guards and predicates, build mapped and template literal types, constrain and default generics, write function overloads, and use satisfies to keep precise inference.',
+      lessons: tsIntermediateLessons,
+    },
+    {
+      title: 'Build a Typed REST API with Express, TypeScript & Zod',
+      description:
+        'Build a real, validated REST API: Zod schemas as a single source of truth for runtime validation and inferred TypeScript types, typed Express handlers and middleware, validated environment configuration, integration tests with Vitest & Supertest, and a full typed CRUD project.',
+      lessons: tsExpressZodLessons,
     },
   ],
   cpp: [
