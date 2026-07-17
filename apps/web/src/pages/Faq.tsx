@@ -702,6 +702,75 @@ export const SECTIONS: Record<Language, Section[]> = {
       ],
     },
     {
+      title: 'AI frameworks (LangChain, LangGraph & more)',
+      items: [
+        {
+          q: 'What is LangChain?',
+          a: 'LangChain is an open source framework for building applications powered by LLMs, it provides reusable building blocks for prompts, chaining multiple calls together, connecting to external data sources for RAG, and calling tools, so you don’t have to write that plumbing from scratch. It was one of the first popular frameworks in this space and remains widely used, especially for simpler, linear LLM workflows.',
+        },
+        {
+          q: 'What is LangGraph?',
+          a: 'LangGraph is a framework, built by the LangChain team, for building more complex, stateful AI agents and multi-step workflows as a graph of steps rather than a simple linear chain. It’s designed specifically for agentic use cases where the flow needs to branch, loop, or wait for human input, things that are awkward to express as a straight chain.',
+        },
+        {
+          q: 'LangChain vs LangGraph',
+          a: 'LangChain is best suited for simpler, mostly linear LLM workflows, like a single RAG pipeline or a straightforward prompt chain, while LangGraph is built for more complex agents that need branching logic, loops, or to pause and resume with human input. In practice, many projects use both together, LangChain’s components for the building blocks, and LangGraph for orchestrating them into a more complex agent.',
+        },
+        {
+          q: 'How do you build AI agents with LangGraph?',
+          a: 'In LangGraph, you define your agent as a graph: nodes represent steps (like calling the model, calling a tool, or checking a condition), and edges define how control moves between them, including loops back to earlier steps and conditional branches. You then compile the graph and run it with an initial state, and LangGraph handles keeping track of state across steps, including pausing for human approval if you’ve added that as a step.',
+        },
+        {
+          q: 'How do you build RAG with LangChain?',
+          a: 'LangChain provides ready-made components for each step of a RAG pipeline: loading and splitting documents, embedding them and storing the vectors in a vector database, retrieving the most relevant chunks for a given query, and feeding them into the model along with the user’s question. Most of the wiring between these steps is handled by LangChain’s abstractions, so you mainly need to pick which document loader, vector store, and model to plug in.',
+        },
+        {
+          q: 'How does Tool Calling work in LangChain?',
+          a: 'In LangChain, you define a tool as a function with a description of what it does and what parameters it takes, and the model decides, based on the user’s request, whether and how to call it. LangChain then handles passing the model’s chosen arguments to your actual function, running it, and feeding the result back into the conversation so the model can use it in its response.',
+        },
+        {
+          q: 'How do you build multi-agent systems?',
+          a: 'A multi-agent system splits a task across several specialized agents, each focused on a narrower job (like a researcher, a writer, and a reviewer), coordinated by either a central "orchestrator" agent or a shared communication pattern between them. Frameworks like LangGraph, CrewAI, and AutoGen all provide different ways to define these roles and the handoffs between them, rather than making you build the coordination logic entirely from scratch.',
+        },
+        {
+          q: 'LangGraph vs CrewAI',
+          a: 'LangGraph gives you fine-grained, code-first control over exactly how agents interact via an explicit graph of steps, which suits complex or unusual workflows but requires more setup. CrewAI takes a higher-level, role-based approach, where you mainly define agents’ roles and goals and let the framework handle more of the coordination, which is faster to get started with but offers less control over the exact flow.',
+        },
+        {
+          q: 'LangChain vs LlamaIndex',
+          a: 'LangChain is a general-purpose framework for building LLM applications of all kinds, chains, agents, tool use, and RAG among them, while LlamaIndex is more narrowly focused and especially strong at the data side of RAG, ingesting, indexing, and querying large document collections. Many projects use LlamaIndex specifically for retrieval and LangChain (or LangGraph) for the rest of the application logic around it.',
+        },
+        {
+          q: 'Is LangChain still relevant?',
+          a: 'Yes, LangChain remains one of the most widely used frameworks for LLM applications and continues to be actively developed, though its reputation has shifted over time, early versions were criticized for being overly abstracted for simple use cases. For straightforward chains and RAG pipelines it’s still a solid, well-supported choice, while more complex agentic workflows increasingly reach for LangGraph instead.',
+        },
+        {
+          q: 'Will LangGraph replace LangChain?',
+          a: 'Not exactly "replace," since LangGraph is built by the same team and actually depends on LangChain’s core components, they’re complementary rather than competing. LangGraph is aimed at more complex, stateful agent workflows, while LangChain’s simpler chain-based tools remain the better fit for straightforward use cases, so both continue to be maintained and used together.',
+        },
+        {
+          q: 'Is LangGraph the future of AI agents?',
+          a: 'LangGraph is one of the leading frameworks for building complex AI agents today, particularly popular for workflows that need explicit control over state, branching, and human-in-the-loop steps, but it’s not the only serious option, CrewAI, AutoGen, and others are also actively developed. The space is still moving quickly, so it’s more accurate to say LangGraph is a strong current choice than a guaranteed long-term standard.',
+        },
+        {
+          q: 'What are the alternatives to LangChain?',
+          a: 'Notable alternatives include LlamaIndex (focused on data retrieval for RAG), CrewAI and AutoGen (both more role- or conversation-based for multi-agent systems), Haystack, and simply using a model provider’s SDK directly with your own lightweight orchestration code. Which one fits best depends on the use case, teams that want fine control with less abstraction often skip a framework entirely and just call the API directly.',
+        },
+        {
+          q: 'Which AI framework should you learn in 2026?',
+          a: 'LangChain and LangGraph are the safest starting point given how widely they’re used and documented, and give you transferable concepts (chains, tools, agents, state graphs) that carry over to other frameworks. Beyond that, it’s worth understanding the underlying concepts, RAG, tool calling, and agent orchestration, well enough that you could work with any framework, or none at all, rather than tying your skills to one specific library.',
+        },
+        {
+          q: 'What does the future look like for AI agents?',
+          a: 'AI agents are trending toward being more reliable and controllable, with better tooling for observability, evaluation, and human oversight, rather than just more autonomous for its own sake. Standards like Model Context Protocol for connecting agents to tools and data are also likely to reduce how much custom integration work each new agent needs, making frameworks more interoperable with each other.',
+        },
+        {
+          q: 'Which AI frameworks do companies use?',
+          a: 'LangChain and LangGraph are among the most widely adopted in production, alongside LlamaIndex for retrieval-heavy use cases, and CrewAI or AutoGen for teams building multi-agent workflows. Larger companies with more custom needs sometimes build a thinner, in-house layer directly on top of a model provider’s API instead of adopting a full framework, trading convenience for more control.',
+        },
+      ],
+    },
+    {
       title: 'Programming with AI',
       items: [
         {
@@ -1594,6 +1663,75 @@ export const SECTIONS: Record<Language, Section[]> = {
         {
           q: 'Hur distribuerar man AI-modeller?',
           a: 'Att distribuera (deploya) en AI-modell innebär vanligtvis att köra den bakom ett API, antingen genom en molnleverantörs hanterade tjänst (enklast, men mindre kontroll) eller genom att själv hosta modellen på egen eller hyrd hårdvara med tillräcklig GPU-kapacitet (mer kontroll och ofta lägre kostnad i stor skala, men betydligt mer driftsansvar). Valet beror mest på hur känslig datan är, hur stor skala man kör i, och hur mycket infrastrukturarbete man är beredd att ta på sig.',
+        },
+      ],
+    },
+    {
+      title: 'AI-ramverk (LangChain, LangGraph & fler)',
+      items: [
+        {
+          q: 'Vad är LangChain?',
+          a: 'LangChain är ett open source-ramverk för att bygga applikationer som drivs av LLM:er, det ger färdiga byggstenar för prompts, att kedja ihop flera anrop, koppla mot externa datakällor för RAG, och anropa verktyg, så att du slipper skriva den infrastrukturen från grunden. Det var ett av de första populära ramverken inom området och används fortfarande brett, särskilt för enklare, linjära LLM-flöden.',
+        },
+        {
+          q: 'Vad är LangGraph?',
+          a: 'LangGraph är ett ramverk, byggt av samma team som LangChain, för att bygga mer komplexa, tillståndsbaserade AI-agenter och flerstegsflöden som en graf av steg snarare än en enkel linjär kedja. Det är utformat specifikt för agentiska användningsfall där flödet behöver förgrena sig, loopa, eller vänta på mänsklig input, sådant som är krångligt att uttrycka som en rak kedja.',
+        },
+        {
+          q: 'LangChain vs LangGraph',
+          a: 'LangChain passar bäst för enklare, mestadels linjära LLM-flöden, som en enskild RAG-pipeline eller en rak promptkedja, medan LangGraph är byggt för mer komplexa agenter som behöver förgrenad logik, loopar, eller att pausa och återuppta med mänsklig input. I praktiken använder många projekt båda tillsammans, LangChains komponenter som byggstenar, och LangGraph för att orkestrera dem till en mer komplex agent.',
+        },
+        {
+          q: 'Hur bygger man AI-agenter med LangGraph?',
+          a: 'I LangGraph definierar du din agent som en graf: noder representerar steg (som att anropa modellen, anropa ett verktyg, eller kontrollera ett villkor), och kanter definierar hur kontrollen förflyttas mellan dem, inklusive loopar tillbaka till tidigare steg och villkorliga förgreningar. Du kompilerar sedan grafen och kör den med ett initialt tillstånd, och LangGraph håller reda på tillståndet genom stegen, inklusive att pausa för mänskligt godkännande om du lagt till det som ett steg.',
+        },
+        {
+          q: 'Hur bygger man RAG med LangChain?',
+          a: 'LangChain tillhandahåller färdiga komponenter för varje steg i en RAG-pipeline: att läsa in och dela upp dokument, embedda dem och lagra vektorerna i en vektordatabas, hämta de mest relevanta avsnitten för en given fråga, och mata in dem i modellen tillsammans med användarens fråga. Det mesta av kopplingen mellan dessa steg hanteras av LangChains abstraktioner, så du behöver mest välja vilken dokumentladdare, vektordatabas och modell som ska kopplas in.',
+        },
+        {
+          q: 'Hur fungerar Tool Calling i LangChain?',
+          a: 'I LangChain definierar du ett verktyg som en funktion med en beskrivning av vad den gör och vilka parametrar den tar, och modellen avgör, utifrån användarens förfrågan, om och hur den ska anropas. LangChain hanterar sedan att skicka modellens valda argument till din faktiska funktion, köra den, och mata tillbaka resultatet in i konversationen så att modellen kan använda det i sitt svar.',
+        },
+        {
+          q: 'Hur bygger man multi-agent-system?',
+          a: 'Ett multi-agent-system delar upp en uppgift mellan flera specialiserade agenter, var och en fokuserad på en snävare del (som en researcher, en skribent och en granskare), koordinerade antingen av en central "orkestrerande" agent eller ett delat kommunikationsmönster mellan dem. Ramverk som LangGraph, CrewAI och AutoGen erbjuder alla olika sätt att definiera dessa roller och överlämningarna mellan dem, istället för att du behöver bygga koordineringslogiken helt från grunden.',
+        },
+        {
+          q: 'LangGraph vs CrewAI',
+          a: 'LangGraph ger dig finkornig, kodnära kontroll över exakt hur agenter interagerar via en explicit graf av steg, vilket passar komplexa eller ovanliga flöden men kräver mer uppsättning. CrewAI tar ett mer högnivå-, rollbaserat tillvägagångssätt, där du huvudsakligen definierar agenternas roller och mål och låter ramverket hantera mer av koordineringen, vilket går snabbare att komma igång med men ger mindre kontroll över det exakta flödet.',
+        },
+        {
+          q: 'LangChain vs LlamaIndex',
+          a: 'LangChain är ett generellt ramverk för att bygga LLM-applikationer av alla slag, kedjor, agenter, verktygsanvändning och RAG bland annat, medan LlamaIndex är mer smalt fokuserat och särskilt starkt på datasidan av RAG, att läsa in, indexera och söka i stora dokumentsamlingar. Många projekt använder LlamaIndex specifikt för sökning/hämtning och LangChain (eller LangGraph) för resten av applikationslogiken runt omkring.',
+        },
+        {
+          q: 'Är LangChain fortfarande relevant?',
+          a: 'Ja, LangChain förblir ett av de mest använda ramverken för LLM-applikationer och utvecklas fortfarande aktivt, även om dess rykte förändrats över tid, tidiga versioner kritiserades för att vara onödigt abstraherade för enkla användningsfall. För raka kedjor och RAG-pipelines är det fortfarande ett solitt, väl underhållet val, medan mer komplexa agentiska flöden alltmer vänder sig till LangGraph istället.',
+        },
+        {
+          q: 'Kommer LangGraph att ersätta LangChain?',
+          a: 'Inte direkt "ersätta", eftersom LangGraph byggs av samma team och faktiskt bygger på LangChains kärnkomponenter, de kompletterar varandra snarare än att konkurrera. LangGraph riktar sig mot mer komplexa, tillståndsbaserade agentflöden, medan LangChains enklare kedjebaserade verktyg fortfarande passar bättre för raka användningsfall, så båda fortsätter att underhållas och användas tillsammans.',
+        },
+        {
+          q: 'Är LangGraph framtiden för AI-agenter?',
+          a: 'LangGraph är ett av de ledande ramverken för att bygga komplexa AI-agenter idag, särskilt populärt för flöden som behöver explicit kontroll över tillstånd, förgreningar och mänskliga godkännandesteg, men det är inte det enda seriösa alternativet, CrewAI, AutoGen och andra utvecklas också aktivt. Området rör sig fortfarande snabbt, så det är mer träffsäkert att säga att LangGraph är ett starkt aktuellt val än en garanterad långsiktig standard.',
+        },
+        {
+          q: 'Vilka alternativ finns till LangChain?',
+          a: 'Anmärkningsvärda alternativ inkluderar LlamaIndex (fokuserat på datahämtning för RAG), CrewAI och AutoGen (båda mer roll- eller konversationsbaserade för multi-agent-system), Haystack, och att helt enkelt använda en modellleverantörs SDK direkt med egen lättviktig orkestreringskod. Vilket som passar bäst beror på användningsfallet, team som vill ha fin kontroll med mindre abstraktion hoppar ofta över ett ramverk helt och anropar API:et direkt.',
+        },
+        {
+          q: 'Vilket AI-ramverk ska man lära sig 2026?',
+          a: 'LangChain och LangGraph är det säkraste startvalet med tanke på hur brett de används och dokumenteras, och ger dig överförbara koncept (kedjor, verktyg, agenter, tillståndsgrafer) som går att applicera på andra ramverk. Utöver det är det värt att förstå de underliggande koncepten, RAG, verktygsanrop och agentorkestrering, tillräckligt väl för att kunna jobba med vilket ramverk som helst, eller inget alls, snarare än att knyta din kompetens till ett specifikt bibliotek.',
+        },
+        {
+          q: 'Hur ser framtiden ut för AI-agenter?',
+          a: 'AI-agenter går mot att bli mer pålitliga och kontrollerbara, med bättre verktyg för observerbarhet, utvärdering och mänsklig tillsyn, snarare än bara mer autonoma för sin egen skull. Standarder som Model Context Protocol för att koppla agenter till verktyg och data kommer sannolikt också minska hur mycket anpassad integrationskod varje ny agent behöver, vilket gör ramverk mer interoperabla med varandra.',
+        },
+        {
+          q: 'Vilka AI-ramverk används av företag?',
+          a: 'LangChain och LangGraph hör till de mest använda i produktion, tillsammans med LlamaIndex för sökningstunga användningsfall, och CrewAI eller AutoGen för team som bygger multi-agent-flöden. Större företag med mer anpassade behov bygger ibland ett tunnare, egenutvecklat lager direkt ovanpå en modellleverantörs API istället för att anta ett fullständigt ramverk, vilket byter bekvämlighet mot mer kontroll.',
         },
       ],
     },
