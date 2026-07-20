@@ -136,6 +136,8 @@ export interface AdminReviewDto {
   username: string;
   courseTitle: string;
   createdAt: string;
+  featured: boolean;
+  featuredOrder: number | null;
 }
 
 export interface QuizQuestionDto {

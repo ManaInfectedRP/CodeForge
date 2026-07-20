@@ -197,7 +197,7 @@ export function Landing() {
       .then((res) => setPaths(res.data.filter((p) => p.slug !== 'public')))
       .catch(() => {});
     api
-      .get<FeaturedReviewDto[]>('/reviews/featured', { params: { limit: 9 } })
+      .get<FeaturedReviewDto[]>('/reviews/featured')
       .then((res) => setReviews(res.data))
       .catch(() => {});
   }, []);
