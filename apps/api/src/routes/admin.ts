@@ -11,6 +11,8 @@ const rejectSchema = z.object({
   note: z.string().max(1000).optional(),
 });
 
+const moveSchema = z.object({ direction: z.enum(['up', 'down']) });
+
 const statusFilter = z.enum(['DRAFT', 'PENDING_REVIEW', 'PUBLISHED']).optional();
 
 export const adminRouter = Router();
@@ -307,7 +309,7 @@ adminRouter.get(
   '/reviews',
   h(async (req, res) => {
     const reviews = await prisma.courseReview.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ featured: 'desc' }, { featuredOrder: 'asc' }, { createdAt: 'desc' }],
       include: {
         user: { select: { username: true } },
         course: { select: { title: true } },
@@ -320,6 +322,8 @@ adminRouter.get(
       username: r.user.username,
       courseTitle: r.course.title,
       createdAt: r.createdAt.toISOString(),
+      featured: r.featured,
+      featuredOrder: r.featuredOrder,
     }));
     res.json(body);
   })
@@ -332,5 +336,62 @@ adminRouter.delete(
     if (!review) throw new HttpError(404, 'Review not found');
     await prisma.courseReview.delete({ where: { id: review.id } });
     res.json({ deleted: true });
+  })
+);
+
+// Toggles whether a review is one of the (at most 3) curated testimonials shown on the landing page.
+adminRouter.post(
+  '/reviews/:id/feature',
+  h(async (req, res) => {
+    const review = await prisma.courseReview.findUnique({ where: { id: req.params.id } });
+    if (!review) throw new HttpError(404, 'Review not found');
+
+    if (review.featured) {
+      await prisma.courseReview.update({
+        where: { id: review.id },
+        data: { featured: false, featuredOrder: null },
+      });
+      return res.json({ featured: false });
+    }
+
+    const featuredCount = await prisma.courseReview.count({ where: { featured: true } });
+    if (featuredCount >= 3) throw new HttpError(400, 'Un-feature another review first (max 3 featured)');
+
+    const top = await prisma.courseReview.findFirst({
+      where: { featured: true },
+      orderBy: { featuredOrder: 'desc' },
+    });
+    await prisma.courseReview.update({
+      where: { id: review.id },
+      data: { featured: true, featuredOrder: (top?.featuredOrder ?? -1) + 1 },
+    });
+    res.json({ featured: true });
+  })
+);
+
+// Reorders a featured review among the other featured reviews (landing page display order).
+adminRouter.post(
+  '/reviews/:id/move',
+  h(async (req, res) => {
+    const { direction } = moveSchema.parse(req.body);
+    const review = await prisma.courseReview.findUnique({ where: { id: req.params.id } });
+    if (!review || !review.featured) throw new HttpError(404, 'Featured review not found');
+
+    const neighbor = await prisma.courseReview.findFirst({
+      where: {
+        featured: true,
+        featuredOrder: direction === 'up' ? { lt: review.featuredOrder! } : { gt: review.featuredOrder! },
+      },
+      orderBy: { featuredOrder: direction === 'up' ? 'desc' : 'asc' },
+    });
+    if (!neighbor) return res.json({ moved: false });
+
+    // swap orders via a temporary slot to satisfy the unique(featuredOrder) constraint
+    await prisma.$transaction(async (tx) => {
+      await tx.courseReview.update({ where: { id: review.id }, data: { featuredOrder: -1 } });
+      await tx.courseReview.update({ where: { id: neighbor.id }, data: { featuredOrder: review.featuredOrder } });
+      await tx.courseReview.update({ where: { id: review.id }, data: { featuredOrder: neighbor.featuredOrder } });
+    });
+    res.json({ moved: true });
   })
 );

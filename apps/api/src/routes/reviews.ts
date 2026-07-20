@@ -18,9 +18,11 @@ export const reviewsRouter = Router();
 reviewsRouter.get(
   '/featured',
   h(async (req, res) => {
-    const limit = Math.min(Math.max(Number(req.query.limit) || 6, 1), 20);
+    // At most 3 reviews can ever be featured (enforced in the admin feature-toggle route).
+    const limit = Math.min(Math.max(Number(req.query.limit) || 3, 1), 3);
     const reviews = await prisma.courseReview.findMany({
-      orderBy: [{ rating: 'desc' }, { createdAt: 'desc' }],
+      where: { featured: true },
+      orderBy: { featuredOrder: 'asc' },
       take: limit,
       include: {
         user: { select: { username: true, avatarUrl: true } },
