@@ -14,8 +14,7 @@ const translations = {
     showLess: 'Show less',
     readFullReview: 'Read full review',
     stars: 'stars',
-    heroLead: 'Your path to a career as a',
-    heroHighlight: 'software developer',
+    heroLead: 'Your path to a career as a software developer.',
     subtitle:
       'Step by step, from your first line of code to your first developer role. Interactive courses, real projects, and quizzes across all kinds of programming languages.',
     inviteFriend: 'Invite a friend with your link below.',
@@ -34,8 +33,7 @@ const translations = {
     showLess: 'Visa mindre',
     readFullReview: 'Läs hela recensionen',
     stars: 'stjärnor',
-    heroLead: 'Din väg mot en karriär som',
-    heroHighlight: 'mjukvaruutvecklare',
+    heroLead: 'Din väg mot en karriär som mjukvaruutvecklare.',
     subtitle:
       'Kliv för kliv, från din första rad kod till din första utvecklarroll. Interaktiva kurser, verkliga projekt och quiz i alla möjliga programmeringsspråk.',
     inviteFriend: 'Bjud in en vän med din länk nedan.',
@@ -207,9 +205,6 @@ export function Landing() {
       <section className="mx-auto max-w-6xl px-4 py-16 text-center">
         <h1 className="mx-auto max-w-3xl text-4xl font-extrabold leading-tight sm:text-6xl">
           {t.heroLead}{' '}
-          <span className="bg-gradient-to-r from-forge-500 to-emerald-400 bg-clip-text text-transparent">
-            {t.heroHighlight}
-          </span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">{t.subtitle}</p>
         {user ? (
