@@ -7,6 +7,12 @@
 # https://render.com/docs/deploy-nextjs-app#deploy-as-a-static-site
 #
 # Deploy: push this repo to GitHub -> Render Dashboard -> New -> Blueprint.
+#
+# Migrating from the old backend deploy: a service's `type`/`runtime` is immutable, so
+# Render cannot turn the previous `codeforge` Node web service into a static site. Delete
+# that service (and the `codeforge-db` Postgres instance, which this blueprint no longer
+# declares - export anything you still want first) before syncing, otherwise the sync keeps
+# the old service and its old `npm ci ...` build command.
 
 services:
   - type: web
