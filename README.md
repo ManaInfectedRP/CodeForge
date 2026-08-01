@@ -93,8 +93,15 @@ Quizzes and coding challenges are graded in the browser using the same sandbox.
 
 Push to GitHub, then in the Render dashboard choose **New → Blueprint** and point it at the
 repo. [render.yaml](render.yaml) provisions a single static site that runs
-[build.sh](build.sh) and serves `apps/web/out` from Render's CDN. `build.sh` restores and
-saves `.next/cache` between builds via `$XDG_CACHE_HOME`, which keeps rebuilds fast.
+[build.sh](build.sh) and serves `apps/web/out` from Render's CDN. Render does not install
+dependencies for you, so `build.sh` runs `yarn install --frozen-lockfile` itself, then
+restores and saves `.next/cache` between builds via `$XDG_CACHE_HOME` to keep rebuilds fast.
+
+**Coming from the old backend deploy:** Render can't change an existing service's type, so
+the previous `codeforge` Node web service has to be deleted before the blueprint can create
+the static site. The `codeforge-db` Postgres instance is no longer in the blueprint either;
+Render won't remove it automatically, and it still holds the old accounts, progress, chat,
+and course reviews, so export anything worth keeping before deleting it.
 
 ## What this used to be
 
