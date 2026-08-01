@@ -1,0 +1,442 @@
+{
+  "slug": "logging-and-observability",
+  "title": "Logging and Observability",
+  "description": "The three pillars of observability: structured logging, metrics and time-series data, distributed tracing, and alerting that does not burn out your team.",
+  "pathSlug": "observability",
+  "pathName": "Observability",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "the-three-pillars-logs-metrics-and-traces",
+      "title": "The Three Pillars: Logs, Metrics, and Traces",
+      "order": 1,
+      "content": "# The Three Pillars: Logs, Metrics, and Traces\n\n**Observability** is the ability to understand what's happening inside a running system just from what it exposes externally, without having to guess or attach a debugger to production. It's usually broken down into three complementary signal types.\n\n## Monitoring vs. observability\n\n**Monitoring** answers questions you already thought to ask ahead of time (\"is CPU usage above 80%?\"). **Observability** is what lets you answer questions you *didn't* anticipate when something goes wrong at 3am (\"why are only requests from mobile clients in the EU slow, and only since 20 minutes ago?\"), by exploring the raw signals your system emits.\n\n## The three pillars\n\n| Pillar | Answers | Example |\n|---|---|---|\n| **Logs** | What happened, in detail, at a specific point | \"User 42's payment failed: card declined\" |\n| **Metrics** | How much/how many, over time | \"Requests per second\", \"p99 latency\" |\n| **Traces** | How a single request flowed through multiple services | \"Request hit API → auth service (12ms) → database (340ms) → response\" |\n\nNone of the three replaces the others, metrics tell you *something* is wrong and roughly when, logs tell you the specific detail of what happened, traces tell you *where* in a multi-service request the time actually went.\n\n## A concrete example\n\nImagine checkout latency suddenly spikes:\n1. A **metric** (p99 latency dashboard) shows the spike started at 14:32 and is ongoing.\n2. A **trace** for a slow request shows 90% of the time is spent in a call to the inventory service.\n3. **Logs** from the inventory service around that time show repeated database connection timeout errors.\n\nEach pillar narrowed the investigation, from \"something is slow\" to \"which service\" to \"the exact underlying error\", in minutes instead of hours of guessing.\n\n> [!NOTE]\n> This course focuses on the concepts and vendor-agnostic tools (structured logging, Prometheus-style metrics, OpenTelemetry), the same ideas apply whether you're using a cloud provider's built-in tools, a self-hosted stack, or a dedicated observability vendor.",
+      "quiz": {
+        "title": "Observability Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What's the key difference between monitoring and observability?",
+            "options": [
+              "They are exactly the same thing",
+              "Monitoring answers pre-defined questions, observability lets you explore unanticipated questions",
+              "Observability only works for Kubernetes",
+              "Monitoring is newer than observability"
+            ],
+            "answer": "Monitoring answers pre-defined questions, observability lets you explore unanticipated questions"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which pillar tells you how a single request flowed through multiple services?",
+            "options": [
+              "Logs",
+              "Metrics",
+              "Traces",
+              "Alerts"
+            ],
+            "answer": "Traces"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Metrics can tell you the specific detailed reason a single request failed.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The pillar that answers 'how much/how many, over time' is ____.",
+            "options": [],
+            "answer": "Metrics"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "The three pillars of observability are redundant with each other, so you only need one.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In the checkout latency example, what narrowed the investigation from 'something is slow' to the exact root cause?",
+            "options": [
+              "Guessing randomly",
+              "Using metrics, then a trace, then logs together",
+              "Restarting the service repeatedly",
+              "Ignoring the issue until it resolved itself"
+            ],
+            "answer": "Using metrics, then a trace, then logs together"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "structured-logging-done-right",
+      "title": "Structured Logging Done Right",
+      "order": 2,
+      "content": "# Structured Logging Done Right\n\nA log line like `Payment failed for user` is easy for a human to read once, and nearly useless to search, filter, or aggregate across millions of log lines. **Structured logging** fixes that by emitting logs as data, not prose.\n\n## Plain text vs. structured\n\n```\n# Plain text\nPayment failed for user 42, card declined, order #8817\n\n# Structured (JSON)\n{\"level\": \"error\", \"event\": \"payment_failed\", \"userId\": 42, \"orderId\": 8817, \"reason\": \"card_declined\", \"timestamp\": \"2026-07-08T14:32:01Z\"}\n```\n\nThe structured version is trivial to query (\"show me every `payment_failed` event where `reason = card_declined` in the last hour\"), the plain-text version requires fragile regex or full-text search across free-form sentences that might not even be phrased consistently between developers.\n\n## Log levels\n\nEvery log line should carry a **level**, indicating urgency and who needs to see it:\n\n| Level | Meaning |\n|---|---|\n| `debug` | Detailed diagnostic info, useful in development, usually off in production |\n| `info` | Normal operational events (a request completed, a job started) |\n| `warn` | Something unexpected, but not (yet) a failure |\n| `error` | An operation failed |\n\nBeing disciplined about levels means production can run at `info` and above by default, keeping log volume (and cost) manageable, while `debug` is available to flip on temporarily when actively investigating something.\n\n## Correlation IDs\n\nA single user action often triggers work across multiple services, correlating all their logs together requires a shared identifier attached to every log line involved in handling that one request:\n\n```\n{\"event\": \"request_received\", \"correlationId\": \"req-9f8a\", \"path\": \"/checkout\"}\n{\"event\": \"payment_charged\", \"correlationId\": \"req-9f8a\", \"amount\": 4999}\n{\"event\": \"order_created\", \"correlationId\": \"req-9f8a\", \"orderId\": 8817}\n```\n\nGenerate a `correlationId` (or reuse the incoming one if the request came from another internal service) at the very start of handling a request, and pass it along to every downstream call and every log line for that request.\n\n> [!TIP]\n> If you can't answer \"show me every log line related to this one specific user's specific failed request\" in under a minute, your logging isn't structured enough yet, that query is the entire point of doing this.",
+      "quiz": {
+        "title": "Structured Logging Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What's the main advantage of structured (JSON) logs over free-form text?",
+            "options": [
+              "They take up less disk space always",
+              "They are trivial to query and filter reliably",
+              "They cannot be read by humans at all",
+              "They replace the need for metrics"
+            ],
+            "answer": "They are trivial to query and filter reliably"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A ____ ID is a shared identifier attached to every log line involved in handling one specific request, letting you trace it across services.",
+            "options": [],
+            "answer": "correlation"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "In production, it's common to run at info level and above by default, keeping debug logs available to enable temporarily.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which log level indicates an operation actually failed?",
+            "options": [
+              "debug",
+              "info",
+              "warn",
+              "error"
+            ],
+            "answer": "error"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Structured logging replaces the need for log levels entirely.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "Being able to find every log line related to one specific failed request quickly is the whole point of ____ logging.",
+            "options": [],
+            "answer": "structured"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "metrics-and-time-series-data",
+      "title": "Metrics and Time-Series Data",
+      "order": 3,
+      "content": "# Metrics and Time-Series Data\n\nLogs tell you about individual events. **Metrics** aggregate numbers over time, letting you see trends, set alerts, and build dashboards without drowning in individual log lines.\n\n## The three basic metric types\n\n| Type | Behavior | Example |\n|---|---|---|\n| **Counter** | Only ever goes up (until reset) | Total requests served |\n| **Gauge** | Goes up or down freely | Current memory usage, active connections |\n| **Histogram** | Buckets observations to compute distributions | Request latency (so you can ask for p50/p95/p99) |\n\nA counter for `http_requests_total` doesn't tell you the request *rate*, but a monitoring system can compute the rate of change over time from a raw counter, which is usually what you actually want to graph.\n\n## Prometheus-style metrics\n\nA very common pattern (used by Prometheus and compatible with most modern monitoring stacks) is exposing metrics as plain text on an HTTP endpoint that a collector periodically scrapes:\n\n```\n# HELP http_requests_total Total HTTP requests\n# TYPE http_requests_total counter\nhttp_requests_total{method=\"GET\",status=\"200\"} 84213\nhttp_requests_total{method=\"GET\",status=\"500\"} 12\n\n# HELP http_request_duration_seconds Request latency\n# TYPE http_request_duration_seconds histogram\nhttp_request_duration_seconds_bucket{le=\"0.1\"} 79000\nhttp_request_duration_seconds_bucket{le=\"0.5\"} 83900\nhttp_request_duration_seconds_bucket{le=\"+Inf\"} 84225\n```\n\nThe `{method=\"GET\",status=\"200\"}` part is a set of **labels**, letting you slice the same metric by dimensions (which method, which status code) without defining a separate metric name for every combination.\n\n## The cardinality trap\n\nLabels are powerful, but each unique combination of label values creates a separate time series stored and tracked individually. Adding a label like `userId` to a metric with millions of users creates millions of time series, this is called a **cardinality explosion**, and it can silently overwhelm a monitoring system's storage and query performance.\n\n> [!WARNING]\n> Never put unbounded, high-cardinality values (user IDs, email addresses, raw URLs with query strings, request IDs) directly into a metric's labels. Those belong in logs and traces instead, metric labels should stay to a bounded, relatively small set of values (a handful of environments, a handful of status codes, a handful of regions).",
+      "quiz": {
+        "title": "Metrics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which metric type only ever increases (until it resets)?",
+            "options": [
+              "Gauge",
+              "Counter",
+              "Histogram",
+              "Trace"
+            ],
+            "answer": "Counter"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which metric type lets you compute percentiles like p95 latency?",
+            "options": [
+              "Counter",
+              "Gauge",
+              "Histogram",
+              "Log level"
+            ],
+            "answer": "Histogram"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A gauge metric can go both up and down, like current memory usage.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A set of key-value pairs attached to a metric, like method and status, letting you slice it by dimension, is called a ____.",
+            "options": [],
+            "answer": "label"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Adding a high-cardinality label like userId to a metric is a safe, recommended practice.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "Adding unbounded label values that create millions of separate time series is called a cardinality ____.",
+            "options": [],
+            "answer": "explosion"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "distributed-tracing",
+      "title": "Distributed Tracing",
+      "order": 4,
+      "content": "# Distributed Tracing\n\nA single user request in a microservices system might touch five, ten, or more services before a response comes back. When it's slow, \"logs from each service\" don't easily show you the full, connected picture, **distributed tracing** does.\n\n## Traces, spans, and context propagation\n\nA **trace** represents one end-to-end request, made up of multiple **spans**, each span is one unit of work (a single service call, a database query) with a start time, duration, and metadata.\n\n```\nTrace: checkout-req-9f8a\n├── span: API gateway            (2ms)\n├── span: auth service check     (12ms)\n├── span: inventory service call (340ms)  ← the slow one\n│   └── span: inventory DB query (335ms)\n└── span: payment service call   (45ms)\n```\n\nEach span records its **parent span**, building the tree above, so a tracing tool can render exactly where time was spent across the whole request, at a glance.\n\n## Propagating context across services\n\nFor this to work, a **trace context** (trace ID + current span ID) has to travel with the request as it hops between services, usually via an HTTP header:\n\n```\ntraceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\n```\n\nEvery service in the chain reads the incoming trace context, creates its own span as a child of it, and passes the updated context along to whatever it calls next. Miss this step in even one service, and the trace breaks into two disconnected pieces there.\n\n## OpenTelemetry\n\n**OpenTelemetry (OTel)** is the current industry-standard, vendor-neutral way to instrument code for traces (and logs and metrics), instrument your code once with OTel's libraries, and send the data to whichever backend you choose (many are compatible), instead of locking your instrumentation to one specific vendor's proprietary SDK.\n\n```\nimport { trace } from '@opentelemetry/api';\n\nconst tracer = trace.getTracer('inventory-service');\n\nasync function checkStock(itemId) {\n  return tracer.startActiveSpan('checkStock', async (span) => {\n    const result = await db.query(...);\n    span.end();\n    return result;\n  });\n}\n```\n\n> [!NOTE]\n> A great deal of tracing's value comes for free once a service framework or library has built-in OTel instrumentation, HTTP frameworks, database clients, and message queues increasingly ship this out of the box, so you often get spans for the \"boring\" infrastructure calls without writing any tracing code yourself, and only add manual spans for the business logic you specifically want visibility into.",
+      "quiz": {
+        "title": "Distributed Tracing Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is a span?",
+            "options": [
+              "An entire trace",
+              "One unit of work within a trace, like a single service call",
+              "A type of log level",
+              "A metric label"
+            ],
+            "answer": "One unit of work within a trace, like a single service call"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Trace context must travel with a request across service boundaries (e.g. via an HTTP header) for a trace to stay connected.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "If a service fails to propagate the incoming trace context to what it calls next, the trace ____ into disconnected pieces.",
+            "options": [],
+            "answer": "breaks"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is OpenTelemetry?",
+            "options": [
+              "A single vendor's proprietary monitoring product",
+              "A vendor-neutral standard for instrumenting traces, logs, and metrics",
+              "A database engine",
+              "A container orchestrator"
+            ],
+            "answer": "A vendor-neutral standard for instrumenting traces, logs, and metrics"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Each span records its parent span, which is how a tracing tool reconstructs the full request tree.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "Many HTTP frameworks and database clients now ship built-in ____ instrumentation, giving you spans for infrastructure calls with no extra code.",
+            "options": [],
+            "answer": "OTel"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "alerting-without-burning-out-your-team",
+      "title": "Alerting Without Burning Out Your Team",
+      "order": 5,
+      "content": "# Alerting Without Burning Out Your Team\n\nCollecting logs, metrics, and traces is only useful if the right person finds out at the right time when something's actually wrong, without being paged for things that don't matter. Alerting is where observability turns into action.\n\n## SLIs, SLOs, and error budgets\n\n- **SLI (Service Level Indicator)**: a specific measurement, e.g. \"percentage of requests completed successfully\" or \"p99 latency\".\n- **SLO (Service Level Objective)**: a target for that indicator, e.g. \"99.9% of requests succeed over a rolling 30 days\".\n- **Error budget**: the amount of \"failure\" the SLO allows, 99.9% success means a 0.1% error budget, once you're consistently spending it faster than planned, that's a signal to slow down new releases and focus on stability instead of features.\n\n## Alert on symptoms, not causes\n\nA common mistake: alerting on every possible underlying cause (\"CPU > 90%\", \"one Pod restarted\", \"disk usage > 80%\") instead of on user-visible symptoms (\"error rate > 1%\", \"p99 latency > 2s\"). A single real incident can trigger dozens of cause-based alerts simultaneously, symptom-based alerts fire once, for the thing that actually matters to users.\n\n```\n❌ Alert: \"CPU usage above 90% on node-7\"\n✅ Alert: \"Error rate above 1% for checkout service, sustained 5 minutes\"\n```\n\n## Actionable alerts only\n\nEvery alert that pages a human should be something they can actually **act on**. If an alert fires and the response is always \"check it, it's fine, go back to sleep\", that's not an alert, that's noise, and it trains people to ignore the next one, including the real one.\n\n- Does this alert mean something is currently broken for users, or might be soon?\n- Is there a clear next action for whoever receives it?\n- Would ignoring this alert for an hour actually cause harm?\n\nIf the answer to any of these is \"no\", it probably shouldn't page anyone, it might still be worth a metric on a dashboard, just not a 3am notification.\n\n> [!WARNING]\n> **Alert fatigue** (too many low-value alerts) is one of the most common ways real incidents get missed, not because nobody was watching, but because everyone had learned to tune out the constant noise. A team with 5 alerts they trust completely responds faster than a team with 50 they've learned to dismiss.",
+      "quiz": {
+        "title": "Alerting Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is an SLO?",
+            "options": [
+              "A type of log format",
+              "A target for a specific service level indicator, like 99.9% success rate",
+              "A metric label",
+              "A distributed tracing tool"
+            ],
+            "answer": "A target for a specific service level indicator, like 99.9% success rate"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The amount of allowed failure under an SLO (e.g. 0.1% for a 99.9% target) is called the error ____.",
+            "options": [],
+            "answer": "budget"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Alerting on user-visible symptoms (like error rate) is generally preferred over alerting on every possible underlying cause.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is 'alert fatigue'?",
+            "options": [
+              "A hardware failure",
+              "When too many low-value alerts train people to ignore alerts, including real ones",
+              "A type of distributed trace",
+              "A billing charge from too many alerts"
+            ],
+            "answer": "When too many low-value alerts train people to ignore alerts, including real ones"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Every alert that fires should always page a human immediately, regardless of whether there's a clear next action.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "A Service Level ____ is a specific measurement, like percentage of successful requests or p99 latency.",
+            "options": [],
+            "answer": "Indicator"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "dashboards-and-centralized-log-aggregation",
+      "title": "Dashboards and Centralized Log Aggregation",
+      "order": 6,
+      "content": "# Dashboards and Centralized Log Aggregation\n\nWith logs, metrics, and traces flowing from every service, you need somewhere to actually collect, search, and visualize all of it, especially once you have more than one service or more than one server.\n\n## Why centralize logs\n\nIf every service's logs only live on its own machine/container, investigating anything that spans services (which is most real incidents) means SSHing into multiple machines and manually correlating timestamps, painfully slow, and impossible once containers get recycled and their local logs disappear with them.\n\nA **log aggregation** pipeline ships logs from every service to one central, searchable place:\n\n```\nService A logs ─┐\nService B logs ─┼──→  Log shipper  →  Central storage/index  →  Search UI\nService C logs ─┘\n```\n\nCommon building blocks: **Fluentd**/**Fluent Bit** or **Logstash** as the shipper, **Elasticsearch** or a similar index as storage, **Kibana** or **Grafana** as the search/visualization UI, this combination (Elasticsearch + Logstash + Kibana) is common enough to have its own acronym, the \"ELK stack\".\n\n## Building a useful dashboard\n\nA good dashboard answers \"is everything okay right now?\" at a glance, and helps narrow down \"what's wrong?\" within seconds if not. A solid starting point for almost any service:\n\n- **Request rate** (traffic volume over time)\n- **Error rate** (percentage of failed requests)\n- **Latency** (p50 and p99, not just an average, which hides outliers)\n- **Saturation** (how close a resource, CPU/memory/queue depth, is to its limit)\n\nThis is sometimes called the **\"four golden signals\"** (from Google's SRE book), covering both \"are users having a bad time\" (rate/errors/latency) and \"are we about to have a bad time\" (saturation).\n\n## Correlating across pillars in one place\n\nThe real payoff of centralizing everything: from one dashboard, you can jump from a metric spike, to the traces active during that window, to the specific logs from the exact service and time range the trace pointed at, without re-typing timestamps or switching between five different tools' worth of context.\n\n> [!TIP]\n> Don't build a dashboard with 40 panels nobody looks at. Start with the four golden signals for your most important service, and only add more once you've actually needed something else while debugging a real incident.",
+      "quiz": {
+        "title": "Dashboards & Log Aggregation Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the ELK stack stand for?",
+            "options": [
+              "Elasticsearch, Logstash, Kibana",
+              "Events, Logs, Kubernetes",
+              "Error, Latency, Kafka",
+              "Encryption, Logging, Kubernetes"
+            ],
+            "answer": "Elasticsearch, Logstash, Kibana"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Investigating an incident by SSHing into each service's machine individually is a scalable, recommended approach for a multi-service system.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The 'four golden signals' from Google's SRE book are latency, traffic, errors, and ____.",
+            "options": [],
+            "answer": "saturation"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why should latency be shown as p50/p99 rather than just an average?",
+            "options": [
+              "Averages are illegal in monitoring",
+              "An average hides outliers that percentiles reveal",
+              "p99 is easier to compute",
+              "Averages cannot be graphed"
+            ],
+            "answer": "An average hides outliers that percentiles reveal"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "A good dashboard should have as many panels as possible to show every available metric.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "Central log storage lets you jump from a metric spike to related traces to the exact ____ from that time range, all in one place.",
+            "options": [],
+            "answer": "logs"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-instrument-a-sample-app-with-logs-metrics-and-traces",
+      "title": "Final Project: Instrument a Sample App with Logs, Metrics, and Traces",
+      "order": 7,
+      "content": "# Final Project: Instrument a Sample App with Logs, Metrics, and Traces\n\nApply all three pillars to a real, running application, however small.\n\n## Requirements\n\n1. Add structured (JSON) logging to your app, including at least one correlation ID that's attached to every log line generated while handling a single request.\n2. Expose at least three Prometheus-style metrics: one counter (e.g. total requests), one gauge (e.g. active connections), and one histogram (e.g. request latency), on a scrapeable endpoint.\n3. Add basic distributed tracing (using OpenTelemetry or a similar library) around at least one operation that calls another service or the database, with the trace context propagated if your app has more than one service.\n4. Build a simple dashboard (even a basic Grafana/hosted-tool dashboard, or a written mockup with real numbers) showing the four golden signals for your app.\n5. Define at least one SLO for your app (e.g. \"99% of requests complete in under 500ms\") and describe what alert you'd configure to catch a violation of it.\n\n## Stretch goals\n\n- Deliberately introduce a bug, then use only your logs/metrics/traces (not the source code) to diagnose it, and write up how you found it.\n- Add a second alert rule based on error rate, and explain why it's a symptom-based alert rather than a cause-based one.\n- Correlate a single request end-to-end: capture its correlation ID, find its trace, and find its logs, all for the exact same request.\n\nSubmit a link to your finished project (a repo, or a written report with dashboard screenshots/mock numbers) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

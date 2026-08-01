@@ -1,10 +1,12 @@
+'use client';
+
 import { isValidElement, useMemo, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import { CodePlayground, normalizeLang } from './CodePlayground';
 import { HtmlPreview } from './HtmlPreview';
-import { highlight, resolvePrismLang } from '../lib/prism';
+import { highlight, resolvePrismLang } from '@/lib/prism';
 
 /**
  * Fenced code blocks in a runnable language (python/js/ts/lua) become interactive

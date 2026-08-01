@@ -1,0 +1,222 @@
+{
+  "slug": "modding-minecraft-with-forge",
+  "title": "Modding Minecraft with Forge",
+  "description": "Get a Forge mod running, then build your own custom item, block, and crafting recipe for Minecraft using Java and the Forge modding API.",
+  "pathSlug": "java",
+  "pathName": "Java",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "setting-up-a-forge-mod-development-environment",
+      "title": "Setting Up a Forge Mod Development Environment",
+      "order": 1,
+      "content": "# Setting Up a Forge Mod Development Environment\n\nMinecraft mods written in Java are built against **Forge**, a modding API and loader that hooks into the base game. Forge ships a **Mod Development Kit (MDK)**, a ready-to-go Gradle project you build your mod on top of instead of starting from nothing.\n\n## What you'll need\n\n- A Java Development Kit matching your target Minecraft version (JDK 17 for modern 1.20.x Forge).\n- The Forge MDK for the Minecraft version you're targeting, downloaded from Forge's files page and unzipped into your project folder.\n- An IDE with Gradle support, IntelliJ IDEA or Eclipse both work well.\n\n## Getting the MDK running\n\nFrom inside the unzipped MDK folder:\n\n```bash\n./gradlew genIntellijRuns\n```\n\n(`genEclipseRuns` for Eclipse instead), this generates run configurations for launching Minecraft with your mod loaded. Then launch the game itself:\n\n```bash\n./gradlew runClient\n```\n\nThe first run downloads a full Minecraft client and Forge's patched sources, expect it to take a while. If it succeeds, you'll see the normal Minecraft title screen with your (currently empty) mod already loaded.\n\n## mods.toml\n\nEvery Forge mod describes itself in `src/main/resources/META-INF/mods.toml`:\n\n```\nmodLoader=\"javafml\"\nloaderVersion=\"[47,)\"\n\n[[mods]]\nmodId=\"examplemod\"\nversion=\"1.0.0\"\ndisplayName=\"Example Mod\"\n```\n\n`modId` is the mod's unique internal identifier, lowercase, no spaces, you'll reference it constantly in code and in every resource file path.",
+      "quiz": {
+        "title": "Forge Setup Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does Forge's MDK provide?",
+            "options": [
+              "A finished example mod with no code to write",
+              "A ready-to-go Gradle project to build a mod on top of",
+              "A Minecraft server hosting service",
+              "A texture editor"
+            ],
+            "answer": "A ready-to-go Gradle project to build a mod on top of"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A mod's unique internal identifier, declared in mods.toml, is called its ____.",
+            "options": [],
+            "answer": "modId"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The Gradle task runClient launches Minecraft with your mod already loaded.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "the-main-mod-class-and-the-event-bus",
+      "title": "The Main Mod Class and the Event Bus",
+      "order": 2,
+      "content": "# The Main Mod Class and the Event Bus\n\nEvery Forge mod has one main class, annotated with `@Mod`, that Forge instantiates automatically when the game loads.\n\n```java\npackage com.example.examplemod;\n\nimport net.minecraftforge.fml.common.Mod;\nimport net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;\n\n@Mod(\"examplemod\")\npublic class ExampleMod {\n    public ExampleMod() {\n        FMLJavaModLoadingContext.get().getModEventBus()\n            .addListener(this::commonSetup);\n    }\n\n    private void commonSetup(final FMLCommonSetupEvent event) {\n        // runs once, early, on both client and dedicated server\n    }\n}\n```\n\nThe string passed to `@Mod` **must match `modId`** in `mods.toml`, that's how Forge connects the class to the mod's metadata.\n\n## The mod event bus\n\nForge fires setup and registration events through a **mod event bus**, retrieved with `FMLJavaModLoadingContext.get().getModEventBus()`. Registering a listener in the constructor, as above, is the standard place to hook into it, you'll register items and blocks here in the next two lessons.\n\n`FMLCommonSetupEvent` fires once, after all registries have finished registering, the right place for setup logic that depends on other mods' content already existing (like inter-mod compatibility), but too early for anything requiring a running world.\n\n> [!WARNING]\n> There's a second, separate bus, the **game/Forge event bus** (`MinecraftForge.EVENT_BUS`), used for gameplay events like a player breaking a block. Setup and registration events use the *mod* bus, gameplay events use the *Forge* bus, mixing them up is one of the most common beginner mistakes.",
+      "quiz": {
+        "title": "Mod Class & Event Bus Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What must the string passed to @Mod match?",
+            "options": [
+              "The Java package name",
+              "The modId in mods.toml",
+              "The main class name",
+              "The Minecraft version"
+            ],
+            "answer": "The modId in mods.toml"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Registration and setup listeners are attached to the mod event bus inside the mod's ____.",
+            "options": [],
+            "answer": "constructor"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Gameplay events, like a player breaking a block, are fired on the same bus as registration events.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "registering-a-custom-item",
+      "title": "Registering a Custom Item",
+      "order": 3,
+      "content": "# Registering a Custom Item\n\nForge mods don't create game objects directly, everything (items, blocks, sounds, and more) goes through a **registry**, so the game knows about it consistently across saves, mods, and multiplayer.\n\n## DeferredRegister\n\n`DeferredRegister` is the standard, modern pattern for registering content:\n\n```java\npackage com.example.examplemod;\n\nimport net.minecraft.world.item.Item;\nimport net.minecraftforge.registries.DeferredRegister;\nimport net.minecraftforge.registries.ForgeRegistries;\nimport net.minecraftforge.registries.RegistryObject;\n\npublic class ModItems {\n    public static final DeferredRegister<Item> ITEMS =\n        DeferredRegister.create(ForgeRegistries.ITEMS, \"examplemod\");\n\n    public static final RegistryObject<Item> RUBY =\n        ITEMS.register(\"ruby\", () -> new Item(new Item.Properties()));\n}\n```\n\nThen hook `ModItems.ITEMS` into the mod event bus from the main class constructor:\n\n```java\nModItems.ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());\n```\n\n`RegistryObject<Item>` is a lazy reference, it isn't a real, usable `Item` until registration actually completes, call `.get()` on it later once the game has finished loading (never at class-load time).\n\n## Making it show up in-game\n\nA registered item exists, but without two more pieces it's invisible and unnamed in the inventory:\n\n1. **A lang file entry**, `src/main/resources/assets/examplemod/lang/en_us.json`:\n   ```json\n   { \"item.examplemod.ruby\": \"Ruby\" }\n   ```\n2. **An item model**, `src/main/resources/assets/examplemod/models/item/ruby.json`, pointing at a texture in `assets/examplemod/textures/item/ruby.png`.\n\n## Creative tab\n\nTo make the item easy to find in creative mode, add it to a `CreativeModeTab` via a `BuildCreativeModeTabContentsEvent` listener, or simply add it to an existing vanilla tab for now, that's a detail you can refine once the basics work.",
+      "quiz": {
+        "title": "Registering Items Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What's the standard modern pattern for registering a new item in Forge?",
+            "options": [
+              "Calling new Item() directly in main()",
+              "DeferredRegister",
+              "Editing Minecraft's source code directly",
+              "A JSON-only registration, no Java needed"
+            ],
+            "answer": "DeferredRegister"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A RegistryObject is a ____ reference, it isn't a usable item until registration completes.",
+            "options": [],
+            "answer": "lazy"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "An item's display name in the inventory comes from a lang file, not from its registry name.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "creating-a-custom-block",
+      "title": "Creating a Custom Block",
+      "order": 4,
+      "content": "# Creating a Custom Block\n\nBlocks follow the same `DeferredRegister` pattern as items, with a bit more configuration for how they behave in the world.\n\n```java\npackage com.example.examplemod;\n\nimport net.minecraft.world.level.block.Block;\nimport net.minecraft.world.level.material.MapColor;\nimport net.minecraftforge.registries.DeferredRegister;\nimport net.minecraftforge.registries.ForgeRegistries;\nimport net.minecraftforge.registries.RegistryObject;\n\npublic class ModBlocks {\n    public static final DeferredRegister<Block> BLOCKS =\n        DeferredRegister.create(ForgeRegistries.BLOCKS, \"examplemod\");\n\n    public static final RegistryObject<Block> RUBY_ORE =\n        BLOCKS.register(\"ruby_ore\", () ->\n            new Block(Block.Properties.of()\n                .mapColor(MapColor.STONE)\n                .strength(3.0f, 3.0f)\n                .requiresCorrectToolForDrops()));\n}\n```\n\n`strength(hardness, resistance)` controls mining time and explosion resistance, and `requiresCorrectToolForDrops()` means the block only drops an item if broken with a tool that meets its harvest level (a pickaxe, in this case), just like vanilla ore.\n\n## Registering the matching BlockItem\n\nA registered block has no inventory representation on its own, you need a companion `BlockItem` so it can actually be picked up and placed:\n\n```java\npublic static final RegistryObject<Item> RUBY_ORE_ITEM =\n    ModItems.ITEMS.register(\"ruby_ore\", () ->\n        new BlockItem(ModBlocks.RUBY_ORE.get(), new Item.Properties()));\n```\n\n## Blockstates and models\n\nLike items, blocks need JSON resources to actually render:\n\n- `assets/examplemod/blockstates/ruby_ore.json`, maps the block's state(s) to a model.\n- `assets/examplemod/models/block/ruby_ore.json`, describes its geometry and textures (a simple cube uses the built-in `block/cube_all` parent).\n- `assets/examplemod/models/item/ruby_ore.json`, usually just points back at the block model, so it looks the same in the inventory as it does placed.",
+      "quiz": {
+        "title": "Custom Blocks Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does requiresCorrectToolForDrops() control?",
+            "options": [
+              "How fast the block breaks",
+              "Whether the block drops an item unless mined with an adequate tool",
+              "The block's color",
+              "Whether the block can be placed underwater"
+            ],
+            "answer": "Whether the block drops an item unless mined with an adequate tool"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A block needs a companion ____ registered so it can be picked up and placed like a normal inventory item.",
+            "options": [],
+            "answer": "BlockItem"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Blocks are registered with the exact same DeferredRegister pattern used for items, just against a different registry.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "adding-a-crafting-recipe",
+      "title": "Adding a Crafting Recipe",
+      "order": 5,
+      "content": "# Adding a Crafting Recipe\n\nForge recipes are plain JSON data, no Java required, living under `data/<modid>/recipes/`.\n\n## A shaped recipe\n\n`src/main/resources/data/examplemod/recipes/ruby_block.json`:\n\n```json\n{\n  \"type\": \"minecraft:crafting_shaped\",\n  \"pattern\": [\n    \"RRR\",\n    \"RRR\",\n    \"RRR\"\n  ],\n  \"key\": {\n    \"R\": { \"item\": \"examplemod:ruby\" }\n  },\n  \"result\": {\n    \"item\": \"examplemod:ruby_block\",\n    \"count\": 1\n  }\n}\n```\n\n`pattern` is a 3x3 (or smaller) grid where each character maps to an ingredient in `key`, blank rows/columns are allowed for recipes smaller than a full crafting grid. The `type` tells the game which recipe serializer to use, `minecraft:crafting_shaped` respects the exact layout, while `minecraft:crafting_shapeless` (no `pattern`/`key`, just an `ingredients` array) ignores placement entirely.\n\n## Recipe advancements\n\nRecipes only show up in a player's recipe book once they've been \"unlocked\", normally the moment they first obtain one of the ingredients. That unlock condition lives in a matching advancement file, `data/examplemod/advancements/recipes/.../ruby_block.json`, with a `minecraft:recipe_unlocked` trigger, generated projects and mod-dev tooling can scaffold this for you, but it's worth understanding it's a separate file from the recipe itself.\n\n## Testing it\n\nRebuild and relaunch with `./gradlew runClient`, resource and data files under `src/main/resources` are picked up automatically, open your inventory's crafting grid in-game and confirm the recipe actually works.",
+      "quiz": {
+        "title": "Crafting Recipes Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Where do Forge crafting recipes live?",
+            "options": [
+              "Inside the main mod Java class",
+              "As JSON files under data/<modid>/recipes/",
+              "In mods.toml",
+              "They are generated automatically from item names"
+            ],
+            "answer": "As JSON files under data/<modid>/recipes/"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A recipe that ignores item placement in the crafting grid uses the type minecraft:crafting_____.",
+            "options": [],
+            "answer": "shapeless"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A recipe automatically appears in a player's recipe book with no additional configuration.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-mini-ore-mod",
+      "title": "Final Project: Build a Mini Ore Mod",
+      "order": 6,
+      "content": "# Final Project: Build a Mini Ore Mod\n\nCombine registration, blocks, items, and recipes from this course into one small but complete mod: a new ore, and something to craft with it.\n\n## Requirements\n\n1. Register a new item, a raw gem or ingot (e.g. `ruby`), using `DeferredRegister<Item>`.\n2. Register a new ore block (e.g. `ruby_ore`) using `DeferredRegister<Block>`, with sensible `strength()` and `requiresCorrectToolForDrops()`, plus its matching `BlockItem`.\n3. Give both a lang file entry and basic item/block model JSON so they have a name and texture in-game (a solid-color texture is fine, this course is about the code, not art).\n4. Add at least one crafting recipe involving your new item, turning it into a block (like a decorative storage block) or a simple tool.\n5. Confirm everything works by running `./gradlew runClient`, mining your ore, picking up the item, and crafting the recipe in-game.\n\n## Stretch goals\n\n- Add a second tier item/tool that requires your new material plus an existing vanilla one (like sticks) in its recipe.\n- Register a custom `CreativeModeTab` for your mod instead of relying on vanilla tabs.\n- Add a smelting recipe (`minecraft:smelting`) that turns your raw ore item into a refined version.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck!",
+      "requiresSubmission": true
+    }
+  ]
+}

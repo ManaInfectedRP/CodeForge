@@ -1,0 +1,195 @@
+{
+  "slug": "python-for-absolute-beginners",
+  "title": "Python for Absolute Beginners",
+  "description": "Learn programming from zero with the most beginner-friendly language in the world.",
+  "pathSlug": "python",
+  "pathName": "Python",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "getting-started-with-python",
+      "title": "Getting Started with Python",
+      "order": 1,
+      "content": "# Getting Started with Python\n\nPython is one of the most popular programming languages in the world, and one of the friendliest for beginners. It's used for everything from web apps and automation scripts to data science and AI.\n\n## Your first program\n\n```python\nprint(\"Hello, Kodstigen!\")\n\nname = \"student\"\nxp = 0\nxp += 10\nprint(f\"{name} has {xp} XP\")\n```\n\n## Reading it line by line\n\n- `print(...)` writes text to the console, it's usually the very first thing anyone learns in any language.\n- `name = \"student\"` creates a **variable**, a named container for a value, Python figures out the type (here, a piece of text) automatically, you never have to declare it up front.\n- `xp += 10` is shorthand for `xp = xp + 10`, add 10 to whatever `xp` already is.\n- `f\"{name} has {xp} XP\"` is an **f-string**, the `f` right before the quotes lets you embed variables directly inside `{ }`, without it you'd have to write something clunkier like `name + \" has \" + str(xp) + \" XP\"`.\n\n## No semicolons, no braces\n\nUnlike many languages, Python doesn't use `{ }` to mark where a block of code starts and ends, it uses **indentation** (consistent spaces at the start of a line) instead. Get the indentation wrong and Python refuses to run your code, that's a feature, not a bug, it forces code to stay readable.\n\n> [!TIP]\n> Comments start with `#` and are ignored when the program runs, use them to explain *why* you did something, not just *what* the code does.",
+      "quiz": {
+        "title": "Python Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How does Python define code blocks?",
+            "options": [
+              "Curly braces",
+              "Indentation",
+              "Keywords begin/end",
+              "Parentheses"
+            ],
+            "answer": "Indentation"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The built-in function to display output to the console is ____().",
+            "options": [],
+            "answer": "print"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "lists-dicts-and-loops",
+      "title": "Lists, Dicts, and Loops",
+      "order": 2,
+      "content": "# Lists, Dicts, and Loops\n\nTwo of Python's most-used data structures are **lists** (ordered collections) and **dictionaries** (key-value pairs).\n\n```python\nlanguages = [\"python\", \"javascript\", \"cpp\"]\nscores = {\"python\": 95, \"javascript\": 88}\n\nfor lang in languages:\n    print(lang.upper())\n\n# List comprehension\nlengths = [len(lang) for lang in languages]\nprint(\"lengths:\", lengths)\nprint(\"python score:\", scores[\"python\"])\n```\n\n## Lists\n\n`languages` is a **list**, an ordered, mutable (changeable) collection. Access an item by its position, starting from `0`, so `languages[0]` is `\"python\"`. Lists can hold any mix of types and grow or shrink with methods like `.append(...)`.\n\n## Dictionaries\n\n`scores` is a **dict**, it maps **keys** (like `\"python\"`) to **values** (like `95`), instead of positions. Look up a value with `scores[\"python\"]`, trying to access a key that doesn't exist raises an error.\n\n## Loops\n\n`for lang in languages:` visits every item in the list, one at a time, `lang` is a new variable holding the current item on each pass.\n\n## List comprehensions\n\n`[len(lang) for lang in languages]` builds a brand-new list in a single line. Read it right to left: \"for each `lang` in `languages`, compute `len(lang)`, and collect the results into a list.\" It's exactly equivalent to:\n\n```python\nlengths = []\nfor lang in languages:\n    lengths.append(len(lang))\n```\n\njust shorter, once the pattern clicks, you'll use it constantly.",
+      "quiz": {
+        "title": "Collections Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does len([\"a\", \"b\", \"c\"]) return?",
+            "options": [
+              "2",
+              "3",
+              "\"abc\"",
+              "an error"
+            ],
+            "answer": "3"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Python dictionaries map keys to values.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "functions-and-error-handling",
+      "title": "Functions and Error Handling",
+      "order": 3,
+      "content": "# Functions and Error Handling\n\nA **function** is a named, reusable block of code, you define it once and call it as many times as you need.\n\n```python\ndef divide(a: float, b: float) -> float:\n    if b == 0:\n        raise ValueError(\"Cannot divide by zero\")\n    return a / b\n\ntry:\n    print(\"10 / 2 =\", divide(10, 2))\n    print(\"10 / 0 =\", divide(10, 0))\nexcept ValueError as err:\n    print(f\"Error: {err}\")\n```\n\n## Defining a function\n\n`def divide(a, b):` starts a function definition, `a` and `b` are **parameters**, placeholders for whatever values get passed in when the function is called. `return` sends a value back to whoever called the function, once `return` runs, the function stops immediately.\n\n## Type hints\n\n`a: float, b: float) -> float` are **type hints**, they document what types a function expects and returns. Python doesn't enforce them at runtime (you *could* still pass in the wrong type), but they help tools, editors, and other developers understand your code, and catch mistakes early.\n\n## Handling errors\n\nSometimes something goes wrong that a function can't recover from itself, dividing by zero, a missing file, invalid input. Python handles this with **exceptions**:\n\n- `raise ValueError(\"...\")` signals \"something is wrong\" and stops normal execution.\n- `try:` wraps code that might fail.\n- `except ValueError as err:` catches that specific kind of error if it happens, letting your program respond gracefully instead of crashing.\n\nWithout the `try`/`except`, calling `divide(10, 0)` would crash the whole program the moment the `ValueError` was raised.",
+      "quiz": {
+        "title": "Functions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "FILL_BLANK",
+            "prompt": "The keyword used to define a function in Python is ____.",
+            "options": [],
+            "answer": "def"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which block catches an exception raised inside try?",
+            "options": [
+              "catch",
+              "rescue",
+              "except",
+              "finally"
+            ],
+            "answer": "except"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "working-with-files",
+      "title": "Working with Files",
+      "order": 4,
+      "content": "# Working with Files\n\nPrograms are more useful when they can save data between runs. Python's built-in `open()` reads and writes files.\n\n```python\nwith open(\"scores.txt\", \"w\") as f:\n    f.write(\"Ada,95\\n\")\n    f.write(\"Grace,98\\n\")\n\nwith open(\"scores.txt\", \"r\") as f:\n    for line in f:\n        name, score = line.strip().split(\",\")\n        print(f\"{name}: {score}\")\n```\n\n## The `with` statement\n\n`with open(...) as f:` opens the file and guarantees it gets closed automatically when the block ends, even if an error happens inside it. Without `with`, you'd have to remember to call `f.close()` yourself.\n\n## Common modes\n\n| Mode | Meaning |\n|------|---------|\n| `\"r\"` | Read (default), errors if the file doesn't exist |\n| `\"w\"` | Write, creates the file or overwrites it completely |\n| `\"a\"` | Append, adds to the end without erasing existing content |",
+      "quiz": {
+        "title": "Files Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which file mode adds new content to the end of a file without erasing what is already there?",
+            "options": [
+              "\"r\"",
+              "\"w\"",
+              "\"a\"",
+              "\"x\""
+            ],
+            "answer": "\"a\""
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The `with` statement automatically closes a file when its block ends.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Opening a file for writing, overwriting any existing content, uses mode ____.",
+            "options": [],
+            "answer": "w"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "classes-and-objects",
+      "title": "Classes and Objects",
+      "order": 5,
+      "content": "# Classes and Objects\n\nA **class** is a blueprint for creating objects that bundle data and behavior together.\n\n```python\nclass Student:\n    def __init__(self, name, xp=0):\n        self.name = name\n        self.xp = xp\n\n    def gain_xp(self, amount):\n        self.xp += amount\n        return self.xp\n\nada = Student(\"Ada\")\nada.gain_xp(50)\nprint(f\"{ada.name} has {ada.xp} XP\")\n\ngrace = Student(\"Grace\", xp=10)\ngrace.gain_xp(5)\nprint(f\"{grace.name} has {grace.xp} XP\")\n```\n\n## Key pieces\n\n- `__init__` is the **constructor**, it runs automatically whenever you create a new instance with `Student(...)`.\n- `self` refers to the specific instance a method was called on, it's always the first parameter of an instance method.\n- Each instance (`ada`, `grace`) keeps its own independent copy of the data set in `__init__`.",
+      "quiz": {
+        "title": "Classes Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "FILL_BLANK",
+            "prompt": "The constructor method that runs automatically when a new instance is created is called ____.",
+            "options": [],
+            "answer": "__init__"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does `self` refer to inside an instance method?",
+            "options": [
+              "The class itself",
+              "The instance the method was called on",
+              "The parent class",
+              "Nothing, it is optional"
+            ],
+            "answer": "The instance the method was called on"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Two instances of the same class always share the same attribute values.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-contact-book-cli",
+      "title": "Final Project: Contact Book CLI",
+      "order": 6,
+      "content": "# Final Project: Contact Book CLI\n\nTime to combine everything, functions, collections, classes, and files, into one program.\n\n## Requirements\n\n1. Represent each contact with a class (or dictionary) storing a name, phone number, and email.\n2. Support adding a new contact and listing all contacts.\n3. Support searching for a contact by name, and handle the case where no match is found without crashing.\n4. Persist contacts to a text or JSON file so they survive between runs, using what you learned about file I/O.\n5. Write at least one function with a clear docstring and type hints.\n\n## Stretch goals\n\n- Support deleting a contact.\n- Sort the contact list alphabetically by name.\n- Use the `json` module to save and load contacts as structured JSON instead of plain text.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

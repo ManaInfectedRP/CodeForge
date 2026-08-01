@@ -1,0 +1,222 @@
+{
+  "slug": "animating-with-react-native-skia",
+  "title": "Animating with React Native Skia",
+  "description": "High-performance 2D graphics and animation for React Native: the Skia Canvas, shapes and paths, animated values, transforms, and gesture-driven motion.",
+  "pathSlug": "react",
+  "pathName": "React",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "setting-up-skia-canvas-and-your-first-shape",
+      "title": "Setting Up Skia: Canvas and Your First Shape",
+      "order": 1,
+      "content": "# Setting Up Skia: Canvas and Your First Shape\n\nSkia is the same 2D graphics engine that powers Chrome, Android, and Flutter, drawing directly on the GPU instead of going through React Native's normal `View`/`Text` tree. **React Native Skia** (`@shopify/react-native-skia`) brings that engine into your Expo app, and it's the tool of choice whenever you need buttery-smooth custom graphics or animation that plain React Native views can't keep up with.\n\n## Installing Skia in an Expo app\n\n```bash\nnpx expo install @shopify/react-native-skia\n```\n\n## The Canvas\n\nEverything Skia draws lives inside a `<Canvas>`, a special component that owns its own GPU surface. Shapes are its children, described declaratively just like regular JSX:\n\n```tsx\nimport { Canvas, Circle } from '@shopify/react-native-skia';\nimport { StyleSheet } from 'react-native';\n\nexport function FirstShape() {\n  return (\n    <Canvas style={styles.canvas}>\n      <Circle cx={100} cy={100} r={50} color=\"#22d3ee\" />\n    </Canvas>\n  );\n}\n\nconst styles = StyleSheet.create({\n  canvas: { flex: 1 },\n});\n```\n\n`cx`/`cy` set the circle's center, `r` its radius, both in the Canvas's own coordinate space, not the screen, so a `Canvas` sized 300x300 has its own local (0,0) to (300,300) grid regardless of where it sits on screen.\n\n> [!WARNING]\n> A `<Canvas>` needs an explicit size (from `style` or a parent with a fixed size) to render anything. An unconstrained Canvas (e.g. inside a `View` with no `flex` or dimensions) draws nothing.\n\n## Why not just use View and CSS-like styles?\n\nRegular React Native views re-render through the normal React/Yoga layout pipeline on every change, fine for UI, too slow for continuous animation like particle effects or a physics-driven loading spinner. Skia shapes are drawn straight to the GPU and can update at 60-120fps without ever touching React's render cycle, that's the whole point of the rest of this course.",
+      "quiz": {
+        "title": "Skia Setup Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What package brings the Skia 2D graphics engine into a React Native/Expo app?",
+            "options": [
+              "react-native-svg",
+              "@shopify/react-native-skia",
+              "react-native-reanimated",
+              "expo-gl"
+            ],
+            "answer": "@shopify/react-native-skia"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Every shape Skia draws must be a child of the ____ component.",
+            "options": [],
+            "answer": "Canvas"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A Canvas with no explicit size will still render its shapes at a default 100x100 size.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "drawing-shapes-and-paths",
+      "title": "Drawing Shapes and Paths",
+      "order": 2,
+      "content": "# Drawing Shapes and Paths\n\nSkia ships a handful of built-in shape components, and one flexible escape hatch, `Path`, for anything more custom.\n\n## Built-in shapes\n\n```tsx\nimport { Canvas, Circle, Rect, RoundedRect } from '@shopify/react-native-skia';\n\nexport function Shapes() {\n  return (\n    <Canvas style={{ flex: 1 }}>\n      <Circle cx={60} cy={60} r={40} color=\"#f97316\" />\n      <Rect x={140} y={20} width={80} height={80} color=\"#22c55e\" />\n      <RoundedRect x={20} y={140} width={100} height={60} r={16} color=\"#a855f7\" />\n    </Canvas>\n  );\n}\n```\n\nMultiple shapes as siblings inside a `Canvas` are simply drawn in order, later children paint on top of earlier ones, exactly like layered `View`s.\n\n## Fill vs. stroke\n\nBy default every shape is filled. Pass `style=\"stroke\"` and a `strokeWidth` to draw just an outline instead:\n\n```tsx\n<Circle cx={100} cy={100} r={50} color=\"#22d3ee\" style=\"stroke\" strokeWidth={4} />\n```\n\n## Paths, for anything custom\n\n`Path` takes an SVG-style path string, and Skia gives you `Skia.Path.Make()` to build one programmatically:\n\n```tsx\nimport { Canvas, Path, Skia } from '@shopify/react-native-skia';\n\nconst triangle = Skia.Path.Make();\ntriangle.moveTo(50, 0);\ntriangle.lineTo(100, 100);\ntriangle.lineTo(0, 100);\ntriangle.close();\n\nexport function Triangle() {\n  return (\n    <Canvas style={{ flex: 1 }}>\n      <Path path={triangle} color=\"#facc15\" />\n    </Canvas>\n  );\n}\n```\n\n`moveTo` lifts the \"pen\" to a starting point without drawing, `lineTo` draws a straight segment to the next point, and `close()` connects back to the start. Curves are available too, via `cubicTo`/`quadTo`, for anything that isn't made of straight lines.",
+      "quiz": {
+        "title": "Shapes & Paths Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "When two Skia shapes overlap, which one is drawn on top?",
+            "options": [
+              "The larger one",
+              "The one declared later in JSX",
+              "The one declared first in JSX",
+              "Skia picks automatically based on color"
+            ],
+            "answer": "The one declared later in JSX"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "To draw just the outline of a shape instead of filling it, set style to ____.",
+            "options": [],
+            "answer": "stroke"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Skia.Path.Make() lets you build a custom shape out of straight lines and curves.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "animated-values-usevalue-usecomputedvalue-runtiming",
+      "title": "Animated Values: useValue, useComputedValue & runTiming",
+      "order": 3,
+      "content": "# Animated Values: useValue, useComputedValue & runTiming\n\nUpdating shape props from `useState` works, but every change re-renders the component. Skia has its own lightweight value system that updates the GPU surface directly, skipping React entirely, which is how you get smooth 60fps+ animation.\n\n## useValue\n\n```tsx\nimport { Canvas, Circle, useValue } from '@shopify/react-native-skia';\n\nexport function PulsingDot() {\n  const radius = useValue(30);\n\n  return (\n    <Canvas style={{ flex: 1 }}>\n      <Circle cx={100} cy={100} r={radius} color=\"#22d3ee\" />\n    </Canvas>\n  );\n}\n```\n\n`radius` is a mutable \"Skia value\" (a `SkiaValue<number>`), passing it straight into `r` tells Skia to re-read `radius.current` on every frame, changing `radius.current = 50` updates the drawing immediately, with zero React re-render.\n\n## Animating with runTiming\n\n```tsx\nimport { runTiming, Easing } from '@shopify/react-native-skia';\n\nrunTiming(radius, 60, { duration: 500, easing: Easing.inOut(Easing.ease) });\n```\n\n`runTiming(value, toValue, config)` smoothly animates a Skia value from its current number to `toValue` over `duration` milliseconds, using the given easing curve, call it from a button press, a `useEffect`, or a gesture handler.\n\n## Deriving one value from another\n\n`useComputedValue` recomputes automatically whenever a value it depends on changes, useful for keeping two animated properties in sync without duplicating the animation:\n\n```tsx\nimport { useComputedValue } from '@shopify/react-native-skia';\n\nconst opacity = useComputedValue(() => radius.current / 60, [radius]);\n```\n\nHere `opacity` always tracks `radius`, growing towards `1` as the circle grows towards its max radius, with no separate `runTiming` call needed for it.",
+      "quiz": {
+        "title": "Animated Values Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What's the main advantage of a Skia useValue over React's useState for animation?",
+            "options": [
+              "It supports negative numbers",
+              "Updating it doesn't trigger a React re-render",
+              "It automatically loops forever",
+              "It only works with colors"
+            ],
+            "answer": "Updating it doesn't trigger a React re-render"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "____ animates a Skia value from its current number to a target value over a given duration.",
+            "options": [],
+            "answer": "runTiming"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "useComputedValue automatically recalculates whenever a Skia value it depends on changes.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "transforms-translate-rotate-scale",
+      "title": "Transforms: Translate, Rotate & Scale",
+      "order": 4,
+      "content": "# Transforms: Translate, Rotate & Scale\n\nEvery Skia shape (and `Group` of shapes) accepts a `transform` prop, an array of transform operations applied in order, exactly like a CSS `transform` list.\n\n## Transforming a single shape\n\n```tsx\n<Rect x={0} y={0} width={40} height={40} color=\"#22d3ee\" transform={[{ rotate: Math.PI / 4 }]} />\n```\n\nRotation is in **radians**, not degrees, `Math.PI / 4` is 45 degrees. By default a shape rotates/scales around its own top-left origin (0,0), use the `origin` prop to rotate around its actual center instead:\n\n```tsx\n<Rect x={80} y={80} width={40} height={40} color=\"#f97316\"\n  origin={{ x: 100, y: 100 }}\n  transform={[{ rotate: Math.PI / 4 }]}\n/>\n```\n\n## Grouping shapes\n\n`Group` lets several shapes share one transform, moving and rotating together as a single unit, without repeating the same `transform` prop on each child:\n\n```tsx\nimport { Canvas, Group, Circle, Rect } from '@shopify/react-native-skia';\n\n<Canvas style={{ flex: 1 }}>\n  <Group transform={[{ translateX: 50 }, { translateY: 50 }, { scale: 1.5 }]}>\n    <Circle cx={0} cy={0} r={20} color=\"#22d3ee\" />\n    <Rect x={-10} y={30} width={20} height={20} color=\"#f97316\" />\n  </Group>\n</Canvas>\n```\n\n## Animating a transform\n\nCombine what you learned last lesson, drive the rotation off a `useValue` and animate it with `runTiming` for a continuously spinning shape:\n\n```tsx\nconst angle = useValue(0);\n\nuseEffect(() => {\n  runTiming(angle, Math.PI * 2, { duration: 2000 }, () => {\n    angle.current = 0;\n  });\n}, []);\n\n// ...\n<Group transform={[{ rotate: angle }]}>...</Group>\n```",
+      "quiz": {
+        "title": "Transforms Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What unit does Skia's rotate transform use?",
+            "options": [
+              "Degrees",
+              "Radians",
+              "Percent",
+              "Turns"
+            ],
+            "answer": "Radians"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ component lets multiple shapes share a single transform.",
+            "options": [],
+            "answer": "Group"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "By default, a shape rotates around its own center rather than its top-left origin.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "gestures-dragging-and-spring-animation",
+      "title": "Gestures: Dragging and Spring Animation",
+      "order": 5,
+      "content": "# Gestures: Dragging and Spring Animation\n\nPairing Skia with `react-native-gesture-handler` is how you build draggable, physics-feeling graphics, a slider, a drag-to-dismiss card, or a springy button.\n\n## Reading a pan gesture into a Skia value\n\n```tsx\nimport { Gesture, GestureDetector } from 'react-native-gesture-handler';\nimport { Canvas, Circle, useValue } from '@shopify/react-native-skia';\n\nexport function DraggableDot() {\n  const cx = useValue(100);\n  const cy = useValue(100);\n\n  const pan = Gesture.Pan().onChange((e) => {\n    cx.current += e.changeX;\n    cy.current += e.changeY;\n  });\n\n  return (\n    <GestureDetector gesture={pan}>\n      <Canvas style={{ flex: 1 }}>\n        <Circle cx={cx} cy={cy} r={30} color=\"#22d3ee\" />\n      </Canvas>\n    </GestureDetector>\n  );\n}\n```\n\n`onChange` fires on every frame of the gesture with the delta since the last event (`changeX`/`changeY`), adding that delta straight to the Skia values moves the circle in perfect sync with the finger, again with zero React re-renders.\n\n## Springing back on release\n\n`runSpring` animates a value using spring physics (mass, damping, stiffness) instead of a fixed duration, ideal for \"let go and it snaps back\":\n\n```tsx\nimport { runSpring } from '@shopify/react-native-skia';\n\nconst pan = Gesture.Pan()\n  .onChange((e) => {\n    cx.current += e.changeX;\n    cy.current += e.changeY;\n  })\n  .onEnd(() => {\n    runSpring(cx, 100, { mass: 1, damping: 10, stiffness: 150 });\n    runSpring(cy, 100, { mass: 1, damping: 10, stiffness: 150 });\n  });\n```\n\nHigher `damping` settles faster with less bounce, higher `stiffness` snaps back faster, tune both to taste.",
+      "quiz": {
+        "title": "Gestures Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which gesture-handler event fires on every frame of a pan gesture with the movement delta?",
+            "options": [
+              "onStart",
+              "onChange",
+              "onFinalize",
+              "onTouchesDown"
+            ],
+            "answer": "onChange"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "____ animates a Skia value using spring physics instead of a fixed duration.",
+            "options": [],
+            "answer": "runSpring"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Reading gesture deltas straight into a Skia useValue still causes a React re-render on every frame.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-an-animated-loading-spinner",
+      "title": "Final Project: Build an Animated Loading Spinner",
+      "order": 6,
+      "content": "# Final Project: Build an Animated Loading Spinner\n\nTime to combine shapes, animated values, transforms, and gestures into one real piece of UI: a custom animated loading spinner.\n\n## Requirements\n\n1. Render at least two Skia shapes inside a single `Canvas` (for example an outer ring built from a stroked `Circle` and an inner accent shape).\n2. Drive a continuous rotation using a `useValue` and `runTiming`, looping forever (re-triggering the animation each time it completes, as shown in the transforms lesson).\n3. Animate at least one more property besides rotation, radius, opacity, or color, using `useComputedValue` to derive it from your rotation value.\n4. Add a tappable/draggable element (even a simple `GestureDetector` wrapping the whole `Canvas`) that triggers a `runSpring` animation, a \"pulse\" on tap is enough.\n5. Wrap the whole thing in a reusable `<Spinner />` component that accepts a `size` prop and works at any size.\n\n## Stretch goals\n\n- Add a second, independent ring rotating in the opposite direction at a different speed.\n- Fade the spinner in with `runTiming` on an opacity value when it first mounts.\n- Turn it into a progress ring: accept a `progress` prop (0-1) and animate the stroke's arc length to match instead of spinning forever.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck!",
+      "requiresSubmission": true
+    }
+  ]
+}

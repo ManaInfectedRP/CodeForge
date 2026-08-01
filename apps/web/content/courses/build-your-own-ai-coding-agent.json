@@ -1,0 +1,140 @@
+{
+  "slug": "build-your-own-ai-coding-agent",
+  "title": "Build Your Own AI Coding Agent",
+  "description": "Learn how LLMs, function calling, and agent loops actually work by building a real AI coding agent: send prompts via OpenRouter and the OpenAI SDK, write the tool functions your agent needs, wire up function calling, then give it a feedback loop so it can autonomously read, run, and fix a real bug.",
+  "pathSlug": "python",
+  "pathName": "Python",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "llms",
+      "title": "LLMs",
+      "order": 1,
+      "content": "# LLMs\n\nAn **LLM** (Large Language Model) is a model trained to predict the next token in a sequence of text, given enough training data and scale, that simple objective turns out to produce something that can hold a conversation, write code, and reason through problems. This course builds a real **AI coding agent**, a program that uses an LLM plus tools to actually take action, starting with the basics: sending a prompt and getting a response back.\n\n## The chat message format\n\nEvery modern chat LLM API is built around a list of messages, each with a **role**:\n\n- `system`: instructions that set the model's behavior for the whole conversation, not something the user said, more like configuration.\n- `user`: what the human (or, later, your code) is asking.\n- `assistant`: what the model said back, you'll see this role again when building the agent's conversation history.\n\n```python\nmessages = [\n    {'role': 'system', 'content': 'You are a helpful assistant.'},\n    {'role': 'user', 'content': 'What is a large language model?'},\n]\n```\n\n## Sending a prompt with the OpenAI SDK, via OpenRouter\n\n**OpenRouter** is a service that exposes dozens of different models (from OpenAI, Anthropic, Meta, and others) behind one single, OpenAI-API-compatible endpoint, so you can use the familiar `openai` Python package by just pointing it at a different `base_url`:\n\n```\nfrom openai import OpenAI\n\nclient = OpenAI(\n    base_url='https://openrouter.ai/api/v1',\n    api_key='YOUR_OPENROUTER_API_KEY',\n)\n\nresponse = client.chat.completions.create(\n    model='openai/gpt-4o-mini',\n    messages=[\n        {'role': 'system', 'content': 'You are a helpful assistant.'},\n        {'role': 'user', 'content': 'What is a large language model?'},\n    ],\n)\n\nprint(response.choices[0].message.content)\n```\n\n*This needs a real OpenRouter API key and network access, so it's read-only here, get a free key at openrouter.ai to run this yourself locally.*\n\n`response.choices[0].message` is where the model's reply lives, `.content` is the actual text. `choices` is a list because you can ask a model for multiple candidate responses at once, for a single reply, you'll almost always just use `choices[0]`.\n\n> [!TIP]\n> Model names on OpenRouter are prefixed with the provider, `openai/gpt-4o-mini`, `anthropic/claude-3.5-sonnet`, `meta-llama/llama-3.1-8b-instruct`, all callable through the exact same `client.chat.completions.create(...)` code, only the `model` string changes.",
+      "quiz": {
+        "title": "LLMs Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the \"system\" role in a messages list represent?",
+            "options": [
+              "What the human user typed",
+              "Instructions that configure the model's behavior for the whole conversation",
+              "The model's previous reply",
+              "An error message"
+            ],
+            "answer": "Instructions that configure the model's behavior for the whole conversation"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "OpenRouter lets you call many different providers' models through one OpenAI-API-compatible client, just by changing the model string and base_url.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A model's reply text is found at response.choices[0].message.____",
+            "options": [],
+            "answer": "content"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "functions",
+      "title": "Functions",
+      "order": 2,
+      "content": "# Functions\n\nAn LLM on its own can only produce text, it can't read a file, run code, or change anything. To build an actual *agent* (something that takes action, not just talks), you first need real Python functions it can eventually be given access to. This lesson writes three: reading a file, writing a file, and running arbitrary Python code.\n\n## Reading and writing files\n\n```python\ndef read_file(path):\n    with open(path, 'r') as f:\n        return f.read()\n\ndef write_file(path, content):\n    with open(path, 'w') as f:\n        f.write(content)\n    return f'Wrote {len(content)} characters to {path}'\n\nwrite_file('notes.txt', 'Remember to fix the bug in calculate_total().')\nprint(read_file('notes.txt'))\n```\n\nThese are the two most basic actions any coding agent needs: seeing what's currently in a file, and changing it. Nothing fancy yet, just Python's built-in `open()`.\n\n## Running arbitrary Python code\n\nAn agent that can fix bugs needs to actually *execute* code to test whether a fix works, not just read and write text:\n\n```python\nimport io\nimport contextlib\n\ndef run_python(code):\n    output = io.StringIO()\n    try:\n        with contextlib.redirect_stdout(output):\n            exec(code, {})\n        return output.getvalue() or '(no output)'\n    except Exception as e:\n        return f'Error: {e}'\n\nprint(run_python('print(2 + 2)'))\nprint(run_python('print(1 / 0)'))\n```\n\n- `exec(code, {})` runs a string of Python code as if it were a script. Passing `{}` as its globals dict gives it a fresh, empty namespace each call, so one `run_python` call can't accidentally see variables left over from a previous one.\n- `contextlib.redirect_stdout(output)` temporarily redirects anything the code `print()`s into an in-memory buffer (`io.StringIO()`) instead of your real terminal, so `run_python` can capture and return it as a string, exactly what's needed to hand the result back to an LLM as text.\n- The `try/except` is deliberate: if the executed code raises an error (like the division by zero above), `run_python` returns a description of the error *as its result*, instead of crashing your whole program. An agent needs to see its mistakes as feedback (\"that failed because...\") to correct course, not have the entire session die.\n\n> [!WARNING]\n> `exec` runs code with the same permissions as your own program, there's no sandboxing here. This is fine for a personal learning project you control, but a production agent that executes model-generated code needs much stronger isolation (a container, a subprocess with a timeout, a restricted execution environment), never run untrusted, model-generated code with a bare `exec` in anything real.",
+      "quiz": {
+        "title": "Functions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why does run_python wrap exec() in a try/except instead of letting an error crash the program?",
+            "options": [
+              "To make the code run faster",
+              "So a failure becomes a text result the agent can see and react to, instead of ending the whole session",
+              "try/except is required syntax for exec()",
+              "To avoid using io.StringIO"
+            ],
+            "answer": "So a failure becomes a text result the agent can see and react to, instead of ending the whole session"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "contextlib.redirect_stdout lets run_python capture printed output into a string instead of the real terminal.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "exec(code, {}) runs code with a fresh, empty ____ dictionary so previous calls can't leak variables into it.",
+            "options": [],
+            "answer": "globals"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "function-calling",
+      "title": "Function Calling",
+      "order": 3,
+      "content": "# Function Calling\n\nHaving Python functions the agent *could* use isn't the same as the LLM actually being able to use them, a model only outputs text, it has no way to directly call a Python function in your program. **Function calling** (also called **tool calling**) is the bridge: you describe your functions to the model in a structured format, and the model can respond by asking you to call one, with specific arguments, instead of (or as well as) replying in plain text.\n\n## Describing a function to the model\n\nEach tool is described with a JSON Schema, its name, what it does, and what arguments it takes:\n\n```python\ntools = [\n    {\n        'type': 'function',\n        'function': {\n            'name': 'run_python',\n            'description': 'Execute a snippet of Python code and return its printed output.',\n            'parameters': {\n                'type': 'object',\n                'properties': {\n                    'code': {'type': 'string', 'description': 'The Python code to run.'},\n                },\n                'required': ['code'],\n            },\n        },\n    },\n]\n```\n\n`description` matters more than it looks, the model decides *whether* and *when* to call a tool based on how clearly it understands what that tool does from this text alone.\n\n## Passing tools to the model\n\n```\nresponse = client.chat.completions.create(\n    model='openai/gpt-4o-mini',\n    messages=messages,\n    tools=tools,\n)\n\nmessage = response.choices[0].message\nif message.tool_calls:\n    for call in message.tool_calls:\n        print(call.function.name, call.function.arguments)\n```\n\n*This needs a real API key, so it's read-only here.* Crucially: the model does **not** run `run_python` itself, it can't, it has no way to execute code. It just replies with a structured request, \"please call `run_python` with `code='print(2 + 2)'`\", `.arguments` arrives as a JSON *string* your own code still has to parse and act on.\n\n## Dispatching a tool call yourself\n\nThis part needs no API key at all, it's the exact mechanics your own code has to implement, testable right now with a fake tool call standing in for a real model response:\n\n```python\nimport io\nimport json\nimport contextlib\n\ndef run_python(code):\n    output = io.StringIO()\n    try:\n        with contextlib.redirect_stdout(output):\n            exec(code, {})\n        return output.getvalue() or '(no output)'\n    except Exception as e:\n        return f'Error: {e}'\n\navailable_functions = {\n    'run_python': run_python,\n}\n\ndef dispatch_tool_call(tool_call):\n    function_name = tool_call['name']\n    arguments = json.loads(tool_call['arguments'])\n    function = available_functions[function_name]\n    return function(**arguments)\n\nfake_tool_call = {\n    'name': 'run_python',\n    'arguments': json.dumps({'code': 'print(3 * 7)'}),\n}\n\nresult = dispatch_tool_call(fake_tool_call)\nprint(result)\n```\n\n`json.loads(tool_call['arguments'])` turns the model's JSON-string arguments back into a real Python dict, `function(**arguments)` then calls the right function by unpacking that dict as keyword arguments, so `{'code': '...'}` becomes `run_python(code='...')`.\n\n> [!NOTE]\n> `available_functions` is a lookup table mapping the *name* the model was told about (in `tools`) to the *actual function object* your code can call, keeping these in sync (every tool you describe to the model needs a matching entry here) is what makes dispatch work at all.",
+      "quiz": {
+        "title": "Function Calling Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "When a model responds with a tool call, what actually executes the underlying function?",
+            "options": [
+              "The model executes it internally",
+              "Your own code, by dispatching the requested function name and arguments",
+              "OpenRouter runs it on their servers automatically",
+              "Nothing, tool calls are purely informational"
+            ],
+            "answer": "Your own code, by dispatching the requested function name and arguments"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A tool call's arguments arrive as a JSON string that your code must parse with something like json.loads().",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "function(**arguments) unpacks a dict of arguments as ____ arguments to call the function.",
+            "options": [],
+            "answer": "keyword"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "agents",
+      "title": "Agents",
+      "order": 4,
+      "content": "# Agents\n\nEverything so far, sending prompts, writing tool functions, dispatching a tool call, are the individual pieces. An **agent** is what you get when you wire them into a loop: call the model, execute whatever it asks for, feed the result back, and repeat, until the model decides the task is done. This final project builds that loop and points it at a real bug.\n\n## The agent loop\n\n```\ndef run_agent(user_task, max_steps=10):\n    messages = [\n        {\n            'role': 'system',\n            'content': 'You are a coding agent. Use the available tools to inspect and fix the bug, then explain the fix.',\n        },\n        {'role': 'user', 'content': user_task},\n    ]\n\n    for _ in range(max_steps):\n        response = client.chat.completions.create(\n            model='openai/gpt-4o-mini',\n            messages=messages,\n            tools=tools,\n        )\n        message = response.choices[0].message\n        messages.append(message)\n\n        if not message.tool_calls:\n            return message.content  # no more tools requested, this is the agent's final answer\n\n        for call in message.tool_calls:\n            result = dispatch_tool_call({\n                'name': call.function.name,\n                'arguments': call.function.arguments,\n            })\n            messages.append({\n                'role': 'tool',\n                'tool_call_id': call.id,\n                'content': str(result),\n            })\n\n    return \"Agent didn't finish within max_steps.\"\n```\n\n*This needs a real API key and calls the model in a loop, so it's read-only here, this is exactly what you'll run locally for the final project.*\n\n## Why this is \"the feedback loop\"\n\n- `messages` accumulates the **entire** conversation, the original task, every one of the model's replies (including tool call requests), and every tool result, appended with role `'tool'`. Each new call to the model sees all of it, so it remembers what it already tried and what happened.\n- The loop only stops when `message.tool_calls` is empty, meaning the model chose to reply with a plain final answer instead of requesting another tool. Until then, it keeps working: read a file, notice a bug, run code to test a fix, write the corrected file, run it again to confirm.\n- `max_steps` is a safety net. Without it, a model stuck in a bad loop (repeatedly trying the same failing fix) would run forever, capping the attempts guarantees the agent eventually stops one way or another.\n\nThis is the difference between a chatbot and an **agent**: a chatbot replies once, an agent keeps working, using tools and its own prior results, until it decides the job is actually finished.\n\n## Final project requirements\n\n1. Set up a real OpenRouter (or OpenAI) API key and the `openai` Python package locally, this project needs to make real API calls.\n2. Implement `read_file`, `write_file`, and `run_python` (from the Functions lesson, or your own versions).\n3. Write a JSON tool schema for each function (Function Calling lesson) and pass all of them via `tools`.\n4. Implement the full `run_agent()` loop above: call the model, execute any requested tool calls, feed each result back as a `'tool'`-role message, and repeat until the model gives a final plain-text answer.\n5. Point your agent at a real, small, deliberately-broken Python file (plant a genuine bug, an off-by-one error, a wrong variable name, a missing edge case) and give it a task like *\"There's a bug in bug.py, find and fix it.\"* Let it read the file, diagnose the problem, and use `run_python`/`write_file` to actually fix it, then confirm the fix works.\n\n## Stretch goals\n\n- Log every tool call (name and arguments) to the console as the agent works, visibility into *why* it's doing what it's doing is invaluable for debugging your own agent.\n- Add a `list_files` tool so the agent can explore an entire project directory, not just one file you already told it about.\n- Handle the case where the model requests multiple tool calls in a single turn (the `for call in message.tool_calls:` loop above already supports this, verify it with a task that needs two tools at once).\n- Add a friendlier message (or a retry with a smaller task) when `max_steps` is hit, instead of just giving up.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.",
+      "requiresSubmission": true
+    }
+  ]
+}

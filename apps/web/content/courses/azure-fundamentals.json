@@ -1,0 +1,222 @@
+{
+  "slug": "azure-fundamentals",
+  "title": "Azure Fundamentals",
+  "description": "Deploy, host, and scale real applications in the cloud with Microsoft Azure.",
+  "pathSlug": "azure",
+  "pathName": "Azure",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "introduction-to-cloud-computing-and-azure",
+      "title": "Introduction to Cloud Computing and Azure",
+      "order": 1,
+      "content": "# Introduction to Cloud Computing and Azure\n\n**Cloud computing** means renting computing power, storage, and services from a provider instead of buying and maintaining your own servers. **Microsoft Azure** is one of the largest cloud providers, alongside AWS and Google Cloud.\n\n## The service models\n\n| Model | You manage | Provider manages | Example |\n|---|---|---|---|\n| IaaS | OS, runtime, app | Physical hardware, networking | Azure Virtual Machines |\n| PaaS | Just your app and data | OS, runtime, scaling | Azure App Service |\n| SaaS | Just your data | Everything else | Microsoft 365 |\n\nMost of this course focuses on **PaaS**, services like App Service let you deploy code directly without managing servers at all.\n\n## Azure's building blocks\n\n- **Regions**, physical data center locations around the world (e.g. \"West Europe\").\n- **Resource groups**, logical containers that hold related resources (a web app, its database, its storage) so you can manage and delete them together.\n- **Azure Portal**, the web dashboard for creating and managing everything visually, at [portal.azure.com](https://portal.azure.com).\n\n> [!NOTE]\n> Every Azure resource you create belongs to exactly one resource group, get comfortable with them early, they're the organizing unit for almost everything else in this course.",
+      "quiz": {
+        "title": "Cloud Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In the PaaS model, which of these does the cloud provider manage for you?",
+            "options": [
+              "Only physical hardware",
+              "The OS, runtime, and scaling",
+              "Nothing, you manage everything",
+              "Only your application code"
+            ],
+            "answer": "The OS, runtime, and scaling"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A ____ is a logical container that groups related Azure resources together.",
+            "options": [],
+            "answer": "resource group"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Every Azure resource belongs to exactly one resource group.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "resource-groups-and-the-azure-cli",
+      "title": "Resource Groups and the Azure CLI",
+      "order": 2,
+      "content": "# Resource Groups and the Azure CLI\n\nThe **Azure CLI** (`az`) lets you create and manage resources from the command line, scriptable and repeatable, unlike clicking through the Portal.\n\n```bash\naz login\n\naz group create --name kodstigen-rg --location westeurope\n\naz group list --output table\n\naz group delete --name kodstigen-rg\n```\n\n## Reading the commands\n\n- `az login` opens a browser to authenticate the CLI with your Azure account.\n- `az group create` makes a new resource group in a chosen **region** (`--location`).\n- `--output table` formats results as a readable table instead of raw JSON, useful while exploring.\n- `az group delete` removes the resource group **and everything inside it**, a fast way to clean up when you're done experimenting.\n\n> [!WARNING]\n> Deleting a resource group deletes every resource inside it permanently. It's convenient for cleanup, but double-check the name before you run it.",
+      "quiz": {
+        "title": "Azure CLI Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which command authenticates the Azure CLI with your account?",
+            "options": [
+              "az auth",
+              "az login",
+              "az connect",
+              "az signin"
+            ],
+            "answer": "az login"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "az group create uses the ____ flag to pick which region the resource group lives in.",
+            "options": [],
+            "answer": "--location"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Deleting a resource group only deletes the group itself, leaving the resources inside it untouched.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "deploying-a-web-app-with-azure-app-service",
+      "title": "Deploying a Web App with Azure App Service",
+      "order": 3,
+      "content": "# Deploying a Web App with Azure App Service\n\n**Azure App Service** is a fully-managed PaaS for hosting web apps and APIs, you push your code, Azure handles the servers, scaling, and patching.\n\n```bash\naz webapp up \\\n  --name kodstigen-demo-app \\\n  --resource-group kodstigen-rg \\\n  --runtime \"NODE:20-lts\"\n```\n\n`az webapp up` is a convenience command, it creates an App Service plan and web app if they don't exist yet, then deploys your current folder's code to it in one step.\n\n## Key concepts\n\n- An **App Service Plan** defines the underlying compute (how much CPU/RAM, how many instances), think of it as the \"size\" of the box your app runs in.\n- A **Web App** is the actual application running on that plan, you can run multiple web apps on one plan.\n- Once deployed, your app is reachable at `https://<app-name>.azurewebsites.net`.\n\n```bash\naz webapp log tail --name kodstigen-demo-app --resource-group kodstigen-rg\n```\n\n`log tail` streams your app's live logs, the first thing to check when a deployment doesn't behave as expected.",
+      "quiz": {
+        "title": "App Service Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does an App Service Plan define?",
+            "options": [
+              "The domain name of your app",
+              "The underlying compute size and capacity your app runs on",
+              "The programming language only",
+              "The database connection string"
+            ],
+            "answer": "The underlying compute size and capacity your app runs on"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A deployed web app is reachable at https://<app-name>.____.net by default.",
+            "options": [],
+            "answer": "azurewebsites"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Multiple web apps can run on the same App Service Plan.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "storing-data-with-azure-storage",
+      "title": "Storing Data with Azure Storage",
+      "order": 4,
+      "content": "# Storing Data with Azure Storage\n\n**Azure Storage** is a family of services for storing files, structured data, and messages at scale. The one you'll reach for most often is **Blob Storage**, built for unstructured files like images, videos, backups, and documents.\n\n## The hierarchy\n\n- A **storage account**, the top-level container for all your storage services.\n- **Containers**, similar to folders, group related blobs together.\n- **Blobs**, the actual files themselves.\n\n```bash\naz storage account create --name kodstigenstorage --resource-group kodstigen-rg --sku Standard_LRS\n\naz storage container create --name uploads --account-name kodstigenstorage\n\naz storage blob upload --account-name kodstigenstorage --container-name uploads --name photo.jpg --file ./photo.jpg\n```\n\n## When to use what\n\n| Service | Best for |\n|---|---|\n| Blob Storage | Files: images, videos, backups, static website assets |\n| Table Storage | Simple key-value / NoSQL data at massive scale |\n| Queue Storage | Passing messages between parts of an application |\n\n`--sku Standard_LRS` picks a pricing/redundancy tier, \"Locally Redundant Storage\", the cheapest option, keeping multiple copies within one data center.",
+      "quiz": {
+        "title": "Storage Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which Azure Storage service is best suited for storing image and video files?",
+            "options": [
+              "Table Storage",
+              "Queue Storage",
+              "Blob Storage",
+              "App Service"
+            ],
+            "answer": "Blob Storage"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Inside a storage account, blobs are grouped into ____, similar to folders.",
+            "options": [],
+            "answer": "containers"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A storage account is the top-level container that holds all of your storage services.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "azure-databases-azure-sql-and-cosmos-db",
+      "title": "Azure Databases: Azure SQL and Cosmos DB",
+      "order": 5,
+      "content": "# Azure Databases: Azure SQL and Cosmos DB\n\nRather than running your own database server on a VM, Azure offers fully-managed database services, Azure handles patching, backups, and failover for you.\n\n## Azure SQL Database\n\nA managed, relational SQL Server database, a good fit if your data has a stable, well-defined schema.\n\n```bash\naz sql server create --name kodstigen-sql --resource-group kodstigen-rg --admin-user sqladmin --admin-password \"P@ssword123!\"\n\naz sql db create --name kodstigen-db --server kodstigen-sql --resource-group kodstigen-rg --service-objective S0\n```\n\n## Azure Cosmos DB\n\nA globally distributed, multi-model NoSQL database, if the flexible, document-style data you worked with in MongoDB sounded appealing, Cosmos DB even offers an API that speaks MongoDB's wire protocol.\n\n```bash\naz cosmosdb create --name kodstigen-cosmos --resource-group kodstigen-rg --kind GlobalDocumentDB\n```\n\n## Which one?\n\n| | Azure SQL Database | Cosmos DB |\n|---|---|---|\n| Data shape | Rows and columns | Flexible documents |\n| Best for | Structured, relational data | High-scale, globally distributed apps |\n| Query language | T-SQL | SQL-like, or MongoDB/Cassandra/Gremlin APIs |\n\n> [!NOTE]\n> Both services are billed based on the capacity/tier you provision, always check the pricing tier before creating one, it's easy to leave an expensive tier running by accident.",
+      "quiz": {
+        "title": "Azure Databases Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which managed Azure database is the best fit for structured, relational data queried with T-SQL?",
+            "options": [
+              "Cosmos DB",
+              "Azure SQL Database",
+              "Blob Storage",
+              "Queue Storage"
+            ],
+            "answer": "Azure SQL Database"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Azure ____ DB is a globally distributed, multi-model NoSQL database that can even speak the MongoDB wire protocol.",
+            "options": [],
+            "answer": "Cosmos"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Using a managed database service means Azure handles patching and backups for you.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-deploy-a-full-app-to-azure",
+      "title": "Final Project: Deploy a Full App to Azure",
+      "order": 6,
+      "content": "# Final Project: Deploy a Full App to Azure\n\nTime to put a real application live on Azure.\n\n## Requirements\n\n1. Create a resource group for the project using the Azure CLI.\n2. Deploy a web app (frontend, API, or full-stack) to Azure App Service using `az webapp up` or your CI/CD tool of choice.\n3. Create a storage account and use Blob Storage for at least one piece of user-uploaded or generated content (an image, a file export, etc.).\n4. Confirm the deployed app is reachable at its `azurewebsites.net` URL and actually uses the storage account.\n5. Use `az webapp log tail` at least once to debug something during deployment.\n\n## Stretch goals\n\n- Add an Azure SQL Database or Cosmos DB instance and connect your app to it.\n- Set an environment variable/app setting on the Web App via the CLI instead of the Portal.\n- Clean up by deleting the resource group when you're done, and confirm everything inside it is gone.\n\nSubmit your repository link (or a link to your deployed app) below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

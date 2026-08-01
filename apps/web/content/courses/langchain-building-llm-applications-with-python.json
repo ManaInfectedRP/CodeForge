@@ -1,0 +1,222 @@
+{
+  "slug": "langchain-building-llm-applications-with-python",
+  "title": "LangChain: Building LLM Applications with Python",
+  "description": "Build real LLM applications with LangChain: prompt templates and chat models, LCEL chains, retrieval-augmented generation, tools and agents, and stateful multi-step workflows with LangGraph.",
+  "pathSlug": "python",
+  "pathName": "Python",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "why-langchain-prompt-templates-and-chat-models",
+      "title": "Why LangChain? Prompt Templates and Chat Models",
+      "order": 1,
+      "content": "# Why LangChain? Prompt Templates and Chat Models\n\nCalling an LLM API directly (as in the RAG and AI Agent courses) works, but every real application ends up rebuilding the same pieces: swappable prompts, a consistent interface across model providers, and a way to chain steps together. **LangChain** is a Python framework that standardizes those pieces so you're not reinventing them for every project.\n\n## Chat models: one interface, many providers\n\n```python\nfrom langchain_openai import ChatOpenAI\n\nmodel = ChatOpenAI(model='gpt-4o-mini', api_key='YOUR_API_KEY')\nresponse = model.invoke('What is a large language model?')\nprint(response.content)\n```\n\n*This needs a real API key and network access, so it's read-only here.* The point of `ChatOpenAI` (and its siblings, `ChatAnthropic`, `ChatGoogleGenerativeAI`, and others) is that they all implement the same `.invoke()` interface, swapping providers later means changing one constructor call, not rewriting your application logic.\n\n## Prompt templates\n\nHardcoding a prompt as a plain string works until you need to reuse it with different inputs, a `PromptTemplate` (or `ChatPromptTemplate` for chat models) separates the fixed wording from the variables that change per call:\n\n```python\nfrom langchain_core.prompts import ChatPromptTemplate\n\nprompt = ChatPromptTemplate.from_messages([\n    ('system', 'You are a helpful assistant that explains topics simply.'),\n    ('human', 'Explain {topic} in two sentences.'),\n])\n\nmessages = prompt.invoke({'topic': 'recursion'})\nprint(messages)\n```\n\n`{topic}` is a placeholder filled in by whatever dictionary you pass to `.invoke()`, the same template can be reused with `{'topic': 'closures'}` or `{'topic': 'binary search'}` without touching the wording itself.\n\n## Why this matters over raw API calls\n\n- **Consistency**: the same `.invoke()` shape works whether the underlying model is from OpenAI, Anthropic, or a local model.\n- **Reusability**: a prompt template is a first-class object you can store, version, and reuse across an app, instead of a string interpolated in twelve different places.\n- **Composability**: templates and models are designed to be chained together, which is exactly what the next lesson builds on.\n\n> [!TIP]\n> `.invoke()` runs synchronously and returns a single result, LangChain's models also support `.stream()` (token-by-token output) and `.batch()` (many inputs at once), same interface, different execution mode.",
+      "quiz": {
+        "title": "LangChain Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the main benefit of LangChain's ChatOpenAI, ChatAnthropic, etc. all sharing the same .invoke() interface?",
+            "options": [
+              "They all run for free",
+              "Switching model providers means changing one constructor call instead of rewriting application logic",
+              "They only work with OpenAI",
+              "It removes the need for prompts entirely"
+            ],
+            "answer": "Switching model providers means changing one constructor call instead of rewriting application logic"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "In a ChatPromptTemplate, a value like {topic} is a ____ filled in from the dictionary passed to .invoke().",
+            "options": [],
+            "answer": "placeholder"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A PromptTemplate lets you reuse the same wording with different input variables instead of hardcoding a new string each time.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "chains-composing-prompts-models-and-output-parsers-with-lcel",
+      "title": "Chains: Composing Prompts, Models, and Output Parsers with LCEL",
+      "order": 2,
+      "content": "# Chains: Composing Prompts, Models, and Output Parsers with LCEL\n\nA single call to a model is rarely the whole story, real applications format a prompt, send it to a model, then parse the result into something usable. **LCEL** (LangChain Expression Language) is the syntax for wiring these steps into a single, reusable **chain** using the `|` (pipe) operator.\n\n## Building a chain with the pipe operator\n\n```python\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\n\nprompt = ChatPromptTemplate.from_messages([\n    ('system', 'You are a helpful assistant that explains topics simply.'),\n    ('human', 'Explain {topic} in two sentences.'),\n])\nmodel = ChatOpenAI(model='gpt-4o-mini')\nparser = StrOutputParser()\n\nchain = prompt | model | parser\nresult = chain.invoke({'topic': 'recursion'})\nprint(result)\n```\n\n*This needs a real API key, so it's read-only here.* `prompt | model | parser` reads left to right: the input dictionary flows into `prompt`, its output (a list of chat messages) flows into `model`, and the model's response object flows into `parser`, which extracts just the plain text string, `result` is a `str`, not a message object you'd need to unwrap yourself.\n\n## Why a pipe instead of manual function calls\n\nEvery piece in a chain (prompts, models, parsers, and more) implements the same `Runnable` interface: `.invoke()`, `.stream()`, and `.batch()`. That's what makes `|` work at all, it's building a new `Runnable` out of smaller ones, and the composed chain gets `.stream()` and `.batch()` for free, without you writing any extra code for them.\n\n```python\ntopics = [{'topic': 'recursion'}, {'topic': 'closures'}, {'topic': 'binary search'}]\nresults = chain.batch(topics)\n```\n\n*Also read-only here, since it calls the model.* `.batch()` runs the whole chain, prompt formatting, model call, and parsing, once per item in the list.\n\n## Output parsers beyond plain text\n\n`StrOutputParser` just extracts text, but parsers can do more structured work, `JsonOutputParser` validates and parses the model's output straight into a Python object, catching malformed output before it reaches the rest of your application.\n\n> [!NOTE]\n> A chain is just a `Runnable` built from other `Runnable`s, once you see that, LCEL stops looking like special syntax, `prompt | model | parser` is exactly as composable as chaining any other typed pipeline stages together.",
+      "quiz": {
+        "title": "LCEL Chains Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In chain = prompt | model | parser, what does the model's output get passed to next?",
+            "options": [
+              "Back to the prompt",
+              "The parser",
+              "Nothing, the chain ends there",
+              "The original input dictionary"
+            ],
+            "answer": "The parser"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Because every step in a chain implements the same Runnable interface, the whole composed chain automatically gets .stream() and .batch() as well.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "LCEL stands for LangChain ____ Language, the syntax for composing Runnables with the | operator.",
+            "options": [],
+            "answer": "Expression"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "retrieval-augmented-generation-with-langchain",
+      "title": "Retrieval-Augmented Generation with LangChain",
+      "order": 3,
+      "content": "# Retrieval-Augmented Generation with LangChain\n\nThis course's earlier ancestor, plain RAG, is common enough that LangChain provides ready-built pieces for every step: loading documents, splitting them, embedding, storing, and retrieving. This lesson wires those pieces into a chain instead of hand-writing each step.\n\n## Loading and splitting documents\n\n```python\nfrom langchain_text_splitters import RecursiveCharacterTextSplitter\n\ntext = 'LangChain is a framework for building applications with LLMs...'\nsplitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=20)\nchunks = splitter.split_text(text)\nprint(len(chunks), chunks[0])\n```\n\n`RecursiveCharacterTextSplitter` tries to split on paragraph breaks first, falling back to sentences, then words, so chunks stay as semantically coherent as possible instead of cutting mid-sentence at a fixed character count. `chunk_overlap` repeats a few characters between adjacent chunks so a fact split across a chunk boundary still appears whole in at least one chunk.\n\n## Embedding and storing in a vector store\n\n```python\nfrom langchain_openai import OpenAIEmbeddings\nfrom langchain_community.vectorstores import FAISS\n\nembeddings = OpenAIEmbeddings(model='text-embedding-3-small')\nvectorstore = FAISS.from_texts(chunks, embeddings)\nretriever = vectorstore.as_retriever(search_kwargs={'k': 3})\n```\n\n*This needs a real API key to compute embeddings, so it's read-only here.* `FAISS.from_texts` embeds every chunk and stores the resulting vectors for similarity search, `.as_retriever()` wraps the vector store as a `Runnable`, so it fits directly into an LCEL chain, `search_kwargs={'k': 3}` returns the 3 most similar chunks for a given query.\n\n## Wiring retrieval into a chain\n\n```python\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_core.runnables import RunnablePassthrough\n\nprompt = ChatPromptTemplate.from_template(\n    'Answer the question using only this context:\\n{context}\\n\\nQuestion: {question}'\n)\n\ndef format_docs(docs):\n    return '\\n\\n'.join(doc.page_content for doc in docs)\n\nrag_chain = (\n    {'context': retriever | format_docs, 'question': RunnablePassthrough()}\n    | prompt\n    | model\n    | StrOutputParser()\n)\n\nanswer = rag_chain.invoke('What is LangChain?')\n```\n\n*Read-only, needs a real model and vector store.* The dictionary `{'context': ..., 'question': ...}` runs both branches in parallel on the same input: `retriever | format_docs` turns the raw question into retrieved, formatted context, while `RunnablePassthrough()` just forwards the original question unchanged, both results land in `prompt`'s two placeholders.\n\n> [!WARNING]\n> The prompt explicitly says \"using only this context\", this is what keeps the model **grounded**, without it, a model will happily answer from its own training data instead of your retrieved documents, defeating the entire purpose of RAG.",
+      "quiz": {
+        "title": "LangChain RAG Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why does RecursiveCharacterTextSplitter try paragraph and sentence boundaries before falling back to a fixed character count?",
+            "options": [
+              "It's faster",
+              "To keep chunks semantically coherent instead of cutting text mid-sentence",
+              "It is required by FAISS",
+              "To make chunks bigger"
+            ],
+            "answer": "To keep chunks semantically coherent instead of cutting text mid-sentence"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "RunnablePassthrough() forwards its input unchanged, useful for passing the original question through alongside retrieved context.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Telling the model to answer 'using only this context' keeps its answer ____ in the retrieved documents instead of its own training data.",
+            "options": [],
+            "answer": "grounded"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "tools-and-agents-giving-a-chain-the-ability-to-act",
+      "title": "Tools and Agents: Giving a Chain the Ability to Act",
+      "order": 4,
+      "content": "# Tools and Agents: Giving a Chain the Ability to Act\n\nEverything so far produces text. A LangChain **tool** is a Python function wrapped so a model can request it be called, and an **agent** is a chain that repeatedly decides which tool (if any) to call, based on the model's own reasoning, closing the loop between \"the model wants to act\" and \"code actually executes that action.\"\n\n## Defining a tool\n\n```python\nfrom langchain_core.tools import tool\n\n@tool\ndef get_word_length(word: str) -> int:\n    \"\"\"Return the number of characters in a word.\"\"\"\n    return len(word)\n\nprint(get_word_length.name, get_word_length.description)\n```\n\nThe `@tool` decorator turns a normal, type-annotated function into something LangChain can describe to a model automatically, the function's **docstring becomes the tool's description**, exactly what the model reads to decide when this tool is relevant, a vague docstring produces a model that doesn't know when to reach for the tool.\n\n## Binding tools to a model\n\n```python\nmodel_with_tools = model.bind_tools([get_word_length])\nresponse = model_with_tools.invoke('How many letters are in the word \"LangChain\"?')\nprint(response.tool_calls)\n```\n\n*This needs a real API key, so it's read-only here.* `.bind_tools()` returns a new model that, when it decides a tool is useful, responds with a `tool_calls` list instead of (or alongside) plain text, exactly like the raw function-calling mechanics from the AI Agent course, LangChain just standardizes the description and binding step.\n\n## The agent loop\n\n```python\nfrom langchain.agents import create_tool_calling_agent, AgentExecutor\n\nagent = create_tool_calling_agent(model, [get_word_length], prompt)\nexecutor = AgentExecutor(agent=agent, tools=[get_word_length])\n\nresult = executor.invoke({'input': 'How many letters are in the word \"LangChain\"?'})\nprint(result['output'])\n```\n\n*Read-only, needs a real model.* `AgentExecutor` is the loop: call the model, check for `tool_calls`, execute any requested tools, feed the results back, and repeat until the model responds with a final answer instead of another tool call, the exact same feedback loop from the AI Agent course's `run_agent()`, just packaged as a reusable class.\n\n> [!NOTE]\n> A tool with a bad or missing description is invisible to the model in practice, even if the code works perfectly, the model can only decide to use a tool based on what it's told the tool does.",
+      "quiz": {
+        "title": "Tools & Agents Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does a tool function's docstring become, once wrapped with @tool?",
+            "options": [
+              "Nothing, it's ignored",
+              "The tool's description, which the model reads to decide when to use it",
+              "The tool's name",
+              "A code comment only"
+            ],
+            "answer": "The tool's description, which the model reads to decide when to use it"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "AgentExecutor implements essentially the same call-model, execute-tools, feed-back-results loop as a hand-written agent loop.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "model.bind_tools([...]) returns a new model that can respond with a ____ list when it decides a tool should be called.",
+            "options": [],
+            "answer": "tool_calls"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "langgraph-stateful-multi-step-agent-workflows",
+      "title": "LangGraph: Stateful, Multi-Step Agent Workflows",
+      "order": 5,
+      "content": "# LangGraph: Stateful, Multi-Step Agent Workflows\n\n`AgentExecutor` works well for a simple \"call tools until done\" loop, but real workflows often need more control: conditional branches, loops that revisit earlier steps, or multiple cooperating steps that each need to see and update a shared state. **LangGraph** (from the LangChain team) models an application as an explicit **graph** of steps (nodes) and transitions (edges) over a shared state object, instead of an implicit loop.\n\n## State: the shared object every node reads and updates\n\n```python\nfrom typing import TypedDict\n\nclass ResearchState(TypedDict):\n    question: str\n    search_results: str\n    answer: str\n```\n\nEvery node in a LangGraph graph receives the current state and returns a dictionary of updates to merge into it, this is what makes multi-step workflows explicit and inspectable: at any point, `state` is a plain, printable object describing exactly where the workflow is.\n\n## Defining nodes\n\n```python\ndef search_node(state: ResearchState) -> dict:\n    query = state['question']\n    results = f'(pretend search results for: {query})'\n    return {'search_results': results}\n\ndef answer_node(state: ResearchState) -> dict:\n    prompt_text = f\"Question: {state['question']}\\nResearch: {state['search_results']}\\nAnswer:\"\n    return {'answer': f'(pretend model answer based on: {prompt_text})'}\n```\n\nEach node is a plain Python function, `search_node` would call a real search tool and a model call would live in `answer_node`, kept as placeholders here since both need real API access, the graph structure around them is what this lesson is actually teaching.\n\n## Wiring the graph\n\n```python\nfrom langgraph.graph import StateGraph, END\n\ngraph = StateGraph(ResearchState)\ngraph.add_node('search', search_node)\ngraph.add_node('answer', answer_node)\ngraph.set_entry_point('search')\ngraph.add_edge('search', 'answer')\ngraph.add_edge('answer', END)\n\napp = graph.compile()\nresult = app.invoke({'question': 'What is LangGraph?', 'search_results': '', 'answer': ''})\nprint(result['answer'])\n```\n\n`add_edge('search', 'answer')` is a fixed transition, always go from `search` to `answer`. `add_edge('answer', END)` marks `answer` as a terminal step, `END` is a special LangGraph constant meaning \"the graph is finished.\"\n\n## Conditional edges: branching based on state\n\n```python\ndef needs_more_research(state: ResearchState) -> str:\n    if len(state['search_results']) < 20:\n        return 'search'\n    return 'answer'\n\ngraph.add_conditional_edges('search', needs_more_research, {'search': 'search', 'answer': 'answer'})\n```\n\n`add_conditional_edges` routes to a *different* next node depending on a function of the current state, here, looping back to `search` again if the results look too thin, this is the core capability `AgentExecutor`'s simple loop doesn't give you directly: an explicit, inspectable decision about what happens next, rather than an implicit \"keep calling tools until the model stops.\"\n\n> [!TIP]\n> Think of `AgentExecutor` as one specific, common pattern (loop until no more tool calls), and LangGraph as the general-purpose tool for building that pattern, and any other control flow (branches, loops, multiple cooperating agents) your workflow actually needs.",
+      "quiz": {
+        "title": "LangGraph Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does every node in a LangGraph graph receive and return?",
+            "options": [
+              "A raw string prompt",
+              "The current state, and a dictionary of updates to merge into it",
+              "A tool_calls list only",
+              "Nothing, nodes are stateless"
+            ],
+            "answer": "The current state, and a dictionary of updates to merge into it"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "add_conditional_edges lets a graph route to different next nodes based on the current state, unlike a fixed add_edge transition.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "In LangGraph, ____ is the special constant used to mark a node as the terminal step of the graph.",
+            "options": [],
+            "answer": "END"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-multi-step-research-assistant-with-langchain-and-langgraph",
+      "title": "Final Project: Build a Multi-Step Research Assistant with LangChain and LangGraph",
+      "order": 6,
+      "content": "# Final Project: Build a Multi-Step Research Assistant with LangChain and LangGraph\n\nCombine everything from this course, chains, retrieval, tools, and LangGraph, into one working assistant: given a question, it should decide whether it needs to search for more information, retrieve from a small local knowledge base, and produce a final grounded answer.\n\n## Requirements\n\n1. Set up a real API key (OpenAI, or any provider LangChain supports) and install `langchain`, `langchain-openai` (or your provider's package), and `langgraph`.\n2. Build a small local knowledge base (3-5 short text documents on any topic you like) and set up a retriever for it, using the text splitting and vector store pattern from the Retrieval lesson.\n3. Define a `TypedDict` state with at least a `question`, a `context`, and an `answer` field.\n4. Build a LangGraph graph with at least three nodes: one that retrieves context for the question, one that decides (via a conditional edge) whether the retrieved context is sufficient or another retrieval pass is needed, and one that generates the final answer using an LCEL chain (prompt | model | parser) grounded in the retrieved context.\n5. Compile and run the graph on at least three different questions, one that's clearly answerable from your knowledge base, and one that isn't, confirm the assistant behaves sensibly in both cases (e.g. says it doesn't know, rather than making something up).\n\n## Stretch goals\n\n- Add a tool (e.g. a calculator, or a fake \"current date\" function) and a node that lets the model call it when relevant, on top of retrieval.\n- Add a loop limit (a step counter in state) so a conditional edge can't send the graph back to retrieval forever.\n- Visualize your graph with `app.get_graph().print_ascii()` and include it in your submission.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.",
+      "requiresSubmission": true
+    }
+  ]
+}

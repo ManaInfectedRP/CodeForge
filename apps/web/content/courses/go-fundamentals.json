@@ -1,0 +1,304 @@
+{
+  "slug": "go-fundamentals",
+  "title": "Go Fundamentals",
+  "description": "A simple, fast, compiled language built for concurrency: structs, goroutines, channels, and error handling.",
+  "pathSlug": "go",
+  "pathName": "Go",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "hello-go",
+      "title": "Hello, Go",
+      "order": 1,
+      "content": "# Hello, Go\n\nGo (often called Golang) was built at Google to be simple, fast to compile, and easy to run at scale, it deliberately has a small feature set compared to languages like C++ or Java, that's a design goal, not a limitation.\n\n## Your first program\n\n```go\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello, Kodstigen!\")\n}\n```\n\n- Every Go file belongs to a **package**, `package main` marks this one as an executable program's entry point (as opposed to a reusable library package).\n- `import \"fmt\"` brings in the formatting/printing package, Go's standard library is organized into small, focused packages like this.\n- `func main()` is where execution starts, no class wrapper needed, unlike Java.\n\n## Compiling and running\n\n```bash\ngo run main.go     # compile and run in one step, good for development\ngo build main.go   # produce a standalone binary called main (or main.exe)\n./main\n```\n\nGo compiles to a **single, statically-linked binary** with no external runtime required, you can copy that one file to another machine and run it, nothing else needs to be installed.\n\n> [!TIP]\n> Go ships an opinionated formatter, `gofmt`, and the community treats consistent formatting as non-negotiable. Run `gofmt -w main.go` and never argue about tabs vs. spaces again.",
+      "quiz": {
+        "title": "Hello, Go Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does \"go build\" produce?",
+            "options": [
+              "A bytecode file requiring a separate runtime",
+              "A standalone, statically-linked binary",
+              "A JavaScript file",
+              "Nothing, it only checks for errors"
+            ],
+            "answer": "A standalone, statically-linked binary"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Go requires main to be defined inside a class, similar to Java.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The command that compiles and runs a Go file in a single step is: go ____ main.go",
+            "options": [],
+            "answer": "run"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "variables-types-and-constants",
+      "title": "Variables, Types and Constants",
+      "order": 2,
+      "content": "# Variables, Types and Constants\n\nGo is statically typed, but leans hard on type inference so you rarely have to spell types out.\n\n```go\nvar xp int = 0        // explicit type\nvar name = \"Ada\"       // inferred as string\ncount := 5              // short declaration, inferred, only works inside functions\nxp += 10\n```\n\n`:=` is the idiomatic way to declare and initialize a variable at the same time inside a function, Go infers the type from the right-hand side. `var` is used instead when you need to declare without initializing, or at the package level (outside any function), where `:=` isn't allowed.\n\n## Zero values\n\nUnlike many languages, an uninitialized Go variable is never garbage or `undefined`, it gets a sensible **zero value** automatically:\n\n```go\nvar count int      // 0\nvar name string     // \"\" (empty string)\nvar ready bool      // false\n```\n\nThis eliminates an entire category of \"uninitialized variable\" bugs common in other languages.\n\n## Constants\n\n```go\nconst MaxRetries = 3\nconst Pi = 3.14159\n```\n\n`const` values are fixed at compile time and can never be reassigned, use them for values that should never change during a program's execution, like configuration limits.",
+      "quiz": {
+        "title": "Variables and Constants Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the zero value of an uninitialized Go int?",
+            "options": [
+              "null",
+              "undefined",
+              "0",
+              "It is a compile error"
+            ],
+            "answer": "0"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The := short declaration operator can be used at the package level, outside any function.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A value declared with ____ is fixed at compile time and can never be reassigned.",
+            "options": [],
+            "answer": "const"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "control-flow",
+      "title": "Control Flow",
+      "order": 3,
+      "content": "# Control Flow\n\nGo strips control flow down to the essentials, there's no `while`, no ternary operator, and `if` never needs parentheses around its condition.\n\n```go\nxp := 45\n\nif xp >= 100 {\n    fmt.Println(\"Level up!\")\n} else if xp >= 50 {\n    fmt.Println(\"Almost there\")\n} else {\n    fmt.Println(\"Keep going\")\n}\n```\n\n## for is Go's only loop\n\nGo has exactly one looping keyword, `for`, used in several shapes:\n\n```go\nfor i := 0; i < 5; i++ {   // classic three-part form\n    fmt.Println(i)\n}\n\ncount := 0\nfor count < 3 {              // this IS Go's while loop\n    count++\n}\n\nfor {                         // infinite loop, until an explicit break\n    break\n}\n\nscores := []int{90, 85, 77}\nfor i, score := range scores { // like Python's enumerate\n    fmt.Println(i, score)\n}\n```\n\n`range` gives you both the index and value on each iteration, if you only need the value, discard the index with `_`: `for _, score := range scores`.\n\n## switch\n\n```go\nswitch {\ncase xp >= 100:\n    fmt.Println(\"Gold\")\ncase xp >= 50:\n    fmt.Println(\"Silver\")\ndefault:\n    fmt.Println(\"Bronze\")\n}\n```\n\nUnlike C or Java, a Go `switch` case does **not** fall through to the next one automatically, each case breaks on its own by default, removing a very common source of bugs.",
+      "quiz": {
+        "title": "Control Flow Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which keyword is used for every kind of loop in Go, including a \"while\"-style loop?",
+            "options": [
+              "while",
+              "loop",
+              "for",
+              "repeat"
+            ],
+            "answer": "for"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A Go switch case automatically falls through to the next case unless you add a break.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Iterating with \"for i, v := range items\" gives you both the index and the ____ on each pass.",
+            "options": [],
+            "answer": "value"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "functions-and-multiple-return-values",
+      "title": "Functions and Multiple Return Values",
+      "order": 4,
+      "content": "# Functions and Multiple Return Values\n\nGo functions are straightforward, with one distinctive feature that shapes idiomatic Go code more than almost anything else: they can return **multiple values**.\n\n```go\nfunc add(a int, b int) int {\n    return a + b\n}\n\nfunc divide(a, b float64) (float64, error) {\n    if b == 0 {\n        return 0, fmt.Errorf(\"cannot divide %v by zero\", a)\n    }\n    return a / b, nil\n}\n```\n\n```go\nresult, err := divide(10, 0)\nif err != nil {\n    fmt.Println(\"Error:\", err)\n} else {\n    fmt.Println(\"Result:\", result)\n}\n```\n\n## Why Go does errors this way\n\nGo deliberately has **no exceptions** for ordinary error handling. Instead, any function that can fail returns an `error` as its last value, `nil` means success. The caller checks `if err != nil` immediately after every call that could fail, this is more verbose than a `try`/`catch`, but it makes every possible failure point visible directly in the code, nothing can silently fail three function calls away.\n\n## Named returns\n\n```go\nfunc minMax(nums []int) (min, max int) {\n    min, max = nums[0], nums[0]\n    for _, n := range nums {\n        if n < min { min = n }\n        if n > max { max = n }\n    }\n    return // \"naked\" return, sends back the current values of min and max\n}\n```\n\nNaming return values documents intent directly in the function signature, and lets a bare `return` send back whatever they currently hold.",
+      "quiz": {
+        "title": "Functions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How does idiomatic Go typically signal that a function call failed?",
+            "options": [
+              "Throwing an exception",
+              "Returning a non-nil error as the last return value",
+              "Returning -1",
+              "Crashing the program immediately"
+            ],
+            "answer": "Returning a non-nil error as the last return value"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A nil error return value conventionally means the function call succeeded.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A Go function can return more than one value at once, commonly a result and an ____.",
+            "options": [],
+            "answer": "error"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "structs-and-methods",
+      "title": "Structs and Methods",
+      "order": 5,
+      "content": "# Structs and Methods\n\nGo has no classes, but combines **structs** with **methods** (functions attached to a type) to get most of the same benefits, more explicitly.\n\n```go\ntype Student struct {\n    Name string\n    XP   int\n}\n\nfunc (s *Student) GainXP(amount int) {\n    s.XP += amount\n}\n\nfunc (s Student) Greeting() string {\n    return \"Hi, I'm \" + s.Name\n}\n```\n\n```go\nada := Student{Name: \"Ada\", XP: 0}\nada.GainXP(50)\nfmt.Println(ada.XP)         // 50\nfmt.Println(ada.Greeting()) // \"Hi, I'm Ada\"\n```\n\n`func (s *Student) GainXP(...)` is a **method** with `s` as its **receiver**, this is what attaches the function to the `Student` type, letting you call it as `ada.GainXP(...)` instead of `GainXP(ada, ...)`.\n\n## Pointer vs. value receivers\n\nThis is the one detail that trips everyone up at first: `GainXP` uses a **pointer** receiver (`*Student`) because it needs to *modify* the struct, `Greeting` uses a **value** receiver (`Student`) because it only *reads* from it. A value receiver operates on a copy, changes inside it never affect the original:\n\n```go\nfunc (s Student) BrokenGainXP(amount int) {\n    s.XP += amount // only modifies the local copy, caller sees no change\n}\n```\n\nRule of thumb: if a method needs to modify the struct, use a pointer receiver, if it only reads, either works, but staying consistent within a type is idiomatic Go.",
+      "quiz": {
+        "title": "Structs and Methods Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why does GainXP use a pointer receiver (*Student) instead of a value receiver?",
+            "options": [
+              "Pointer receivers are always faster",
+              "It needs to modify the original struct, not a copy",
+              "Value receivers are illegal in Go",
+              "It is required for every method"
+            ],
+            "answer": "It needs to modify the original struct, not a copy"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A method with a value receiver operates on a copy of the struct, so changes inside it are not visible to the caller.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "In \"func (s *Student) GainXP(...)\", s is called the method's ____.",
+            "options": [],
+            "answer": "receiver"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "slices-maps-and-error-handling",
+      "title": "Slices, Maps and Error Handling",
+      "order": 6,
+      "content": "# Slices, Maps and Error Handling\n\nGo's two everyday collection types, and a closer look at the error-handling pattern you've already seen in action.\n\n## Slices\n\nA slice is a resizable, dynamically-sized view over an underlying array, Go's equivalent of a list:\n\n```go\nscores := []int{90, 85, 77}\nscores = append(scores, 100)    // append returns a new slice, always reassign it\nfmt.Println(scores[0])           // 90\nfmt.Println(len(scores))          // 4\n\nsubset := scores[1:3]              // elements at index 1 and 2\n```\n\n`append` might allocate a new underlying array behind the scenes if the old one ran out of room, that's exactly why you always write `scores = append(scores, ...)` instead of just calling it and discarding the result.\n\n## Maps\n\n```go\nscoresByName := map[string]int{\"Ada\": 95, \"Grace\": 98}\nscoresByName[\"Bob\"] = 70\n\nvalue, ok := scoresByName[\"Missing\"]\nfmt.Println(value, ok)     // 0 false, ok tells you whether the key existed\n\ndelete(scoresByName, \"Bob\")\n```\n\nThe **comma-ok idiom** (`value, ok := ...`) is how Go distinguishes \"the key exists and its value is the zero value\" from \"the key doesn't exist at all\", both would otherwise look identical.\n\n## Error handling recap\n\n```go\nfile, err := os.Open(\"data.txt\")\nif err != nil {\n    fmt.Println(\"Could not open file:\", err)\n    return\n}\ndefer file.Close()   // runs when the surrounding function returns, guaranteed\n```\n\n`defer` schedules a call to run right before the enclosing function returns, no matter which `return` statement triggers it, exactly like a `finally` block, and the idiomatic way to guarantee cleanup (closing files, unlocking mutexes) happens.",
+      "quiz": {
+        "title": "Slices, Maps and Error Handling Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the second value in \"value, ok := myMap[key]\" tell you?",
+            "options": [
+              "The type of the key",
+              "Whether the key exists in the map",
+              "The length of the map",
+              "Whether the map is nil"
+            ],
+            "answer": "Whether the key exists in the map"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "defer schedules a function call to run right before the enclosing function returns.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The built-in function used to add an element to a slice is: ____(scores, newValue)",
+            "options": [],
+            "answer": "append"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "goroutines-and-channels",
+      "title": "Goroutines and Channels",
+      "order": 7,
+      "content": "# Goroutines and Channels\n\nConcurrency is Go's headline feature. A **goroutine** is a lightweight, independently-running function, and a **channel** is a typed pipe for goroutines to safely communicate through, instead of sharing memory directly.\n\n## Goroutines\n\n```go\nfunc sayHi(name string) {\n    fmt.Println(\"Hi,\", name)\n}\n\nfunc main() {\n    go sayHi(\"Ada\")    // runs concurrently, doesn't block main\n    go sayHi(\"Grace\")\n    time.Sleep(100 * time.Millisecond) // crude wait, channels below do this properly\n}\n```\n\nThe `go` keyword launches a function as a goroutine, thousands of them can run concurrently with very little overhead, far lighter-weight than an OS thread.\n\n## Channels\n\nWithout coordination, `main` might exit before the goroutines above even run. Channels solve this properly:\n\n```go\nfunc fetchStatus(url string, results chan<- string) {\n    // pretend this makes a real HTTP request\n    results <- url + \": OK\"   // send a value into the channel\n}\n\nfunc main() {\n    urls := []string{\"a.com\", \"b.com\", \"c.com\"}\n    results := make(chan string)\n\n    for _, url := range urls {\n        go fetchStatus(url, results)\n    }\n\n    for range urls {\n        fmt.Println(<-results)   // receive a value, blocks until one arrives\n    }\n}\n```\n\n`results <- value` sends into the channel, `<-results` receives from it, and receiving **blocks** until a value is available, this is exactly what replaces `time.Sleep` guesswork with real synchronization: `main` waits precisely as long as it needs to, no more, no less.\n\n> [!TIP]\n> Go's own proverb sums up the philosophy: \"Don't communicate by sharing memory, share memory by communicating.\" Channels are the idiomatic way to coordinate goroutines, reaching for shared variables and locks is usually a sign to reach for a channel instead.",
+      "quiz": {
+        "title": "Goroutines and Channels Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the \"go\" keyword do when placed before a function call?",
+            "options": [
+              "Deletes the function",
+              "Runs the function as a lightweight, concurrent goroutine",
+              "Compiles the function ahead of time",
+              "Imports the function from another package"
+            ],
+            "answer": "Runs the function as a lightweight, concurrent goroutine"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Receiving from a channel with <-results blocks until a value is available.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A typed pipe used for goroutines to safely send and receive values is called a ____.",
+            "options": [],
+            "answer": "channel"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-concurrent-url-status-checker",
+      "title": "Final Project: Concurrent URL Status Checker",
+      "order": 8,
+      "content": "# Final Project: Concurrent URL Status Checker\n\nCombine goroutines, channels, structs, and error handling into a small concurrent tool: a URL status checker that checks multiple URLs at once instead of one at a time.\n\n## Requirements\n\n1. Define a `Result` struct with fields for the URL, its HTTP status code (or an error), and how long the request took.\n2. Write a `checkURL(url string, results chan<- Result)` function using `net/http`'s `http.Get`, sending a `Result` into the channel when done (success or failure).\n3. In `main`, launch a goroutine per URL for a list of at least 5 URLs, then receive and print every result as it arrives.\n4. Handle the error case explicitly, a failed request should still produce a `Result` (with the error recorded), not crash the whole program.\n5. Print a final summary: how many succeeded, how many failed, and the total time the whole batch took (it should be close to the *slowest single request*, not the sum of all of them, that's the entire point of doing this concurrently).\n\n## Stretch goals\n\n- Add a timeout per request using `context.WithTimeout`.\n- Limit how many requests run at once (a worker pool) instead of launching unlimited goroutines.\n- Sort the final results by response time before printing.\n\nSubmit a link to your finished project below, an instructor will review it before you can mark this lesson complete. Good luck!",
+      "requiresSubmission": true
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "slug": "lua-advanced-coroutines-metamethods-performance",
+  "title": "Lua Advanced: Coroutines, Metamethods & Performance",
+  "description": "Cooperative multitasking with coroutines, operator overloading and __call/__newindex, variadic functions, and garbage collection with weak tables.",
+  "pathSlug": "lua",
+  "pathName": "Lua",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "coroutines-cooperative-multitasking",
+      "title": "Coroutines: Cooperative Multitasking",
+      "order": 1,
+      "content": "# Coroutines: Cooperative Multitasking\n\nA **coroutine** is an independent thread of execution that you can pause and resume by hand, unlike OS threads, only one coroutine (or the main program) ever runs at a time, so there's no race condition to worry about.\n\n## Creating and resuming a coroutine\n\n```lua\nlocal co = coroutine.create(function(a, b)\n  print(\"start\", a, b)\n  local c = coroutine.yield(a + b) -- pauses here, returns a + b to the resumer\n  print(\"resumed with\", c)\n  return \"done\"\nend)\n\nprint(coroutine.resume(co, 1, 2)) -- true  3   (prints \"start 1  2\" first)\nprint(coroutine.resume(co, 10))    -- true  done  (prints \"resumed with  10\" first)\nprint(coroutine.status(co))         -- dead\n```\n\n- `coroutine.create(fn)` builds a coroutine **without** running it yet.\n- `coroutine.resume(co, ...)` starts/continues it, passing `...` in as arguments (either to the function itself, the first time, or as `coroutine.yield`'s return value on later resumes).\n- `coroutine.yield(...)` pauses the coroutine and hands `...` back to whoever called `resume`.\n- `coroutine.status(co)` reports `\"suspended\"`, `\"running\"`, `\"normal\"`, or `\"dead\"`.\n\n## A generator built on coroutines\n\n```lua\nlocal function numberGenerator(limit)\n  return coroutine.wrap(function()\n    for i = 1, limit do\n      coroutine.yield(i)\n    end\n  end)\nend\n\nfor n in numberGenerator(5) do\n  print(n) -- 1 2 3 4 5, one per iteration\nend\n```\n\n`coroutine.wrap` is `coroutine.create` plus automatic `resume` calls, wrapped in a plain function you can call directly (or use in a `for ... in` loop), it's the idiomatic way to build a lazy generator/iterator in Lua.\n\n> [!WARNING]\n> Unlike `pcall`, an error raised inside a coroutine created with `coroutine.wrap` propagates as a normal Lua error to the caller of the wrapped function. A coroutine made with plain `coroutine.create`, by contrast, reports the error as its second `resume` return value instead of raising it, check `coroutine.resume`'s boolean result if you use `create` directly.",
+      "quiz": {
+        "title": "Coroutines Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does coroutine.yield do?",
+            "options": [
+              "Terminates the coroutine permanently",
+              "Pauses the coroutine and returns values to the resumer",
+              "Creates a new coroutine",
+              "Raises an error"
+            ],
+            "answer": "Pauses the coroutine and returns values to the resumer"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Two Lua coroutines can execute simultaneously on separate CPU cores.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "____.wrap(fn) returns a plain callable function that automatically resumes the coroutine each call, ideal for building generators.",
+            "options": [],
+            "answer": "coroutine"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "advanced-metatables-operator-overloading-call",
+      "title": "Advanced Metatables: Operator Overloading & __call",
+      "order": 2,
+      "content": "# Advanced Metatables: Operator Overloading & __call\n\nFundamentals covered `__index` for method lookup. Metatables support many more **metamethods** that let a table respond to operators, comparisons, `tostring`, and even being called like a function.\n\n## Operator overloading\n\n```lua\nlocal Vector = {}\nVector.__index = Vector\n\nfunction Vector.new(x, y)\n  return setmetatable({ x = x, y = y }, Vector)\nend\n\nVector.__add = function(a, b)\n  return Vector.new(a.x + b.x, a.y + b.y)\nend\n\nVector.__tostring = function(v)\n  return string.format(\"(%g, %g)\", v.x, v.y)\nend\n\nVector.__eq = function(a, b)\n  return a.x == b.x and a.y == b.y\nend\n\nlocal v1 = Vector.new(1, 2)\nlocal v2 = Vector.new(3, 4)\n\nprint(v1 + v2)          -- (4, 6), uses __add, then __tostring for print\nprint(v1 == Vector.new(1, 2)) -- true, uses __eq\n```\n\n`print(v1 + v2)` runs `__add` to build a new `Vector`, then `print` calls `tostring` on it, which invokes `__tostring`. Without `__tostring`, printing a table falls back to Lua's default `table: 0x...` representation.\n\n## __call: making a table callable\n\n```lua\nlocal Multiplier = setmetatable({ factor = 3 }, {\n  __call = function(self, n)\n    return n * self.factor\n  end,\n})\n\nprint(Multiplier(10)) -- 30, calling the table like a function\n```\n\n`__call` is what lets some libraries expose an object that's both a table of methods/config **and** directly invokable.\n\n## __newindex: intercepting new keys\n\n```lua\nlocal readOnly = setmetatable({ pi = 3.14159 }, {\n  __newindex = function(_, key, _)\n    error(\"cannot set '\" .. key .. \"', this table is read-only\")\n  end,\n})\n\nprint(readOnly.pi) -- 3.14159, ordinary reads still work\nreadOnly.pi = 4     -- errors: cannot set 'pi', this table is read-only\n```\n\n`__newindex` only fires when you assign to a key that **doesn't already exist** in the table, it's the standard trick for building read-only tables, or a proxy that validates/logs writes.\n\n> [!NOTE]\n> There's a matching, easy-to-miss rule: `__index` (as a function) only fires on a **missing-key read**, and `__newindex` only fires on a **missing-key write**. Once a key genuinely exists on the table itself, both metamethods are bypassed entirely for that key.",
+      "quiz": {
+        "title": "Advanced Metatables Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which metamethod lets a table be invoked like a function, e.g. myTable(10)?",
+            "options": [
+              "__index",
+              "__call",
+              "__newindex",
+              "__tostring"
+            ],
+            "answer": "__call"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "__newindex fires every time you assign to any key on a table, even one that already exists.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Overloading the + operator for a custom table is done by defining the ____ metamethod.",
+            "options": [],
+            "answer": "__add"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "variadic-functions-and-table-pack-unpack",
+      "title": "Variadic Functions and table.pack/unpack",
+      "order": 3,
+      "content": "# Variadic Functions and table.pack/unpack\n\nLua functions can accept a variable number of arguments using `...` (the **vararg expression**), and tables can be converted to and from argument lists with `table.pack`/`table.unpack`.\n\n## Accepting any number of arguments\n\n```lua\nlocal function sum(...)\n  local total = 0\n  for _, n in ipairs({...}) do\n    total = total + n\n  end\n  return total\nend\n\nprint(sum(1, 2, 3))        -- 6\nprint(sum(10, 20, 30, 40)) -- 100\n```\n\n`{...}` packs all the varargs into a plain table, from there `ipairs` works as usual. This breaks down if any argument is `nil`, though, since `ipairs` stops at the first `nil`.\n\n## select: inspecting varargs directly\n\n```lua\nlocal function describe(...)\n  print(\"got \" .. select(\"#\", ...) .. \" arguments\")\n  print(select(2, ...)) -- every argument from position 2 onward\nend\n\ndescribe(\"a\", \"b\", \"c\") -- got 3 arguments  /  b  c\n```\n\n`select(\"#\", ...)` returns the exact argument count, **including trailing nils**, unlike `#{...}` which can undercount if a `nil` is in the middle or at the end. `select(n, ...)` returns every argument from position `n` onward.\n\n## table.pack and table.unpack\n\n```lua\nlocal function packed(...)\n  return table.pack(...) -- { n = 3, 1, 2, 3 } for example\nend\n\nlocal args = packed(1, 2, 3)\nprint(args.n, args[1], args[2], args[3]) -- 3  1  2  3\n\nprint(table.unpack({10, 20, 30})) -- 10  20  30, spreads a table back into multiple values\n```\n\n`table.pack(...)` is exactly `{...}` plus a reliable `n` field for the true count (nil-safe, unlike `#`). `table.unpack(t)` does the reverse, spreading a table's elements out as individual values, handy for forwarding a captured argument list to another function: `someFn(table.unpack(args))`.\n\n> [!TIP]\n> A common pattern is combining both: capture arguments now with `table.pack`, and call a function with them later using `table.unpack`, effectively deferring a function call, exactly what you'd reach for spread syntax for in JavaScript.",
+      "quiz": {
+        "title": "Varargs Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which expression reliably returns the exact count of varargs, including trailing nils?",
+            "options": [
+              "#{...}",
+              "select(\"#\", ...)",
+              "#select(...)",
+              "table.count(...)"
+            ],
+            "answer": "select(\"#\", ...)"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "table.unpack takes a table and spreads its elements out as individual return values.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Lua's ____ expression (three dots) lets a function accept any number of arguments, e.g. function f(...).",
+            "options": [],
+            "answer": "..."
+          }
+        ]
+      }
+    },
+    {
+      "slug": "garbage-collection-weak-tables",
+      "title": "Garbage Collection & Weak Tables",
+      "order": 4,
+      "content": "# Garbage Collection & Weak Tables\n\nLua manages memory automatically with a garbage collector (GC), you never manually free a table, but understanding roughly how the GC decides what's collectible helps you avoid subtle memory leaks in long-running programs (like a game server that stays up for days).\n\n## How collection works, briefly\n\nLua's GC is a **tracing** collector: starting from a set of \"roots\" (globals, the currently running stack, etc.), it walks every reachable table/value and keeps them, anything unreachable gets freed. This means a table is eligible for collection the moment *nothing* still holds a reference to it, you don't need to null it out explicitly the way you might in a manual-memory language, though setting a local to `nil` when you're done with a large table can help it get collected sooner rather than later.\n\n```lua\ncollectgarbage(\"collect\") -- forces a full garbage collection cycle\nprint(collectgarbage(\"count\")) -- current memory use, in kilobytes\n```\n\n`collectgarbage` is rarely called manually in normal code, Lua runs the collector incrementally on its own, but it's useful when profiling memory use or right before measuring memory in a benchmark.\n\n## The leak you don't expect: caches\n\n```lua\nlocal cache = {}\n\nlocal function getUser(id, fetchFn)\n  if not cache[id] then\n    cache[id] = fetchFn(id)\n  end\n  return cache[id]\nend\n```\n\nThis looks harmless, but `cache` holds a **strong reference** to every entry forever, even after nothing else in the program cares about that user anymore. In a long-running process, this cache only grows.\n\n## Weak tables\n\n```lua\nlocal cache = setmetatable({}, { __mode = \"v\" }) -- weak values\n\nlocal function getUser(id, fetchFn)\n  if not cache[id] then\n    cache[id] = fetchFn(id)\n  end\n  return cache[id]\nend\n```\n\n`__mode = \"v\"` makes the table's **values** weak references, if nothing else in the program still holds a strong reference to a cached value, the garbage collector is free to remove that entry from `cache` automatically on its next pass. `__mode = \"k\"` does the same for keys, and `__mode = \"kv\"` makes both weak, useful for building a side-table that attaches extra data to objects without preventing those objects from ever being collected.\n\n> [!WARNING]\n> Weak tables only help if the *values themselves* are collectible tables/userdata elsewhere, numbers and strings are never weakly held the way you might expect (small numbers and short strings in particular are effectively \"immortal\" values in Lua's implementation), so `__mode = \"v\"` won't shrink a cache whose values are plain numbers.",
+      "quiz": {
+        "title": "GC & Weak Tables Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Setting __mode = 'v' on a table's metatable makes...",
+            "options": [
+              "Its keys weak references",
+              "Its values weak references",
+              "The whole table immutable",
+              "It stop participating in garbage collection entirely"
+            ],
+            "answer": "Its values weak references"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A table becomes eligible for garbage collection only once nothing in the program still holds a reference to it.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "____(\"collect\") forces Lua to run a full garbage collection cycle immediately.",
+            "options": [],
+            "answer": "collectgarbage"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-tiny-event-emitter-with-coroutines",
+      "title": "Final Project: Build a Tiny Event Emitter with Coroutines",
+      "order": 5,
+      "content": "# Final Project: Build a Tiny Event Emitter with Coroutines\n\nCombine coroutines, metatables, and varargs into a small pub/sub event emitter, a pattern used constantly in game engines and GUI frameworks.\n\n## Requirements\n\n1. Build an `EventEmitter` \"class\" (metatable-based, like earlier OOP lessons) with `on(event, handler)`, `off(event, handler)`, and `emit(event, ...)` methods. `emit` should forward any extra arguments straight to every registered handler using varargs.\n2. Support **multiple handlers** per event name, stored in a table keyed by event name, each holding a list of handler functions.\n3. Wrap each handler call in `pcall` inside `emit`, so one broken handler doesn't stop the rest of that event's handlers from running, log a warning for the failing one instead.\n4. Add an `onceAsync(event)` method that returns a coroutine-based helper: calling it pauses (via `coroutine.yield`) until the named event next fires, then resumes with that event's arguments, essentially turning a callback-style event into something you can \"await\" step by step.\n5. Use a weak table (`__mode = \"k\"`) to track any per-listener metadata you add (e.g. a registration timestamp) so that metadata doesn't keep a removed handler function alive forever.\n\n## Stretch goals\n\n- Add wildcard subscriptions (`emitter:on(\"*\", handler)` fires on every event).\n- Add a `once(event, handler)` convenience method that automatically calls `off` after the handler's first invocation.\n- Benchmark emitting 10,000 events with `os.clock()` before and after switching a hot path from `pairs` to `ipairs` where applicable, and note the difference.\n\nSubmit a link to your finished script (a repo or gist) below, an instructor will review it before you can mark this lesson complete.",
+      "requiresSubmission": true
+    }
+  ]
+}

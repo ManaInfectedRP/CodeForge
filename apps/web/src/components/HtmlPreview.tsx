@@ -1,6 +1,8 @@
+'use client';
+
 import { useState } from 'react';
 import Editor from 'react-simple-code-editor';
-import { highlight } from '../lib/prism';
+import { highlight } from '@/lib/prism';
 
 export function HtmlPreview({ initialCode }: { initialCode: string }) {
   const [code, setCode] = useState(initialCode);

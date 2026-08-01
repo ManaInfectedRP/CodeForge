@@ -1,0 +1,222 @@
+{
+  "slug": "c-sharp-foundations",
+  "title": "C# Foundations",
+  "description": "Learn statically-typed, object-oriented programming with C# and the .NET ecosystem, from your first program to building console applications.",
+  "pathSlug": "csharp",
+  "pathName": "C#",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "hello-c-sharp",
+      "title": "Hello, C#",
+      "order": 1,
+      "content": "# Hello, C#\n\nC# (pronounced \"C sharp\") is a statically-typed, object-oriented language built by Microsoft for the .NET platform. It's used for everything from web APIs (ASP.NET) to desktop apps to game development (Unity).\n\n```csharp\nusing System;\n\nclass Program\n{\n    static void Main()\n    {\n        Console.WriteLine(\"Hello, Kodstigen!\");\n    }\n}\n```\n\n## The pieces\n\n- `using System;` imports the namespace that contains `Console` and other common types.\n- Every C# program needs an entry point method called `Main`, that's where execution starts.\n- `Console.WriteLine(...)` prints a line of text to the terminal.\n\nCompile and run a C# project with the .NET CLI:\n\n```bash\ndotnet run\n```",
+      "quiz": {
+        "title": "C# Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the entry point method of a C# program called?",
+            "options": [
+              "Start",
+              "Main",
+              "Run",
+              "Init"
+            ],
+            "answer": "Main"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Console.____(\"Hello!\") prints a line of text to the console.",
+            "options": [],
+            "answer": "WriteLine"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "C# is a statically-typed language.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "variables-and-types",
+      "title": "Variables and Types",
+      "order": 2,
+      "content": "# Variables and Types\n\n```csharp\nint xp = 100;\nstring name = \"Ada\";\nbool isInstructor = true;\ndouble score = 92.5;\n\nConsole.WriteLine($\"{name} has {xp} XP\");\n```\n\n## Common types\n\n| Type | Example |\n|------|---------|\n| `int` | `42` |\n| `double` | `3.14` |\n| `string` | `\"hello\"` |\n| `bool` | `true` / `false` |\n\n## String interpolation\n\nA `$\"...\"` string lets you embed expressions directly with `{ }`, this is called **string interpolation**.\n\n## Type inference with `var`\n\n```csharp\nvar count = 10; // the compiler infers count is an int\n```\n\n`var` doesn't make C# dynamically typed, the compiler still figures out and locks in a concrete type at compile time, it just saves you from writing it out.",
+      "quiz": {
+        "title": "Variables Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which keyword lets the compiler infer a variable's type from its initial value?",
+            "options": [
+              "auto",
+              "var",
+              "let",
+              "dynamic"
+            ],
+            "answer": "var"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Embedding expressions directly in a string with $\"{name}\" is called string ____.",
+            "options": [],
+            "answer": "interpolation"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Once a variable is declared as an int, you can later assign a string to it without casting or conversion.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "control-flow-and-loops",
+      "title": "Control Flow and Loops",
+      "order": 3,
+      "content": "# Control Flow and Loops\n\n```csharp\nint xp = 45;\n\nif (xp >= 50)\n{\n    Console.WriteLine(\"Level up!\");\n}\nelse\n{\n    Console.WriteLine($\"Keep going, {50 - xp} XP to go.\");\n}\n\nfor (int i = 1; i <= 5; i++)\n{\n    Console.WriteLine($\"Lesson {i}\");\n}\n\nforeach (var lang in new[] { \"C#\", \"Python\", \"JavaScript\" })\n{\n    Console.WriteLine(lang);\n}\n```\n\n## The pieces\n\n- `if` / `else` branch on a boolean condition.\n- `for (init; condition; increment)` is best when you know how many times to loop.\n- `foreach (var item in collection)` visits every element of an array or collection without needing an index, use it whenever you don't need the index itself.",
+      "quiz": {
+        "title": "Control Flow Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which loop is the best fit for visiting every element of a collection without needing an index?",
+            "options": [
+              "for",
+              "foreach",
+              "while",
+              "do-while"
+            ],
+            "answer": "foreach"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A for loop has three parts separated by semicolons: initializer, condition, and ____.",
+            "options": [],
+            "answer": "increment"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "An if statement in C# requires its condition to evaluate to a boolean.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "methods-and-classes",
+      "title": "Methods and Classes",
+      "order": 4,
+      "content": "# Methods and Classes\n\nA **class** bundles data (fields) and behavior (methods) together, it's the blueprint for creating objects.\n\n```csharp\nclass Student\n{\n    public string Name;\n    public int Xp;\n\n    public Student(string name, int xp = 0)\n    {\n        Name = name;\n        Xp = xp;\n    }\n\n    public int GainXp(int amount)\n    {\n        Xp += amount;\n        return Xp;\n    }\n}\n\nvar ada = new Student(\"Ada\");\nada.GainXp(50);\nConsole.WriteLine($\"{ada.Name} has {ada.Xp} XP\");\n```\n\n## Key pieces\n\n- The method with the same name as the class (`Student(string name, int xp = 0)`) is the **constructor**, it runs when you create a new instance.\n- `new Student(\"Ada\")` allocates a new object and runs its constructor.\n- `public` fields and methods are accessible from outside the class, by convention C# method and property names use PascalCase (`GainXp`, not `gainXp`).",
+      "quiz": {
+        "title": "Classes Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the method that runs automatically when you create a new instance of a class called?",
+            "options": [
+              "The destructor",
+              "The constructor",
+              "The initializer",
+              "The allocator"
+            ],
+            "answer": "The constructor"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ keyword allocates a new instance of a class and runs its constructor.",
+            "options": [],
+            "answer": "new"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "By convention, C# method names use PascalCase, like GainXp rather than gainXp.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "collections-and-linq",
+      "title": "Collections and LINQ",
+      "order": 5,
+      "content": "# Collections and LINQ\n\n```csharp\nusing System.Linq;\n\nList<int> scores = new List<int> { 80, 92, 67, 100 };\n\nvar passed = scores.Where(s => s >= 70).ToList();\nvar doubled = scores.Select(s => s * 2).ToList();\nint total = scores.Sum();\n\nConsole.WriteLine($\"passed: {string.Join(\", \", passed)}\");\nConsole.WriteLine($\"total: {total}\");\n```\n\n## Collections\n\n`List<T>` is a resizable, generic collection, the `<int>` says it only holds `int`s.\n\n## LINQ\n\n**LINQ** (Language Integrated Query) adds query-style methods to collections, similar to JavaScript's `map`/`filter`/`reduce`:\n\n| LINQ | JavaScript equivalent |\n|------|------------------------|\n| `Where(predicate)` | `filter` |\n| `Select(transform)` | `map` |\n| `Sum()` | `reduce` (adding) |\n\nLINQ methods live in the `System.Linq` namespace, and (like the JavaScript array methods they resemble) return a new sequence rather than modifying the original.",
+      "quiz": {
+        "title": "Collections & LINQ Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which LINQ method keeps only the elements that match a condition?",
+            "options": [
+              "Select",
+              "Where",
+              "Sum",
+              "ToList"
+            ],
+            "answer": "Where"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A resizable, generic collection of integers is declared as List<____>.",
+            "options": [],
+            "answer": "int"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "LINQ methods like Where and Select modify the original collection in place.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-console-grade-book",
+      "title": "Final Project: Console Grade Book",
+      "order": 6,
+      "content": "# Final Project: Console Grade Book\n\nTime to combine classes, collections, and LINQ into a real console application.\n\n## Requirements\n\n1. Create a `Student` class with a name and a list of scores.\n2. Store several students in a `List<Student>`.\n3. Write a method that computes a student's average score.\n4. Use LINQ (`Where`, `Select`, or similar) to filter and report which students are passing (e.g. average `>= 70`).\n5. Loop over every student and print a report line with their name, average, and a letter grade (A/B/C/D/F) based on thresholds you define.\n\n## Stretch goals\n\n- Read student data from `Console.ReadLine()` instead of hardcoding it.\n- Sort students by average score, highest first.\n- Wrap score parsing in a `try/catch` to handle invalid input gracefully.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

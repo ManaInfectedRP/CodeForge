@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 declare global {
   interface Window {
@@ -7,20 +9,22 @@ declare global {
   }
 }
 
-/** The gtag.js snippet in index.html only reports a page view on the initial load, so
- * client-side route changes in this SPA would otherwise be invisible to GA4. Reports one
- * on every route change instead. Renders nothing. */
+/** gtag.js only reports the page view it was loaded on, so client-side navigations would
+ * otherwise be invisible to GA4. Reports one on every route change. gtag is only ever
+ * defined after the visitor accepts cookies, so this is a no-op until then. Renders nothing. */
 export function GaPageView() {
-  const location = useLocation();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (typeof window.gtag !== 'function') return;
+    const query = searchParams.toString();
     window.gtag('event', 'page_view', {
-      page_path: location.pathname + location.search,
+      page_path: pathname + (query ? `?${query}` : ''),
       page_title: document.title,
       page_location: window.location.href,
     });
-  }, [location.pathname, location.search]);
+  }, [pathname, searchParams]);
 
   return null;
 }

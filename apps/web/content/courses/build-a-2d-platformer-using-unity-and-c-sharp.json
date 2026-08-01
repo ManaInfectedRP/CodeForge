@@ -1,0 +1,263 @@
+{
+  "slug": "build-a-2d-platformer-using-unity-and-c-sharp",
+  "title": "Build a 2D Platformer using Unity and C#",
+  "description": "Build a complete, playable platformer from scratch: a Rigidbody2D player controller with a ground check, Tilemap level design, a smooth bounded camera follow, Animator-driven run/jump/idle animations, collectible coins and patrolling enemies, and a UI wired up to score, health, and level completion.",
+  "pathSlug": "csharp",
+  "pathName": "C#",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "project-setup-the-player-controller",
+      "title": "Project Setup & the Player Controller",
+      "order": 1,
+      "content": "# Project Setup & the Player Controller\n\nA platformer starts with the one thing every level depends on: a player that can move and jump reliably. In 2D Unity, that means `Rigidbody2D` and a **ground check**.\n\n```csharp\nusing UnityEngine;\n\npublic class PlayerController : MonoBehaviour\n{\n    public float moveSpeed = 6f;\n    public float jumpForce = 12f;\n    public Transform groundCheck;\n    public LayerMask groundLayer;\n\n    Rigidbody2D rb;\n    bool isGrounded;\n\n    void Awake()\n    {\n        rb = GetComponent<Rigidbody2D>();\n    }\n\n    void Update()\n    {\n        isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.2f, groundLayer);\n\n        float move = Input.GetAxisRaw(\"Horizontal\");\n        rb.linearVelocity = new Vector2(move * moveSpeed, rb.linearVelocity.y);\n\n        if (isGrounded && Input.GetButtonDown(\"Jump\"))\n        {\n            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);\n        }\n    }\n}\n```\n\n## The pieces\n\n- `Rigidbody2D` (not the 3D `Rigidbody`) handles gravity and movement for 2D games, set its **Body Type** to `Dynamic` in the Inspector.\n- `Physics2D.OverlapCircle(point, radius, layerMask)` checks whether any collider on `groundLayer` overlaps a small circle, a cheap, reliable way to ask \"is the player standing on something?\" without relying on fragile collision-event timing.\n- `groundCheck` is an empty child GameObject positioned at the player's feet, purely there to give the overlap circle a position to check from.\n- `Input.GetAxisRaw` (unlike `GetAxis`) returns exactly -1, 0, or 1 with no smoothing, snappier and more predictable for platformer movement.\n- Only jump when `isGrounded` is true, otherwise the player could jump endlessly in mid-air.\n\n> [!TIP]\n> Put ground and platform tiles on their own **Layer** (e.g. \"Ground\"), and set `groundLayer` to only that layer in the Inspector. Otherwise `OverlapCircle` might count the player's own collider or an enemy standing nearby as \"ground.\"",
+      "quiz": {
+        "title": "Player Controller Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does Physics2D.OverlapCircle check for in the ground-check pattern?",
+            "options": [
+              "Whether the player is moving",
+              "Whether any collider on a given layer overlaps a point",
+              "The player's current health",
+              "The camera's position"
+            ],
+            "answer": "Whether any collider on a given layer overlaps a point"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Input.Get____(\"Horizontal\") returns an unsmoothed -1, 0, or 1, better suited to snappy platformer movement than GetAxis.",
+            "options": [],
+            "answer": "AxisRaw"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The player should be able to jump whether or not isGrounded is true.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "tilemaps-and-level-design",
+      "title": "Tilemaps and Level Design",
+      "order": 2,
+      "content": "# Tilemaps and Level Design\n\nHand-placing hundreds of individual sprite GameObjects for a level doesn't scale. Unity's **Tilemap** system lets you paint a level like a grid-based canvas instead.\n\n## Setting up a Tilemap\n\n1. Right-click in the Hierarchy → **2D Object → Tilemap → Rectangular**, this creates a `Grid` GameObject with a `Tilemap` child.\n2. Open the **Tile Palette** window (Window → 2D → Tile Palette), create a new palette, and drag your tile sprites into it.\n3. Select the paint brush tool and click on the Tilemap in the Scene view to place tiles.\n\n## Making the tiles solid\n\nOn the Tilemap GameObject, add a `Tilemap Collider2D` and a `Rigidbody2D` set to Body Type `Static`. A `TilemapCollider2D` automatically generates a collider shape from whatever tiles are painted, so painting a new platform is enough, no manual collider work needed.\n\n## Reading tile data from code\n\n```csharp\nusing UnityEngine;\nusing UnityEngine.Tilemaps;\n\npublic class LevelInfo : MonoBehaviour\n{\n    public Tilemap tilemap;\n\n    public bool IsSolidAt(Vector3 worldPosition)\n    {\n        Vector3Int cell = tilemap.WorldToCell(worldPosition);\n        return tilemap.HasTile(cell);\n    }\n}\n```\n\n## The pieces\n\n- `Grid` defines the cell size and layout that every child `Tilemap` shares, a level can have several Tilemaps (ground, background decoration, hazards) stacked on the same Grid.\n- A Tilemap's `Rigidbody2D` should be `Static`, the level geometry doesn't move.\n- `WorldToCell` converts a world-space position (like a GameObject's `transform.position`) into the Tilemap's grid coordinates, useful for gameplay logic that needs to know \"what tile is under this point.\"\n\n> [!TIP]\n> Keep hazards (spikes, lava) on a **separate Tilemap** from solid ground, with its own collider set to **Is Trigger**. That way a single `OnTriggerEnter2D` check on the player can detect \"touched a hazard\" without it also being solid ground.",
+      "quiz": {
+        "title": "Tilemaps Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which component automatically generates a collider shape that matches the tiles painted on a Tilemap?",
+            "options": [
+              "Rigidbody2D",
+              "TilemapCollider2D",
+              "BoxCollider2D",
+              "TileRenderer"
+            ],
+            "answer": "TilemapCollider2D"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A Tilemap's Rigidbody2D should be set to Body Type ____, since level geometry doesn't move.",
+            "options": [],
+            "answer": "Static"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A single Grid GameObject can have multiple Tilemap children, e.g. one for ground and one for background decoration.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "camera-follow-and-bounds",
+      "title": "Camera Follow and Bounds",
+      "order": 3,
+      "content": "# Camera Follow and Bounds\n\nA platformer camera needs to track the player smoothly, without jittering or showing empty space past the edges of the level.\n\n```csharp\nusing UnityEngine;\n\npublic class CameraFollow : MonoBehaviour\n{\n    public Transform target;\n    public float smoothTime = 0.15f;\n    public Vector2 minBounds;\n    public Vector2 maxBounds;\n\n    Vector3 velocity;\n\n    void LateUpdate()\n    {\n        Vector3 desired = new Vector3(target.position.x, target.position.y, transform.position.z);\n        Vector3 smoothed = Vector3.SmoothDamp(transform.position, desired, ref velocity, smoothTime);\n\n        smoothed.x = Mathf.Clamp(smoothed.x, minBounds.x, maxBounds.x);\n        smoothed.y = Mathf.Clamp(smoothed.y, minBounds.y, maxBounds.y);\n\n        transform.position = smoothed;\n    }\n}\n```\n\n## The pieces\n\n- `LateUpdate()` runs after every `Update()` this frame, cameras should always follow in `LateUpdate`, so they track the player's **final** position for the frame instead of a stale one from before its last movement.\n- `Vector3.SmoothDamp` eases the camera toward a target position over `smoothTime` seconds, instead of snapping instantly, this is what makes camera movement feel smooth rather than jittery. It needs a `ref Vector3 velocity` field that it updates internally between calls, don't reset that field yourself.\n- `Mathf.Clamp` on the final x and y keeps the camera from ever showing area outside `minBounds`/`maxBounds`, set those to the edges of your level so the camera stops panning once it reaches them.\n- The camera's own `z` position is preserved (`transform.position.z`) rather than copied from the player, since the player lives on the 2D gameplay plane but the camera needs distance from it to actually render anything.\n\n> [!TIP]\n> Unity's **Cinemachine** package does all of this (smoothing, bounds via a Confiner) with no code and far more polish, writing your own follow script first is worth doing once so you understand what Cinemachine is actually doing under the hood.",
+      "quiz": {
+        "title": "Camera Follow Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why should camera-follow logic run in LateUpdate instead of Update?",
+            "options": [
+              "LateUpdate runs faster",
+              "It ensures the camera tracks the player's final position for the frame",
+              "Update cannot read Transform values",
+              "LateUpdate is required for Rigidbody2D"
+            ],
+            "answer": "It ensures the camera tracks the player's final position for the frame"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Vector3.____ eases a value toward a target over time instead of snapping to it instantly.",
+            "options": [],
+            "answer": "SmoothDamp"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Mathf.Clamp on the camera's position can prevent it from showing area outside the level bounds.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "animator-idle-run-and-jump-animations",
+      "title": "Animator: Idle, Run, and Jump Animations",
+      "order": 4,
+      "content": "# Animator: Idle, Run, and Jump Animations\n\nA static sprite makes movement look robotic. Unity's **Animator** system swaps between animation clips based on parameters your code sets every frame.\n\n## Setting up the Animator Controller\n\n1. Create an **Animator Controller** asset, and add three states: `Idle`, `Run`, `Jump`.\n2. Add parameters: a `float Speed` and a `bool IsGrounded`.\n3. Draw transitions: `Idle → Run` when `Speed > 0.1`, `Run → Idle` when `Speed <= 0.1`, and both `→ Jump` when `IsGrounded` becomes `false`.\n4. Assign the Animator Controller to the player's `Animator` component.\n\n```csharp\nusing UnityEngine;\n\npublic class PlayerAnimation : MonoBehaviour\n{\n    Animator animator;\n    Rigidbody2D rb;\n    SpriteRenderer spriteRenderer;\n\n    void Awake()\n    {\n        animator = GetComponent<Animator>();\n        rb = GetComponent<Rigidbody2D>();\n        spriteRenderer = GetComponent<SpriteRenderer>();\n    }\n\n    void Update()\n    {\n        float speed = Mathf.Abs(rb.linearVelocity.x);\n        animator.SetFloat(\"Speed\", speed);\n        animator.SetBool(\"IsGrounded\", Mathf.Abs(rb.linearVelocity.y) < 0.01f);\n\n        if (rb.linearVelocity.x != 0f)\n        {\n            spriteRenderer.flipX = rb.linearVelocity.x < 0f;\n        }\n    }\n}\n```\n\n## The pieces\n\n- `animator.SetFloat(...)`/`SetBool(...)` push values from code into the Animator Controller's parameters every frame, the transitions you drew in the editor react to those values automatically, your code never has to say \"play the Run animation\" directly.\n- Keeping animation logic in its own `PlayerAnimation` script, separate from `PlayerController`'s movement logic, means either one can change without touching the other.\n- `spriteRenderer.flipX` mirrors the sprite horizontally, a cheap way to make one \"Run\" animation face both left and right instead of needing separate clips.\n\n> [!WARNING]\n> If a transition's conditions can never actually be reached (e.g. checking `Speed > 0.1` but the code only ever sets whole numbers), the Animator gets stuck in one state. Use the Animator window's live preview during Play mode to watch which state is active and debug transitions.",
+      "quiz": {
+        "title": "Animator Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How does code trigger an Animator transition, like Idle to Run?",
+            "options": [
+              "By calling animator.Play(\"Run\") every frame",
+              "By setting parameters (like a float or bool) that the transition conditions check",
+              "Transitions are fully automatic and need no code",
+              "By destroying and re-instantiating the Animator"
+            ],
+            "answer": "By setting parameters (like a float or bool) that the transition conditions check"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "spriteRenderer.____ mirrors a sprite horizontally, useful for reusing one animation for both facing directions.",
+            "options": [],
+            "answer": "flipX"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Animation logic and movement logic must always live in the same script.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "collectibles-and-enemies",
+      "title": "Collectibles and Enemies",
+      "order": 5,
+      "content": "# Collectibles and Enemies\n\nA platformer needs something to collect and something to avoid. Both come from the trigger and collision patterns you already know, applied to specific gameplay roles.\n\n```csharp\nusing UnityEngine;\n\npublic class Coin : MonoBehaviour\n{\n    public int value = 10;\n\n    void OnTriggerEnter2D(Collider2D other)\n    {\n        if (!other.CompareTag(\"Player\")) return;\n\n        GameManager.Instance.AddScore(value);\n        Destroy(gameObject);\n    }\n}\n```\n\n```csharp\nusing UnityEngine;\n\npublic class Patroller : MonoBehaviour\n{\n    public float speed = 2f;\n    public float patrolDistance = 3f;\n\n    Vector3 start;\n    int direction = 1;\n\n    void Start()\n    {\n        start = transform.position;\n    }\n\n    void Update()\n    {\n        transform.Translate(Vector2.right * direction * speed * Time.deltaTime);\n\n        if (Mathf.Abs(transform.position.x - start.x) >= patrolDistance)\n        {\n            direction *= -1;\n            transform.localScale = new Vector3(-transform.localScale.x, transform.localScale.y, 1f);\n        }\n    }\n\n    void OnCollisionEnter2D(Collision2D collision)\n    {\n        if (collision.gameObject.CompareTag(\"Player\"))\n        {\n            collision.gameObject.GetComponent<PlayerHealth>()?.TakeDamage(1);\n        }\n    }\n}\n```\n\n## The pieces\n\n- A coin's collider is a **trigger** (`Is Trigger` checked), so the player passes through it while still getting `OnTriggerEnter2D`, and it destroys itself once collected.\n- The patroller walks back and forth by tracking distance from its `start` position, and flips its `direction` (and its sprite, via `localScale.x`) at each end.\n- `OnCollisionEnter2D` on the enemy fires when the player touches its **solid** collider, that's the difference from the coin: an enemy should physically be there (block/push the player), a coin shouldn't.\n- `GetComponent<PlayerHealth>()?.TakeDamage(1)` uses the null-conditional `?.` in case the colliding object somehow doesn't have a `PlayerHealth` component, avoiding a crash.\n\n> [!TIP]\n> Give enemies and hazards a distinct **Tag** (e.g. \"Enemy\", \"Hazard\") and coins a \"Collectible\" tag. Tag checks (`CompareTag`) are far cheaper than `GetComponent` calls just to identify what something is.",
+      "quiz": {
+        "title": "Collectibles & Enemies Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why is a coin's collider set to Is Trigger instead of a solid collider?",
+            "options": [
+              "Triggers are faster to render",
+              "So the player can pass through it while still detecting the overlap",
+              "Trigger colliders cannot be destroyed",
+              "It is required for 2D sprites"
+            ],
+            "answer": "So the player can pass through it while still detecting the overlap"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "CompareTag(...) is a cheaper way to check what a GameObject is than calling ____ just to check if a component exists.",
+            "options": [],
+            "answer": "GetComponent"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "An enemy that should physically block the player should use a trigger collider instead of a solid one.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "ui-score-health-and-level-complete",
+      "title": "UI: Score, Health, and Level Complete",
+      "order": 6,
+      "content": "# UI: Score, Health, and Level Complete\n\nWire the systems from earlier lessons to a UI a player can actually see, using a small manager class that everything else talks to.\n\n```csharp\nusing UnityEngine;\nusing TMPro;\n\npublic class GameManager : MonoBehaviour\n{\n    public static GameManager Instance { get; private set; }\n\n    public TMP_Text scoreText;\n    public GameObject levelCompletePanel;\n\n    int score;\n\n    void Awake()\n    {\n        Instance = this;\n    }\n\n    public void AddScore(int amount)\n    {\n        score += amount;\n        scoreText.text = $\"Score: {score}\";\n    }\n\n    public void CompleteLevel()\n    {\n        levelCompletePanel.SetActive(true);\n        Time.timeScale = 0f;\n    }\n}\n```\n\n## The pieces\n\n- `public static GameManager Instance { get; private set; }` is a lightweight **singleton**: any script can reach the one `GameManager` in the scene with `GameManager.Instance`, instead of every script needing a manually-dragged reference. That's how `Coin` called `GameManager.Instance.AddScore(...)` in the previous lesson.\n- `scoreText.text = $\"Score: {score}\"` is the same pattern from the Unity Essentials course, code pushes new values into the UI, the UI never updates itself.\n- `levelCompletePanel` is a `Canvas` child (a panel with a background and text) that starts inactive in the Inspector and gets `SetActive(true)` only when the level is finished.\n- `Time.timeScale = 0f` pauses all physics and any code using `Time.deltaTime` (like the patroller's movement), a simple way to freeze gameplay behind a completion or pause screen without disabling every script individually.\n\n> [!WARNING]\n> Setting `Time.timeScale = 0f` also freezes `Update()`-based countdowns and animations driven by `deltaTime`. Resetting it back to `1f` (e.g. when restarting the level) is easy to forget, and leaves the whole game frozen.",
+      "quiz": {
+        "title": "UI & Game State Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the GameManager.Instance pattern let other scripts do?",
+            "options": [
+              "Create a new GameManager each time",
+              "Reach the one GameManager in the scene without a manually-dragged reference",
+              "Automatically destroy themselves",
+              "Skip using the Inspector entirely for all fields"
+            ],
+            "answer": "Reach the one GameManager in the scene without a manually-dragged reference"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Setting Time.____ to 0 pauses physics and any code driven by deltaTime, useful for a level-complete or pause screen.",
+            "options": [],
+            "answer": "timeScale"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "UI text updates itself automatically whenever the underlying score variable changes.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-finish-your-platformer",
+      "title": "Final Project: Finish Your Platformer",
+      "order": 7,
+      "content": "# Final Project: Finish Your Platformer\n\nYou now have every piece: a responsive player controller, a tile-based level, a camera that follows smoothly, animated movement, collectibles and enemies, and a UI wired to game state. Put it all together into one complete, playable level.\n\n## Requirements\n\n1. Combine the `PlayerController`, `PlayerAnimation`, and `CameraFollow` scripts from earlier lessons onto a player that can run, jump, and be tracked by the camera across a full level.\n2. Build a level with a Tilemap, including solid ground and at least one gap the player must jump across.\n3. Place at least 5 coins (using the `Coin` script) and update the score UI live as they're collected.\n4. Add at least one patrolling enemy that damages the player on contact, and a `PlayerHealth` script that ends the run (e.g. reloads the level) when health reaches 0.\n5. Show the level-complete panel when the player reaches an end-of-level trigger zone, and pause gameplay while it's shown.\n\n## Stretch goals\n\n- Add a second enemy type that doesn't patrol, but instead activates and chases the player once it enters an `OnTriggerEnter2D` \"aggro\" radius.\n- Add a simple checkpoint system: touching a checkpoint updates where the player respawns after taking too much damage, instead of always restarting from the beginning.\n- Swap your hand-written `CameraFollow` for Unity's **Cinemachine** package, and compare how much of your script it replaces.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

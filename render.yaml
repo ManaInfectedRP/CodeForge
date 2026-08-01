@@ -1,81 +1,30 @@
 # Render.com Blueprint for Kodstigen
 # https://render.com/docs/blueprint-spec
 #
-# One web service runs everything: the Express API serves the built React
-# frontend (see app.ts) plus /uploads. A managed PostgreSQL instance backs it.
+# The whole site is a Next.js static export, no server and no database: `build.sh`
+# runs `next build` (which writes apps/web/out because next.config.ts sets
+# output: 'export') and Render serves those files straight from its CDN.
+# https://render.com/docs/deploy-nextjs-app#deploy-as-a-static-site
 #
-# Deploy: push this repo to GitHub → Render Dashboard → New → Blueprint.
-#
-# Free-tier notes:
-#  - The free Postgres instance expires after 30 days; upgrade the plan to keep data.
-#  - The free web service has an EPHEMERAL filesystem: uploaded lesson videos are
-#    lost on every deploy/restart. On a paid instance, uncomment the "disk"
-#    section below to persist them.
-#  - Migrations + seed run at the end of the build (preDeployCommand requires a
-#    paid instance; move them there when you upgrade).
-
-databases:
-  - name: codeforge-db
-    plan: free
-    databaseName: codeforge
-    user: codeforge
+# Deploy: push this repo to GitHub -> Render Dashboard -> New -> Blueprint.
 
 services:
   - type: web
     name: codeforge
-    runtime: node
-    plan: free
-    buildCommand: >-
-      npm ci --include=dev &&
-      npm run build -w apps/web &&
-      npx -w apps/api prisma generate &&
-      npx -w apps/api prisma migrate deploy &&
-      npm run db:seed -w apps/api
-    startCommand: npm run start -w apps/api
-    healthCheckPath: /api/health
+    runtime: static
+    buildCommand: ./build.sh
+    staticPublishPath: apps/web/out
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: 22.12.0
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: codeforge-db
-          property: connectionString
-      - key: JWT_SECRET
-        generateValue: true
-      # Email (verification mails). Leave unset to log verification links to the
-      # service logs instead of sending, fill these in the Render dashboard
-      # with your provider (Resend, SendGrid, Mailgun, Gmail app password, …).
-      - key: SMTP_HOST
-        sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-      - key: EMAIL_FROM
-        sync: false
-      # Public URL used in email links + certificate QR codes.
-      # Defaults to RENDER_EXTERNAL_URL (set automatically), override only if
-      # you serve the app from a custom domain.
-      - key: APP_URL
-        sync: false
-      # GitHub OAuth ("Sign in with GitHub"). Leave unset to disable it. Register an
-      # OAuth App at https://github.com/settings/developers with callback URL
-      # {APP_URL}/api/auth/github/callback (used for both sign-in and Settings connect).
-      - key: GITHUB_CLIENT_ID
-        sync: false
-      - key: GITHUB_CLIENT_SECRET
-        sync: false
-    # --- persistent uploads (paid instances only) ---
-    # disk:
-    #   name: codeforge-uploads
-    #   mountPath: /var/data/uploads
-    #   sizeGB: 1
-    # ...and add:
-    # envVars:
-    #   - key: UPLOADS_DIR
-    #     value: /var/data/uploads
+    # `trailingSlash: true` means every route is <route>/index.html, so no rewrites are
+    # needed for deep links. Unknown paths fall through to the exported 404.html.
+    headers:
+      # hashed filenames, safe to cache forever
+      - path: /_next/static/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff

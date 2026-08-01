@@ -1,0 +1,414 @@
+{
+  "slug": "build-a-typed-rest-api-with-express-typescript-zod",
+  "title": "Build a Typed REST API with Express, TypeScript & Zod",
+  "description": "Build a real, validated REST API: Zod schemas as a single source of truth for runtime validation and inferred TypeScript types, typed Express handlers and middleware, validated environment configuration, integration tests with Vitest & Supertest, and a full typed CRUD project.",
+  "pathSlug": "typescript",
+  "pathName": "TypeScript",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "why-express-plus-typescript-plus-zod",
+      "title": "Why Express + TypeScript + Zod?",
+      "order": 1,
+      "content": "# Why Express + TypeScript + Zod?\n\nExpress by itself is untyped JavaScript, `req.body` is `any`, and nothing stops a malformed request from reaching your business logic. TypeScript alone doesn't fix that either, types are checked at compile time and stripped away entirely before the code runs, they can't catch bad data arriving over the network at 2am.\n\n```ts\nimport { z } from 'zod';\n\nconst CreateTaskSchema = z.object({\n  title: z.string().min(1),\n  priority: z.enum(['low', 'medium', 'high']),\n});\n\ntype CreateTaskInput = z.infer<typeof CreateTaskSchema>;\n// { title: string; priority: 'low' | 'medium' | 'high' }\n\nconst parsed = CreateTaskSchema.parse({ title: 'Ship it', priority: 'high' });\n// parsed is typed as CreateTaskInput, AND was actually checked against the schema just now\n```\n\n**Zod** is a runtime validation library, `.parse()` (or `.safeParse()`) actually inspects the value while the program is running and throws (or reports) if it doesn't match, exactly what TypeScript's compile-time types can't do on their own.\n\n## One schema, two guarantees\n\n`z.infer<typeof CreateTaskSchema>` derives a TypeScript type directly from the schema, so the compile-time type and the runtime check can never drift apart, there's one source of truth instead of a hand-written interface that quietly stops matching what you actually validate.\n\n```\nUntyped Express          Express + TypeScript          Express + TypeScript + Zod\n─────────────────        ──────────────────────        ────────────────────────────\nreq.body: any             req.body: any (still!)         req.body validated + typed\nNo compile-time            Compile-time types only,       Compile-time types AND\nchecks at all               nothing checks the network      a runtime boundary check\n```\n\n> [!NOTE]\n> TypeScript's own types genuinely disappear when your code compiles to JavaScript, they're a build-time tool. Zod schemas are ordinary JavaScript objects that keep working after compilation, that's *why* they're the right tool for validating anything crossing a real boundary: an HTTP request, a file read from disk, a response from another service.",
+      "quiz": {
+        "title": "Express + TypeScript + Zod Intro Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "TRUE_FALSE",
+            "prompt": "TypeScript's compile-time types alone validate incoming request data at runtime.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does z.infer<typeof Schema> do?",
+            "options": [
+              "Runs the schema's validation once",
+              "Derives a static TypeScript type directly from a Zod schema",
+              "Converts a TS interface into a Zod schema",
+              "Deletes unused fields"
+            ],
+            "answer": "Derives a static TypeScript type directly from a Zod schema"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The Zod method that validates a value and throws if it doesn't match the schema is .____().",
+            "options": [],
+            "answer": "parse"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What happens to TypeScript types when code is compiled to JavaScript?",
+            "options": [
+              "They stay in the output as runtime checks",
+              "They are stripped away entirely, they never run",
+              "They become Zod schemas automatically",
+              "They throw a compile error"
+            ],
+            "answer": "They are stripped away entirely, they never run"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Without Zod, req.body in an Express handler is typed as `any` by default.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "setting-up-an-express-plus-typescript-project",
+      "title": "Setting Up an Express + TypeScript Project",
+      "order": 2,
+      "content": "# Setting Up an Express + TypeScript Project\n\nBefore writing any routes, get a minimal Express + TypeScript project compiling and running.\n\n## Install dependencies\n\n```bash\nnpm init -y\nnpm install express zod\nnpm install -D typescript @types/express @types/node tsx\nnpx tsc --init\n```\n\n`express` and `zod` are runtime dependencies, your server actually needs them once it's running. `typescript` and `@types/express`/`@types/node` are dev-only, they exist purely to type-check your code before it ships. `tsx` runs `.ts` files directly during development without a separate build step.\n\n## Key tsconfig.json options\n\n```json\n{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"module\": \"commonjs\",\n    \"strict\": true,\n    \"esModuleInterop\": true,\n    \"skipLibCheck\": true,\n    \"outDir\": \"dist\"\n  }\n}\n```\n\n`\"strict\": true` turns on every strict type-checking flag at once (including the `unknown`-forcing narrowing rules from the last course), it's the setting that makes TypeScript actually catch bugs instead of just documenting types. Leave it on for anything beyond a throwaway script.\n\n## A minimal server\n\n```ts\nimport express from 'express';\n\nconst app = express();\napp.use(express.json()); // parses JSON request bodies into req.body\n\napp.get('/health', (_req, res) => {\n  res.json({ status: 'ok' });\n});\n\napp.listen(3000, () => console.log('Server running on http://localhost:3000'));\n```\n\nThe leading underscore in `_req` is a convention (not a language feature) for \"this parameter is required by the function signature but isn't used in the body,\" it keeps an unused-parameter lint rule quiet without disabling the check entirely.\n\n> [!TIP]\n> Add `\"dev\": \"tsx watch src/index.ts\"` and `\"build\": \"tsc\"` scripts to `package.json`, `tsx watch` re-runs the server on every save during development, `tsc` produces the compiled `dist/` folder you'd actually deploy.",
+      "quiz": {
+        "title": "Project Setup Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why install @types/express as a dev dependency?",
+            "options": [
+              "It is required for Express to run at all",
+              "It provides TypeScript type definitions for Express's API, with no effect at runtime",
+              "It replaces the express package",
+              "It validates request bodies"
+            ],
+            "answer": "It provides TypeScript type definitions for Express's API, with no effect at runtime"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "\"strict\": true in tsconfig.json enables every strict type-checking flag at once.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "app.use(express.____()) parses incoming JSON request bodies into req.body.",
+            "options": [],
+            "answer": "json"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What tool runs a .ts file directly during development, without a separate compile step?",
+            "options": [
+              "tsc",
+              "tsx",
+              "@types/node",
+              "esModuleInterop"
+            ],
+            "answer": "tsx"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "express and zod should be installed as regular (non-dev) dependencies, since the running server needs them.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "defining-schemas-with-zod-inferring-types",
+      "title": "Defining Schemas with Zod & Inferring Types",
+      "order": 3,
+      "content": "# Defining Schemas with Zod & Inferring Types\n\nWith the project running, model the actual data the API will accept and return, starting from Zod schemas instead of hand-written interfaces.\n\n```ts\nimport { z } from 'zod';\n\nconst TaskSchema = z.object({\n  id: z.string().uuid(),\n  title: z.string().min(1).max(200),\n  done: z.boolean().default(false),\n  priority: z.enum(['low', 'medium', 'high']),\n  tags: z.array(z.string()).optional(),\n});\n\ntype Task = z.infer<typeof TaskSchema>;\n```\n\nEach field reads like a description of the constraint, `z.string().min(1).max(200)` isn't just \"a string,\" it's \"a string between 1 and 200 characters,\" checked for real when `.parse()` runs, not just documented in a comment.\n\n## Deriving request schemas from the base schema\n\n```ts\nconst CreateTaskSchema = TaskSchema.omit({ id: true, done: true });\n// clients shouldn't set id or done themselves when creating a task\n\nconst UpdateTaskSchema = TaskSchema.partial().omit({ id: true });\n// every field optional (a client only sends what's changing), id still can't be changed\n\ntype CreateTaskInput = z.infer<typeof CreateTaskSchema>;\ntype UpdateTaskInput = z.infer<typeof UpdateTaskSchema>;\n```\n\n`.omit()` and `.partial()` on a Zod schema work exactly like `Omit<T, K>` and `Partial<T>` from the intermediate TypeScript course, except they reshape the *runtime validator*, not just the compile-time type, and `z.infer` immediately gives you the matching TypeScript type for free.\n\n## Custom validation with refine\n\n```ts\nconst CreateTaskSchemaStrict = CreateTaskSchema.refine(\n  (data) => data.title.trim().length > 0,\n  { message: 'Title cannot be only whitespace', path: ['title'] }\n);\n```\n\n`.refine()` adds a check `.min()`/`.max()`/`.enum()` can't express on their own, an arbitrary function returning `true`/`false`, with a custom error message attached to a specific field.\n\n> [!NOTE]\n> Notice there's still only one place `Task`'s shape is written down, the `TaskSchema`. `CreateTaskInput`, `UpdateTaskInput`, and the runtime checks for all three all derive from it, change one field once and everything downstream stays in sync automatically.",
+      "quiz": {
+        "title": "Zod Schemas Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does TaskSchema.omit({ id: true, done: true }) produce?",
+            "options": [
+              "A new schema missing id and done",
+              "The same schema with id and done required",
+              "A TypeScript interface",
+              "An error"
+            ],
+            "answer": "A new schema missing id and done"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": ".refine() lets you add a custom validation rule beyond what built-in checks like .min() express.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "TaskSchema.____() (with no arguments) makes every field of the schema optional, matching TypeScript's Partial.",
+            "options": [],
+            "answer": "partial"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does .refine() add that .min()/.max()/.enum() cannot express alone?",
+            "options": [
+              "A second Zod schema",
+              "An arbitrary custom validation function with its own error message",
+              "A TypeScript interface",
+              "Automatic retries"
+            ],
+            "answer": "An arbitrary custom validation function with its own error message"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "z.infer<typeof TaskSchema> has to be kept manually in sync with TaskSchema by hand.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "typed-request-handlers-middleware",
+      "title": "Typed Request Handlers & Middleware",
+      "order": 4,
+      "content": "# Typed Request Handlers & Middleware\n\nExpress's own types describe the *shape* of a request/response, but leave `req.body`, `req.params`, and `req.query` as loosely typed by default. This lesson tightens that up and builds a reusable pattern for async route handlers.\n\n## Typing params, body, and query explicitly\n\n```ts\nimport { Request, Response, NextFunction } from 'express';\n\napp.get('/tasks/:id', (req: Request<{ id: string }>, res: Response) => {\n  const id = req.params.id; // typed as string, not string | undefined\n  res.json({ id });\n});\n```\n\n`Request`'s first generic parameter types `req.params`. Left as plain `Request`, `req.params.id` would be typed loosely, spelling it out here catches a typo like `req.params.taskId` at compile time instead of at 2am in production logs.\n\n## A reusable async handler wrapper\n\nExpress doesn't automatically catch a rejected Promise from an `async` route handler, an unhandled rejection just hangs or crashes the process.\n\n```ts\nfunction asyncHandler(\n  fn: (req: Request, res: Response) => Promise<void>\n) {\n  return (req: Request, res: Response, next: NextFunction) => {\n    fn(req, res).catch(next);\n  };\n}\n\napp.get('/tasks/:id', asyncHandler(async (req, res) => {\n  const task = await findTask(req.params.id);\n  res.json(task);\n}));\n```\n\n`asyncHandler` wraps any `async` function, catches whatever it throws or rejects with, and forwards it to `next(err)`, Express's normal error-handling path, instead of letting it disappear silently.\n\n## Typed error-handling middleware\n\n```ts\nfunction errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {\n  console.error(err);\n  const message = err instanceof Error ? err.message : 'Unknown error';\n  res.status(500).json({ error: message });\n}\n\napp.use(errorHandler);\n```\n\nExpress recognizes error-handling middleware by its **four** parameters, `err` first, note it's typed `unknown`, not `Error`, anything can technically be thrown in JavaScript, so `instanceof Error` narrowing is what makes reading `.message` safe.\n\n> [!TIP]\n> Register `app.use(errorHandler)` *after* every route. Express matches error middleware in registration order too, one placed too early simply never gets reached.",
+      "quiz": {
+        "title": "Typed Handlers & Middleware Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "TRUE_FALSE",
+            "prompt": "Express automatically catches a rejected Promise thrown inside an async route handler.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How does Express recognize error-handling middleware?",
+            "options": [
+              "By a special function name",
+              "By having exactly four parameters, starting with err",
+              "By its file location",
+              "By a decorator"
+            ],
+            "answer": "By having exactly four parameters, starting with err"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "In Request<{ id: string }>, the generic parameter types req.____.",
+            "options": [],
+            "answer": "params"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does asyncHandler do with a rejected Promise from the wrapped function?",
+            "options": [
+              "Ignores it",
+              "Catches it and forwards it to next(err), Express's error-handling path",
+              "Retries the request automatically",
+              "Crashes the server intentionally"
+            ],
+            "answer": "Catches it and forwards it to next(err), Express's error-handling path"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "app.use(errorHandler) should be registered before the routes it is meant to catch errors from.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "validating-requests-and-building-rest-endpoints",
+      "title": "Validating Requests and Building REST Endpoints",
+      "order": 5,
+      "content": "# Validating Requests and Building REST Endpoints\n\nCombine Zod schemas, typed handlers, and the async wrapper into full, validated REST endpoints.\n\n## A validation middleware factory\n\n```ts\nimport { Request, Response, NextFunction } from 'express';\nimport { z } from 'zod';\n\nfunction validateBody<T extends z.ZodTypeAny>(schema: T) {\n  return (req: Request, res: Response, next: NextFunction) => {\n    const result = schema.safeParse(req.body);\n    if (!result.success) {\n      res.status(400).json({ error: result.error.flatten() });\n      return;\n    }\n    req.body = result.data; // now the validated, typed value\n    next();\n  };\n}\n```\n\n`safeParse` never throws, it returns `{ success: true, data }` or `{ success: false, error }`, which suits middleware better than `.parse()`'s throw-based style, a bad request is an expected outcome here, not an exceptional one. `<T extends z.ZodTypeAny>` makes `validateBody` reusable for *any* schema, not just one hard-coded shape.\n\n## Wiring up the endpoints\n\n```ts\nconst tasks: Task[] = [];\n\napp.get('/tasks', (_req, res) => {\n  res.json(tasks);\n});\n\napp.get('/tasks/:id', asyncHandler(async (req: Request<{ id: string }>, res) => {\n  const task = tasks.find((t) => t.id === req.params.id);\n  if (!task) {\n    res.status(404).json({ error: 'Task not found' });\n    return;\n  }\n  res.json(task);\n}));\n\napp.post('/tasks', validateBody(CreateTaskSchema), asyncHandler(async (req, res) => {\n  const task: Task = { id: crypto.randomUUID(), done: false, ...req.body };\n  tasks.push(task);\n  res.status(201).json(task);\n}));\n```\n\nEvery layer does one job: `validateBody` rejects malformed input before the handler ever runs, `asyncHandler` catches anything the handler itself throws, and the handler is left to assume `req.body` is already a valid `CreateTaskInput`, because by the time it runs, Zod already checked that.\n\n## Status codes that mean something\n\n| Code | When |\n|---|---|\n| `200` | Successful GET/PATCH |\n| `201` | Successful POST that created something |\n| `400` | The request body failed validation |\n| `404` | The requested resource doesn't exist |\n| `500` | An unexpected server error (caught by `errorHandler`) |\n\n> [!WARNING]\n> Validating *inputs* (`req.body`, `req.params`) is the priority, but don't skip checks on values you construct yourself either, `tasks.find(...)` returning `undefined` is exactly the kind of case the `404` branch above exists to catch, TypeScript's `strict` mode will actually force you to handle it.",
+      "quiz": {
+        "title": "Validated Endpoints Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why use safeParse instead of parse inside validation middleware?",
+            "options": [
+              "safeParse is faster",
+              "safeParse returns a result object instead of throwing, which suits handling an expected 'bad request' case",
+              "safeParse skips validation",
+              "There is no difference"
+            ],
+            "answer": "safeParse returns a result object instead of throwing, which suits handling an expected 'bad request' case"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A 201 status code conventionally indicates a successful POST that created a new resource.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A request that fails Zod validation should typically respond with HTTP status ____.",
+            "options": [],
+            "answer": "400"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is <T extends z.ZodTypeAny> on validateBody for?",
+            "options": [
+              "It restricts validateBody to only work with TaskSchema",
+              "It makes validateBody reusable for any Zod schema, not one hard-coded shape",
+              "It disables type checking on the schema",
+              "It is required syntax with no effect"
+            ],
+            "answer": "It makes validateBody reusable for any Zod schema, not one hard-coded shape"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "A 404 response is appropriate when a GET /tasks/:id request references an id that does not exist.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "environment-variables-configuration-with-zod",
+      "title": "Environment Variables & Configuration with Zod",
+      "order": 6,
+      "content": "# Environment Variables & Configuration with Zod\n\n`process.env` is where an Express app's real configuration lives, database URLs, API keys, ports, but TypeScript types every property on `process.env` as `string | undefined`, and nothing stops a typo'd or missing variable from reaching production. Validate it with Zod the same way you validate a request body.\n\n```ts\nimport { z } from 'zod';\n\nconst EnvSchema = z.object({\n  PORT: z.coerce.number().int().positive().default(3000),\n  DATABASE_URL: z.string().url(),\n  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),\n});\n\nconst env = EnvSchema.parse(process.env);\n// env.PORT is typed as number, env.DATABASE_URL as string, both actually checked\n```\n\n`z.coerce.number()` converts the incoming string (everything in `process.env` is a string) to a number *before* validating it, exactly what an environment variable needs, `PORT` arrives as the string `\"3000\"`, not the number `3000`. Calling `EnvSchema.parse(process.env)` **once**, at startup, means a missing or malformed `DATABASE_URL` crashes the app immediately with a clear error, instead of failing mysteriously the first time a database query runs, minutes or hours later.\n\n## A typed config module\n\n```ts\n// config.ts\nimport { z } from 'zod';\n\nconst EnvSchema = z.object({\n  PORT: z.coerce.number().int().positive().default(3000),\n  DATABASE_URL: z.string().url(),\n});\n\nexport const config = EnvSchema.parse(process.env);\n```\n\n```ts\n// index.ts\nimport { config } from './config';\n\napp.listen(config.PORT, () => console.log(`Listening on ${config.PORT}`));\n```\n\nImporting `config` instead of reading `process.env` directly anywhere else in the codebase means every other file gets a fully typed, already-validated object, no `string | undefined` and no repeated validation.\n\n> [!WARNING]\n> Never commit real secrets (database passwords, API keys) to source control, even in a `.env.example` file, real `.env` files belong in `.gitignore`. Zod validates the *shape* of your configuration, it doesn't protect a secret that's already been checked in.",
+      "quiz": {
+        "title": "Environment Config Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why use z.coerce.number() for an environment variable like PORT?",
+            "options": [
+              "It has no effect, PORT is already a number",
+              "process.env values are always strings, coerce converts before validating",
+              "It disables validation",
+              "It only works with Zod v1"
+            ],
+            "answer": "process.env values are always strings, coerce converts before validating"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Every property on process.env is typed as string | undefined by TypeScript, without extra validation.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Calling EnvSchema.parse(process.env) once at ____ crashes the app immediately on bad config instead of failing later.",
+            "options": [],
+            "answer": "startup"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "testing-a-typed-api-with-vitest-supertest",
+      "title": "Testing a Typed API with Vitest & Supertest",
+      "order": 7,
+      "content": "# Testing a Typed API with Vitest & Supertest\n\nEverything so far has been validated by the compiler and by Zod at runtime, but neither one confirms the API actually behaves correctly end to end. That's what integration tests are for.\n\n```bash\nnpm install -D vitest supertest @types/supertest\n```\n\n**Supertest** sends real HTTP requests to your Express app in-process, no separate server or port needed, and **Vitest** runs the assertions, both fully typed against your existing `app`.\n\n## Testing a validated endpoint\n\n```ts\nimport { describe, it, expect } from 'vitest';\nimport request from 'supertest';\nimport { app } from './app'; // the Express app, exported without calling .listen()\n\ndescribe('POST /tasks', () => {\n  it('creates a task with valid input', async () => {\n    const response = await request(app)\n      .post('/tasks')\n      .send({ title: 'Write tests', priority: 'medium' });\n\n    expect(response.status).toBe(201);\n    expect(response.body).toMatchObject({ title: 'Write tests', priority: 'medium', done: false });\n    expect(typeof response.body.id).toBe('string');\n  });\n\n  it('rejects an invalid priority with 400', async () => {\n    const response = await request(app)\n      .post('/tasks')\n      .send({ title: 'Write tests', priority: 'urgent' }); // not in the enum\n\n    expect(response.status).toBe(400);\n    expect(response.body.error).toBeDefined();\n  });\n});\n```\n\nSplitting `app` (the Express application) from the code that calls `app.listen()` is what makes this possible, Supertest talks to `app` directly in memory, no real network socket or port conflict involved. The second test is just as important as the first: it proves the `400`/Zod-validation path from the earlier lesson actually fires for bad input, not just that the happy path works.\n\n## Testing the full lifecycle\n\n```ts\nit('creates, fetches, and deletes a task', async () => {\n  const created = await request(app).post('/tasks').send({ title: 'Temp task', priority: 'low' });\n  const id = created.body.id;\n\n  await request(app).get(`/tasks/${id}`).expect(200);\n  await request(app).delete(`/tasks/${id}`).expect(200);\n  await request(app).get(`/tasks/${id}`).expect(404); // gone after delete\n});\n```\n\nOne test walking through create → read → delete catches a class of bug unit tests on individual functions miss entirely: whether the pieces actually agree with each other once wired together as real HTTP requests.\n\n> [!TIP]\n> Test both the happy path (valid input, expected status) and at least one failure path (invalid input, missing resource) for every endpoint, a suite that only exercises success cases won't catch a broken validation rule or a wrong error status code.",
+      "quiz": {
+        "title": "Testing with Vitest & Supertest Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why export the Express app separately from the code that calls .listen()?",
+            "options": [
+              "It's required by TypeScript",
+              "So Supertest can send requests to it in-process, without a real network port",
+              "It makes the app faster",
+              "It disables Zod validation during tests"
+            ],
+            "answer": "So Supertest can send requests to it in-process, without a real network port"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A good test suite for a validated endpoint should include at least one request that is expected to fail validation.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The library used in this lesson to send real HTTP requests to an Express app in tests is ____.",
+            "options": [],
+            "answer": "supertest"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-typed-task-api",
+      "title": "Final Project: Build a Typed Task API",
+      "order": 8,
+      "content": "# Final Project: Build a Typed Task API\n\nPut every piece from this course together into one working, fully typed REST API for managing tasks.\n\n## Requirements\n\n1. Define a `TaskSchema` with Zod (`id`, `title`, `done`, `priority`, and at least one more field of your choice), derive `Task` with `z.infer`.\n2. Derive `CreateTaskSchema` (omit `id`/`done`) and `UpdateTaskSchema` (fully partial, `id` omitted) from `TaskSchema`, the way the earlier lesson did.\n3. Implement all five endpoints against an in-memory array: `GET /tasks`, `GET /tasks/:id`, `POST /tasks`, `PATCH /tasks/:id`, `DELETE /tasks/:id`.\n4. Use the `validateBody` middleware on `POST` and `PATCH`, returning `400` with the flattened Zod error on invalid input.\n5. Use the `asyncHandler` wrapper on every route, and register a typed `errorHandler` (four-parameter, `err: unknown`) after all routes.\n6. Return `404` for `GET`/`PATCH`/`DELETE` on a task id that doesn't exist.\n\n## Stretch goals\n\n- Add a `GET /tasks?priority=high` filter using a Zod schema to validate the query string too.\n- Add pagination (`?page=`, `?limit=`) with sensible defaults.\n- Split schemas, routes, and the in-memory store into separate files, importing/exporting types and schemas between them.\n- Write a small script (or use a REST client) that sends an intentionally invalid request and confirms you get a `400` with a useful error message back.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

@@ -1,0 +1,316 @@
+{
+  "slug": "build-a-tower-defense-game-using-c-plus-plus-raylib-a-pathfinding",
+  "title": "Build a Tower Defense Game using C++, Raylib & A* Pathfinding",
+  "description": "Build a maze-style tower defense game with Raylib (a simpler, immediate-mode alternative to SFML) and a from-scratch A* pathfinding implementation: enemies navigate a grid using open/closed sets and a Manhattan-distance heuristic, and legally reroute around every tower a player places, since placing a tower re-runs A* to make sure the goal never gets sealed off entirely.",
+  "pathSlug": "cpp",
+  "pathName": "C++",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "raylib-setup-and-installation",
+      "title": "Raylib: Setup and Installation",
+      "order": 1,
+      "content": "# Raylib: Setup and Installation\n\n**Raylib** is another popular C/C++ library for 2D and 3D graphics, and it takes a genuinely different approach than SFML. SFML models everything as objects, you create an `sf::RectangleShape`, configure it, then call `window.draw(shape)`. Raylib is **immediate mode**, there are no shape objects to create at all, you just call a function like `DrawRectangle(...)` with the position and color every single frame, and it appears.\n\n## Installing Raylib\n\n- **Ubuntu/Debian**: `sudo apt install libraylib-dev`\n- **macOS (Homebrew)**: `brew install raylib`\n- **Windows**: install via `vcpkg install raylib`, or grab prebuilt binaries from raylib.com and point your IDE at them.\n\n## Compiling with Raylib\n\n```bash\ng++ main.cpp -o tower_defense -lraylib -lGL -lm -lpthread -ldl -lrt -lX11\n./tower_defense\n```\n\n(macOS links different system frameworks instead of `-lGL`/`-lX11`, and Windows links `-lopengl32 -lgdi32 -lwinmm`, the raylib install docs cover the exact flags for your platform.)\n\n## Opening a window\n\n```cpp\n#include \"raylib.h\"\n\nint main() {\n    InitWindow(800, 600, \"Tower Defense\");\n    SetTargetFPS(60);\n\n    while (!WindowShouldClose()) {\n        BeginDrawing();\n        ClearBackground(RAYWHITE);\n\n        DrawText(\"Hello, Raylib!\", 300, 280, 20, DARKGRAY);\n\n        EndDrawing();\n    }\n\n    CloseWindow();\n    return 0;\n}\n```\n\n## Reading it line by line\n\n- `InitWindow(800, 600, \"Tower Defense\")` opens an 800x600 window, no separate object to store, hold onto, or pass around, raylib just tracks \"the window\" globally.\n- `WindowShouldClose()` is both the loop condition *and* the close-button/Escape-key check in one call, there's no separate event queue to drain like SFML's `pollEvent`.\n- `BeginDrawing()` / `EndDrawing()` bracket every frame's drawing calls, everything between them, in the order you call it, is what appears on screen.\n- `ClearBackground(RAYWHITE)` wipes the previous frame, exactly like SFML's `window.clear(...)`, skip it and you'd see a smeared trail.\n- `DrawText(...)` needs no font object, no `sf::Text`, no `sf::Font::loadFromFile`, raylib ships a default font and draws text with a single function call.\n\n> [!NOTE]\n> Immediate mode isn't \"better\" than SFML's object model, it's a different tradeoff. Objects (SFML) let you configure something once and reuse it; immediate mode (raylib) means every frame is self-contained, nothing to keep in sync, at the cost of passing the same arguments again every single frame. Both are widely used in real games, this course is a chance to feel the difference firsthand.",
+      "quiz": {
+        "title": "Raylib Setup Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does \"immediate mode\" mean in raylib, compared to SFML?",
+            "options": [
+              "Raylib runs faster than SFML",
+              "There are no persistent shape objects, you call a draw function with fresh arguments every frame",
+              "Raylib cannot draw shapes, only text",
+              "Immediate mode means the window opens instantly"
+            ],
+            "answer": "There are no persistent shape objects, you call a draw function with fresh arguments every frame"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "WindowShouldClose() handles both the close button and checking whether the loop should keep running.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Every frame's drawing calls must be wrapped between Begin____() and End____().",
+            "options": [],
+            "answer": "Drawing"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "the-grid-modeling-the-map",
+      "title": "The Grid: Modeling the Map",
+      "order": 2,
+      "content": "# The Grid: Modeling the Map\n\nA tower defense map is a **grid**: some cells are walkable ground, some are permanent walls, one is where enemies spawn, one is the goal they're marching toward. Model that before drawing a single pixel.\n\n```cpp\nconst int GRID_COLS = 20;\nconst int GRID_ROWS = 12;\nconst int CELL_SIZE = 40;\n\nenum class CellType { Empty, Wall, Start, Goal };\n\nCellType grid[GRID_ROWS][GRID_COLS];\n\nstruct GridPos {\n    int row, col;\n    bool operator==(const GridPos& other) const {\n        return row == other.row && col == other.col;\n    }\n};\n\nvoid initGrid() {\n    for (int r = 0; r < GRID_ROWS; r++) {\n        for (int c = 0; c < GRID_COLS; c++) {\n            grid[r][c] = CellType::Empty;\n        }\n    }\n    grid[5][0] = CellType::Start;\n    grid[5][GRID_COLS - 1] = CellType::Goal;\n}\n```\n\n`GridPos` bundles a row and column together, and `operator==` is defined explicitly because C++ doesn't generate one for you automatically, comparing two `GridPos` values by `==` later (which the pathfinding lessons do constantly) needs this to actually compile.\n\n## Drawing the grid\n\n```cpp\nvoid drawGrid() {\n    for (int r = 0; r < GRID_ROWS; r++) {\n        for (int c = 0; c < GRID_COLS; c++) {\n            int x = c * CELL_SIZE;\n            int y = r * CELL_SIZE;\n\n            Color color = LIGHTGRAY;\n            if (grid[r][c] == CellType::Wall) color = DARKGRAY;\n            if (grid[r][c] == CellType::Start) color = GREEN;\n            if (grid[r][c] == CellType::Goal) color = RED;\n\n            DrawRectangle(x, y, CELL_SIZE - 2, CELL_SIZE - 2, color);\n        }\n    }\n}\n```\n\nEvery cell is drawn as a `CELL_SIZE - 2` square instead of a full `CELL_SIZE` square, leaving a thin 2-pixel gap so adjacent cells are visually distinct instead of forming one solid block.\n\n## Converting between grid coordinates and pixels\n\nTwo small helpers pay for themselves immediately, everything from here on needs to go back and forth between \"which cell\" and \"where on screen\":\n\n```cpp\nVector2 gridToPixel(GridPos pos) {\n    return Vector2{\n        pos.col * (float) CELL_SIZE + CELL_SIZE / 2.f,\n        pos.row * (float) CELL_SIZE + CELL_SIZE / 2.f\n    };\n}\n\nGridPos pixelToGrid(Vector2 pixel) {\n    return GridPos{\n        (int)(pixel.y / CELL_SIZE),\n        (int)(pixel.x / CELL_SIZE)\n    };\n}\n```\n\n`gridToPixel` returns the **center** of a cell (adding half a `CELL_SIZE`), not its top-left corner, that's what you want for placing an enemy or tower sprite so it looks centered in its cell rather than jammed into a corner.\n\n> [!TIP]\n> `pixelToGrid` is exactly what you'll feed `GetMousePosition()` into later, to turn \"where the player clicked\" into \"which cell they clicked.\"",
+      "quiz": {
+        "title": "Grid Modeling Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why does GridPos define its own operator==?",
+            "options": [
+              "It is required by raylib",
+              "C++ doesn't generate == for structs automatically, and it's needed to compare positions later",
+              "It makes the struct smaller in memory",
+              "It is only needed for drawing"
+            ],
+            "answer": "C++ doesn't generate == for structs automatically, and it's needed to compare positions later"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "gridToPixel returns the top-left corner of a cell, not its center.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "pixelToGrid is designed to convert the result of GetMouse____() into a grid cell.",
+            "options": [],
+            "answer": "Position"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "why-a-from-bfs-to-heuristics",
+      "title": "Why A*? From BFS to Heuristics",
+      "order": 3,
+      "content": "# Why A*? From BFS to Heuristics\n\nEnemies need to walk from **Start** to **Goal** around whatever walls are on the grid, and recompute that route the instant a tower blocks their way. That's a pathfinding problem, and the algorithm this course builds, **A\\*** (pronounced \"A-star\"), is the industry-standard answer for exactly this situation.\n\n## Starting point: breadth-first search\n\n**BFS** explores outward from the start, one ring of neighbors at a time, and is guaranteed to find the *shortest* path on an unweighted grid like this one. The problem: it explores **equally in every direction**, including straight away from the goal, wasting a lot of work checking cells that were never going to lead anywhere useful.\n\n```\nBFS explores a growing circle around the start,\neven the parts pointing away from the goal:\n\n        ░░░░░░░\n      ░░░░░░░░░░░\n    ░░░░S░░░░░░░░░   G\n      ░░░░░░░░░░░\n        ░░░░░░░\n```\n\n## A*'s idea: let the goal pull the search toward it\n\nA\\* keeps BFS's guarantee of finding the shortest path, but adds a **heuristic**, an estimate of \"how far is this cell from the goal\", to prioritize exploring cells that are actually making progress. Every cell A\\* considers gets a score:\n\n```\nf(n) = g(n) + h(n)\n```\n\n- **g(n)**: the actual cost to reach cell `n` from the start, along the best path found so far.\n- **h(n)**: the heuristic, an *estimate* of the remaining cost from `n` to the goal.\n- **f(n)**: the combined score, \"total estimated cost of a path through this cell.\" A\\* always explores the cell with the lowest `f` next.\n\n## The heuristic for a grid: Manhattan distance\n\nOn a grid where movement is only up/down/left/right (no diagonals), the natural heuristic is **Manhattan distance**, the number of grid steps between two cells ignoring any obstacles:\n\n```cpp\nfloat heuristic(GridPos a, GridPos b) {\n    return std::abs(a.row - b.row) + std::abs(a.col - b.col);\n}\n```\n\nThis heuristic is **admissible**, it never *overestimates* the true remaining cost (walls can only make the real path longer, never shorter than the straight-line grid distance), and that's the one property A\\* needs to guarantee it still finds the truly shortest path, not just a plausible-looking one.\n\n## Open set and closed set\n\nA\\* tracks two collections while it searches:\n\n| Set | Meaning |\n|---|---|\n| **Open set** | Cells discovered but not yet fully explored, candidates for \"explore next\" |\n| **Closed set** | Cells already fully explored, no need to revisit |\n\nEach step: pull the lowest-`f` cell out of the open set, mark it closed, look at its neighbors, and for each one either add it to the open set or update its score if a cheaper path to it was just found. The search ends the moment the goal itself is pulled from the open set.\n\n> [!NOTE]\n> BFS is really just A\\* with `h(n) = 0` for every cell, no goal-direction guidance at all. Dijkstra's algorithm (for weighted graphs) is the same idea generalized further. A\\* is the version tuned specifically for \"I have a reasonable estimate of the remaining distance,\" which is exactly what a grid gives you for free.",
+      "quiz": {
+        "title": "Why A* Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does A* add on top of plain BFS?",
+            "options": [
+              "Diagonal movement",
+              "A heuristic that estimates remaining distance to the goal, prioritizing cells that make real progress",
+              "The ability to find any path at all",
+              "Multithreading"
+            ],
+            "answer": "A heuristic that estimates remaining distance to the goal, prioritizing cells that make real progress"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Manhattan distance can overestimate the true remaining cost on a 4-directional grid, since walls can only shorten the real path.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "f(n) = g(n) + h(n), where g(n) is the actual cost so far and h(n) is the ____.",
+            "options": [],
+            "answer": "heuristic"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the closed set represent during an A* search?",
+            "options": [
+              "Cells that are walls",
+              "Cells already fully explored, no need to revisit",
+              "Cells the player has clicked on",
+              "The final path"
+            ],
+            "answer": "Cells already fully explored, no need to revisit"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "implementing-a-the-priority-queue-path-reconstruction",
+      "title": "Implementing A*: The Priority Queue & Path Reconstruction",
+      "order": 4,
+      "content": "# Implementing A*: The Priority Queue & Path Reconstruction\n\nTime to turn the theory into working code. The open set needs to always hand back its lowest-`f` cell, exactly what `std::priority_queue` is for.\n\n## Neighbors\n\n```cpp\nstd::vector<GridPos> getNeighbors(GridPos p) {\n    std::vector<GridPos> result;\n    const int dr[] = {-1, 1, 0, 0};\n    const int dc[] = {0, 0, -1, 1};\n\n    for (int i = 0; i < 4; i++) {\n        int nr = p.row + dr[i];\n        int nc = p.col + dc[i];\n        if (nr >= 0 && nr < GRID_ROWS && nc >= 0 && nc < GRID_COLS) {\n            result.push_back(GridPos{nr, nc});\n        }\n    }\n    return result;\n}\n\nint encode(GridPos p) { return p.row * GRID_COLS + p.col; }\n```\n\n`getNeighbors` checks the four 4-directional cells and only keeps ones still inside the grid's bounds. `encode` flattens a 2D `GridPos` into one `int`, so it can be used as a key in a hash map, `std::unordered_map<GridPos, ...>` would need a custom hash function, an `int` key sidesteps that entirely.\n\n## The search\n\n```cpp\nstd::vector<GridPos> findPath(GridPos start, GridPos goal) {\n    auto cmp = [](const std::pair<float, GridPos>& a, const std::pair<float, GridPos>& b) {\n        return a.first > b.first; // smallest f comes out first\n    };\n    std::priority_queue<std::pair<float, GridPos>, std::vector<std::pair<float, GridPos>>, decltype(cmp)> openSet(cmp);\n\n    std::unordered_map<int, float> gScore;\n    std::unordered_map<int, GridPos> cameFrom;\n    std::unordered_set<int> closedSet;\n\n    gScore[encode(start)] = 0.f;\n    openSet.push({heuristic(start, goal), start});\n\n    while (!openSet.empty()) {\n        GridPos current = openSet.top().second;\n        openSet.pop();\n\n        if (current == goal) {\n            return reconstructPath(cameFrom, current);\n        }\n\n        if (closedSet.count(encode(current))) continue; // stale entry, a better one was already processed\n        closedSet.insert(encode(current));\n\n        for (GridPos neighbor : getNeighbors(current)) {\n            if (grid[neighbor.row][neighbor.col] == CellType::Wall) continue;\n            if (closedSet.count(encode(neighbor))) continue;\n\n            float tentativeG = gScore[encode(current)] + 1.f;\n            int key = encode(neighbor);\n\n            if (!gScore.count(key) || tentativeG < gScore[key]) {\n                gScore[key] = tentativeG;\n                cameFrom[key] = current;\n                float f = tentativeG + heuristic(neighbor, goal);\n                openSet.push({f, neighbor});\n            }\n        }\n    }\n\n    return {}; // no path exists\n}\n```\n\nA couple of details worth pausing on:\n\n- `std::priority_queue` is a **max-heap** by default, the custom `cmp` flips the comparison (`a.first > b.first`) so the *smallest* `f` comes out first instead.\n- The same `GridPos` can be pushed onto `openSet` more than once, if a cheaper path to it is found after it's already queued. The `closedSet.count(...)` check right after popping catches and skips these stale, already-superseded entries instead of reprocessing them.\n- `tentativeG = gScore[current] + 1.f` assumes every step costs exactly `1`, true for a uniform grid with no difficult terrain, this is the `g(n)` from the last lesson, built up incrementally as the search progresses.\n\n## Reconstructing the path\n\n```cpp\nstd::vector<GridPos> reconstructPath(std::unordered_map<int, GridPos>& cameFrom, GridPos current) {\n    std::vector<GridPos> path;\n    path.push_back(current);\n\n    int key = encode(current);\n    while (cameFrom.count(key)) {\n        current = cameFrom[key];\n        key = encode(current);\n        path.push_back(current);\n    }\n\n    std::reverse(path.begin(), path.end());\n    return path;\n}\n```\n\n`cameFrom[key]` was recorded every time a cheaper path to a cell was found, so walking it backward from the goal traces the actual shortest path, one predecessor at a time, all the way back to the start. Since that walk naturally produces the path **backward** (goal to start), `std::reverse` flips it into the order an enemy will actually walk it.\n\n> [!WARNING]\n> Skipping the `closedSet.count(encode(current)) continue;` check after popping from `openSet` is a classic A\\* bug, without it, a cell can be fully reprocessed multiple times using a stale, more expensive `f` score, which doesn't break correctness here but does waste real work on every search.",
+      "quiz": {
+        "title": "A* Implementation Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why does findPath define a custom cmp lambda for the priority_queue?",
+            "options": [
+              "std::priority_queue requires a lambda by law",
+              "priority_queue is a max-heap by default, cmp flips it so the smallest f comes out first",
+              "It sorts by GridPos instead of by score",
+              "It has no effect and could be removed"
+            ],
+            "answer": "priority_queue is a max-heap by default, cmp flips it so the smallest f comes out first"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The same GridPos can be pushed onto the open set more than once during a search.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "reconstructPath walks the cameFrom map backward from the goal, then calls std::____ to put the path in start-to-goal order.",
+            "options": [],
+            "answer": "reverse"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "enemies-following-the-path",
+      "title": "Enemies: Following the Path",
+      "order": 5,
+      "content": "# Enemies: Following the Path\n\n`findPath` returns grid cells, but an enemy needs to move smoothly through pixel space, not teleport from cell center to cell center. Convert the path once, then walk it gradually every frame.\n\n## From grid path to pixel waypoints\n\n```cpp\nstd::vector<Vector2> pathToWaypoints(const std::vector<GridPos>& path) {\n    std::vector<Vector2> waypoints;\n    for (const GridPos& pos : path) {\n        waypoints.push_back(gridToPixel(pos));\n    }\n    return waypoints;\n}\n```\n\nDo this **once**, right after `findPath` returns, not every frame, the grid path doesn't change until a tower is placed, so there's no reason to recompute pixel positions from it repeatedly.\n\n## The Enemy struct\n\n```cpp\n#include \"raymath.h\"\n\nstruct Enemy {\n    Vector2 position;\n    int currentWaypoint = 0;\n    float speed = 100.f; // pixels per second\n    float health = 100.f;\n    bool reachedGoal = false;\n};\n```\n\n`raymath.h` is raylib's companion header for vector math, `Vector2` addition, subtraction, distance, and normalization, all the operations movement along a path needs, without hand-rolling them.\n\n## Moving along waypoints\n\n```cpp\nvoid updateEnemy(Enemy& enemy, const std::vector<Vector2>& waypoints, float deltaTime) {\n    if (enemy.currentWaypoint >= (int) waypoints.size()) {\n        enemy.reachedGoal = true;\n        return;\n    }\n\n    Vector2 target = waypoints[enemy.currentWaypoint];\n    float distance = Vector2Distance(enemy.position, target);\n\n    if (distance < 4.f) {\n        enemy.currentWaypoint++; // close enough, advance to the next waypoint\n        return;\n    }\n\n    Vector2 direction = Vector2Normalize(Vector2Subtract(target, enemy.position));\n    enemy.position = Vector2Add(enemy.position, Vector2Scale(direction, enemy.speed * deltaTime));\n}\n```\n\n- `Vector2Subtract(target, enemy.position)` gives the raw direction vector, pointing from the enemy toward the current waypoint, but its length is however far away the waypoint happens to be.\n- `Vector2Normalize(...)` rescales that to a length of exactly `1`, \"which way to go,\" with the distance stripped out.\n- `Vector2Scale(direction, enemy.speed * deltaTime)` turns that pure direction back into \"how far to move **this frame**,\" at a fixed speed, regardless of how far the current waypoint happens to be.\n- `distance < 4.f` is a small tolerance, not an exact `== 0`, floating-point movement will essentially never land on a waypoint's *exact* pixel, so \"close enough\" is what actually advances the enemy through the path.\n\n## Drawing enemies\n\n```cpp\nvoid drawEnemy(const Enemy& enemy) {\n    DrawCircleV(enemy.position, 10.f, RED);\n}\n```\n\n> [!TIP]\n> `currentWaypoint` is exactly what makes a mid-path reroute possible later: when a tower blocks the grid and `findPath` runs again, converting the *new* path to waypoints and resetting `currentWaypoint` to `0` (rather than reusing the old index) is enough to make an enemy smoothly pick up the new route from wherever it currently stands.",
+      "quiz": {
+        "title": "Enemy Movement Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why convert the grid path to pixel waypoints once, instead of every frame?",
+            "options": [
+              "It is required by raylib",
+              "The grid path only changes when a tower is placed, so recomputing it every frame would be wasted work",
+              "Grid coordinates cannot be converted to pixels",
+              "It makes the enemy move faster"
+            ],
+            "answer": "The grid path only changes when a tower is placed, so recomputing it every frame would be wasted work"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Vector2Normalize returns a vector pointing in the same direction but with length 1.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "updateEnemy checks distance < 4.f instead of distance == 0 because floating-point movement will almost never land exactly on a waypoint's ____ pixel.",
+            "options": [],
+            "answer": "exact"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "towers-targeting-shooting-blocking-the-grid",
+      "title": "Towers: Targeting, Shooting & Blocking the Grid",
+      "order": 6,
+      "content": "# Towers: Targeting, Shooting & Blocking the Grid\n\nTowers do two jobs: shoot enemies that wander into range, and, the mechanic that ties this whole course together, **block the grid** so enemies have to path around them.\n\n## The Tower struct\n\n```cpp\nstruct Tower {\n    GridPos gridPos;\n    Vector2 pixelPos;\n    float range = 100.f;\n    float damage = 10.f;\n    float fireRate = 1.f;  // shots per second\n    float cooldown = 0.f;\n};\n```\n\n## Targeting and shooting\n\n```cpp\nvoid updateTower(Tower& tower, std::vector<Enemy>& enemies, float deltaTime) {\n    tower.cooldown -= deltaTime;\n    if (tower.cooldown > 0.f) return; // still reloading\n\n    for (Enemy& enemy : enemies) {\n        if (enemy.health <= 0.f || enemy.reachedGoal) continue;\n\n        if (Vector2Distance(tower.pixelPos, enemy.position) <= tower.range) {\n            enemy.health -= tower.damage;\n            tower.cooldown = 1.f / tower.fireRate;\n            break; // one shot per cooldown, stop after the first valid target\n        }\n    }\n}\n```\n\n`tower.cooldown` counts down every frame by `deltaTime`, and resets to `1.f / tower.fireRate` the instant a shot fires, a tower with `fireRate = 2.f` reloads in half a second, one with `fireRate = 0.5f` takes two full seconds. This is the same \"accumulate/reset a timer\" pattern as the horse race course's per-tick movement, just applied to shooting instead of distance.\n\n## Placing a tower: the maze-blocking rule\n\nThis is the payoff for everything built so far. A player should be able to block *some* of the path to slow enemies down, funneling them past more towers, but never seal off the goal **entirely**. Checking that is exactly one extra call to `findPath`:\n\n```cpp\nbool tryPlaceTower(GridPos pos, GridPos startPos, GridPos goalPos, std::vector<Tower>& towers) {\n    if (grid[pos.row][pos.col] != CellType::Empty) {\n        return false; // already a wall, or the start/goal cell\n    }\n\n    grid[pos.row][pos.col] = CellType::Wall; // tentatively block it\n\n    std::vector<GridPos> testPath = findPath(startPos, goalPos);\n    if (testPath.empty()) {\n        grid[pos.row][pos.col] = CellType::Empty; // undo, this would have sealed off the goal\n        return false;\n    }\n\n    Tower tower;\n    tower.gridPos = pos;\n    tower.pixelPos = gridToPixel(pos);\n    towers.push_back(tower);\n\n    return true; // caller should recompute waypoints from testPath for every enemy in play\n}\n```\n\nThe block-then-test-then-maybe-undo sequence is the whole trick: mark the cell as a wall *before* checking, run the exact same `findPath` from the earlier lesson, and only keep the change if a path still exists. If it doesn't, revert the one cell that was just changed, no other state needs touching, since nothing else was modified yet.\n\n> [!WARNING]\n> `tryPlaceTower` finds *a* valid path, but doesn't rebuild every enemy's waypoints itself. After a successful placement, the caller still needs to convert `testPath` to waypoints and reset each enemy's `currentWaypoint` to `0`, exactly the reroute mechanism from the end of the last lesson, otherwise enemies keep walking a path that may now be blocked.",
+      "quiz": {
+        "title": "Towers & Path Blocking Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How does tryPlaceTower decide whether a tower placement is legal?",
+            "options": [
+              "It checks if the player has enough gold",
+              "It tentatively marks the cell a wall, reruns findPath, and undoes the change if no path exists anymore",
+              "It only allows towers on the edges of the grid",
+              "It counts the number of existing towers"
+            ],
+            "answer": "It tentatively marks the cell a wall, reruns findPath, and undoes the change if no path exists anymore"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A tower with a higher fireRate reloads faster (shoots more often).",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "After a legal tower placement, every enemy still needs its waypoints rebuilt and its current____ reset to 0 to actually reroute.",
+            "options": [],
+            "answer": "Waypoint"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "waves-gold-and-game-over",
+      "title": "Waves, Gold, and Game Over",
+      "order": 7,
+      "content": "# Waves, Gold, and Game Over\n\nThe last pieces turn \"towers that shoot\" into an actual game: enemies arrive in waves, killing them earns gold to afford more towers, and letting too many through ends the game.\n\n## Spawning a wave over time\n\n```cpp\nstruct WaveState {\n    int enemiesRemaining = 10;\n    float spawnTimer = 0.f;\n    float spawnInterval = 0.8f; // seconds between spawns\n};\n\nvoid updateWaveSpawning(WaveState& wave, std::vector<Enemy>& enemies, Vector2 startPixel, float deltaTime) {\n    if (wave.enemiesRemaining <= 0) return;\n\n    wave.spawnTimer -= deltaTime;\n    if (wave.spawnTimer <= 0.f) {\n        Enemy enemy;\n        enemy.position = startPixel;\n        enemies.push_back(enemy);\n\n        wave.enemiesRemaining--;\n        wave.spawnTimer = wave.spawnInterval;\n    }\n}\n```\n\nSpawning every enemy on frame one would make them all overlap and march in a single clump, staggering them with `spawnInterval` (the same countdown-timer pattern from the tower's `cooldown`) spreads them into a readable line instead.\n\n## Gold and lives\n\n```cpp\nint gold = 100;\nint lives = 20;\nconst int TOWER_COST = 25;\nconst int KILL_REWARD = 5;\n\n// in updateTower, right after an enemy's health drops to 0 or below:\nif (enemy.health <= 0.f) {\n    gold += KILL_REWARD;\n}\n\n// in the main loop, checking every enemy each frame:\nif (enemy.reachedGoal) {\n    lives--;\n}\n```\n\n`tryPlaceTower` from the last lesson should also check `gold >= TOWER_COST` before allowing a placement, and subtract `TOWER_COST` on success, a player with `0` gold shouldn't be able to place a free tower just because a cell happens to be empty and a path would still exist.\n\n## Removing enemies that die or finish\n\n```cpp\nenemies.erase(\n    std::remove_if(enemies.begin(), enemies.end(),\n        [](const Enemy& e) { return e.health <= 0.f || e.reachedGoal; }),\n    enemies.end()\n);\n```\n\nThe **erase-remove idiom**: `std::remove_if` doesn't actually shrink the vector, it shuffles the elements that *should* be kept to the front and returns an iterator marking where the \"removed\" ones now start, `.erase(...)` is what actually shrinks the vector down to just the kept elements. Doing this once per frame, after health and `reachedGoal` have been updated, keeps `enemies` from growing forever.\n\n## Game over\n\n```cpp\nbool gameOver = lives <= 0;\nbool waveCleared = wave.enemiesRemaining <= 0 && enemies.empty();\n```\n\n`waveCleared` needs **both** conditions, no more enemies left to spawn, *and* none currently alive on the board, checking `enemiesRemaining` alone would declare victory while enemies are still mid-path.\n\n> [!TIP]\n> Once `gameOver` is true, stop calling `updateEnemy`/`updateTower`/`updateWaveSpawning` (freeze the board, same idea as the horse race course's finish-line freeze), but keep drawing and keep the window's own event loop running, so the final state and a \"GAME OVER\" message stay visible.",
+      "quiz": {
+        "title": "Waves & Game Over Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does std::remove_if actually do to a vector?",
+            "options": [
+              "Immediately shrinks the vector and frees memory",
+              "Moves kept elements to the front and returns an iterator marking where removed ones start, without resizing the vector itself",
+              "Sorts the vector",
+              "Deletes the entire vector"
+            ],
+            "answer": "Moves kept elements to the front and returns an iterator marking where removed ones start, without resizing the vector itself"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A wave should be considered cleared as soon as enemiesRemaining reaches 0, even if enemies are still alive on the board.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Staggering enemy spawns with a spawnInterval timer is the same countdown pattern used by a tower's ____.",
+            "options": [],
+            "answer": "cooldown"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-finish-your-tower-defense-game",
+      "title": "Final Project: Finish Your Tower Defense Game",
+      "order": 8,
+      "content": "# Final Project: Finish Your Tower Defense Game\n\nEvery system is built: a grid-based map, A\\* pathfinding with path reconstruction, enemies that follow waypoints, towers that shoot and legally block the path, waves, gold, and lives. Combine them into one complete, playable tower defense game.\n\n## Requirements\n\n1. Build a grid with a fixed start and goal, and at least a few permanent wall cells laid out to force an interesting initial path.\n2. Let the player click an empty cell to place a tower, using `tryPlaceTower`'s block-then-`findPath`-then-maybe-undo check, invalid placements (no gold, or would fully seal the path) must be rejected.\n3. When a tower placement succeeds, recompute waypoints from the new path and reset every current enemy's `currentWaypoint` to `0`, so they visibly reroute around the new tower instead of walking through it.\n4. Spawn enemies in a timed wave, deal damage from towers in range, remove dead or goal-reached enemies with the erase-remove idiom, and track gold and lives correctly.\n5. Show a clear game-over state once `lives` reaches `0`, and a clear \"wave cleared\" state once a wave is fully spawned and empty.\n\n## Stretch goals\n\n- Support multiple waves, with enemies that get tougher (more health, more speed) each round, and a short pause between waves for the player to place more towers.\n- Add a second tower type with a different range/damage/fireRate tradeoff, and let the player choose which to place.\n- Draw each tower's range as a `DrawCircleLines` outline while the player is choosing where to place it, so the tradeoff is visible before committing gold to it.\n- Visualize the A\\* open and closed sets briefly after each `findPath` call (a faint overlay color per explored cell), so you can *see* the search reaching outward, exactly like the diagram from the \"Why A*?\" lesson.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

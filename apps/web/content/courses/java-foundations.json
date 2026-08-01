@@ -1,0 +1,263 @@
+{
+  "slug": "java-foundations",
+  "title": "Java Foundations",
+  "description": "Statically-typed, object-oriented programming on the JVM: classes, collections, generics, and interfaces.",
+  "pathSlug": "java",
+  "pathName": "Java",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "hello-java",
+      "title": "Hello, Java",
+      "order": 1,
+      "content": "# Hello, Java\n\nJava is a statically-typed, object-oriented language that runs on the **JVM** (Java Virtual Machine), write once, run anywhere: the same compiled bytecode runs unmodified on any machine with a JVM installed.\n\n## Your first program\n\n```java\npublic class Hello {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, Kodstigen!\");\n    }\n}\n```\n\nA few things that look unfamiliar if you're coming from Python or JavaScript:\n\n- **Everything lives inside a class.** Java has no free-floating functions, `main` must be a method of some class.\n- `public static void main(String[] args)` is the fixed, required signature the JVM looks for as the entry point, `public` (callable from outside), `static` (belongs to the class itself, not an instance), `void` (returns nothing), `String[] args` (command-line arguments).\n- The **filename must match the public class name** exactly: `Hello.java`.\n\n## Compiling and running\n\nJava compiles to an intermediate form called **bytecode**, not directly to native machine code:\n\n```bash\njavac Hello.java   # compiles Hello.java into Hello.class (bytecode)\njava Hello          # the JVM runs the bytecode\n```\n\nThis two-step process, and the JVM in between, is exactly what makes \"write once, run anywhere\" true, the same `.class` file runs on Windows, macOS, or Linux without recompiling, as long as a JVM is installed.\n\n> [!TIP]\n> `System.out.println` is verbose on purpose, it's read as \"the `out` stream on the `System` class, call `println`\", once you know Java always nests functionality inside classes, the verbosity stops feeling arbitrary.",
+      "quiz": {
+        "title": "Hello, Java Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the JVM actually execute?",
+            "options": [
+              "Raw Java source code",
+              "Compiled bytecode",
+              "Native machine code compiled per-OS",
+              "Python bytecode"
+            ],
+            "answer": "Compiled bytecode"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "In Java, a function can exist on its own, outside of any class.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The command that compiles Hello.java into bytecode is: ____ Hello.java",
+            "options": [],
+            "answer": "javac"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "variables-and-types",
+      "title": "Variables and Types",
+      "order": 2,
+      "content": "# Variables and Types\n\nJava has two fundamentally different kinds of types: **primitives**, and **objects**. Mixing them up is one of the most common early confusions.\n\n## Primitives\n\n```java\nint xp = 0;\ndouble ratio = 0.5;\nboolean loggedIn = true;\nchar grade = 'A';\nxp += 10;\n```\n\nPrimitives store their value directly, are fixed-size, and are **not** objects, they have no methods, can't be `null`, and are always passed by value.\n\n## Objects\n\nEverything else, starting with `String`, is an object, a reference to data living on the heap:\n\n```java\nString name = \"Ada\";\nInteger boxedXp = 10;    // the \"boxed\" object version of int\nname = null;              // objects CAN be null, primitives cannot\n```\n\n`String` looks like a primitive in everyday use (you can write `\"hello\"` directly), but it's really an object under the hood, with methods like `.length()` and `.toUpperCase()`.\n\n## Type inference with var\n\nModern Java lets the compiler infer a local variable's type from its initializer:\n\n```java\nvar count = 5;          // inferred as int\nvar name = \"Ada\";        // inferred as String\n```\n\n`var` is purely a compile-time convenience, Java is still 100% statically typed underneath, `count` is genuinely an `int` forever, the compiler just saved you from typing it twice.\n\n| | Primitive | Object |\n|---|---|---|\n| Examples | int, double, boolean, char | String, Integer, any class |\n| Can be null | No | Yes |\n| Has methods | No | Yes |\n| Stored | Directly, on the stack | Reference to the heap |",
+      "quiz": {
+        "title": "Variables and Types Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which of these can be set to null?",
+            "options": [
+              "int",
+              "boolean",
+              "String",
+              "char"
+            ],
+            "answer": "String"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Using var still means the variable is statically typed, the compiler just infers the type instead of you writing it.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A type like int or boolean that stores its value directly and is never null is called a ____.",
+            "options": [],
+            "answer": "primitive"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "control-flow-and-loops",
+      "title": "Control Flow and Loops",
+      "order": 3,
+      "content": "# Control Flow and Loops\n\nJava's control flow will look familiar if you know C-family syntax, curly braces mark blocks, conditions need parentheses.\n\n```java\nint xp = 45;\n\nif (xp >= 100) {\n    System.out.println(\"Level up!\");\n} else if (xp >= 50) {\n    System.out.println(\"Almost there\");\n} else {\n    System.out.println(\"Keep going\");\n}\n```\n\n## Loops\n\n```java\nfor (int i = 0; i < 5; i++) {\n    System.out.println(\"Iteration \" + i);\n}\n\nint[] scores = {90, 85, 77};\nfor (int score : scores) {   // \"enhanced for\", like Python's for-in\n    System.out.println(score);\n}\n\nint tries = 0;\nwhile (tries < 3) {\n    tries++;\n}\n```\n\nThe enhanced `for (int score : scores)` form reads as \"for each `score` in `scores`\", it's the idiomatic way to iterate when you don't need the index.\n\n## Switch expressions\n\nModern Java's `switch` can be used as an **expression** that directly produces a value, not just a statement that runs code:\n\n```java\nString tier = switch (xp / 25) {\n    case 0 -> \"Bronze\";\n    case 1 -> \"Silver\";\n    case 2 -> \"Gold\";\n    default -> \"Platinum\";\n};\n```\n\nEach `case` uses `->` instead of `:`, which means no accidental \"fallthrough\" to the next case, a common bug in older-style `switch` statements, and the whole thing evaluates directly to `tier`.",
+      "quiz": {
+        "title": "Control Flow Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does \"for (int score : scores)\" mean?",
+            "options": [
+              "Loop while score equals scores",
+              "Iterate over each element in the scores array",
+              "Declare a new array called scores",
+              "Compare score to scores"
+            ],
+            "answer": "Iterate over each element in the scores array"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A modern switch expression using -> can directly produce a value assigned to a variable.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The loop that keeps running as long as a condition stays true, checked before each iteration, is a ____ loop.",
+            "options": [],
+            "answer": "while"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "methods-and-classes",
+      "title": "Methods and Classes",
+      "order": 4,
+      "content": "# Methods and Classes\n\nA **class** is a blueprint for objects, bundling data (**fields**) and behavior (**methods**) together, the foundation of Java's object-oriented style.\n\n```java\npublic class Student {\n    private String name;\n    private int xp;\n\n    public Student(String name) {   // constructor\n        this.name = name;\n        this.xp = 0;\n    }\n\n    public void gainXp(int amount) {\n        this.xp += amount;\n    }\n\n    public int getXp() {\n        return this.xp;\n    }\n}\n```\n\n```java\nStudent ada = new Student(\"Ada\");\nada.gainXp(50);\nSystem.out.println(ada.getXp()); // 50\n```\n\n- The **constructor** (same name as the class, no return type) runs whenever you `new` an instance, setting up its initial state.\n- `this` refers to the specific instance a method was called on, needed here because the parameter `name` shadows the field `name`.\n- `private` fields can only be accessed from inside the class itself, forcing outside code to go through methods like `gainXp`/`getXp` instead of reaching in and mutating state directly, this is **encapsulation**.\n\n## Why private fields plus public methods?\n\n`getXp()`/`gainXp()` exist instead of a public `xp` field so the class controls *how* its state changes, e.g. `gainXp` could reject negative amounts, or trigger a level-up check, logic a bare public field could never enforce. This getter/setter pattern is one of the most common in all of Java.",
+      "quiz": {
+        "title": "Methods and Classes Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What runs automatically when you create a new instance with \"new Student(...)\"?",
+            "options": [
+              "The getXp method",
+              "The constructor",
+              "The main method",
+              "Nothing runs automatically"
+            ],
+            "answer": "The constructor"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A private field can be accessed directly from outside the class it is declared in.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Keeping fields private and only exposing controlled access through methods is called ____.",
+            "options": [],
+            "answer": "encapsulation"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "collections-and-generics",
+      "title": "Collections and Generics",
+      "order": 5,
+      "content": "# Collections and Generics\n\nJava's **Collections Framework** provides ready-made, reusable data structures, and **generics** let those structures stay type-safe no matter what they hold.\n\n```java\nimport java.util.ArrayList;\nimport java.util.List;\n\nList<String> languages = new ArrayList<>();\nlanguages.add(\"Java\");\nlanguages.add(\"Go\");\nSystem.out.println(languages.get(0)); // \"Java\"\n\nfor (String lang : languages) {\n    System.out.println(lang.toUpperCase());\n}\n```\n\n`List<String>` is a **generic type**, the `<String>` tells the compiler \"this list only ever holds `String`s\", so trying to `.add(42)` is a compile error, not a runtime surprise. `ArrayList` is the most common concrete implementation, a resizable, array-backed list.\n\n## Maps\n\n```java\nimport java.util.HashMap;\nimport java.util.Map;\n\nMap<String, Integer> scores = new HashMap<>();\nscores.put(\"Ada\", 95);\nscores.put(\"Grace\", 98);\n\nSystem.out.println(scores.get(\"Ada\")); // 95\nSystem.out.println(scores.getOrDefault(\"Bob\", 0)); // 0, key doesn't exist\n```\n\n`Map<String, Integer>` associates keys with values, like Python's dict. `getOrDefault` avoids a `null` result (and a potential `NullPointerException`) when a key might not exist.\n\n## Why generics matter\n\nWithout generics, a collection could only hold `Object`, meaning you'd have to cast every single item back to its real type before using it, and the compiler couldn't catch a mistake until it crashed at runtime. Generics push that type checking to compile time, exactly where you want to catch bugs.",
+      "quiz": {
+        "title": "Collections and Generics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the <String> in List<String> guarantee?",
+            "options": [
+              "The list can never be empty",
+              "The list only ever holds String values, checked at compile time",
+              "The list is automatically sorted",
+              "Nothing, it is just documentation"
+            ],
+            "answer": "The list only ever holds String values, checked at compile time"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Map.getOrDefault avoids returning null when a key does not exist in the map.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The most common resizable, array-backed implementation of List in Java is called ____.",
+            "options": [],
+            "answer": "ArrayList"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "interfaces-and-inheritance",
+      "title": "Interfaces and Inheritance",
+      "order": 6,
+      "content": "# Interfaces and Inheritance\n\nJava supports two ways to share behavior across classes: **inheritance** (extending a class) and **interfaces** (implementing a contract). Knowing when to reach for each is core to writing idiomatic Java.\n\n## Inheritance\n\n```java\npublic class Animal {\n    protected String name;\n    public Animal(String name) { this.name = name; }\n    public String speak() { return name + \" makes a sound\"; }\n}\n\npublic class Dog extends Animal {\n    public Dog(String name) { super(name); } // call the parent constructor\n\n    @Override\n    public String speak() {\n        return name + \" barks\";\n    }\n}\n```\n\n`Dog extends Animal` inherits its fields and methods, then **overrides** `speak()` with its own version. `super(name)` calls `Animal`'s constructor, since `Dog` doesn't own the `name` field itself, it inherited it.\n\n## Interfaces\n\nAn interface declares **what** a class must do, without saying **how**:\n\n```java\npublic interface Comparable2<T> {\n    int compareTo(T other);\n}\n\npublic class Student implements Comparable2<Student> {\n    int xp;\n    public int compareTo(Student other) {\n        return this.xp - other.xp;\n    }\n}\n```\n\nA class can `implements` as many interfaces as it wants, but can only `extends` **one** class, this is a deliberate Java design decision to avoid the ambiguity of multiple inheritance (\"if two parent classes both define `speak()` differently, which one wins?\").\n\n## Why prefer interfaces?\n\nCode written against an interface (`List<String>` instead of `ArrayList<String>`) doesn't care which concrete implementation it's handed, `ArrayList`, `LinkedList`, anything, as long as it implements `List`. This is called **programming to an interface**, and it's one of the most valuable habits in all of object-oriented design.",
+      "quiz": {
+        "title": "Interfaces and Inheritance Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How many classes can a single Java class extend?",
+            "options": [
+              "Zero",
+              "Exactly one",
+              "As many as needed",
+              "Unlimited, same as interfaces"
+            ],
+            "answer": "Exactly one"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A class can implement multiple interfaces at the same time.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The call super(name) inside a subclass constructor invokes the ____ class's constructor.",
+            "options": [],
+            "answer": "parent"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-library-management-console-app",
+      "title": "Final Project: Library Management Console App",
+      "order": 7,
+      "content": "# Final Project: Library Management Console App\n\nCombine everything from this course into a small, real console application: a library management system.\n\n## Requirements\n\n1. Create a `Book` class with fields for title, author, and a checked-out boolean, plus a constructor and getter methods.\n2. Create a `Library` class holding a `List<Book>`, with methods `addBook(Book b)`, `checkOut(String title)`, `returnBook(String title)`, and `listAvailable()`.\n3. Use a `Map<String, Book>` (keyed by title) internally if you'd like faster lookups than scanning the list, either approach is fine.\n4. `main` should add at least 3 books, check one out, attempt to check out an already-checked-out book (and print a clear message instead of crashing), then list what's still available.\n5. Define at least one interface (e.g. `Searchable` with a `search(String query)` method) and implement it on `Library`.\n\n## Stretch goals\n\n- Add a `Member` class and track which member currently has each book checked out.\n- Support returning a book by member name instead of just by title.\n- Sort the available books alphabetically before printing them.\n\nSubmit a link to your finished project below, an instructor will review it before you can mark this lesson complete. Good luck!",
+      "requiresSubmission": true
+    }
+  ]
+}

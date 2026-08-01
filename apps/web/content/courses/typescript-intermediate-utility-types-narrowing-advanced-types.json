@@ -1,0 +1,360 @@
+{
+  "slug": "typescript-intermediate-utility-types-narrowing-advanced-types",
+  "title": "TypeScript Intermediate: Utility Types, Narrowing & Advanced Types",
+  "description": "Go beyond the basics: compose types with Partial, Pick, Omit & Record, narrow unknown values safely with type guards and predicates, build mapped and template literal types, constrain and default generics, write function overloads, and use satisfies to keep precise inference.",
+  "pathSlug": "typescript",
+  "pathName": "TypeScript",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "utility-types-partial-pick-omit-record",
+      "title": "Utility Types: Partial, Pick, Omit & Record",
+      "order": 1,
+      "content": "# Utility Types: Partial, Pick, Omit & Record\n\nTypeScript ships a set of **utility types** that build new types out of ones you already have, instead of writing everything from scratch. Four of the most common: `Partial`, `Pick`, `Omit`, and `Record`.\n\n```ts\ninterface Task {\n  id: string;\n  title: string;\n  done: boolean;\n  priority: 'low' | 'medium' | 'high';\n}\n\ntype TaskDraft = Partial<Omit<Task, 'id'>>;\n// every field optional, and 'id' isn't part of the type at all\n\nfunction updateTask(task: Task, changes: TaskDraft): Task {\n  return { ...task, ...changes };\n}\n\nupdateTask({ id: '1', title: 'Write lesson', done: false, priority: 'high' }, { done: true });\n```\n\n## The four utility types\n\n| Utility | What it does |\n|---|---|\n| `Partial<T>` | Makes every property of `T` optional |\n| `Pick<T, K>` | Keeps only the listed keys `K` |\n| `Omit<T, K>` | Keeps everything except the listed keys `K` |\n| `Record<K, V>` | Builds an object type with keys `K`, all mapped to value type `V` |\n\n`Partial<Omit<Task, 'id'>>` above composes two of them: drop `id` entirely, then make what's left optional, exactly what an \"update\" function needs, callers shouldn't be able to change a task's `id`, and shouldn't have to repeat every other field just to change one.\n\n## Record for lookup tables\n\n```ts\nconst board: Record<Task['priority'], Task[]> = {\n  low: [],\n  medium: [],\n  high: [],\n};\n\nboard.low.push({ id: '2', title: 'Sort backlog', done: false, priority: 'low' });\n```\n\n`Task['priority']` reads the type of the `priority` property directly off `Task`, so `board` is guaranteed to have exactly the three keys the union allows, no more, no less. Try `board.urgent` and the compiler rejects it before the code runs.\n\n> [!NOTE]\n> None of these are special compiler magic, `Partial<T>`, `Pick<T, K>`, and friends are themselves just TypeScript types defined in the standard library using **mapped types**, the tool you'll build your own versions of in the next lesson.",
+      "quiz": {
+        "title": "Utility Types Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does `Omit<Task, 'id'>` produce?",
+            "options": [
+              "A copy of Task with only id",
+              "Task without the id property",
+              "An empty type",
+              "A union of Task's keys"
+            ],
+            "answer": "Task without the id property"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The utility type that makes every property of an existing type optional is ____.",
+            "options": [],
+            "answer": "Partial"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Record<K, V> requires K to be a string, number, or symbol (or a union of them).",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which utility type keeps only the listed keys of an existing type?",
+            "options": [
+              "Omit",
+              "Pick",
+              "Partial",
+              "Record"
+            ],
+            "answer": "Pick"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Task['priority'] reads the type of Task's priority property directly off the interface.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "type-narrowing-unknown-guards-predicates",
+      "title": "Type Narrowing: unknown, Guards & Predicates",
+      "order": 2,
+      "content": "# Type Narrowing: unknown, Guards & Predicates\n\nNot every value flowing through a program has a known type up front, JSON parsed from a network response, user input, data from a library without types. TypeScript gives you `unknown` for exactly that, plus tools to **narrow** it down safely.\n\n```ts\nfunction parseConfig(raw: unknown) {\n  if (typeof raw !== 'object' || raw === null) {\n    throw new Error('Config must be an object');\n  }\n  // raw is narrowed from unknown to `object` here, but its properties still aren't known\n  console.log(raw);\n}\n```\n\n## unknown vs any\n\n`any` turns off type checking entirely, `unknown` still forces you to prove what a value is before you can use it.\n\n```ts\nfunction useAny(value: any) {\n  value.toUpperCase(); // ✅ compiles, but crashes at runtime if value isn't a string\n}\n\nfunction useUnknown(value: unknown) {\n  value.toUpperCase(); // ❌ compile error: value is still 'unknown'\n  if (typeof value === 'string') {\n    value.toUpperCase(); // ✅ narrowed to string, now this is safe\n  }\n}\n```\n\n`unknown` is the type-safe way to accept \"could be anything,\" it makes the compiler force every caller to check before touching the value, `any` just gets out of the way and hopes for the best.\n\n## Narrowing with typeof, instanceof, and in\n\n```ts\ntype Input = string | number | Date;\n\nfunction describe(value: Input): string {\n  if (typeof value === 'string') return value.toUpperCase();      // typeof narrows primitives\n  if (value instanceof Date) return value.toISOString();          // instanceof narrows classes\n  return value.toFixed(2);                                        // only number is left\n}\n\ninterface Cat { meow(): void }\ninterface Dog { bark(): void }\n\nfunction speak(pet: Cat | Dog) {\n  if ('meow' in pet) pet.meow();  // 'in' narrows by checking for a property\n  else pet.bark();\n}\n```\n\n## Custom type predicates\n\nFor shapes `typeof`/`instanceof`/`in` can't fully describe, write your own narrowing function with an `is` return type.\n\n```ts\ninterface Task {\n  id: string;\n  title: string;\n}\n\nfunction isTask(value: unknown): value is Task {\n  return (\n    typeof value === 'object' &&\n    value !== null &&\n    'id' in value &&\n    'title' in value\n  );\n}\n\nfunction handle(value: unknown) {\n  if (isTask(value)) {\n    console.log(value.title); // narrowed to Task, .title is safe here\n  }\n}\n```\n\n`value is Task` tells the compiler: \"if this function returns `true`, treat `value` as a `Task` from this point on.\" It's not checked for correctness, a wrong `isTask` will lie to the compiler, so the logic inside still has to be right.\n\n> [!WARNING]\n> Reach for `unknown`, not `any`, whenever a value's type genuinely isn't known yet (parsed JSON, a library return value). `any` is easy in the moment but silently reintroduces every bug static types exist to prevent.",
+      "quiz": {
+        "title": "Narrowing Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What's the key difference between unknown and any?",
+            "options": [
+              "They behave identically",
+              "unknown must be narrowed before use, any bypasses type checking entirely",
+              "any is only for primitives",
+              "unknown can't hold objects"
+            ],
+            "answer": "unknown must be narrowed before use, any bypasses type checking entirely"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A function with return type 'value is Task' is a custom type predicate.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The operator used to narrow a union by checking whether a property exists on an object is ____.",
+            "options": [],
+            "answer": "in"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which keyword narrows a union to a specific class instance?",
+            "options": [
+              "typeof",
+              "instanceof",
+              "keyof",
+              "satisfies"
+            ],
+            "answer": "instanceof"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "A custom type predicate is checked for logical correctness by the compiler, so a wrong one is impossible to write.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "mapped-template-literal-types",
+      "title": "Mapped & Template Literal Types",
+      "order": 3,
+      "content": "# Mapped & Template Literal Types\n\nThe last lesson used `unknown` and narrowing to make individual *values* safer. Mapped types and template literal types do the same for *building new types themselves* out of existing ones.\n\n## Mapped types\n\nA mapped type loops over the keys of an existing type and transforms each one.\n\n```ts\ninterface Task {\n  id: string;\n  title: string;\n  priority: 'low' | 'medium' | 'high';\n}\n\ntype ReadonlyTask = { readonly [K in keyof Task]: Task[K] };\n// every property is now readonly, same shape otherwise\n\ntype TaskFlags = { [K in keyof Task]: boolean };\n// { id: boolean; title: boolean; priority: boolean } — useful for tracking \"which fields changed\"\n```\n\n`keyof Task` produces a union of Task's property names (`'id' | 'title' | 'priority'`), and `[K in keyof Task]` loops over that union, building one new property per key. This is exactly how `Partial<T>` and `Readonly<T>` are implemented in TypeScript's own standard library, they're just mapped types with a `?` or `readonly` added.\n\n## Template literal types\n\nTemplate literal types build new string-literal types the same way JS template strings build new strings, except entirely at the type level.\n\n```ts\ntype Priority = 'low' | 'medium' | 'high';\n\ntype PriorityChangeEvent = `${Priority}Changed`;\n// 'lowChanged' | 'mediumChanged' | 'highChanged'\n\ntype EventName<T extends string> = `on${Capitalize<T>}Change`;\n\ntype TaskEvents = EventName<'title' | 'priority'>;\n// 'onTitleChange' | 'onPriorityChange'\n```\n\n`${Priority}Changed` distributes over every member of the `Priority` union, producing one literal string type per member. `Capitalize<T>` is a built-in intrinsic type that uppercases the first letter, useful for deriving conventional names like event handlers straight from a union you already have, instead of typing each one out by hand and letting them drift out of sync.\n\n> [!TIP]\n> If you find yourself hand-writing a list of string literals that's really just \"every value in this union, with a prefix or suffix,\" that's a template literal type waiting to replace it, one source of truth instead of two lists that can disagree.",
+      "quiz": {
+        "title": "Mapped & Template Literal Types Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "FILL_BLANK",
+            "prompt": "____ Task produces a union of all of Task's property names.",
+            "options": [],
+            "answer": "keyof"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the [K in keyof Task] syntax do inside a mapped type?",
+            "options": [
+              "Deletes every key",
+              "Loops over each of Task's property names, building one new property per key",
+              "Only keeps required keys",
+              "Converts Task to a tuple"
+            ],
+            "answer": "Loops over each of Task's property names, building one new property per key"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Partial<T> and Readonly<T> are implemented internally as mapped types.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does `${Priority}Changed` produce when Priority is 'low' | 'medium' | 'high'?",
+            "options": [
+              "A single string type, \"PriorityChanged\"",
+              "A union of one literal per member: 'lowChanged' | 'mediumChanged' | 'highChanged'",
+              "A compile error",
+              "The Priority type unchanged"
+            ],
+            "answer": "A union of one literal per member: 'lowChanged' | 'mediumChanged' | 'highChanged'"
+          },
+          {
+            "id": "q5",
+            "type": "FILL_BLANK",
+            "prompt": "The built-in intrinsic type that uppercases the first letter of a string literal type is ____.",
+            "options": [],
+            "answer": "Capitalize"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "the-satisfies-operator-const-assertions",
+      "title": "The satisfies Operator & Const Assertions",
+      "order": 4,
+      "content": "# The satisfies Operator & Const Assertions\n\nTwo common problems when writing typed object literals: annotate them and you lose their exact inferred shape, don't annotate them and the compiler won't check they match what you meant. `satisfies` and `as const` solve both.\n\n## The problem with a plain annotation\n\n```ts\ntype Setting = number | string;\n\nconst configAnnotated: Record<string, Setting> = {\n  retries: 3,\n  mode: 'dark',\n};\n\nconfigAnnotated.retries.toFixed(0); // ❌ retries is typed as `number | string`, not number\n```\n\nAnnotating with `Record<string, Setting>` checks that every value is a valid `Setting`, but then widens every property to the *whole* union `number | string`, TypeScript forgets that `retries` specifically was a number.\n\n## satisfies keeps the precise type\n\n```ts\nconst config = {\n  retries: 3,\n  mode: 'dark',\n} satisfies Record<string, Setting>;\n\nconfig.retries.toFixed(0); // ✅ retries is still known as number\nconfig.mode.toUpperCase(); // ✅ mode is still known as string\n```\n\n`satisfies` checks the object against `Record<string, Setting>` the same way the annotation did, rejecting anything that doesn't fit, but it doesn't replace the object's own inferred type afterward. Each property keeps its own specific type.\n\n## const assertions\n\n```ts\nconst directions = ['up', 'down', 'left', 'right'];\n// inferred as string[], any string could be pushed in later\n\nconst fixedDirections = ['up', 'down', 'left', 'right'] as const;\n// inferred as readonly [\"up\", \"down\", \"left\", \"right\"]\n\ntype Direction = typeof fixedDirections[number];\n// 'up' | 'down' | 'left' | 'right'\n```\n\n`as const` tells the compiler \"infer the narrowest possible type,\" a literal tuple of exact strings, marked `readonly`, instead of the general `string[]`. Combined with `typeof ...[number]`, it's a common way to derive a union type from an array of values you already have, one list instead of a list plus a hand-written union that can drift apart.\n\n> [!NOTE]\n> `satisfies` and `as const` solve different problems and combine well: `as const` narrows a literal's own inferred type, `satisfies` checks that literal against some other type without widening it. Reach for `satisfies` whenever you're about to write `: SomeType` and would lose useful precision by doing so.",
+      "quiz": {
+        "title": "satisfies & as const Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does satisfies do that a plain type annotation does not?",
+            "options": [
+              "Nothing, they're identical",
+              "Checks the value against a type while keeping its own precise inferred type",
+              "Disables type checking",
+              "Converts the value to that type at runtime"
+            ],
+            "answer": "Checks the value against a type while keeping its own precise inferred type"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "as const widens an array literal's type to string[].",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "typeof someArray[number] extracts a union type of the array's ____.",
+            "options": [],
+            "answer": "elements"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Without `as const`, what type does `['up', 'down']` infer to?",
+            "options": [
+              "readonly ['up', 'down']",
+              "string[]",
+              "never[]",
+              "unknown"
+            ],
+            "answer": "string[]"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "satisfies and as const solve the same problem and are interchangeable.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "generic-constraints-default-type-parameters",
+      "title": "Generic Constraints & Default Type Parameters",
+      "order": 5,
+      "content": "# Generic Constraints & Default Type Parameters\n\nThe beginner course's `firstElement<T>` worked for *any* `T`, but plenty of generic functions only make sense for types that have something specific about them. **Constraints** narrow what `T` is allowed to be.\n\n```ts\ninterface HasId {\n  id: string;\n}\n\nfunction findById<T extends HasId>(items: T[], id: string): T | undefined {\n  return items.find((item) => item.id === id);\n}\n\ninterface Task extends HasId {\n  title: string;\n}\n\nconst tasks: Task[] = [{ id: '1', title: 'Write lesson' }];\nfindById(tasks, '1'); // ✅ Task has an id, so it satisfies HasId\n\nfindById([{ title: 'no id here' }], '1'); // ❌ compile error: missing id\n```\n\n`T extends HasId` doesn't mean inheritance the way a class `extends` does, it means \"whatever `T` ends up being, it must have at least the shape of `HasId`.\" Inside the function, `item.id` is safe to access precisely because the constraint guarantees it exists, no matter which concrete type `T` turns out to be.\n\n## Constraining with keyof\n\nA very common constraint ties a generic parameter to the keys of another generic parameter.\n\n```ts\nfunction getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {\n  return obj[key];\n}\n\nconst task = { id: '1', title: 'Write lesson', done: false };\n\ngetProperty(task, 'title'); // ✅ inferred as string\ngetProperty(task, 'nope');  // ❌ 'nope' isn't a key of task, compile error\n```\n\n`K extends keyof T` means \"K can only be one of T's actual property names,\" so `getProperty` can never be called with a key that doesn't exist, and its return type (`T[K]`) is exactly the type of that specific property, not a generic `unknown`.\n\n## Default type parameters\n\nGenerics can also supply a default, used when the caller doesn't specify one explicitly.\n\n```ts\ninterface ApiResponse<T = unknown> {\n  status: number;\n  data: T;\n}\n\nfunction ok(): ApiResponse {\n  return { status: 200, data: null }; // T defaults to unknown here\n}\n\nfunction okWithTask(task: Task): ApiResponse<Task> {\n  return { status: 200, data: task }; // T explicitly set to Task\n}\n```\n\n`T = unknown` means `ApiResponse` (with no type argument at all) still compiles, falling back to `unknown` for `data`, while callers that care can still specify exactly what they're returning.\n\n> [!NOTE]\n> Constraints and defaults are how library-quality generic functions stay both flexible and safe, flexible enough to work with many types, safe enough that the compiler still catches misuse instead of silently allowing anything.",
+      "quiz": {
+        "title": "Generic Constraints Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does `T extends HasId` mean for a generic type parameter?",
+            "options": [
+              "T must be a subclass of HasId",
+              "Whatever T is, it must have at least the shape of HasId",
+              "T is optional",
+              "T is ignored at compile time"
+            ],
+            "answer": "Whatever T is, it must have at least the shape of HasId"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "`K extends keyof T` restricts K to only the actual property names of T.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "In `interface ApiResponse<T = unknown>`, `unknown` is the ____ type parameter, used when the caller supplies none.",
+            "options": [],
+            "answer": "default"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Given `getProperty<T, K extends keyof T>(obj: T, key: K): T[K]`, what does the return type T[K] guarantee?",
+            "options": [
+              "It always returns a string",
+              "It returns exactly the type of the specific property that was requested",
+              "It returns unknown",
+              "It returns the whole object T"
+            ],
+            "answer": "It returns exactly the type of the specific property that was requested"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "function-overloads-call-signatures",
+      "title": "Function Overloads & Call Signatures",
+      "order": 6,
+      "content": "# Function Overloads & Call Signatures\n\nSome functions genuinely behave differently depending on the *shape* of the arguments passed in, not just their values. A single generic signature can't always express that precisely, **overloads** let you describe several valid call shapes for the same function.\n\n```ts\nfunction createTask(title: string): { id: string; title: string };\nfunction createTask(title: string, priority: 'low' | 'medium' | 'high'): { id: string; title: string; priority: string };\nfunction createTask(title: string, priority?: 'low' | 'medium' | 'high') {\n  const base = { id: crypto.randomUUID(), title };\n  return priority ? { ...base, priority } : base;\n}\n\nconst a = createTask('Write lesson');                 // typed as { id: string; title: string }\nconst b = createTask('Write lesson', 'high');          // typed as { id: string; title: string; priority: string }\n```\n\nThe first two signatures are **overload signatures**, they describe the valid ways to call `createTask` from the outside. The third, with a body, is the **implementation signature**, it must be compatible with every overload above it, but callers never see it directly, only the overloads are checked against call sites. This is how `a` and `b` end up with two genuinely different, more precise return types instead of one overly-broad union.\n\n## Typing callable objects\n\nA type can also describe something that's callable, not just an object with properties.\n\n```ts\ninterface Logger {\n  (message: string): void;      // Logger itself is callable...\n  level: 'debug' | 'info' | 'error'; // ...and also has a property\n}\n\nconst log: Logger = Object.assign(\n  (message: string) => console.log(`[${log.level}] ${message}`),\n  { level: 'info' as const }\n);\n\nlog('server started'); // calling it directly\nlog.level;              // and reading a property off it\n```\n\nA **call signature** inside an interface, `(message: string): void` with no name, describes \"this thing can be invoked like a function.\" Combined with an ordinary property, it types values that are both callable and carry extra data, a real pattern for loggers, event emitters, and similar utilities.\n\n> [!TIP]\n> Reach for overloads sparingly, only when a single generic signature genuinely can't express how the return type depends on which arguments were passed. Most of the time, optional parameters or a union parameter type are simpler and just as safe.",
+      "quiz": {
+        "title": "Overloads & Call Signatures Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In a set of function overloads, which signature do callers actually see and get checked against?",
+            "options": [
+              "Only the implementation signature",
+              "Only the overload signatures, not the implementation signature",
+              "All of them, merged into one",
+              "None, overloads are purely documentation"
+            ],
+            "answer": "Only the overload signatures, not the implementation signature"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "An interface can describe something that is both callable and has properties, using a call signature.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The signature with a function body, which every overload must be compatible with, is called the ____ signature.",
+            "options": [],
+            "answer": "implementation"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-typed-settings-validator",
+      "title": "Final Project: Build a Typed Settings Validator",
+      "order": 7,
+      "content": "# Final Project: Build a Typed Settings Validator\n\nCombine utility types, narrowing, mapped/template literal types, and `satisfies` into one small but real module: a settings validator.\n\n## Requirements\n\n1. Define a `Settings` interface with at least four fields of mixed types (e.g. `theme: 'light' | 'dark'`, `fontSize: number`, `autoSave: boolean`, `username: string`).\n2. Write an `isSettings(value: unknown): value is Settings` type predicate that validates an untrusted value (e.g. something parsed from `JSON.parse`) before it's ever treated as `Settings`.\n3. Write an `updateSettings(current: Settings, changes: Partial<Settings>): Settings` function, changes should be optional and partial, not a full replacement.\n4. Use a mapped type to derive a `SettingsChanged` type, `{ [K in keyof Settings]: boolean }`, and a function that compares two `Settings` objects and returns one, flagging exactly which fields differ.\n5. Build a `defaultSettings` object typed with `satisfies Settings`, so each default value keeps its own precise type instead of being widened to a single union.\n\n## Stretch goals\n\n- Add a template literal type deriving an event name per settings key, e.g. `on` + the capitalized key + `Change`, and a tiny typed event emitter that only accepts those names.\n- Use `Pick`/`Omit` to derive a \"public settings\" type that hides one internal-only field from an exported API.\n- Add a `resetSettings(): Settings` that returns a fresh copy of `defaultSettings`, and verify at the type level that `defaultSettings` itself can't be mutated by accident.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

@@ -1,0 +1,372 @@
+{
+  "slug": "kubernetes-fundamentals",
+  "title": "Kubernetes Fundamentals",
+  "description": "Orchestrate containers at scale: Pods, Deployments, Services, config and storage, and real kubectl workflows.",
+  "pathSlug": "kubernetes",
+  "pathName": "Kubernetes",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "why-kubernetes-pods-and-the-control-plane",
+      "title": "Why Kubernetes? Pods and the Control Plane",
+      "order": 1,
+      "content": "# Why Kubernetes? Pods and the Control Plane\n\nDocker gets a single container running reliably. **Kubernetes** (often shortened to \"k8s\") is what takes over once you have many containers, across many machines, that need to be scheduled, restarted when they crash, scaled up and down, and discovered by each other automatically.\n\n## The problem Kubernetes solves\n\nRunning a handful of containers by hand with `docker run` works fine on one machine. It falls apart once you have:\n- Multiple machines (a **cluster**) to spread containers across.\n- Containers that need to be automatically restarted if they crash or a machine dies.\n- A need to scale a service from 2 replicas to 20 during a traffic spike.\n- Services that need to find and talk to each other without hardcoded IP addresses.\n\nKubernetes is a **container orchestrator**: you declare the desired state (\"I want 3 replicas of this container running\"), and Kubernetes continuously works to make reality match that declaration.\n\n## The control plane and nodes\n\nA cluster has two kinds of machines:\n\n| | Control plane | Worker nodes |\n|---|---|---|\n| Job | Decides *what* should run *where* | Actually runs the containers |\n| Key components | API server, scheduler, controller manager, etcd | kubelet, kube-proxy, container runtime |\n\n- The **API server** is the front door, every `kubectl` command and every internal component talks to Kubernetes through it.\n- **etcd** is the cluster's database, the single source of truth for the desired state.\n- The **scheduler** decides which node a new Pod should run on (based on available resources, constraints, etc).\n- The **kubelet** runs on every worker node and makes sure the containers the control plane assigned to that node are actually running.\n\n## Pods: the smallest deployable unit\n\nYou don't deploy a container directly in Kubernetes, you deploy a **Pod**, a wrapper around one or more containers that always run together on the same node and share networking/storage.\n\n```yaml\napiVersion: v1\nkind: Pod\nmetadata:\n  name: hello-pod\nspec:\n  containers:\n    - name: hello\n      image: nginx:latest\n      ports:\n        - containerPort: 80\n```\n\nMost Pods run exactly one container, the \"multiple containers\" case is for tightly-coupled helpers (like a logging sidecar) that genuinely need to share a network namespace and disk with the main container.\n\n> [!NOTE]\n> You'll rarely create a bare Pod directly in a real project, almost everything is managed through a **Deployment** (next lesson), which creates and manages Pods for you and handles restarts, scaling, and rollouts.",
+      "quiz": {
+        "title": "Kubernetes Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is a Pod in Kubernetes?",
+            "options": [
+              "A single physical machine",
+              "The smallest deployable unit, wrapping one or more containers",
+              "A backup of the cluster's database",
+              "A type of load balancer"
+            ],
+            "answer": "The smallest deployable unit, wrapping one or more containers"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which control plane component is the single source of truth for the cluster's desired state?",
+            "options": [
+              "kubelet",
+              "etcd",
+              "kube-proxy",
+              "Docker"
+            ],
+            "answer": "etcd"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Every kubectl command and internal component talks to the cluster through the API server.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The control plane component responsible for deciding which node a new Pod runs on is the ____.",
+            "options": [],
+            "answer": "scheduler"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "In a real project, you should almost always create bare Pods directly instead of using a Deployment.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "The component that runs on every worker node and ensures its assigned containers are actually running is the ____.",
+            "options": [],
+            "answer": "kubelet"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "deployments-and-replicasets",
+      "title": "Deployments and ReplicaSets",
+      "order": 2,
+      "content": "# Deployments and ReplicaSets\n\nBare Pods have no self-healing: if a Pod's node dies, that Pod is gone for good. A **Deployment** is the standard way to run and manage Pods in practice, it describes a desired state and Kubernetes continuously reconciles reality to match it.\n\n## Declaring a Deployment\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: web\n  template:\n    metadata:\n      labels:\n        app: web\n    spec:\n      containers:\n        - name: web\n          image: myregistry/web:1.4.0\n          ports:\n            - containerPort: 8080\n```\n\n- `replicas: 3` declares you always want 3 copies of this Pod running.\n- `selector`/`template.metadata.labels` must match, this is how the Deployment knows which Pods belong to it.\n- `template` is effectively a Pod spec, the Deployment stamps out Pods from this template.\n\n## ReplicaSets: the mechanism underneath\n\nA Deployment doesn't manage Pods directly, it manages a **ReplicaSet**, which is the thing that actually watches the Pod count and creates/deletes Pods to match `replicas`. You'll almost never create a ReplicaSet by hand, but understanding it explains what's happening when you list resources:\n\n```bash\nkubectl get deployments\nkubectl get replicasets\nkubectl get pods\n```\n\nEach layer exists for a reason: the Deployment adds **rollout history and rolling updates** on top of what a plain ReplicaSet can do.\n\n## Rolling updates\n\nChange the image tag and re-apply, and the Deployment performs a **rolling update** by default: it spins up new Pods with the new version, waits for them to become healthy, then terminates old Pods, a few at a time, so the service never has zero healthy replicas.\n\n```bash\nkubectl set image deployment/web web=myregistry/web:1.5.0\nkubectl rollout status deployment/web\nkubectl rollout undo deployment/web   # roll back if something's wrong\n```\n\n> [!TIP]\n> `kubectl rollout undo` is your emergency brake, it re-applies the previous ReplicaSet's Pod template immediately, no need to remember or re-type the old image tag.",
+      "quiz": {
+        "title": "Deployments Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does a Deployment actually manage under the hood?",
+            "options": [
+              "Pods directly, with no intermediate resource",
+              "A ReplicaSet, which manages the Pods",
+              "Nodes",
+              "The API server"
+            ],
+            "answer": "A ReplicaSet, which manages the Pods"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ field in a Deployment spec declares how many copies of the Pod should always be running.",
+            "options": [],
+            "answer": "replicas"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "By default, a Deployment updates all Pods to a new image simultaneously, causing brief downtime.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which command rolls back a Deployment to its previous version?",
+            "options": [
+              "kubectl rollout undo",
+              "kubectl delete deployment",
+              "kubectl get rollback",
+              "kubectl apply --previous"
+            ],
+            "answer": "kubectl rollout undo"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "The selector and the Pod template's labels must match for a Deployment to know which Pods belong to it.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "kubectl rollout ____ deployment/web shows the live progress of an ongoing rollout.",
+            "options": [],
+            "answer": "status"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "services-and-networking",
+      "title": "Services and Networking",
+      "order": 3,
+      "content": "# Services and Networking\n\nPods are ephemeral, when one is replaced (a rollout, a crash, a rescheduled Pod), it gets a **brand new IP address**. Nothing that depends on a Pod's IP directly would survive that. A **Service** gives a stable network identity in front of a changing set of Pods.\n\n## Why you can't just use Pod IPs\n\n```\nPod IP: 10.244.1.7  →  crashes, replaced  →  new Pod IP: 10.244.2.3\n```\n\nAnything that hardcoded `10.244.1.7` breaks the moment that Pod is replaced. A Service solves this with a stable virtual IP and DNS name that automatically routes to whichever Pods currently match its selector.\n\n## Defining a Service\n\n```yaml\napiVersion: v1\nkind: Service\nmetadata:\n  name: web\nspec:\n  selector:\n    app: web\n  ports:\n    - port: 80\n      targetPort: 8080\n```\n\n`selector: app: web` means this Service load-balances traffic across every Pod carrying that label, exactly the same label used by the Deployment's template. Other Pods in the cluster can now reach this Service at the DNS name `web` (or `web.<namespace>.svc.cluster.local` in full).\n\n## Service types\n\n| Type | What it does |\n|---|---|\n| `ClusterIP` (default) | Only reachable from inside the cluster |\n| `NodePort` | Also exposes a fixed port on every node's IP |\n| `LoadBalancer` | Asks the cloud provider to provision an external load balancer |\n\nMost internal, service-to-service traffic uses `ClusterIP`, you only reach for `LoadBalancer` for something the outside world needs to hit directly, like a public-facing web frontend.\n\n## Labels and selectors tie it all together\n\nLabels are simple key-value pairs attached to any Kubernetes object, and selectors are how Deployments, Services, and other resources find the right Pods to act on:\n\n```yaml\nlabels:\n  app: web\n  environment: production\n```\n\n> [!WARNING]\n> A Service with a selector that doesn't match any Pod's labels silently \"works\" (it exists and has a DNS name), but routes traffic to nowhere, an extremely common, very confusing first Kubernetes bug. Always double check the label spelling matches exactly on both sides.",
+      "quiz": {
+        "title": "Services & Networking Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why can't other parts of your app just rely on a Pod's IP address directly?",
+            "options": [
+              "Pod IPs never change",
+              "A Pod's IP changes every time it's replaced",
+              "Pods don't have IP addresses",
+              "IP addresses are deprecated in Kubernetes"
+            ],
+            "answer": "A Pod's IP changes every time it's replaced"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which Service type is only reachable from inside the cluster?",
+            "options": [
+              "NodePort",
+              "LoadBalancer",
+              "ClusterIP",
+              "ExternalName"
+            ],
+            "answer": "ClusterIP"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A Service routes traffic to Pods based on matching labels via a selector.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A Service with a selector that matches no Pods will exist but route traffic to ____.",
+            "options": [],
+            "answer": "nowhere"
+          },
+          {
+            "id": "q5",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which Service type asks the cloud provider to provision an external load balancer?",
+            "options": [
+              "ClusterIP",
+              "NodePort",
+              "LoadBalancer",
+              "Ingress"
+            ],
+            "answer": "LoadBalancer"
+          },
+          {
+            "id": "q6",
+            "type": "TRUE_FALSE",
+            "prompt": "Labels are a Kubernetes field that only Services can use.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "configmaps-secrets-and-volumes",
+      "title": "ConfigMaps, Secrets, and Volumes",
+      "order": 4,
+      "content": "# ConfigMaps, Secrets, and Volumes\n\nHardcoding configuration (URLs, feature flags, credentials) directly into a container image means rebuilding the image every time a setting changes, and it means secrets end up baked into an image anyone with registry access can pull. Kubernetes externalizes this with **ConfigMaps**, **Secrets**, and **Volumes**.\n\n## ConfigMaps: non-sensitive configuration\n\n```yaml\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: web-config\ndata:\n  LOG_LEVEL: 'info'\n  FEATURE_NEW_CHECKOUT: 'true'\n```\n\n```yaml\n# inside a Pod spec\ncontainers:\n  - name: web\n    image: myregistry/web:1.5.0\n    envFrom:\n      - configMapRef:\n          name: web-config\n```\n\n`envFrom`/`configMapRef` injects every key in the ConfigMap as an environment variable, change the ConfigMap and restart the Pods, no image rebuild required.\n\n## Secrets: the same idea, for sensitive values\n\n```yaml\napiVersion: v1\nkind: Secret\nmetadata:\n  name: db-credentials\ntype: Opaque\ndata:\n  password: cGFzc3dvcmQxMjM=   # base64-encoded, NOT encrypted\n```\n\n> [!WARNING]\n> Secret values are **base64-encoded, not encrypted**, by default, anyone who can read the Secret object can trivially decode it. Real production clusters pair Secrets with encryption-at-rest and tools like a proper secrets manager (Vault, AWS Secrets Manager, sealed-secrets) rather than relying on the base64 encoding for actual protection.\n\n## Volumes: storage that outlives a container\n\nA container's own filesystem disappears the moment it restarts. A **Volume** attaches storage to a Pod that can persist across container restarts (or even be shared between containers in the same Pod).\n\n```yaml\nspec:\n  containers:\n    - name: web\n      image: myregistry/web:1.5.0\n      volumeMounts:\n        - name: cache-data\n          mountPath: /var/cache/app\n  volumes:\n    - name: cache-data\n      emptyDir: {}\n```\n\n`emptyDir` survives container restarts within the same Pod, but is deleted when the Pod itself is removed. For storage that must outlive the Pod entirely (a database's data directory), you'd use a **PersistentVolumeClaim** instead, which requests storage from the cluster that exists independently of any one Pod's lifecycle.",
+      "quiz": {
+        "title": "Config & Storage Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the main purpose of a ConfigMap?",
+            "options": [
+              "Storing encrypted secrets",
+              "Storing non-sensitive configuration outside the container image",
+              "Scheduling Pods",
+              "Load balancing traffic"
+            ],
+            "answer": "Storing non-sensitive configuration outside the container image"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Kubernetes Secret values are encrypted by default, so anyone who can read the object can't see the real value.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Secret values are stored ____-encoded by default, which is not the same as encryption.",
+            "options": [],
+            "answer": "base64"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What happens to an emptyDir volume's contents when its Pod is deleted?",
+            "options": [
+              "They persist forever",
+              "They are deleted along with the Pod",
+              "They are automatically backed up to S3",
+              "Nothing, emptyDir cannot be deleted"
+            ],
+            "answer": "They are deleted along with the Pod"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Changing a ConfigMap's values requires rebuilding the container image.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "For storage that must outlive a Pod entirely, like a database's data directory, you'd use a Persistent Volume ____ instead of a plain volume.",
+            "options": [],
+            "answer": "Claim"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "kubectl-and-working-with-a-real-cluster",
+      "title": "kubectl and Working with a Real Cluster",
+      "order": 5,
+      "content": "# kubectl and Working with a Real Cluster\n\nEverything so far has been YAML in the abstract. This lesson is the hands-on toolkit: `kubectl`, the command-line tool for talking to a cluster, and how to get a real (if small) cluster running on your own machine.\n\n## Getting a local cluster\n\nYou don't need a cloud account to learn Kubernetes. Tools like **minikube** and **kind** (Kubernetes IN Docker) run a real, small cluster locally:\n\n```bash\n# minikube\nminikube start\n\n# or kind\nkind create cluster\n```\n\nBoth give you a fully functional `kubectl` context pointed at a local cluster in a couple of minutes.\n\n## Core kubectl commands\n\n```bash\nkubectl apply -f deployment.yaml   # create or update a resource from a YAML file\nkubectl get pods                    # list resources\nkubectl get pods -o wide            # list with extra detail (node, IP)\nkubectl describe pod web-7d9f8      # detailed info + recent events, great for debugging\nkubectl logs web-7d9f8              # see a container's stdout/stderr\nkubectl logs web-7d9f8 -f            # follow logs live\nkubectl exec -it web-7d9f8 -- sh    # get an interactive shell inside a running container\nkubectl delete -f deployment.yaml   # tear down what that file created\n```\n\n`kubectl describe` is usually the first thing to reach for when something isn't working, its **Events** section at the bottom often tells you exactly why a Pod won't schedule or start (out of resources, image pull failure, failed health check, etc).\n\n## Namespaces: dividing a cluster\n\nA **namespace** is a way to partition a single cluster into logical groups, commonly one per environment or team:\n\n```bash\nkubectl create namespace staging\nkubectl apply -f deployment.yaml -n staging\nkubectl get pods -n staging\nkubectl get pods --all-namespaces\n```\n\nResource names only need to be unique **within** a namespace, so `staging` and `production` can each have their own `web` Deployment without colliding.\n\n> [!TIP]\n> `kubectl apply` is declarative and safe to re-run, if nothing changed in the YAML, re-applying it is a no-op. This is why CI/CD pipelines for Kubernetes almost always just run `kubectl apply -f .` on every deploy rather than tracking what's \"new\" vs \"changed\" themselves.",
+      "quiz": {
+        "title": "kubectl Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which local tool lets you run a real Kubernetes cluster without a cloud account?",
+            "options": [
+              "kubectl",
+              "minikube or kind",
+              "Docker Compose",
+              "AWS CLI"
+            ],
+            "answer": "minikube or kind"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "kubectl ____ pod-name shows detailed info and recent events for a Pod, the best first stop when debugging.",
+            "options": [],
+            "answer": "describe"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Resource names must be unique across the entire cluster, even across different namespaces.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which command gets you an interactive shell inside a running container?",
+            "options": [
+              "kubectl logs",
+              "kubectl describe",
+              "kubectl exec -it ... -- sh",
+              "kubectl get pods"
+            ],
+            "answer": "kubectl exec -it ... -- sh"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Re-running kubectl apply -f on an unchanged YAML file is safe and effectively a no-op.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "kubectl create ____ staging creates a new logical partition of the cluster for grouping resources.",
+            "options": [],
+            "answer": "namespace"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-deploy-a-multi-tier-app-to-kubernetes",
+      "title": "Final Project: Deploy a Multi-Tier App to Kubernetes",
+      "order": 6,
+      "content": "# Final Project: Deploy a Multi-Tier App to Kubernetes\n\nPut every piece together: Deployments, Services, config, and real `kubectl` usage, applied to an actual multi-tier application.\n\n## Requirements\n\n1. Containerize a simple app with at least two tiers (e.g. a web/API service and a database, or a frontend and a backend), each with its own Dockerfile.\n2. Write a Deployment + Service for each tier, the backend/API's Service should be `ClusterIP` (internal only), the frontend's should be exposed (`NodePort` or `LoadBalancer`, depending on your cluster).\n3. Externalize at least one piece of configuration into a ConfigMap and one credential into a Secret, referenced by your Deployments rather than hardcoded.\n4. Deploy everything to a local cluster (minikube or kind) using `kubectl apply -f`, and confirm the frontend can actually reach the backend through its Service DNS name.\n5. Perform a rolling update, change something in your app, rebuild the image, bump the tag, and re-apply, then verify with `kubectl rollout status` that it completed without downtime.\n\n## Stretch goals\n\n- Add a liveness and readiness probe to at least one Deployment.\n- Use a PersistentVolumeClaim for the database tier's data directory so data survives a Pod restart.\n- Split your environment into two namespaces (e.g. `staging` and `production`) using the same YAML with different config.\n\nSubmit a link to your finished project (a repo with your YAML manifests, or a recording/write-up of it running) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

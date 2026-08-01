@@ -3,20 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
-    "dev:api": "npm run dev -w apps/api",
-    "dev:web": "npm run dev -w apps/web",
-    "stop": "bash stop.sh",
-    "db:migrate": "npm run db:migrate -w apps/api",
-    "db:seed": "npm run db:seed -w apps/api",
-    "typecheck": "npm run typecheck -w apps/api && npm run typecheck -w apps/web",
-    "build": "npm run build -w apps/web"
+    "dev": "yarn workspace @codeforge/web dev",
+    "build": "yarn workspace @codeforge/web build",
+    "start": "yarn workspace @codeforge/web start",
+    "typecheck": "yarn workspace @codeforge/web typecheck"
   },
-  "devDependencies": {
-    "concurrently": "^9.1.2"
-  }
+  "packageManager": "yarn@1.22.22"
 }

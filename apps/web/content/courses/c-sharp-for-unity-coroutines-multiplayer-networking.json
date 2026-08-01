@@ -1,0 +1,263 @@
+{
+  "slug": "c-sharp-for-unity-coroutines-multiplayer-networking",
+  "title": "C# for Unity: Coroutines & Multiplayer Networking",
+  "description": "Go from console apps to game code: GameObjects and the MonoBehaviour lifecycle, coroutines with IEnumerator for timed and multi-frame logic, and multiplayer networking with Netcode for GameObjects (NetworkObject, RPCs, NetworkVariables).",
+  "pathSlug": "csharp",
+  "pathName": "C#",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "gameobjects-components-and-the-monobehaviour-lifecycle",
+      "title": "GameObjects, Components, and the MonoBehaviour Lifecycle",
+      "order": 1,
+      "content": "# GameObjects, Components, and the MonoBehaviour Lifecycle\n\nIn Unity, everything in a scene is a **GameObject**, an empty container that gets its behavior from attached **Components**. A `MonoBehaviour` script is a component that hooks into Unity's lifecycle.\n\n```csharp\nusing UnityEngine;\n\npublic class PlayerController : MonoBehaviour\n{\n    public float speed = 5f;\n\n    void Start()\n    {\n        Debug.Log($\"{gameObject.name} spawned\");\n    }\n\n    void Update()\n    {\n        float move = Input.GetAxis(\"Horizontal\") * speed * Time.deltaTime;\n        transform.Translate(move, 0, 0);\n    }\n}\n```\n\n## The lifecycle\n\n- `Awake()` runs once, before `Start()`, even on a disabled component, use it to cache references.\n- `Start()` runs once, after every `Awake()` has run, right before the first frame.\n- `Update()` runs every frame, use `Time.deltaTime` so movement stays framerate-independent.\n- `FixedUpdate()` runs on a fixed timestep, use it for physics (`Rigidbody` forces).\n\n## Getting components\n\n`GetComponent<T>()` looks up another component attached to the same GameObject:\n\n```csharp\nRigidbody rb = GetComponent<Rigidbody>();\nrb.AddForce(Vector3.up * 10f);\n```",
+      "quiz": {
+        "title": "GameObjects & Lifecycle Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which MonoBehaviour method is best for movement, since it runs every frame?",
+            "options": [
+              "Awake",
+              "Start",
+              "Update",
+              "OnDestroy"
+            ],
+            "answer": "Update"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Multiplying movement by Time.____ keeps it framerate-independent.",
+            "options": [],
+            "answer": "deltaTime"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Awake() can run even on a component that starts disabled.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "coroutines-and-ienumerator",
+      "title": "Coroutines and IEnumerator",
+      "order": 2,
+      "content": "# Coroutines and IEnumerator\n\nA regular method runs to completion within a single frame. A **coroutine** can pause itself and resume later, spread across multiple frames, without blocking the main thread. Unity coroutines are built on C#'s `IEnumerator`.\n\n```csharp\nusing System.Collections;\nusing UnityEngine;\n\npublic class FadeIn : MonoBehaviour\n{\n    void Start()\n    {\n        StartCoroutine(Fade());\n    }\n\n    IEnumerator Fade()\n    {\n        CanvasGroup group = GetComponent<CanvasGroup>();\n        float t = 0f;\n        while (t < 1f)\n        {\n            t += Time.deltaTime;\n            group.alpha = t;\n            yield return null; // pause until next frame\n        }\n    }\n}\n```\n\n## The pieces\n\n- A coroutine is any method that returns `IEnumerator` and contains at least one `yield return`.\n- `StartCoroutine(...)` begins running it, Unity resumes it each frame from wherever it last `yield return`ed.\n- `yield return null` pauses for exactly one frame.\n- `yield return new WaitForSeconds(2f)` pauses for 2 (scaled) seconds.\n\n## Why not just Update()?\n\n`Update()` runs every frame for the entire lifetime of the object. A coroutine only runs while it has work to do, then finishes, better for one-off timed sequences like fades, delays, or spawn waves.",
+      "quiz": {
+        "title": "Coroutines Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What return type must a coroutine method have?",
+            "options": [
+              "void",
+              "IEnumerator",
+              "Coroutine",
+              "Task"
+            ],
+            "answer": "IEnumerator"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "____(...) is the method you call to begin running a coroutine.",
+            "options": [],
+            "answer": "StartCoroutine"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "yield return null pauses a coroutine for exactly one frame.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "advanced-coroutine-patterns",
+      "title": "Advanced Coroutine Patterns",
+      "order": 3,
+      "content": "# Advanced Coroutine Patterns\n\nReal coroutines usually need more control than a single loop: waiting on conditions, nesting, and stopping cleanly.\n\n```csharp\nIEnumerator SpawnWave(int count)\n{\n    for (int i = 0; i < count; i++)\n    {\n        Instantiate(enemyPrefab, RandomSpawnPoint(), Quaternion.identity);\n        yield return new WaitForSeconds(1.5f);\n    }\n}\n\nIEnumerator WaitForPlayerReady()\n{\n    yield return new WaitUntil(() => player.IsReady);\n    Debug.Log(\"Player ready, starting match\");\n}\n```\n\n## Useful yield instructions\n\n| Instruction | Waits for |\n|---|---|\n| `yield return null` | next frame |\n| `yield return new WaitForSeconds(t)` | t seconds, scaled by `Time.timeScale` |\n| `yield return new WaitForSecondsRealtime(t)` | t real seconds, ignores pause |\n| `yield return new WaitUntil(() => condition)` | condition to become true |\n| `yield return StartCoroutine(Other())` | a nested coroutine to finish |\n\n## Stopping coroutines\n\n```csharp\nCoroutine handle = StartCoroutine(SpawnWave(5));\n...\nStopCoroutine(handle);   // stop a specific one\nStopAllCoroutines();      // stop everything running on this MonoBehaviour\n```\n\nA coroutine also stops automatically if the GameObject it's running on is destroyed or disabled.",
+      "quiz": {
+        "title": "Advanced Coroutines Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which yield instruction pauses a coroutine until a condition becomes true?",
+            "options": [
+              "WaitForSeconds",
+              "WaitUntil",
+              "WaitForFixedUpdate",
+              "WaitForEndOfFrame"
+            ],
+            "answer": "WaitUntil"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "____() stops every coroutine currently running on a MonoBehaviour.",
+            "options": [],
+            "answer": "StopAllCoroutines"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A running coroutine keeps executing even after the GameObject it belongs to is destroyed.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "intro-to-multiplayer-netcode-for-gameobjects",
+      "title": "Intro to Multiplayer: Netcode for GameObjects",
+      "order": 4,
+      "content": "# Intro to Multiplayer: Netcode for GameObjects\n\nUnity's official networking layer is **Netcode for GameObjects (NGO)**. It uses a client-server model: one instance is the **server** (often also a **host**, meaning server + local client), everyone else connects as **clients**.\n\nTo make a GameObject network-aware, add a `NetworkObject` component to its prefab, and give it scripts that inherit from `NetworkBehaviour` instead of `MonoBehaviour`.\n\n```csharp\nusing Unity.Netcode;\n\npublic class PlayerHealth : NetworkBehaviour\n{\n    public override void OnNetworkSpawn()\n    {\n        if (IsOwner)\n            Debug.Log(\"This is my player!\");\n    }\n}\n```\n\n## Key concepts\n\n- **NetworkManager** is the singleton that starts hosting/joining and spawns networked prefabs.\n- **NetworkObject** identifies a GameObject across the network, only prefabs with one can be spawned with `NetworkObject.Spawn()`.\n- `IsServer`, `IsClient`, `IsOwner`, `IsHost` are booleans on every `NetworkBehaviour` telling you which role the current instance is playing.\n- Only the server should spawn, despawn, or authoritatively change networked state, clients request changes, the server decides.\n\n```csharp\nGameObject enemy = Instantiate(enemyPrefab);\nenemy.GetComponent<NetworkObject>().Spawn(); // server-only\n```",
+      "quiz": {
+        "title": "Netcode Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which component must a prefab have before it can be spawned across the network?",
+            "options": [
+              "NetworkVariable",
+              "NetworkObject",
+              "NetworkManager",
+              "ServerRpc"
+            ],
+            "answer": "NetworkObject"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A networked script inherits from ____ instead of MonoBehaviour.",
+            "options": [],
+            "answer": "NetworkBehaviour"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A host is a server and a local client running at the same time.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "server-client-rpcs",
+      "title": "Server & Client RPCs",
+      "order": 5,
+      "content": "# Server & Client RPCs\n\nAn **RPC** (Remote Procedure Call) lets one machine trigger a method that runs on another. Netcode gives you two directions.\n\n```csharp\npublic class PlayerShooter : NetworkBehaviour\n{\n    [ServerRpc]\n    void FireServerRpc()\n    {\n        // Runs on the server only, the server owns the truth.\n        SpawnBullet();\n        FireClientRpc();\n    }\n\n    [ClientRpc]\n    void FireClientRpc()\n    {\n        // Runs on every client, e.g. to play a muzzle-flash effect.\n        PlayMuzzleFlash();\n    }\n\n    void Update()\n    {\n        if (IsOwner && Input.GetButtonDown(\"Fire1\"))\n            FireServerRpc();\n    }\n}\n```\n\n## The rules\n\n- `[ServerRpc]` methods are called by a client (usually the owner) but always execute on the server, name them with a `ServerRpc` suffix.\n- `[ClientRpc]` methods are called by the server and execute on every connected client, suffix `ClientRpc`.\n- By default a `ServerRpc` can only be called by the object's **owner**, set `RequireOwnership = false` to allow any client to call it.\n- Never trust a client to decide game outcomes, a client calls a `ServerRpc` to *request* an action, the server validates and applies it, then tells everyone via a `ClientRpc`.",
+      "quiz": {
+        "title": "RPCs Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A method marked [ServerRpc] always executes on which machine?",
+            "options": [
+              "The caller's machine",
+              "Every client",
+              "The server",
+              "A random client"
+            ],
+            "answer": "The server"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Setting RequireOwnership = false on a ServerRpc lets ____ client call it, not just the owner.",
+            "options": [],
+            "answer": "any"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A client should be trusted to directly decide game-changing outcomes for performance reasons.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "networkvariables-and-state-synchronization",
+      "title": "NetworkVariables and State Synchronization",
+      "order": 6,
+      "content": "# NetworkVariables and State Synchronization\n\nRPCs are one-shot events. For continuous state, like health, score, or position, that every client should always see the current value of, use a `NetworkVariable<T>`.\n\n```csharp\npublic class PlayerHealth : NetworkBehaviour\n{\n    public NetworkVariable<int> Health = new NetworkVariable<int>(\n        100,\n        NetworkVariableReadPermission.Everyone,\n        NetworkVariableWritePermission.Server\n    );\n\n    void Start()\n    {\n        Health.OnValueChanged += (oldValue, newValue) =>\n        {\n            Debug.Log($\"Health changed: {oldValue} -> {newValue}\");\n        };\n    }\n\n    [ServerRpc]\n    public void TakeDamageServerRpc(int amount)\n    {\n        Health.Value -= amount; // only the server may write\n    }\n}\n```\n\n## The pieces\n\n- A `NetworkVariable<T>` automatically syncs its value from the server to every client, no manual RPC needed.\n- `ReadPermission` controls who can see it (usually `Everyone`), `WritePermission` controls who can change it (almost always `Server`, to prevent cheating).\n- `OnValueChanged` fires on every machine, server and clients, whenever the value updates, a good place to refresh UI or trigger effects.\n- Combine with coroutines when you need timed, server-authoritative changes, e.g. a coroutine on the server that ticks damage-over-time and writes to a `NetworkVariable` each interval.",
+      "quiz": {
+        "title": "NetworkVariables Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why should WritePermission on a NetworkVariable almost always be Server?",
+            "options": [
+              "It runs faster that way",
+              "To prevent clients from cheating by changing shared state directly",
+              "Clients cannot write to variables at all",
+              "It is required for compilation"
+            ],
+            "answer": "To prevent clients from cheating by changing shared state directly"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ event on a NetworkVariable fires on every machine when its value changes.",
+            "options": [],
+            "answer": "OnValueChanged"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A NetworkVariable requires you to write a ClientRpc every time its value changes in order to sync it.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-networked-countdown-spawner",
+      "title": "Final Project: Networked Countdown Spawner",
+      "order": 7,
+      "content": "# Final Project: Networked Countdown Spawner\n\nCombine everything from this course into one networked feature.\n\n## Requirements\n\n1. Create a networked prefab (`NetworkObject` + a `NetworkBehaviour` script) representing an enemy spawner.\n2. On the server, run a **coroutine** that counts down from 5 seconds using `WaitForSeconds`, syncing the remaining time to clients through a `NetworkVariable<float>`.\n3. When the countdown reaches zero, the server should spawn an enemy prefab (`Instantiate` + `NetworkObject.Spawn()`) and restart the countdown.\n4. Expose a `[ServerRpc]` that lets any client request an immediate spawn (e.g. for testing), guarded so it only works before the match starts.\n5. Use a `[ClientRpc]` to play a sound or log a message on every client the moment an enemy spawns.\n\n## Stretch goals\n\n- Cap the number of enemies alive at once, checked server-side before spawning.\n- Show the synced countdown in on-screen UI using `NetworkVariable.OnValueChanged`.\n- Handle a client that joins mid-countdown, it should immediately see the current value, not start from zero.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

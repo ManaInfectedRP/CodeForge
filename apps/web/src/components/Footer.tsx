@@ -1,13 +1,15 @@
+'use client';
+
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { ContactModal } from './ContactModal';
-import { useLanguage, type Language } from '../context/LanguageContext';
-import { useCookieConsent } from '../context/CookieConsentContext';
+import { useLanguage, type Language } from '@/context/LanguageContext';
+import { useCookieConsent } from '@/context/CookieConsentContext';
 
 const translations = {
   en: {
     tagline: 'Kodstigen, a path forward in coding, by Sebastian Larsson.',
-    dashboard: 'Dashboard',
+    courses: 'Courses',
     blog: 'Blog',
     about: 'About',
     faq: 'FAQ',
@@ -17,7 +19,7 @@ const translations = {
   },
   sv: {
     tagline: 'Kodstigen, en väg framåt inom kodning, av Sebastian Larsson.',
-    dashboard: 'Översikt',
+    courses: 'Kurser',
     blog: 'Blogg',
     about: 'Om',
     faq: 'Vanliga frågor',
@@ -60,16 +62,16 @@ export function Footer() {
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
           <p>{t.tagline}</p>
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-slate-300">
-            <Link to="/dashboard" className="hover:text-white">
-              {t.dashboard}
+            <Link href="/courses" className="hover:text-white">
+              {t.courses}
             </Link>
-            <Link to="/blog" className="hover:text-white">
+            <Link href="/blog" className="hover:text-white">
               {t.blog}
             </Link>
-            <Link to="/about" className="hover:text-white">
+            <Link href="/about" className="hover:text-white">
               {t.about}
             </Link>
-            <Link to="/faq" className="hover:text-white">
+            <Link href="/faq" className="hover:text-white">
               {t.faq}
             </Link>
           </nav>
@@ -78,7 +80,7 @@ export function Footer() {
         <div className="mt-4 flex flex-col items-center gap-3 border-t border-slate-800 pt-4 text-xs sm:flex-row sm:justify-between">
           <p>&copy; {year} Kodstigen</p>
           <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-            <Link to="/privacy" className="hover:text-white">
+            <Link href="/privacy" className="hover:text-white">
               {t.privacy}
             </Link>
             <button type="button" onClick={openSettings} className="hover:text-white">

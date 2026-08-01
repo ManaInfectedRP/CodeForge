@@ -1,5 +1,7 @@
+'use client';
+
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { clearGoogleAnalyticsCookies, loadGoogleAnalytics } from '../lib/analytics';
+import { clearGoogleAnalyticsCookies, loadGoogleAnalytics } from '@/lib/analytics';
 
 export type ConsentStatus = 'unset' | 'granted' | 'denied';
 
@@ -17,14 +19,17 @@ interface CookieConsentContextValue {
 
 const CookieConsentContext = createContext<CookieConsentContextValue | null>(null);
 
-function readStoredStatus(): ConsentStatus {
-  const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
-  return stored === 'granted' || stored === 'denied' ? stored : 'unset';
-}
-
 export function CookieConsentProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<ConsentStatus>(readStoredStatus);
-  const [bannerOpen, setBannerOpen] = useState(() => readStoredStatus() === 'unset');
+  const [status, setStatus] = useState<ConsentStatus>('unset');
+  // The prerendered HTML can't know whether this visitor already decided, so the banner
+  // stays hidden until the stored decision has been read on the client.
+  const [bannerOpen, setBannerOpen] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'granted' || stored === 'denied') setStatus(stored);
+    else setBannerOpen(true);
+  }, []);
 
   useEffect(() => {
     if (status === 'granted') loadGoogleAnalytics();

@@ -1,0 +1,263 @@
+{
+  "slug": "build-asteroids-using-python-and-pygame",
+  "title": "Build Asteroids using Python and Pygame",
+  "description": "Build a clone of the classic Asteroids game using Pygame and object-oriented programming concepts. This guided project will help you understand how to use Pygame to create a game loop, handle user input, and manage game state. You'll also learn how to use object-oriented programming to create game objects and manage their interactions.",
+  "pathSlug": "python",
+  "pathName": "Python",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "pygame-setup-and-installation",
+      "title": "Pygame: Setup and Installation",
+      "order": 1,
+      "content": "# Pygame: Setup and Installation\n\nPygame is a popular Python library for building 2D games, handling graphics, sound, input, and timing so you don't have to write that from scratch. In this project, you'll build a clone of the classic arcade game **Asteroids**: a ship that rotates and thrusts through space, dodging (and eventually destroying) asteroids drifting across the screen.\n\n## Installing Pygame\n\nPygame doesn't run inside this course's browser sandbox (it needs a real window to draw into), so for this project you'll write and run code locally with a real Python install.\n\n```bash\npip install pygame\n```\n\nVerify it installed correctly:\n\n```\nimport pygame\nprint(pygame.ver)\n```\n\n## Opening a window\n\nEvery Pygame program starts the same way: initialize the library, create a window (called a **surface**), and give it a title.\n\n```\nimport pygame\n\npygame.init()\n\nWIDTH, HEIGHT = 800, 600\nscreen = pygame.display.set_mode((WIDTH, HEIGHT))\npygame.display.set_caption(\"Asteroids\")\n```\n\n- `pygame.init()` sets up every Pygame subsystem (display, sound, input) in one call.\n- `pygame.display.set_mode((width, height))` creates the actual window and returns a `Surface` you'll draw everything onto.\n- Nothing shows up yet, and the window will look \"frozen\"/unresponsive, that's because there's no loop keeping it open and processing events, which is exactly what the next lesson builds.\n\n> [!NOTE]\n> Running this script as-is will open a window and then immediately close it (or hang, depending on your OS), that's expected. A real window needs a **game loop** to stay open and respond to events, covered next.",
+      "quiz": {
+        "title": "Pygame Setup Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which function creates the actual game window in Pygame?",
+            "options": [
+              "pygame.init()",
+              "pygame.display.set_mode()",
+              "pygame.window.create()",
+              "pygame.new_screen()"
+            ],
+            "answer": "pygame.display.set_mode()"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "pygame.init() must be called before using most other Pygame features.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "pygame.display.set_mode() returns a ____ that you draw everything onto.",
+            "options": [],
+            "answer": "surface"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "the-game-loop",
+      "title": "The Game Loop",
+      "order": 2,
+      "content": "# The Game Loop\n\nEvery real-time game (not just Asteroids) is built around one core idea: the **game loop**, an endless cycle that processes input, updates state, and draws the next frame, over and over, many times per second.\n\n## The three phases\n\n```\nimport pygame\n\npygame.init()\nscreen = pygame.display.set_mode((800, 600))\nclock = pygame.time.Clock()\n\nrunning = True\nwhile running:\n    # 1. Handle input/events\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            running = False\n\n    # 2. Update game state\n    # (nothing to update yet)\n\n    # 3. Draw the frame\n    screen.fill((10, 10, 30))  # dark space background\n    pygame.display.flip()\n\n    clock.tick(60)  # cap the loop at 60 frames per second\n\npygame.quit()\n```\n\n- **Handle events**: `pygame.event.get()` drains the queue of everything that happened since the last frame (key presses, window close, etc). Without checking for `pygame.QUIT`, clicking the window's close button would do nothing.\n- **Update**: where you'll move the player, move asteroids, check collisions, this lesson's loop doesn't update anything yet, but the slot is there.\n- **Draw**: `screen.fill(...)` clears the previous frame to a solid color, then `pygame.display.flip()` actually shows everything you've drawn since the last flip, nothing is visible on screen until you call it.\n\n## Why clock.tick(60)?\n\n```\nclock = pygame.time.Clock()\n# ... inside the loop:\nclock.tick(60)\n```\n\n`clock.tick(60)` pauses just long enough to cap the loop at 60 iterations per second. Without it, the loop would run as fast as the CPU allows, hundreds or thousands of times per second, burning a full CPU core and making movement speed depend on how fast the computer happens to be. Capping the frame rate keeps the game's speed consistent across different machines.\n\n> [!WARNING]\n> Forgetting to call `pygame.event.get()` at all (not just skipping the QUIT check) makes the OS think the program has hung, since it isn't responding. Always drain the event queue every frame, even if you don't care about most of the events in it.",
+      "quiz": {
+        "title": "Game Loop Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does clock.tick(60) do?",
+            "options": [
+              "Draws 60 asteroids",
+              "Caps the loop at 60 iterations per second",
+              "Waits 60 seconds before starting",
+              "Counts the player's score"
+            ],
+            "answer": "Caps the loop at 60 iterations per second"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "pygame.display.flip() must be called for anything drawn that frame to actually appear on screen.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "____.event.get() drains the queue of input/window events since the last frame.",
+            "options": [],
+            "answer": "pygame"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "the-player-class",
+      "title": "The Player Class",
+      "order": 3,
+      "content": "# The Player Class\n\nWith the loop running, it's time to put something on screen: the player's ship. This is also where **object-oriented programming** starts paying off, every asteroid and bullet you add later will follow the same pattern as this `Player` class.\n\n## Defining the class\n\n```\nimport math\nimport pygame\n\nclass Player:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n        self.angle = 0          # degrees, 0 = facing up\n        self.speed = 0\n        self.radius = 15\n\n    def rotate(self, direction):\n        self.angle += direction * 4  # degrees per frame\n\n    def thrust(self):\n        self.speed = min(self.speed + 0.15, 6)  # accelerate, capped at a max speed\n\n    def update(self):\n        radians = math.radians(self.angle)\n        self.x += -math.sin(radians) * self.speed\n        self.y += math.cos(radians) * self.speed\n        self.speed *= 0.99  # gentle drag, so the ship coasts to a stop instead of forever\n\n    def draw(self, screen):\n        radians = math.radians(self.angle)\n        tip = (self.x + math.sin(radians) * self.radius, self.y - math.cos(radians) * self.radius)\n        left = (self.x - math.cos(radians) * self.radius * 0.6, self.y - math.sin(radians) * self.radius * 0.6)\n        right = (self.x + math.cos(radians) * self.radius * 0.6, self.y + math.sin(radians) * self.radius * 0.6)\n        pygame.draw.polygon(screen, (255, 255, 255), [tip, left, right])\n```\n\n- `__init__` stores the ship's position (`x`, `y`), facing `angle`, current `speed`, and a `radius` you'll reuse for collision checks later.\n- `rotate` and `thrust` don't move the ship directly, they just change its angle/speed, `update` is what actually applies that to the position every frame, using basic trigonometry to convert an angle into an x/y direction.\n- `draw` computes three points (nose and two rear corners) from the ship's angle and position, then hands them to `pygame.draw.polygon` to render a simple triangle ship, classic Asteroids style.\n\n## Wiring it into the loop\n\n```\nplayer = Player(400, 300)\n\nrunning = True\nwhile running:\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            running = False\n\n    keys = pygame.key.get_pressed()\n    if keys[pygame.K_LEFT]:\n        player.rotate(-1)\n    if keys[pygame.K_RIGHT]:\n        player.rotate(1)\n    if keys[pygame.K_UP]:\n        player.thrust()\n\n    player.update()\n\n    screen.fill((10, 10, 30))\n    player.draw(screen)\n    pygame.display.flip()\n    clock.tick(60)\n```\n\n`pygame.key.get_pressed()` returns the state of *every* key as a list-like object, checking `keys[pygame.K_LEFT]` each frame (rather than only reacting to individual key-down events) is what gives you smooth, held-down rotation and thrust instead of one press = one tiny nudge.\n\n> [!TIP]\n> Notice `rotate`/`thrust` only change `angle`/`speed`, while `update` is the only method that touches `x`/`y`. Separating \"what changed\" from \"apply the change\" like this makes it much easier to add things like screen-wrap or drag later without touching your input-handling code.",
+      "quiz": {
+        "title": "Player Class Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which function lets you check every frame whether a key is currently held down?",
+            "options": [
+              "pygame.event.get()",
+              "pygame.key.get_pressed()",
+              "pygame.key.was_pressed()",
+              "pygame.QUIT"
+            ],
+            "answer": "pygame.key.get_pressed()"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "In the Player class, the rotate() and thrust() methods directly change the ship's x and y position.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "pygame.draw.____(screen, color, points) draws a shape from a list of (x, y) points, used here for the ship.",
+            "options": [],
+            "answer": "polygon"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "asteroids",
+      "title": "Asteroids",
+      "order": 4,
+      "content": "# Asteroids\n\nA ship with nothing to dodge isn't much of a game. This lesson adds the asteroids themselves, and a screen-wrapping trick that both the ship and asteroids will share.\n\n## An Asteroid class\n\n```\nimport random\nimport pygame\n\nclass Asteroid:\n    def __init__(self, x, y, size=40):\n        self.x = x\n        self.y = y\n        self.size = size\n        self.dx = random.uniform(-2, 2)\n        self.dy = random.uniform(-2, 2)\n\n    def update(self, width, height):\n        self.x = (self.x + self.dx) % width   # wrap around the left/right edges\n        self.y = (self.y + self.dy) % height  # wrap around the top/bottom edges\n\n    def draw(self, screen):\n        pygame.draw.circle(screen, (160, 160, 160), (int(self.x), int(self.y)), self.size, width=2)\n```\n\n`self.x % width` is the key trick: Python's modulo operator wraps a value that goes past `width` back around to `0`, and a negative value back around to just under `width`. Applying it to both `x` and `y` every frame gives you the classic Asteroids screen-wrap for free, drift off the right edge, and you reappear on the left.\n\n## Spawning a field of them\n\n```\ndef spawn_asteroids(count, width, height):\n    asteroids = []\n    for _ in range(count):\n        x = random.uniform(0, width)\n        y = random.uniform(0, height)\n        asteroids.append(Asteroid(x, y))\n    return asteroids\n\nasteroids = spawn_asteroids(5, 800, 600)\n```\n\n## Updating and drawing all of them\n\n```\nrunning = True\nwhile running:\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            running = False\n\n    # ... player input handling from the previous lesson ...\n    player.update()\n\n    for asteroid in asteroids:\n        asteroid.update(800, 600)\n\n    screen.fill((10, 10, 30))\n    player.draw(screen)\n    for asteroid in asteroids:\n        asteroid.draw(screen)\n    pygame.display.flip()\n    clock.tick(60)\n```\n\nLooping over `asteroids` twice, once to `update()` and once to `draw()`, is deliberate: every asteroid's position should be fully updated *before* any of them are drawn, otherwise you'd occasionally draw a half-updated frame (some asteroids moved, some not yet), causing visible stutter.\n\n> [!NOTE]\n> Right now the ship can fly straight through an asteroid with nothing happening, that's intentional for this lesson. Collision detection comes in a later lesson, once there's also something (a bullet) to collide with.",
+      "quiz": {
+        "title": "Asteroids Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does self.x % width accomplish in Asteroid.update?",
+            "options": [
+              "Slows the asteroid down over time",
+              "Wraps the position back on-screen when it goes past an edge",
+              "Rotates the asteroid",
+              "Deletes the asteroid"
+            ],
+            "answer": "Wraps the position back on-screen when it goes past an edge"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The example loop updates every asteroid's position before drawing any of them, rather than updating and drawing one at a time.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "random.____(-2, 2) returns a random floating-point number between -2 and 2, used for each asteroid's drift speed.",
+            "options": [],
+            "answer": "uniform"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "shooting-bullets",
+      "title": "Shooting Bullets",
+      "order": 5,
+      "content": "# Shooting Bullets\n\nDodging is only half of Asteroids, next you'll give the ship a way to fight back.\n\n## A Bullet class\n\n```\nimport math\nimport pygame\n\nclass Bullet:\n    def __init__(self, x, y, angle):\n        self.x = x\n        self.y = y\n        radians = math.radians(angle)\n        self.dx = -math.sin(radians) * 10\n        self.dy = math.cos(radians) * -10\n        self.life = 60  # frames until it disappears, about 1 second at 60 FPS\n\n    def update(self):\n        self.x += self.dx\n        self.y += self.dy\n        self.life -= 1\n\n    def is_dead(self):\n        return self.life <= 0\n\n    def draw(self, screen):\n        pygame.draw.circle(screen, (255, 220, 100), (int(self.x), int(self.y)), 3)\n```\n\nA bullet reuses the same angle-to-direction math as the ship's `update`, fired at a fixed speed (`10`) in whatever direction the ship was facing at the moment it fired. The `life` counter, decremented every frame, is what makes bullets disappear on their own instead of flying forever, `is_dead()` gives the rest of the code a clean way to ask \"should this be removed yet?\".\n\n## Firing on spacebar, with a cooldown\n\n```\nbullets = []\ncooldown = 0\n\nrunning = True\nwhile running:\n    for event in pygame.event.get():\n        if event.type == pygame.QUIT:\n            running = False\n\n    keys = pygame.key.get_pressed()\n    if keys[pygame.K_SPACE] and cooldown == 0:\n        bullets.append(Bullet(player.x, player.y, player.angle))\n        cooldown = 15  # frames before you can fire again\n\n    if cooldown > 0:\n        cooldown -= 1\n\n    for bullet in bullets:\n        bullet.update()\n    bullets = [b for b in bullets if not b.is_dead()]\n\n    # ... player and asteroid updates from earlier lessons ...\n\n    screen.fill((10, 10, 30))\n    for bullet in bullets:\n        bullet.draw(screen)\n    pygame.display.flip()\n    clock.tick(60)\n```\n\nTwo details are doing the real work here:\n\n- **The cooldown counter** stops holding spacebar from firing a new bullet every single frame (60 a second!), a fixed delay between shots is what makes it feel like a weapon instead of a hose.\n- **The list comprehension** `[b for b in bullets if not b.is_dead()]` rebuilds the `bullets` list containing only the ones still alive, this is the standard Python idiom for \"remove items matching a condition\" from a list, since you can't safely remove items from a list while iterating over it directly.\n\n> [!TIP]\n> This same \"append when spawned, filter out when dead\" pattern is exactly how you'll manage destroyed asteroids in the next lesson too, it's worth getting comfortable with here first.",
+      "quiz": {
+        "title": "Bullets Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why does the bullet-firing code track a cooldown counter?",
+            "options": [
+              "To make bullets fly faster",
+              "To prevent firing a new bullet on every single frame while spacebar is held",
+              "To count the player's score",
+              "To slow down the asteroids"
+            ],
+            "answer": "To prevent firing a new bullet on every single frame while spacebar is held"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "[b for b in bullets if not b.is_dead()] creates a new list containing only the bullets that are still alive.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A bullet's ____ counter decreases by one every frame and determines when it disappears.",
+            "options": [],
+            "answer": "life"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "collisions-score-and-game-over",
+      "title": "Collisions, Score, and Game Over",
+      "order": 6,
+      "content": "# Collisions, Score, and Game Over\n\nWith bullets and asteroids both on screen, it's time to make them actually interact: destroy asteroids you shoot, and end the game if one hits your ship.\n\n## Distance-based collision detection\n\n```\nimport math\n\ndef distance(a, b):\n    return math.hypot(a.x - b.x, a.y - b.y)\n```\n\nFor circular objects (ships, asteroids, bullets all drawn as circles/triangles with a `radius`), you don't need pixel-perfect collision, just check whether the distance between two centers is less than the sum of their radii:\n\n```\ndef circles_collide(a, b):\n    return distance(a, b) < (a.radius + b.radius)\n```\n\n## Bullets destroying asteroids\n\n```\nscore = 0\n\nfor bullet in bullets:\n    for asteroid in asteroids:\n        if distance(bullet, asteroid) < asteroid.size:\n            bullet.life = 0        # mark the bullet dead so it gets filtered out\n            asteroid.hit = True    # mark this asteroid for removal\n            score += 100\n\nasteroids = [a for a in asteroids if not getattr(a, 'hit', False)]\nbullets = [b for b in bullets if not b.is_dead()]\n```\n\nRather than removing items from `asteroids`/`bullets` in the middle of the nested loop (which corrupts the loop you're iterating over), the pattern is the same as the bullet-cleanup from the last lesson: mark things as \"should be removed\" first, then filter both lists once, after the collision checks are done.\n\n## Ending the game\n\n```\ngame_over = False\n\nfor asteroid in asteroids:\n    if circles_collide(player, asteroid):\n        game_over = True\n\nif game_over:\n    font = pygame.font.SysFont(None, 64)\n    text = font.render(\"GAME OVER\", True, (255, 60, 60))\n    screen.blit(text, (250, 260))\n```\n\n`pygame.font.SysFont(None, 64)` loads the operating system's default font at size 64, `.render(text, antialias, color)` turns a string into a drawable `Surface`, and `screen.blit(surface, position)` is how you draw *any* image or rendered text onto the screen, it's the same function you'd use to draw a sprite image.\n\n> [!WARNING]\n> Once `game_over` is `True`, this snippet still keeps calling `player.update()`/`asteroid.update()` every frame unless you guard those calls too, remember to stop updating gameplay (but keep the event loop and drawing running) once the game has ended, otherwise the ship and asteroids keep moving invisibly under your \"GAME OVER\" text.",
+      "quiz": {
+        "title": "Collisions & Game Over Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does screen.blit(surface, position) do?",
+            "options": [
+              "Deletes a surface",
+              "Draws one surface (an image or rendered text) onto another at a position",
+              "Creates a new window",
+              "Detects a collision"
+            ],
+            "answer": "Draws one surface (an image or rendered text) onto another at a position"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Two circular objects are considered colliding when the distance between their centers is less than the sum of their radii.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "math.____(dx, dy) computes the straight-line distance between two points from their x and y differences.",
+            "options": [],
+            "answer": "hypot"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-finish-your-asteroids-game",
+      "title": "Final Project: Finish Your Asteroids Game",
+      "order": 7,
+      "content": "# Final Project: Finish Your Asteroids Game\n\nYou now have every piece: a ship that rotates and thrusts, asteroids that drift and wrap around the screen, bullets with a cooldown, and collision detection that awards score and ends the game. Put it all together into a complete, playable game.\n\n## Requirements\n\n1. Combine the `Player`, `Asteroid`, and `Bullet` classes from earlier lessons into a single game with one game loop running at 60 FPS.\n2. Display the current score on screen every frame (reuse the `pygame.font`/`screen.blit` approach from the Collisions lesson).\n3. When an asteroid is destroyed by a bullet, split it into two smaller asteroids (half the `size`, each with a new random `dx`/`dy`) if it's above some minimum size, instead of just disappearing, this is the classic Asteroids \"splitting\" mechanic.\n4. Track a `lives` count (start at 3). When the player's ship collides with an asteroid, lose a life and respawn the ship at the center of the screen instead of ending immediately, only show \"GAME OVER\" once lives reach 0.\n5. Add a simple start screen (\"Press SPACE to start\") shown before the game loop begins updating gameplay.\n\n## Stretch goals\n\n- Make the ship briefly invulnerable (and visually flash) for a second after respawning, so it can't immediately lose another life to an asteroid it spawned on top of.\n- Add a basic sound effect for firing and for an asteroid being destroyed with `pygame.mixer`.\n- Increase difficulty over time by spawning additional asteroids the longer the player survives.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.",
+      "requiresSubmission": true
+    }
+  ]
+}

@@ -1,0 +1,297 @@
+{
+  "slug": "linux-fundamentals",
+  "title": "Linux Fundamentals",
+  "description": "The command line, filesystems, processes, permissions, and setting up a real development environment.",
+  "pathSlug": "linux",
+  "pathName": "Linux",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "the-command-line",
+      "title": "The Command Line",
+      "order": 1,
+      "content": "# The Command Line\n\nA command-line interface (CLI) lets you control a computer by typing text commands instead of clicking through menus. It looks intimidating at first, but it's often faster and, crucially, **scriptable**: anything you can type, you can save and re-run automatically.\n\n## Why text beats clicking\n\n- A CLI command can be copy-pasted, shared, and reproduced exactly, a screenshot of \"click here, then here\" cannot.\n- Commands compose: the output of one command can feed directly into another (more on that soon).\n- Almost every server in the world has no graphical interface at all, the CLI isn't a retro curiosity, it's how most computing actually happens.\n\n## Your first commands\n\n```bash\nwhoami        # who am I logged in as?\npwd           # print working directory, where am I?\necho \"hi\"     # print text\ndate          # current date and time\n```\n\nEvery command follows roughly the same shape: a program name, optionally followed by **flags** (options, usually starting with `-`) and **arguments** (the things it operates on):\n\n```bash\nls -l /home\n# ^command  ^flag  ^argument\n```\n\n`ls` lists files, `-l` is a flag asking for the \"long\" (detailed) format, `/home` is the argument telling it which directory to list. You'll see this exact pattern, command, flags, arguments, in nearly every tool covered in this course.\n\n> [!TIP]\n> Stuck on what a command does or which flags it accepts? Almost every command supports `--help`, e.g. `ls --help`. That's always your first move, not memorization.",
+      "quiz": {
+        "title": "Command Line Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the main advantage of CLI commands over clicking through a GUI?",
+            "options": [
+              "CLI commands always run faster on the CPU",
+              "They can be scripted, copied, and reproduced exactly",
+              "GUIs do not exist on servers",
+              "There is no real advantage"
+            ],
+            "answer": "They can be scripted, copied, and reproduced exactly"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "In \"ls -l /home\", -l is an argument and /home is a flag.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "To see the current working directory in the terminal, you run: ____",
+            "options": [],
+            "answer": "pwd"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "filesystems",
+      "title": "Filesystems",
+      "order": 2,
+      "content": "# Filesystems\n\nA Linux filesystem is organized as a single tree, starting from one root directory, `/`, with everything else nested underneath it, unlike Windows there's no separate \"C:\" drive.\n\n```\n/\n├── home/\n│   └── ada/       # your personal files usually live here\n├── etc/            # system configuration files\n├── usr/            # installed programs\n└── tmp/            # temporary files, cleared periodically\n```\n\n## Navigating\n\n```bash\ncd /home/ada       # change directory (absolute path, starts with /)\ncd Documents       # relative path, relative to where you already are\ncd ..              # go up one level\ncd ~               # jump to your home directory\nls -la             # list files, including hidden ones (-a) with details (-l)\n```\n\nAn **absolute path** always starts from `/` and works no matter where you currently are. A **relative path** is interpreted starting from your current directory, so `cd Documents` only works if `Documents` exists right where you're standing.\n\n## Managing files\n\n```bash\nmkdir projects           # create a directory\ntouch notes.txt          # create an empty file\ncp notes.txt backup.txt  # copy\nmv notes.txt todo.txt    # rename/move\nrm backup.txt            # delete a file\nrm -r old_folder         # delete a directory and everything in it (recursive)\n```\n\n> [!WARNING]\n> `rm` does **not** move files to a trash bin, it deletes them immediately and permanently. `rm -r` on the wrong directory is one of the most common ways people lose real work, always double-check the path before you hit enter.",
+      "quiz": {
+        "title": "Filesystems Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does a relative path like \"Documents\" (without a leading /) depend on?",
+            "options": [
+              "Your username",
+              "Your current working directory",
+              "The system clock",
+              "Nothing, it always resolves the same way"
+            ],
+            "answer": "Your current working directory"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Files deleted with rm on Linux are moved to a recoverable trash/recycle bin by default.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The command to create a new, empty directory is: ____ <name>",
+            "options": [],
+            "answer": "mkdir"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "programs",
+      "title": "Programs",
+      "order": 3,
+      "content": "# Programs\n\nRunning a program from the command line is more nuanced than it looks, the shell has to first figure out **where** the program you typed actually lives.\n\n## PATH\n\nWhen you type `ls`, the shell doesn't magically know where the `ls` program is, it searches a list of directories stored in an environment variable called `PATH`:\n\n```bash\necho $PATH\n# /usr/local/bin:/usr/bin:/bin\n\nwhich ls\n# /usr/bin/ls, the first match found while searching PATH in order\n```\n\n`PATH` is a colon-separated list of directories, the shell checks each one in order until it finds an executable file with that name. This is why installing a new tool sometimes requires adding its folder to `PATH`, otherwise typing its name does nothing but \"command not found\".\n\n## Running local scripts\n\nA script in your current directory is deliberately **not** found automatically, even if you're standing right next to it, this is a safety feature so a malicious file named `ls` sitting in a random folder can't silently hijack your commands:\n\n```bash\n./deploy.sh     # explicit \"run the file right here\", the ./ is required\nbash deploy.sh  # or, explicitly hand it to the bash interpreter\n```\n\n## Executable permission\n\nA script also needs the **executable bit** set before `./` will run it (more on permissions two lessons from now):\n\n```bash\nchmod +x deploy.sh\n./deploy.sh\n```\n\nWithout `chmod +x`, you'll get a \"permission denied\" error even though the file exists and is readable.",
+      "quiz": {
+        "title": "Programs Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is PATH?",
+            "options": [
+              "The current working directory",
+              "A colon-separated list of directories the shell searches for programs",
+              "A single file containing every installed program",
+              "A Linux permission level"
+            ],
+            "answer": "A colon-separated list of directories the shell searches for programs"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A script in your current directory runs automatically just by typing its name, the same as a PATH command.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "To run a script literally sitting in your current directory, you type ____./deploy.sh",
+            "options": [],
+            "answer": ""
+          }
+        ]
+      }
+    },
+    {
+      "slug": "input-output",
+      "title": "Input/Output",
+      "order": 4,
+      "content": "# Input/Output\n\nEvery program has three standard I/O streams: **stdin** (input), **stdout** (normal output), and **stderr** (error output). Understanding them is what unlocks the CLI's real power, connecting simple programs together to build something bigger.\n\n## Redirection\n\n```bash\necho \"hello\" > out.txt     # redirect stdout, overwrites out.txt\necho \"world\" >> out.txt    # append instead of overwrite\nsort < names.txt            # redirect stdin FROM a file\ncat missing.txt 2> err.log  # redirect stderr (file descriptor 2) to a file\n```\n\n`>` and `>>` both aim a program's output at a file instead of your screen, the difference is whether it replaces or adds to existing content. `<` does the reverse, feeding a file's contents in as if you'd typed them.\n\n## Pipes\n\nA pipe (`|`) connects one program's stdout directly to the next program's stdin, no temp file needed:\n\n```bash\ncat access.log | grep \"ERROR\" | wc -l\n```\n\nRead this left to right: print the log file, filter to lines containing \"ERROR\", count how many lines are left. Each command does one small job well, and piping chains them into something none of them could do alone, this is the core Unix philosophy.\n\n## Arguments and flags recap\n\n```bash\ngrep -i \"error\" access.log   # -i = case-insensitive flag\ngrep -c \"error\" access.log   # -c = count matches instead of printing them\n```\n\nMost CLI tools accept flags to change their behavior without changing what you're fundamentally asking them to do, always check `--help` when you need a tool to behave slightly differently than its default.",
+      "quiz": {
+        "title": "Input/Output Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the pipe operator (|) do?",
+            "options": [
+              "Deletes both files",
+              "Connects one command's stdout to the next command's stdin",
+              "Runs two commands at the exact same instant",
+              "Compares two files for differences"
+            ],
+            "answer": "Connects one command's stdout to the next command's stdin"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Using >> instead of > appends to a file instead of overwriting it.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The three standard I/O streams every program has are stdin, stdout, and ____.",
+            "options": [],
+            "answer": "stderr"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "local-cli",
+      "title": "Local CLI",
+      "order": 5,
+      "content": "# Local CLI\n\nEverything so far works the same in a browser-based sandbox. Real systems work involves your own machine, so this lesson is a guided tour of what to set up locally.\n\n## A real terminal, and WSL on Windows\n\nmacOS and Linux both ship with a real terminal out of the box. On Windows, install **WSL** (Windows Subsystem for Linux), which runs a genuine Linux environment alongside Windows:\n\n```bash\nwsl --install\n```\n\nThis gets you a real `bash` shell, real Linux filesystem semantics, and every command in this course working exactly as shown, rather than an approximation.\n\n## Manual pages\n\nEvery standard command ships with a full manual, more detailed than `--help`:\n\n```bash\nman ls\n# space/f = next page, b = previous page, q = quit\n```\n\n## Interactive pagers\n\nCommands like `man`, and tools like `less`, are **pagers**, they show output one screen at a time instead of dumping it all at once:\n\n```bash\ncat huge_log.txt | less   # scroll through with arrow keys, q to quit\n```\n\n## Processes\n\nEvery running program is a **process**, with a unique process ID (PID):\n\n```bash\nps aux            # list running processes\ntop                # live, updating view of processes and resource use\nkill 4821          # ask a process to stop, by PID\n```\n\n## Users, root, and sudo\n\nLinux is multi-user by design. Regular users can't modify system files or other users' data, that requires the **root** user, the one account with unrestricted access:\n\n```bash\nwhoami             # your current user\nsudo apt update    # run one command AS root, temporarily, with a password prompt\n```\n\n`sudo` (\"superuser do\") is how you borrow root's power for a single command without permanently logging in as root, which is exactly the safer, auditable model almost every real system uses.\n\n> [!WARNING]\n> Running everyday commands as root \"just to avoid permission errors\" is a common beginner habit and a real safety risk, a typo in a root shell can damage the whole system. Use `sudo` per-command instead.",
+      "quiz": {
+        "title": "Local CLI Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does WSL let you do on Windows?",
+            "options": [
+              "Delete Linux permanently",
+              "Run a real Linux environment alongside Windows",
+              "Compile Windows programs faster",
+              "Replace the Windows terminal with cmd.exe"
+            ],
+            "answer": "Run a real Linux environment alongside Windows"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "sudo permanently logs you in as the root user for the rest of your session.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The one Linux account with unrestricted access to modify any file on the system is called ____.",
+            "options": [],
+            "answer": "root"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "permissions",
+      "title": "Permissions",
+      "order": 6,
+      "content": "# Permissions\n\nEvery file and directory on Linux has an owner, a group, and a set of permissions controlling who can read, write, or execute it.\n\n```bash\nls -l notes.txt\n# -rw-r--r-- 1 ada staff 128 Jan 5 10:00 notes.txt\n```\n\nThat first cryptic-looking column breaks down into four parts:\n\n```\n-  rw-  r--  r--\n│   │    │    │\n│   │    │    └─ others: read only\n│   │    └────── group: read only\n│   └─────────── owner (ada): read and write\n└─────────────── file type (- = regular file, d = directory)\n```\n\nEach group of three letters means **r**ead, **w**rite, **e**xecute, in that fixed order, a `-` means that permission is absent.\n\n## Changing permissions\n\n```bash\nchmod +x deploy.sh       # add execute permission for everyone\nchmod u+w notes.txt      # add write, but only for the (u)ser/owner\nchmod 644 notes.txt      # numeric form: owner rw-, group r--, others r--\n```\n\nThe numeric form adds up read (4) + write (2) + execute (1) per group: `6` = rw-, `7` = rwx, `4` = r--. `644` is an extremely common default for regular files, `755` for scripts and directories (execute lets you `cd` into a directory, not just list it).\n\n## Changing ownership\n\n```bash\nsudo chown ada:staff notes.txt   # change owner (ada) and group (staff)\n```\n\nChanging ownership requires root, since it's a security-sensitive operation, you can't just hand your files off to someone else's ownership without a privileged account authorizing it.",
+      "quiz": {
+        "title": "Permissions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In \"-rw-r--r--\", what permissions does the file's owner have?",
+            "options": [
+              "Read only",
+              "Read and write",
+              "Read, write, and execute",
+              "No permissions"
+            ],
+            "answer": "Read and write"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The numeric permission 644 grants the owner read+write, and group/others read-only.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The command to add execute permission to a script for everyone is: chmod ____ deploy.sh",
+            "options": [],
+            "answer": "+x"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "editors-and-packages",
+      "title": "Editors and Packages",
+      "order": 7,
+      "content": "# Editors and Packages\n\nThe last piece of a real development environment: editing files without a GUI, and installing software the Linux way.\n\n## Terminal text editors\n\nWhen you're already in a terminal (editing a config file on a remote server, for example), a terminal-based editor avoids switching context entirely:\n\n```bash\nnano notes.txt   # beginner-friendly, shortcuts shown on screen\nvim notes.txt    # ubiquitous, steeper learning curve, worth learning eventually\n```\n\n`nano` shows its keyboard shortcuts (like `^O` to save) right at the bottom of the screen, making it the easiest place to start. `vim` is nearly universal, it's preinstalled on almost every Linux server you'll ever SSH into, which is exactly why it's worth getting comfortable with over time even though `nano` is friendlier at first.\n\n## Package managers\n\nInstalling software on Linux almost never means downloading an installer from a website, a **package manager** fetches, installs, and keeps software up to date from a trusted repository:\n\n```bash\n# Debian/Ubuntu\nsudo apt update && sudo apt install git\n\n# macOS\nbrew install git\n\n# Cross-platform, no admin rights required\nwebi git\n```\n\n`apt` is Debian/Ubuntu's package manager, built into the OS. **Homebrew** (`brew`) is the de facto standard on macOS, and increasingly used on Linux too. **Webi** is a newer, simpler installer that doesn't require `sudo` at all, handy when you don't have admin rights on a machine.\n\n## Setting up a dev environment, end to end\n\n```bash\nsudo apt update\nsudo apt install git python3 build-essential\ngit --version\npython3 --version\n```\n\nThat's the complete pattern behind setting up almost any machine for development: update your package lists, install the tools you need by name, and verify each one with `--version`.",
+      "quiz": {
+        "title": "Editors and Packages Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the main advantage of installing software with a package manager instead of a website installer?",
+            "options": [
+              "It is always faster to download",
+              "It fetches trusted, versioned software and keeps it updatable from one place",
+              "It never requires any configuration",
+              "Package managers only work offline"
+            ],
+            "answer": "It fetches trusted, versioned software and keeps it updatable from one place"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "vim is preinstalled on almost every Linux server, which is part of why it is worth learning even though it has a steeper learning curve than nano.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "On Debian/Ubuntu, the command to install a package called git is: sudo apt ____ git",
+            "options": [],
+            "answer": "install"
+          }
+        ]
+      }
+    }
+  ]
+}

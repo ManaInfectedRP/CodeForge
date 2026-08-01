@@ -1,0 +1,263 @@
+{
+  "slug": "gdscript-fundamentals",
+  "title": "GDScript Fundamentals",
+  "description": "Godot's built-in scripting language: nodes, the scene tree, signals, and building real gameplay behavior.",
+  "pathSlug": "gdscript",
+  "pathName": "GDScript",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "introduction-to-gdscript-godot",
+      "title": "Introduction to GDScript & Godot",
+      "order": 1,
+      "content": "# Introduction to GDScript & Godot\n\n**Godot** is a free, open-source game engine, and **GDScript** is its built-in scripting language, designed specifically to feel natural for game development and to integrate tightly with the engine's editor.\n\n## Nodes and the scene tree\n\nEverything in a Godot game is a **node**: a sprite, a button, a sound player, even an abstract logic container. Nodes are arranged into a tree, and a saved tree of nodes is called a **scene**:\n\n```\nPlayer (CharacterBody2D)\n├── Sprite2D\n├── CollisionShape2D\n└── Camera2D\n```\n\nA scene can be instanced inside another scene, exactly like a reusable component, this is how a \"Player\" scene gets placed into a \"Level\" scene without duplicating its logic.\n\n## Your first script\n\n```gdscript\nextends Node2D\n\nfunc _ready():\n    print(\"Hello, Kodstigen!\")\n\nfunc _process(delta):\n    # runs every single frame, delta is the time since the last frame in seconds\n    pass\n```\n\n- `extends Node2D` attaches this script's behavior to a node of type `Node2D` (or anything that inherits from it), scripts in Godot are never standalone, they always extend some node type.\n- `_ready()` is a **lifecycle method** the engine calls automatically once, when the node first enters the running scene.\n- `_process(delta)` is called automatically every rendered frame, `delta` lets you write movement and animation that's consistent regardless of frame rate.\n\n> [!TIP]\n> Function names starting with an underscore, like `_ready` and `_process`, are **engine callbacks**, Godot calls them for you at the right moment, you never call them yourself directly.",
+      "quiz": {
+        "title": "Introduction to GDScript Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is a \"scene\" in Godot?",
+            "options": [
+              "A single image asset",
+              "A saved tree of nodes that can be instanced elsewhere",
+              "A sound effect",
+              "A compiled executable"
+            ],
+            "answer": "A saved tree of nodes that can be instanced elsewhere"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "_process(delta) is called automatically by the engine every frame.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The lifecycle method Godot calls automatically once, when a node first enters the running scene, is: _____()",
+            "options": [],
+            "answer": "_ready"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "variables-and-types",
+      "title": "Variables and Types",
+      "order": 2,
+      "content": "# Variables and Types\n\nGDScript is dynamically typed by default, like Python, but with **optional static typing** you can add for extra safety and editor autocompletion.\n\n```gdscript\nvar xp = 0              # dynamically typed, inferred as int\nvar name := \"Ada\"        # := infers AND locks in the type (String)\nvar health: float = 100.0 # explicit static type annotation\n\nxp += 10\n```\n\n`var xp = 0` works exactly like Python, no type is enforced. `var name := \"Ada\"` (with a colon before `=`) tells the compiler to infer the type once and then **enforce** it, assigning a number to `name` later becomes a compile-time error instead of a silent bug.\n\n## Exported variables\n\nA variable marked `@export` becomes editable directly in the Godot editor's Inspector panel, no code changes needed to tweak it:\n\n```gdscript\nextends CharacterBody2D\n\n@export var speed: float = 300.0\n@export var jump_velocity: float = -400.0\n```\n\nThis is one of GDScript's most distinctive features, a game designer with no programming background can tune `speed` and `jump_velocity` by dragging a slider in the editor, without ever opening this file.\n\n## Common built-in types\n\n```gdscript\nvar position := Vector2(100, 50)   # a 2D point/vector, everywhere in 2D games\nvar items := [\"sword\", \"shield\"]     # array\nvar stats := {\"str\": 10, \"dex\": 8}    # dictionary\n```\n\n`Vector2` isn't just a convenience class, it has built-in math operators (`+`, `-`, `*`) that work exactly as you'd expect mathematically, since 2D position and movement math is something almost every game script needs constantly.",
+      "quiz": {
+        "title": "Variables and Types Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does marking a variable with @export do?",
+            "options": [
+              "Makes it read-only",
+              "Makes it editable in the Godot editor's Inspector panel",
+              "Deletes it when the game exits",
+              "Converts it to a global variable"
+            ],
+            "answer": "Makes it editable in the Godot editor's Inspector panel"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "GDScript requires every variable to have an explicit static type declared.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The built-in type commonly used to represent a 2D point or movement vector is: ____",
+            "options": [],
+            "answer": "Vector2"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "control-flow-and-functions",
+      "title": "Control Flow and Functions",
+      "order": 3,
+      "content": "# Control Flow and Functions\n\nGDScript's syntax leans heavily on Python: indentation defines blocks, no curly braces, no semicolons.\n\n```gdscript\nvar xp = 45\n\nif xp >= 100:\n    print(\"Level up!\")\nelif xp >= 50:\n    print(\"Almost there\")\nelse:\n    print(\"Keep going\")\n```\n\n## Loops\n\n```gdscript\nfor i in range(5):\n    print(i)\n\nvar items = [\"sword\", \"shield\", \"potion\"]\nfor item in items:\n    print(item)\n\nvar tries = 0\nwhile tries < 3:\n    tries += 1\n```\n\n`for item in items` iterates directly over any array-like value, exactly like Python's `for x in list`.\n\n## Functions\n\n```gdscript\nfunc calculate_damage(base: int, multiplier: float = 1.0) -> int:\n    return int(base * multiplier)\n\nvar dmg = calculate_damage(10)        # 10, uses the default multiplier\nvar crit = calculate_damage(10, 2.0)   # 20\n```\n\n`multiplier: float = 1.0` gives the parameter a **default value**, callers can omit it entirely. `-> int` is an optional return-type annotation, purely for clarity and editor tooling, not enforced as strictly as some statically-typed languages.\n\n> [!TIP]\n> Because indentation is meaningful, mixing tabs and spaces in the same GDScript file causes real parse errors, not just style warnings. Configure your editor to use one or the other consistently.",
+      "quiz": {
+        "title": "Control Flow and Functions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What defines a code block in GDScript?",
+            "options": [
+              "Curly braces {}",
+              "The keyword \"block\"",
+              "Indentation, like Python",
+              "Semicolons"
+            ],
+            "answer": "Indentation, like Python"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A function parameter can be given a default value, making it optional for callers.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The keyword used to define a function in GDScript is: ____ calculate_damage(base):",
+            "options": [],
+            "answer": "func"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "signals",
+      "title": "Signals",
+      "order": 4,
+      "content": "# Signals\n\n**Signals** are Godot's event system, letting nodes communicate without directly knowing about each other, one of the most distinctive and important GDScript features to understand well.\n\n```gdscript\n# Health.gd, attached to a Player node\nextends Node\n\nsignal health_depleted\nsignal health_changed(new_value)\n\nvar health := 100\n\nfunc take_damage(amount: int):\n    health -= amount\n    health_changed.emit(health)\n    if health <= 0:\n        health_depleted.emit()\n```\n\n```gdscript\n# UI.gd, attached to a completely separate HUD node\nfunc _ready():\n    var player = get_node(\"/root/Game/Player\")\n    player.health_changed.connect(_on_health_changed)\n    player.health_depleted.connect(_on_player_died)\n\nfunc _on_health_changed(new_value):\n    print(\"Health is now: \", new_value)\n\nfunc _on_player_died():\n    print(\"Game over!\")\n```\n\n## Why signals instead of direct calls?\n\nThe `Health` script has **no idea** the UI even exists, it just `emit`s when something happens. The `UI` script `connect`s to those signals separately. This means the `Player`'s health logic and the `HUD`'s display logic are completely decoupled, you can add a second listener (a sound effect script, an achievement tracker) without touching `Health.gd` at all, and swap out the UI entirely without touching gameplay code.\n\nThis pattern (also called \"observer\" or \"pub/sub\" in other languages) is exactly why Godot projects tend to stay maintainable as they grow, systems talk *about* events, not directly *to* each other.",
+      "quiz": {
+        "title": "Signals Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the main benefit of using signals instead of one script calling another directly?",
+            "options": [
+              "Signals run faster than function calls",
+              "The emitting script does not need to know who, if anyone, is listening",
+              "Signals are required by the Godot compiler",
+              "Signals automatically save the game"
+            ],
+            "answer": "The emitting script does not need to know who, if anyone, is listening"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A script must know exactly which other node will receive a signal before it can emit it.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "To trigger a signal named health_depleted, you call: health_depleted.____()",
+            "options": [],
+            "answer": "emit"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "node-references-and-the-scene-tree",
+      "title": "Node References and the Scene Tree",
+      "order": 5,
+      "content": "# Node References and the Scene Tree\n\nA script attached to one node very often needs to reach other nodes nearby in the scene tree, to read their state or call their methods.\n\n```gdscript\nextends CharacterBody2D\n\n@onready var sprite = $Sprite2D\n@onready var collision_shape = $CollisionShape2D\n\nfunc _ready():\n    sprite.modulate = Color.RED\n```\n\n`$Sprite2D` is shorthand for `get_node(\"Sprite2D\")`, fetching a direct child node by name. `@onready` delays that lookup until the node has actually entered the scene tree, if you tried to grab `$Sprite2D` immediately when the script's variables are first declared, the child node might not exist yet.\n\n## Relative and absolute paths\n\n```gdscript\nvar sibling = get_node(\"../Enemy\")        # relative: up one level, then into Enemy\nvar anywhere = get_node(\"/root/Game/UI\")  # absolute: from the very root of the tree\n```\n\nRelative paths (`\"..\"` for parent, a name for a child) are more portable, since they don't break if the whole scene gets moved somewhere else in a larger tree, absolute paths are more explicit but brittle if the tree's structure changes.\n\n## Groups\n\nFor finding many unrelated nodes at once, node **groups** are usually cleaner than manual tree-walking:\n\n```gdscript\n# In the editor, add each enemy node to a group called \"enemies\"\nfor enemy in get_tree().get_nodes_in_group(\"enemies\"):\n    enemy.take_damage(10)\n```\n\nGroups decouple \"find all the enemies\" from the tree's exact shape entirely, new enemies just need to join the group, no code elsewhere needs to change.",
+      "quiz": {
+        "title": "Node References Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is $Sprite2D shorthand for?",
+            "options": [
+              "A new Sprite2D instance",
+              "get_node(\"Sprite2D\")",
+              "A global variable",
+              "An exported variable"
+            ],
+            "answer": "get_node(\"Sprite2D\")"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "@onready delays a node lookup until the node has actually entered the scene tree.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Finding all nodes tagged with a shared label, like \"enemies\", without manually walking the tree, is done with node ____.",
+            "options": [],
+            "answer": "groups"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "classes-and-inheritance",
+      "title": "Classes and Inheritance",
+      "order": 6,
+      "content": "# Classes and Inheritance\n\nBeyond scripts attached directly to nodes, GDScript supports full custom classes, letting you define reusable data types and share behavior through inheritance.\n\n```gdscript\n# item.gd\nclass_name Item\nextends Resource\n\n@export var name: String\n@export var value: int\n\nfunc describe() -> String:\n    return \"%s (%d gold)\" % [name, value]\n```\n\n`class_name Item` registers this script as a globally-available type named `Item`, usable anywhere in the project without an explicit `preload`. Extending `Resource` (rather than a scene node type) makes it a reusable data asset, perfect for things like item definitions that don't need a position in the game world.\n\n## Inheriting your own classes\n\n```gdscript\n# weapon.gd\nclass_name Weapon\nextends Item\n\n@export var damage: int\n\nfunc describe() -> String:\n    return super.describe() + \" - %d damage\" % damage\n```\n\n`Weapon extends Item` inherits `name`, `value`, and the base `describe()`, then **overrides** `describe()` with its own version. `super.describe()` calls the parent class's original implementation first, then extends its result, rather than throwing it away entirely, a common pattern when a subclass wants to *add to* behavior instead of fully replacing it.\n\n```gdscript\nvar sword = Weapon.new()\nsword.name = \"Iron Sword\"\nsword.value = 50\nsword.damage = 12\nprint(sword.describe())   # \"Iron Sword (50 gold) - 12 damage\"\n```",
+      "quiz": {
+        "title": "Classes and Inheritance Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does class_name Item do?",
+            "options": [
+              "Deletes the class",
+              "Registers the script as a globally-available type usable without preload",
+              "Makes the class private",
+              "Attaches the script to every node in the scene"
+            ],
+            "answer": "Registers the script as a globally-available type usable without preload"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "super.describe() calls the parent class's original method instead of the overriding one.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A custom GDScript class inherits from another with the keyword: ____ Item",
+            "options": [],
+            "answer": "extends"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-player-movement-script",
+      "title": "Final Project: Player Movement Script",
+      "order": 7,
+      "content": "# Final Project: Player Movement Script\n\nCombine everything from this course into a real, playable script: 2D platformer-style player movement, the foundation almost every 2D Godot game starts from.\n\n## Requirements\n\n1. Create a script extending `CharacterBody2D` with `@export` variables for `speed` and `jump_velocity`, tunable from the editor's Inspector.\n2. In `_physics_process(delta)`, read left/right input and set horizontal velocity accordingly (use `Input.get_axis(\"ui_left\", \"ui_right\")` or your own custom input actions).\n3. Apply gravity to vertical velocity every frame, and let the player jump (set a negative vertical velocity) only when `is_on_floor()` is true, so jumping mid-air isn't possible.\n4. Call `move_and_slide()` to actually apply the computed velocity and handle collisions.\n5. Define a `signal health_depleted` and a simple `health` variable with a `take_damage(amount)` method that emits the signal when health reaches 0, connect to it from a separate script (even a simple one that just prints \"Game Over\") to prove the decoupling works.\n\n## Stretch goals\n\n- Add a `Sprite2D` reference and flip it horizontally based on movement direction.\n- Add a double-jump, allowed only once per airborne period.\n- Add a `@export var coyote_time: float` grace period that still allows a jump for a few frames after walking off a platform edge.\n\nSubmit a link to your finished project below, an instructor will review it before you can mark this lesson complete. Good luck!",
+      "requiresSubmission": true
+    }
+  ]
+}

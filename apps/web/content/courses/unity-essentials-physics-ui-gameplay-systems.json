@@ -1,0 +1,304 @@
+{
+  "slug": "unity-essentials-physics-ui-gameplay-systems",
+  "title": "Unity Essentials: Physics, UI & Gameplay Systems",
+  "description": "Build real gameplay in Unity: Rigidbody physics with collisions and triggers, raycasting, the UGUI Canvas system, the Input System, data-driven design with ScriptableObjects, object pooling for performance, and saving player data with PlayerPrefs and JSON.",
+  "pathSlug": "csharp",
+  "pathName": "C#",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "rigidbody-physics-collisions-and-triggers",
+      "title": "Rigidbody Physics: Collisions and Triggers",
+      "order": 1,
+      "content": "# Rigidbody Physics: Collisions and Triggers\n\nUnity's physics engine moves and collides GameObjects for you, once they have a `Rigidbody` (3D) or `Rigidbody2D` (2D) component and a `Collider`.\n\n```csharp\nusing UnityEngine;\n\npublic class Bullet : MonoBehaviour\n{\n    public float speed = 20f;\n\n    void Start()\n    {\n        GetComponent<Rigidbody>().linearVelocity = transform.forward * speed;\n    }\n\n    void OnCollisionEnter(Collision collision)\n    {\n        Debug.Log($\"Hit {collision.gameObject.name}\");\n        Destroy(gameObject);\n    }\n}\n```\n\n## Collisions vs triggers\n\n- A regular **collision** (`OnCollisionEnter/Stay/Exit`) needs both objects to have solid (non-trigger) colliders, physics stops them from overlapping.\n- A **trigger** collider (`Is Trigger` checked) lets objects pass through it, but still fires `OnTriggerEnter/Stay/Exit`, useful for pickups, checkpoints, or damage zones that shouldn't physically block anything.\n- Both events only fire if **at least one** of the two objects also has a `Rigidbody`.\n\n```csharp\nvoid OnTriggerEnter(Collider other)\n{\n    if (other.CompareTag(\"Player\"))\n    {\n        Debug.Log(\"Player entered the zone\");\n    }\n}\n```\n\n## Physics update, not Update\n\nMove a `Rigidbody` with `Rigidbody.linearVelocity` or `AddForce` inside `FixedUpdate()`, not `Update()`, `FixedUpdate` runs on physics's fixed timestep, keeping movement consistent regardless of framerate.",
+      "quiz": {
+        "title": "Physics & Collisions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which method fires when a trigger collider is entered by another collider?",
+            "options": [
+              "OnCollisionEnter",
+              "OnTriggerEnter",
+              "OnHit",
+              "OnOverlap"
+            ],
+            "answer": "OnTriggerEnter"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Rigidbody movement should be applied inside ____() instead of Update(), so it stays consistent with the physics timestep.",
+            "options": [],
+            "answer": "FixedUpdate"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A trigger collider physically blocks other objects from passing through it.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "raycasting",
+      "title": "Raycasting",
+      "order": 2,
+      "content": "# Raycasting\n\nA **raycast** shoots an invisible line through the scene and reports what it hits, the basis for shooting, line-of-sight checks, and click-to-move.\n\n```csharp\nusing UnityEngine;\n\npublic class Shooter : MonoBehaviour\n{\n    public float range = 100f;\n\n    void Update()\n    {\n        if (Input.GetButtonDown(\"Fire1\"))\n            Shoot();\n    }\n\n    void Shoot()\n    {\n        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, range))\n        {\n            Debug.Log($\"Hit {hit.collider.gameObject.name} at distance {hit.distance}\");\n            hit.collider.GetComponent<IDamageable>()?.TakeDamage(10);\n        }\n    }\n}\n```\n\n## The pieces\n\n- `Physics.Raycast(origin, direction, out RaycastHit hit, maxDistance)` returns `true` if the ray hit something within `maxDistance`, and fills `hit` with details (the collider, exact point, distance, surface normal).\n- `out` parameters (like `RaycastHit hit`) let a method return extra information beyond its normal return value, `hit` is only meaningful if `Raycast` returned `true`.\n- A **layer mask** (an optional extra parameter) restricts which layers the ray can hit, e.g. ignoring the player's own collider when shooting.\n\n## Debugging rays\n\n`Debug.DrawRay(origin, direction * range, Color.red, duration)` draws a visible line in the Scene view (not in the actual game), invaluable for seeing exactly where a raycast is pointing while you're testing.",
+      "quiz": {
+        "title": "Raycasting Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does Physics.Raycast return?",
+            "options": [
+              "The GameObject it hit",
+              "A bool indicating whether it hit anything",
+              "The distance travelled",
+              "Nothing, it is void"
+            ],
+            "answer": "A bool indicating whether it hit anything"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ parameter on Raycast lets the method return extra hit details alongside its bool result.",
+            "options": [],
+            "answer": "out"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Debug.DrawRay makes a ray visible to players in the built game.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "the-ui-system-canvas-and-ugui",
+      "title": "The UI System: Canvas and UGUI",
+      "order": 3,
+      "content": "# The UI System: Canvas and UGUI\n\nUnity's built-in UI system (UGUI) renders every on-screen element, buttons, health bars, menus, inside a `Canvas`.\n\n```csharp\nusing UnityEngine;\nusing UnityEngine.UI;\nusing TMPro;\n\npublic class HealthBar : MonoBehaviour\n{\n    public Slider slider;\n    public TMP_Text label;\n\n    public void SetHealth(int current, int max)\n    {\n        slider.value = (float)current / max;\n        label.text = $\"{current} / {max}\";\n    }\n}\n```\n\n## The pieces\n\n- A `Canvas` is the root of any UI, everything inside it (buttons, images, text) is a child GameObject positioned in screen space, not world space.\n- `Screen Space - Overlay` draws the UI on top of everything, always facing the camera, most common for HUDs and menus.\n- Wiring a button click to code: select the `Button`'s `OnClick()` list in the Inspector, drag in the target GameObject, and pick a public method, or do it from code:\n\n```csharp\nbutton.onClick.AddListener(() => Debug.Log(\"Clicked!\"));\n```\n\n## Data binding in practice\n\nUI elements don't update themselves, your code has to push new values to them, like calling `SetHealth` from a health-changed callback whenever health changes. Keep UI update code in dedicated UI scripts (like `HealthBar` above) rather than scattering `slider.value = ...` across gameplay code, that separation makes both sides easier to change independently.",
+      "quiz": {
+        "title": "UI System Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What GameObject must every UGUI element live under?",
+            "options": [
+              "A Rigidbody",
+              "A Canvas",
+              "A NetworkObject",
+              "A Camera"
+            ],
+            "answer": "A Canvas"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "button.onClick.____(() => ...) wires up a click handler from code.",
+            "options": [],
+            "answer": "AddListener"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "UI elements like a Slider automatically update themselves whenever a related gameplay value changes, with no code needed.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "the-input-system",
+      "title": "The Input System",
+      "order": 4,
+      "content": "# The Input System\n\nPlayer input, keyboard, mouse, gamepad, touch, needs to be read every frame and turned into game actions.\n\n```csharp\nusing UnityEngine;\n\npublic class LegacyMovement : MonoBehaviour\n{\n    public float speed = 5f;\n\n    void Update()\n    {\n        float h = Input.GetAxis(\"Horizontal\");\n        float v = Input.GetAxis(\"Vertical\");\n        transform.Translate(new Vector3(h, 0, v) * speed * Time.deltaTime);\n\n        if (Input.GetKeyDown(KeyCode.Space))\n            Jump();\n    }\n}\n```\n\n## The old way: the Input class\n\n- `Input.GetAxis(\"Horizontal\")` returns a smoothed value between -1 and 1, built from whatever keys/sticks are bound to that axis in Project Settings.\n- `Input.GetKeyDown(KeyCode.Space)` is true for exactly one frame, the frame the key was pressed, use `GetKey` for \"is it currently held.\"\n- `Input.GetButtonDown(\"Fire1\")` reads a named action the same way, but through the configurable Input Manager instead of a hardcoded key.\n\n## The new Input System package\n\nUnity's newer **Input System** package models input as **Actions** (\"Move\", \"Jump\", \"Fire\") bound to any device, instead of hardcoded keys, so the same script works with keyboard, gamepad, or touch without changes.\n\n```csharp\nusing UnityEngine.InputSystem;\n\npublic class NewMovement : MonoBehaviour\n{\n    public InputAction moveAction;\n\n    void OnEnable() => moveAction.Enable();\n\n    void Update()\n    {\n        Vector2 move = moveAction.ReadValue<Vector2>();\n        transform.Translate(new Vector3(move.x, 0, move.y) * Time.deltaTime);\n    }\n}\n```\n\nBoth systems are valid, the legacy `Input` class is simpler for small projects, the Input System package scales better for multi-device support and rebindable controls.",
+      "quiz": {
+        "title": "Input System Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which legacy Input method is true for only the single frame a key was pressed?",
+            "options": [
+              "GetKey",
+              "GetKeyDown",
+              "GetAxis",
+              "GetButton"
+            ],
+            "answer": "GetKeyDown"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The newer Input System package models input as reusable ____ (like \"Move\" or \"Jump\") that can bind to any device.",
+            "options": [],
+            "answer": "Actions"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Input.GetAxis('Horizontal') returns a raw, unsmoothed -1/0/1 value.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "scriptableobjects-data-driven-design",
+      "title": "ScriptableObjects: Data-Driven Design",
+      "order": 5,
+      "content": "# ScriptableObjects: Data-Driven Design\n\nA `ScriptableObject` is a data container that lives as an **asset** in your project, not attached to any GameObject, perfect for shared configuration that many objects reference.\n\n```csharp\nusing UnityEngine;\n\n[CreateAssetMenu(fileName = \"New Enemy\", menuName = \"Game/Enemy Data\")]\npublic class EnemyData : ScriptableObject\n{\n    public string enemyName;\n    public int maxHealth;\n    public float moveSpeed;\n    public GameObject prefab;\n}\n```\n\n```csharp\npublic class Enemy : MonoBehaviour\n{\n    public EnemyData data;\n    int health;\n\n    void Start()\n    {\n        health = data.maxHealth;\n    }\n}\n```\n\n## Why not just fields on the MonoBehaviour?\n\n- `[CreateAssetMenu]` adds a menu entry so designers can create new `EnemyData` assets (Right-click → Create → Game → Enemy Data) without touching code.\n- Every `Enemy` prefab that shares the same `EnemyData` asset reads the same values, tweak the asset once, every enemy using it updates, no need to edit each prefab individually.\n- ScriptableObjects aren't part of the scene, so they don't get destroyed when a scene unloads, and they don't duplicate per-instance memory the way fields on a `MonoBehaviour` would across hundreds of enemies.\n\n## Common uses\n\nItem databases, enemy/weapon stats, dialogue data, and even shared event channels (a `ScriptableObject`-based alternative to C# events that decouples systems that don't reference each other directly).",
+      "quiz": {
+        "title": "ScriptableObjects Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Where does a ScriptableObject asset live?",
+            "options": [
+              "Attached to a GameObject in the scene",
+              "As a standalone asset in the project",
+              "Inside the Camera component",
+              "It only exists at runtime"
+            ],
+            "answer": "As a standalone asset in the project"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The [____] attribute adds a menu entry so designers can create new instances of a ScriptableObject without code.",
+            "options": [],
+            "answer": "CreateAssetMenu"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Multiple prefabs can reference the same ScriptableObject asset and share its data.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "object-pooling",
+      "title": "Object Pooling",
+      "order": 6,
+      "content": "# Object Pooling\n\n`Instantiate` and `Destroy` are expensive, especially for things spawned constantly like bullets or particle effects. **Object pooling** reuses a fixed set of objects instead of constantly creating and destroying them.\n\n```csharp\nusing System.Collections.Generic;\nusing UnityEngine;\n\npublic class BulletPool : MonoBehaviour\n{\n    public GameObject bulletPrefab;\n    public int poolSize = 20;\n    Queue<GameObject> pool = new Queue<GameObject>();\n\n    void Awake()\n    {\n        for (int i = 0; i < poolSize; i++)\n        {\n            GameObject bullet = Instantiate(bulletPrefab);\n            bullet.SetActive(false);\n            pool.Enqueue(bullet);\n        }\n    }\n\n    public GameObject Get()\n    {\n        GameObject bullet = pool.Count > 0 ? pool.Dequeue() : Instantiate(bulletPrefab);\n        bullet.SetActive(true);\n        return bullet;\n    }\n\n    public void Release(GameObject bullet)\n    {\n        bullet.SetActive(false);\n        pool.Enqueue(bullet);\n    }\n}\n```\n\n## The pieces\n\n- Every object the pool will hand out is created **once**, up front, and disabled.\n- `Get()` hands out a disabled object (reactivating it) instead of instantiating a new one, `Release()` deactivates and returns it to the pool instead of destroying it.\n- A `Queue<T>` is a natural fit, `Enqueue` adds to the back, `Dequeue` removes from the front, first in, first out.\n- Falling back to `Instantiate` inside `Get()` when the pool is empty avoids ever running out, at the cost of an occasional allocation.\n\n## Why it matters\n\n`Instantiate`/`Destroy` allocate and garbage-collect memory, doing that dozens of times per second (every bullet fired, every hit particle) causes frame-rate stutters as the garbage collector kicks in. Reusing objects avoids that churn entirely. Unity also ships a built-in `UnityEngine.Pool.ObjectPool<T>` that implements this same pattern for you.",
+      "quiz": {
+        "title": "Object Pooling Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What problem does object pooling mainly solve?",
+            "options": [
+              "Networking latency",
+              "Repeated allocation/garbage collection from frequent Instantiate/Destroy calls",
+              "Compile-time errors",
+              "Missing textures"
+            ],
+            "answer": "Repeated allocation/garbage collection from frequent Instantiate/Destroy calls"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Instead of destroying an object, a pool's ____() method deactivates it and returns it to the pool for reuse.",
+            "options": [],
+            "answer": "Release"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A pooled object is destroyed and a brand new one is created every time it's needed.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "saving-and-loading-data",
+      "title": "Saving and Loading Data",
+      "order": 7,
+      "content": "# Saving and Loading Data\n\nProgress needs to survive closing the game. Unity gives you a couple of straightforward options depending on how much data you're saving.\n\n```csharp\nusing UnityEngine;\n\n// Small values: PlayerPrefs\nPlayerPrefs.SetInt(\"HighScore\", 4200);\nPlayerPrefs.SetFloat(\"MusicVolume\", 0.8f);\nPlayerPrefs.Save();\n\nint highScore = PlayerPrefs.GetInt(\"HighScore\", 0); // 0 is the default if missing\n```\n\n## PlayerPrefs\n\n- A simple key-value store, backed by the registry on Windows or a plist on Mac, good for small things like settings or a high score.\n- Only stores `int`, `float`, and `string`, and isn't encrypted, don't use it for anything you can't afford a player to see or tamper with.\n\n## Larger or structured data: JSON\n\n```csharp\nusing System.IO;\nusing UnityEngine;\n\n[System.Serializable]\npublic class SaveData\n{\n    public int level;\n    public int[] unlockedItems;\n}\n\nvoid Save(SaveData data)\n{\n    string json = JsonUtility.ToJson(data);\n    File.WriteAllText(Application.persistentDataPath + \"/save.json\", json);\n}\n\nSaveData Load()\n{\n    string path = Application.persistentDataPath + \"/save.json\";\n    if (!File.Exists(path)) return new SaveData();\n    return JsonUtility.FromJson<SaveData>(File.ReadAllText(path));\n}\n```\n\n## The pieces\n\n- `[System.Serializable]` marks a plain class so `JsonUtility` can convert it to and from JSON text.\n- `Application.persistentDataPath` is a writable, platform-correct folder that survives app updates and reinstalls (unlike `Application.dataPath`, which lives inside the read-only app install).\n- `JsonUtility` only serializes public fields (not properties or `Dictionary`s), keep save data structures simple for it to work smoothly.",
+      "quiz": {
+        "title": "Save Data Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which types can PlayerPrefs store directly?",
+            "options": [
+              "Any serializable class",
+              "int, float, and string only",
+              "Only GameObjects",
+              "Only byte arrays"
+            ],
+            "answer": "int, float, and string only"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Application.____ is the writable, platform-correct folder for save files that survives app updates.",
+            "options": [],
+            "answer": "persistentDataPath"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "PlayerPrefs data is encrypted by default, making it safe to store sensitive values.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-wave-based-shooter",
+      "title": "Final Project: Wave-Based Shooter",
+      "order": 8,
+      "content": "# Final Project: Wave-Based Shooter\n\nCombine physics, UI, input, ScriptableObjects, pooling, and save data into one small playable slice.\n\n## Requirements\n\n1. Use raycasting (or physics collisions) to detect when the player's shots hit an enemy.\n2. Represent enemy stats (health, speed, prefab) with a `ScriptableObject`, so tuning them doesn't require touching code.\n3. Pool your bullets and/or enemies instead of calling `Instantiate`/`Destroy` on every shot or spawn.\n4. Show the player's health and current score on a `Canvas`-based UI, updated live as the game state changes.\n5. Read player input (fire, move) using either the legacy `Input` class or the Input System package.\n6. Save the player's best score with `PlayerPrefs`, and display \"New high score!\" when it's beaten.\n\n## Stretch goals\n\n- Use a trigger collider for a pickup (e.g. a health or ammo crate) instead of a raycast hit.\n- Save more detailed run data (wave reached, enemies defeated) as JSON instead of just the high score.\n- Add a pause menu Canvas that disables gameplay input while open.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

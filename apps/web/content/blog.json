@@ -1,0 +1,11 @@
+[
+  {
+    "slug": "welcome-to-kodstigen",
+    "title": "Welcome to Kodstigen",
+    "excerpt": "A free, open path from your first line of code to your first developer role, now running entirely in your browser as a static site.",
+    "coverImageUrl": "/blog/welcome-banner.svg",
+    "author": "Sebastian Larsson",
+    "publishedAt": "2026-08-01",
+    "content": "# Welcome to Kodstigen\n\nKodstigen is a free programming curriculum: interactive lessons, quizzes, and coding challenges across 28 learning paths, from Python and JavaScript to Kubernetes, Solidity, and quantum computing with Qiskit.\n\n## Everything runs in your browser\n\nThere is no account to create and no server holding your work. The site is a static build, and every runnable code block executes locally on your machine:\n\n- **Python** runs through [Pyodide](https://pyodide.org), a full CPython build compiled to WebAssembly. `numpy`, `pandas`, and `scikit-learn` load on demand.\n- **JavaScript** runs in a Web Worker with a hard timeout, so an accidental infinite loop can't lock up the page.\n- **TypeScript** is stripped with [Sucrase](https://sucrase.io) and then run as JavaScript.\n- **Lua** runs on [wasmoon](https://github.com/ceifa/wasmoon), and **C** on a WebAssembly build of picoc.\n- **HTML** blocks render in a sandboxed iframe you can edit live.\n\nTry it, edit any code block in a lesson and press **Run**:\n\n```python\nfor n in range(1, 16):\n    if n % 15 == 0:\n        print(\"FizzBuzz\")\n    elif n % 3 == 0:\n        print(\"Fizz\")\n    elif n % 5 == 0:\n        print(\"Buzz\")\n    else:\n        print(n)\n```\n\n## Where to start\n\n- Browse the [courses](/courses) and pick a path, every lesson is open, in any order.\n- Warm up on the [coding challenges](/challenges) if you'd rather write code than read about it.\n- New to programming entirely? [Programming Basics: Your First Steps](/courses/sample-programming-basics) assumes nothing.\n\nQuestions, bug reports, or course ideas are always welcome, the contact link lives in the footer of every page.\n"
+  }
+]
