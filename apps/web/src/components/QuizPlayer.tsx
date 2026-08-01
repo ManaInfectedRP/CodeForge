@@ -1,37 +1,47 @@
-import { useState } from 'react';
-import type { QuizDto, QuizResultDto } from '@codeforge/shared';
-import { api, errorMessage } from '../lib/api';
-import { useAuth } from '../context/AuthContext';
+'use client';
 
-export function QuizPlayer({ quiz, onPass }: { quiz: QuizDto; onPass?: () => void }) {
+import { useState } from 'react';
+import type { Quiz } from '@/lib/content';
+
+interface Result {
+  score: number;
+  passed: boolean;
+  correctCount: number;
+  totalQuestions: number;
+  incorrectQuestionIds: string[];
+}
+
+/** Same rule the API used to apply: exact match, case-insensitive for typed answers. */
+function isCorrect(given: string, expected: string, type: Quiz['questions'][number]['type']): boolean {
+  const answer = given.trim();
+  return type === 'FILL_BLANK' ? answer.toLowerCase() === expected.trim().toLowerCase() : answer === expected;
+}
+
+export function QuizPlayer({ quiz }: { quiz: Quiz }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<QuizResultDto | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const { refreshUser } = useAuth();
+  const [result, setResult] = useState<Result | null>(null);
 
   const answeredAll = quiz.questions.every((q) => (answers[q.id] ?? '').trim() !== '');
   const incorrect = new Set(result?.incorrectQuestionIds ?? []);
 
-  async function submit() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const { data } = await api.post<QuizResultDto>(`/quizzes/${quiz.id}/attempts`, { answers });
-      setResult(data);
-      if (data.xpAwarded > 0) await refreshUser();
-      if (data.passed) onPass?.();
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setSubmitting(false);
-    }
+  function grade() {
+    const incorrectQuestionIds = quiz.questions
+      .filter((q) => !isCorrect(answers[q.id] ?? '', q.answer, q.type))
+      .map((q) => q.id);
+    const correctCount = quiz.questions.length - incorrectQuestionIds.length;
+    const score = Math.round((correctCount / quiz.questions.length) * 100);
+    setResult({
+      score,
+      passed: score >= quiz.passingScore,
+      correctCount,
+      totalQuestions: quiz.questions.length,
+      incorrectQuestionIds,
+    });
   }
 
   function reset() {
     setAnswers({});
     setResult(null);
-    setError(null);
   }
 
   return (
@@ -98,8 +108,6 @@ export function QuizPlayer({ quiz, onPass }: { quiz: QuizDto; onPass?: () => voi
         ))}
       </ol>
 
-      {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
-
       <div className="mt-6 flex items-center gap-4">
         {result ? (
           <>
@@ -110,7 +118,6 @@ export function QuizPlayer({ quiz, onPass }: { quiz: QuizDto; onPass?: () => voi
             >
               {result.passed ? '✅ Passed' : '❌ Not passed'}, {result.score}% ({result.correctCount}/
               {result.totalQuestions} correct)
-              {result.xpAwarded > 0 && <span className="ml-2 text-amber-400">+{result.xpAwarded} XP</span>}
             </div>
             <button onClick={reset} className="rounded-lg border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800">
               Try again
@@ -118,11 +125,11 @@ export function QuizPlayer({ quiz, onPass }: { quiz: QuizDto; onPass?: () => voi
           </>
         ) : (
           <button
-            onClick={submit}
-            disabled={!answeredAll || submitting}
+            onClick={grade}
+            disabled={!answeredAll}
             className="rounded-lg bg-forge-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-forge-500 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {submitting ? 'Grading…' : 'Submit answers'}
+            Submit answers
           </button>
         )}
       </div>

@@ -1,0 +1,263 @@
+{
+  "slug": "c-sharp-async-programming-task-async-await-cancellation",
+  "title": "C# Async Programming: Task, async/await & Cancellation",
+  "description": "Master asynchronous C#: what async/await actually do, running work concurrently with Task.WhenAll and Task.WhenAny, cancelling long-running operations with CancellationToken, handling exceptions across async code, and streaming results with IAsyncEnumerable.",
+  "pathSlug": "csharp",
+  "pathName": "C#",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "introduction-to-asynchronous-programming",
+      "title": "Introduction to Asynchronous Programming",
+      "order": 1,
+      "content": "# Introduction to Asynchronous Programming\n\nSome operations, reading a file, calling a web API, querying a database, take real time to complete, and don't need the CPU while they wait. **Asynchronous** code lets your program keep doing other work during that wait, instead of blocking a thread that's doing nothing but sitting idle.\n\n```csharp\nusing System;\nusing System.Net.Http;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        Console.WriteLine(\"Starting download...\");\n        string content = await DownloadAsync(\"https://example.com\");\n        Console.WriteLine($\"Downloaded {content.Length} characters\");\n    }\n\n    static async Task<string> DownloadAsync(string url)\n    {\n        using var client = new HttpClient();\n        return await client.GetStringAsync(url);\n    }\n}\n```\n\n## Synchronous vs asynchronous\n\n- **Synchronous** code blocks: calling `GetStringAsync` the old-fashioned, blocking way would leave the thread sitting frozen, doing nothing, until the network response arrives.\n- **Asynchronous** code frees the thread during the wait, `await` pauses this method (without blocking the thread) until the operation completes, then resumes exactly where it left off.\n- A `Task` represents work that's in progress, possibly not finished yet. `Task<T>` is the same idea but the work eventually produces a value of type `T`, like `DownloadAsync` returning `Task<string>`.\n\n## Why it matters\n\nIn a desktop or mobile app, blocking the main thread freezes the UI, buttons stop responding, the window stops redrawing. On a server, one thread blocked waiting on a database call is one fewer thread available to handle other requests. Async code avoids both problems by giving the thread back while waiting.",
+      "quiz": {
+        "title": "Async Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does await do to the method it is used in?",
+            "options": [
+              "Blocks the calling thread until the operation finishes",
+              "Pauses the method without blocking the thread, resuming when the operation completes",
+              "Immediately cancels the operation",
+              "Runs the method on a new process"
+            ],
+            "answer": "Pauses the method without blocking the thread, resuming when the operation completes"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A ____<T> represents asynchronous work that will eventually produce a value of type T.",
+            "options": [],
+            "answer": "Task"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Blocking the main thread in a desktop app can freeze the UI.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "async-and-await",
+      "title": "async and await",
+      "order": 2,
+      "content": "# async and await\n\nThe `async` and `await` keywords are what actually let you write asynchronous code that reads like ordinary, top-to-bottom synchronous code.\n\n```csharp\nusing System;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        int result = await AddAsync(3, 4);\n        Console.WriteLine(result); // 7\n    }\n\n    static async Task<int> AddAsync(int a, int b)\n    {\n        await Task.Delay(1000); // simulate work\n        return a + b;\n    }\n}\n```\n\n## The rules\n\n- `async` marks a method as containing `await` expressions, it doesn't make the method run on a background thread by itself, it just enables the `await` keyword inside it.\n- An `async` method's return type is almost always `Task`, `Task<T>`, or (rarely, for event handlers only) `void`. Never write `async void` for a regular method, exceptions thrown inside it can't be caught by the caller.\n- `await` can only be used inside a method marked `async`, it unwraps a `Task<T>` into its `T` result (or just waits for a plain `Task` to finish), and lets other work happen on the thread while waiting.\n- `Task.Delay(1000)` asynchronously waits about a second without blocking the thread, unlike `Thread.Sleep(1000)`, which does block it.\n\n## What \"async all the way\" means\n\nOnce one method needs to `await` something, every method that calls it should usually become `async` too, and its callers `await` it. Calling `.Result` or `.Wait()` on a `Task` to force synchronous behavior defeats the purpose and can even deadlock in UI applications, prefer `await` end to end.",
+      "quiz": {
+        "title": "async/await Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does marking a method async actually do?",
+            "options": [
+              "Runs it on a background thread automatically",
+              "Enables the use of await inside that method",
+              "Makes it run faster",
+              "Prevents it from throwing exceptions"
+            ],
+            "answer": "Enables the use of await inside that method"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Task.____(1000) asynchronously waits about a second without blocking the thread, unlike Thread.Sleep.",
+            "options": [],
+            "answer": "Delay"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Calling .Result on a Task instead of awaiting it can cause a deadlock in some applications.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "task-whenall-and-task-whenany",
+      "title": "Task.WhenAll and Task.WhenAny",
+      "order": 3,
+      "content": "# Task.WhenAll and Task.WhenAny\n\nAwaiting several operations one after another wastes the whole point of async, if they don't depend on each other, start them all at once.\n\n```csharp\nusing System;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        Task<string> t1 = DownloadAsync(\"https://example.com/a\");\n        Task<string> t2 = DownloadAsync(\"https://example.com/b\");\n        Task<string> t3 = DownloadAsync(\"https://example.com/c\");\n\n        string[] results = await Task.WhenAll(t1, t2, t3);\n        Console.WriteLine($\"Got {results.Length} pages\");\n    }\n\n    static async Task<string> DownloadAsync(string url)\n    {\n        using var client = new System.Net.Http.HttpClient();\n        return await client.GetStringAsync(url);\n    }\n}\n```\n\n## The pieces\n\n- Calling `DownloadAsync(...)` without `await` **starts** the task immediately and returns a `Task<string>` you can hold onto, the download runs in the background right away.\n- `await Task.WhenAll(t1, t2, t3)` waits for all three to finish, and (for `Task<T>`) returns an array of their results in the same order they were passed in, even if they finish in a different order.\n- Awaiting each one individually, `await t1; await t2; await t3;`, would run them one after another instead of concurrently, three times slower for three independent, equally-long downloads.\n- `Task.WhenAny(...)` instead resolves as soon as the **first** task finishes, useful for a timeout pattern: race the real operation against `Task.Delay(timeout)` and see which finishes first.\n\n## When not to do this\n\nIf one operation depends on another's result, keep them sequential with separate `await`s, `Task.WhenAll` is for genuinely independent work, forcing dependent operations to run \"concurrently\" just creates bugs.",
+      "quiz": {
+        "title": "WhenAll & WhenAny Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does Task.WhenAll(t1, t2, t3) do?",
+            "options": [
+              "Runs the tasks one after another",
+              "Cancels all three tasks",
+              "Waits for all three tasks to complete, running them concurrently",
+              "Returns as soon as the first task finishes"
+            ],
+            "answer": "Waits for all three tasks to complete, running them concurrently"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Task.____ resolves as soon as the first of several tasks finishes, useful for timeout patterns.",
+            "options": [],
+            "answer": "WhenAny"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Calling an async method without awaiting it immediately starts the work in the background.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "cancellation-with-cancellationtoken",
+      "title": "Cancellation with CancellationToken",
+      "order": 4,
+      "content": "# Cancellation with CancellationToken\n\nLong-running async work should be cancellable, a user closes a dialog, navigates away, or a timeout expires. `CancellationToken` is the standard way to signal that.\n\n```csharp\nusing System;\nusing System.Threading;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        using var cts = new CancellationTokenSource();\n        cts.CancelAfter(TimeSpan.FromSeconds(3));\n\n        try\n        {\n            await CountAsync(cts.Token);\n        }\n        catch (OperationCanceledException)\n        {\n            Console.WriteLine(\"Cancelled!\");\n        }\n    }\n\n    static async Task CountAsync(CancellationToken token)\n    {\n        for (int i = 1; i <= 10; i++)\n        {\n            token.ThrowIfCancellationRequested();\n            Console.WriteLine(i);\n            await Task.Delay(1000, token);\n        }\n    }\n}\n```\n\n## The pieces\n\n- `CancellationTokenSource` is the object that can **trigger** cancellation, `cts.Cancel()` cancels immediately, `cts.CancelAfter(...)` schedules it.\n- `CancellationToken` (from `cts.Token`) is the read-only signal you pass down into async methods, they check it, they can't cancel anything themselves.\n- `token.ThrowIfCancellationRequested()` throws an `OperationCanceledException` if cancellation was requested, stopping the method's work at a clean point instead of continuing pointlessly.\n- Passing the token into `Task.Delay(1000, token)` lets the delay itself respond to cancellation immediately, instead of finishing its full second first.\n\n## Convention\n\nAny async method that might run for a while should accept an optional `CancellationToken token = default` parameter and pass it through to everything it awaits, this makes cancellation flow all the way down a chain of async calls instead of only stopping the top-level one.",
+      "quiz": {
+        "title": "Cancellation Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is responsible for actually triggering a cancellation?",
+            "options": [
+              "CancellationToken",
+              "CancellationTokenSource",
+              "Task.Delay",
+              "OperationCanceledException"
+            ],
+            "answer": "CancellationTokenSource"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "token.____() throws an OperationCanceledException if cancellation has been requested.",
+            "options": [],
+            "answer": "ThrowIfCancellationRequested"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A CancellationToken can itself cancel work, without needing a CancellationTokenSource.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "exception-handling-in-async-code",
+      "title": "Exception Handling in Async Code",
+      "order": 5,
+      "content": "# Exception Handling in Async Code\n\nExceptions in async code behave a little differently from synchronous code, especially once multiple tasks are involved.\n\n```csharp\nusing System;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        try\n        {\n            await RiskyAsync();\n        }\n        catch (InvalidOperationException ex)\n        {\n            Console.WriteLine($\"Caught: {ex.Message}\");\n        }\n    }\n\n    static async Task RiskyAsync()\n    {\n        await Task.Delay(500);\n        throw new InvalidOperationException(\"Something went wrong\");\n    }\n}\n```\n\n## The pieces\n\n- A regular `try/catch` around an `await` works exactly like you'd hope, an exception thrown inside the awaited async method surfaces at the `await` point, as if it were a normal synchronous call.\n- With `Task.WhenAll`, if **multiple** tasks fail, only the first exception is rethrown by the `await`, the rest are still available on each individual `Task.Exception` property (an `AggregateException`) if you need them.\n\n```csharp\nTask t1 = FailAsync(\"A\");\nTask t2 = FailAsync(\"B\");\n\ntry\n{\n    await Task.WhenAll(t1, t2);\n}\ncatch\n{\n    Console.WriteLine(t1.Exception?.InnerException?.Message);\n    Console.WriteLine(t2.Exception?.InnerException?.Message);\n}\n```\n\n- An exception thrown inside an `async void` method (instead of `async Task`) can't be caught by a surrounding `try/catch` at all, it escapes straight to the app's global unhandled-exception handler, another reason to avoid `async void` outside of event handlers.\n\n## Best practice\n\nCatch specific exception types close to where they can meaningfully be handled, exactly like synchronous code, `async`/`await` doesn't change the fundamentals of exception handling, it just changes *when* the exception surfaces (at the `await`, not at the original call).",
+      "quiz": {
+        "title": "Async Exceptions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Where does an exception thrown inside an awaited async method surface?",
+            "options": [
+              "It is silently swallowed",
+              "At the await point, just like a normal synchronous call",
+              "Only in a background log file",
+              "It always crashes the whole application immediately"
+            ],
+            "answer": "At the await point, just like a normal synchronous call"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "An exception thrown inside an async ____ method cannot be caught by a surrounding try/catch.",
+            "options": [],
+            "answer": "void"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "When multiple tasks passed to Task.WhenAll fail, only the first exception is rethrown by the await, though the rest remain available on each Task.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "async-streams-with-iasyncenumerable",
+      "title": "Async Streams with IAsyncEnumerable",
+      "order": 6,
+      "content": "# Async Streams with IAsyncEnumerable\n\nSometimes you need to process a **sequence** of items that arrive over time, one at a time, page-by-page results from an API, rows streamed from a database, instead of waiting for the whole thing to complete before touching any of it.\n\n```csharp\nusing System;\nusing System.Collections.Generic;\nusing System.Threading.Tasks;\n\nclass Program\n{\n    static async Task Main()\n    {\n        await foreach (int number in CountUpAsync(5))\n        {\n            Console.WriteLine(number);\n        }\n    }\n\n    static async IAsyncEnumerable<int> CountUpAsync(int max)\n    {\n        for (int i = 1; i <= max; i++)\n        {\n            await Task.Delay(500);\n            yield return i;\n        }\n    }\n}\n```\n\n## The pieces\n\n- `IAsyncEnumerable<T>` is the asynchronous counterpart to `IEnumerable<T>`, a sequence where producing the **next** item might itself take time (a network call, a delay), instead of everything being ready up front.\n- `async IAsyncEnumerable<T>` combines `async` (so the method body can `await`) with `yield return` (so it can produce items one at a time), the same `yield return` you saw with `IEnumerator` in Unity coroutines, applied here to an async, awaitable sequence instead.\n- `await foreach` consumes an `IAsyncEnumerable<T>`, awaiting each item as it becomes available, instead of blocking until the entire sequence is ready.\n\n## When to reach for this\n\nUse `Task<List<T>>` (await once, get everything) when you need the whole result before doing anything with it. Reach for `IAsyncEnumerable<T>` when items should be processed as they arrive, e.g. displaying search results as each page loads, instead of one blank screen until every page is in.",
+      "quiz": {
+        "title": "Async Streams Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does IAsyncEnumerable<T> represent?",
+            "options": [
+              "A single value that resolves in the future",
+              "A sequence whose items may each take time to produce",
+              "A synchronous collection with no delays",
+              "A type only usable inside Unity"
+            ],
+            "answer": "A sequence whose items may each take time to produce"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "____ foreach consumes an IAsyncEnumerable<T>, awaiting each item as it becomes available.",
+            "options": [],
+            "answer": "await"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "An async IAsyncEnumerable<T> method can use yield return, just like a synchronous iterator.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-async-multi-source-downloader",
+      "title": "Final Project: Async Multi-Source Downloader",
+      "order": 7,
+      "content": "# Final Project: Async Multi-Source Downloader\n\nCombine everything from this course into a small but realistic async tool.\n\n## Requirements\n\n1. Write an async method that downloads or fetches data from at least 3 different sources (URLs, files, or simulated delays with `Task.Delay`) **concurrently**, using `Task.WhenAll`.\n2. Support cancellation: accept a `CancellationToken`, and let the user cancel the whole operation (e.g. by pressing a key while it's running).\n3. Handle failures gracefully: if one source fails, log which one and continue reporting results for the others, instead of the whole program crashing.\n4. Add a timeout using `Task.WhenAny` racing the real operation against `Task.Delay(timeout)`, cancelling and reporting a timeout message if the delay wins.\n5. Use an `IAsyncEnumerable<T>` method to stream and print progress updates (e.g. \"Source A: 50% done\") as they happen, instead of only printing a final summary.\n\n## Stretch goals\n\n- Add retry logic: if a source fails, retry it up to 2 more times with a short delay between attempts before giving up.\n- Track and print total elapsed time, and compare it to what sequential (non-concurrent) execution would have taken.\n- Wrap the whole thing in a small console menu so a user can re-run it with different sources without restarting the program.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

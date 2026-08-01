@@ -1,0 +1,205 @@
+{
+  "slug": "c-plus-plus-foundations",
+  "title": "C++ Foundations",
+  "description": "Compiled programming, pointers, and memory, the bedrock of systems development.",
+  "pathSlug": "cpp",
+  "pathName": "C++",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "hello-c-plus-plus",
+      "title": "Hello, C++",
+      "order": 1,
+      "content": "# Hello, C++\n\nC++ is a **compiled**, statically-typed language, your source code is translated into machine code by a compiler before the program ever runs. That extra step is part of why C++ programs run so fast, and why \"compile errors\" catch many mistakes before you even try running anything. It's used everywhere performance matters: games and game engines, operating systems, embedded devices, and other high-performance software.\n\n## Your first program\n\n```cpp\n#include <iostream>\n\nint main() {\n    std::cout << \"Hello, Kodstigen!\" << std::endl;\n    return 0;\n}\n```\n\n## Reading it line by line\n\n- `#include <iostream>` pulls in the input/output library, without it `std::cout` wouldn't exist.\n- `int main() { ... }` is the **entry point**, every C++ program starts running here, and only here.\n- `std::cout << \"...\"` sends text to the console, `std::` means \"this comes from the standard library\", and `<<` pushes a value into the output stream.\n- `std::endl` ends the current line.\n- `return 0;` tells the operating system the program finished successfully, by convention `0` means \"no errors\" (anything else signals a problem).\n\n## Compiling and running\n\nUnlike Python or JavaScript, C++ code doesn't run directly, a compiler translates it into an executable first:\n\n```bash\ng++ hello.cpp -o hello\n./hello\n```\n\n`g++ hello.cpp -o hello` compiles `hello.cpp` into a program named `hello`, `./hello` then runs it.",
+      "quiz": {
+        "title": "C++ Intro Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which function is the entry point of every C++ program?",
+            "options": [
+              "start()",
+              "main()",
+              "init()",
+              "run()"
+            ],
+            "answer": "main()"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "C++ source code must be compiled before it can run.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "variables-and-memory",
+      "title": "Variables and Memory",
+      "order": 2,
+      "content": "# Variables and Memory\n\nEvery variable lives somewhere in your computer's memory, and C++ is unusual among popular languages in letting you work with that memory directly.\n\n## Declaring variables\n\n```cpp\nint xp = 100;         // an integer variable holding the value 100\ndouble price = 9.99;  // a floating-point number\nchar grade = 'A';     // a single character\nbool passed = true;   // true or false\n```\n\nEvery variable in C++ has a fixed **type** decided when it's declared, an `int` can never later hold a decimal or a piece of text.\n\n## Addresses, pointers, and references\n\nEvery variable lives at a specific **address** in memory, think of memory as a huge street of numbered houses, a variable's address is just its house number.\n\n```cpp\nint xp = 100;\nstd::cout << &xp;      // prints xp's address, e.g. 0x7ffc3a2b1c\n\nint* ptr = &xp;        // ptr is a pointer: it stores xp's address\nstd::cout << *ptr;     // *ptr \"dereferences\" ptr: prints 100, the value at that address\n\nint& ref = xp;         // ref is a reference: another name for xp itself\nref = 200;             // this actually changes xp too!\nstd::cout << xp;       // prints 200\n```\n\n| Symbol | Meaning | Example |\n|---|---|---|\n| `&x` | \"address of x\" | `int* p = &x;` |\n| `*p` | \"the value at the address p points to\" | `std::cout << *p;` |\n| `T*` | \"a pointer to a T\" | `int* p;` |\n| `T&` | \"a reference to a T\" | `int& r = x;` |\n\n## Pointers vs. references\n\n- A **pointer** is a variable that stores an address, it can be reassigned to point somewhere else, or set to `nullptr` to point at nothing at all.\n- A **reference** is an alias for an existing variable, it must be bound to something when it's created, and can never be changed to refer to something else afterward.\n\n> [!WARNING]\n> A pointer that still holds the address of something that's already been destroyed is called a **dangling pointer**, dereferencing it is undefined behavior, one of the most common sources of bugs in C++. Always be sure what a pointer points at is still alive before you dereference it.",
+      "quiz": {
+        "title": "Memory Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "FILL_BLANK",
+            "prompt": "The operator used to get the address of a variable is ____.",
+            "options": [],
+            "answer": "&"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does dereferencing a pointer (*ptr) give you?",
+            "options": [
+              "The address it stores",
+              "The value at the address it stores",
+              "A copy of the pointer",
+              "A compile error"
+            ],
+            "answer": "The value at the address it stores"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "control-flow-and-loops",
+      "title": "Control Flow and Loops",
+      "order": 3,
+      "content": "# Control Flow and Loops\n\nPrograms need to make decisions and repeat work. C++'s control-flow keywords work a lot like other C-family languages (JavaScript, C#, Java), so what you learn here will transfer directly.\n\n```cpp\n#include <iostream>\n\nint main() {\n    int xp = 45;\n\n    if (xp >= 50) {\n        std::cout << \"Level up!\" << std::endl;\n    } else {\n        std::cout << \"Keep going, \" << (50 - xp) << \" XP to go.\" << std::endl;\n    }\n\n    for (int i = 1; i <= 5; i++) {\n        std::cout << \"Lesson \" << i << std::endl;\n    }\n\n    int count = 0;\n    while (count < 3) {\n        std::cout << \"count = \" << count << std::endl;\n        count++;\n    }\n\n    return 0;\n}\n```\n\n## The pieces\n\n- `if` / `else` branches on a boolean condition, the condition must always be wrapped in parentheses.\n- `for (init; condition; increment)` runs the init once, then repeats: check condition, run the loop body, run the increment, check condition again, and so on. Best when you know how many times to loop.\n- `while (condition)` keeps looping as long as the condition stays true, checked before every iteration, useful when you don't know the number of iterations ahead of time.\n\n> [!TIP]\n> Forgetting to update the loop variable (like `count++`) is one of the most common beginner bugs, it creates an **infinite loop** that never becomes false.",
+      "quiz": {
+        "title": "Control Flow Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which loop is the best fit when you know exactly how many iterations you need?",
+            "options": [
+              "for",
+              "while",
+              "do",
+              "if"
+            ],
+            "answer": "for"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A while loop whose condition never becomes false is called an ____ loop.",
+            "options": [],
+            "answer": "infinite"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "In C++, the condition in an if statement must be wrapped in parentheses.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "functions",
+      "title": "Functions",
+      "order": 4,
+      "content": "# Functions\n\nA **function** packages up a piece of logic so you can reuse it by name, instead of retyping the same code everywhere.\n\n```cpp\n#include <iostream>\n#include <string>\n\nint add(int a, int b) {\n    return a + b;\n}\n\nvoid greet(const std::string& name) {\n    std::cout << \"Hello, \" << name << \"!\" << std::endl;\n}\n\nint main() {\n    std::cout << \"add(2, 3) = \" << add(2, 3) << std::endl;\n    greet(\"Kodstigen\");\n    return 0;\n}\n```\n\n## Key ideas\n\n- A function's declared return type (`int`, `void`, ...) must match what it actually returns, `void` means \"returns nothing\".\n- In `add(int a, int b)`, `a` and `b` are **parameters**, placeholders for whatever values get passed in when the function is called (the actual values, like `2` and `3`, are called **arguments**).\n- Passing a parameter as `const std::string&` passes it **by reference** instead of copying it, faster for large objects like strings, and `const` promises the function won't modify it.\n- Functions must generally be declared (or defined) before they're used, that's why `add` and `greet` appear above `main`.",
+      "quiz": {
+        "title": "Functions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does a function declared with return type `void` return?",
+            "options": [
+              "Nothing",
+              "Zero",
+              "A null pointer",
+              "An empty string"
+            ],
+            "answer": "Nothing"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Declaring a parameter as `const std::string&` avoids copying the argument by passing it by ____.",
+            "options": [],
+            "answer": "reference"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A function's return type must match the type of value it actually returns.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "arrays-and-vectors",
+      "title": "Arrays and Vectors",
+      "order": 5,
+      "content": "# Arrays and Vectors\n\nMost programs need to work with collections of values, not just single variables. C++ gives you two main options: fixed-size arrays and resizable vectors.\n\n```cpp\n#include <iostream>\n#include <vector>\n\nint main() {\n    int scores[3] = {80, 92, 67};   // fixed-size array\n    std::cout << \"first score: \" << scores[0] << std::endl;\n\n    std::vector<int> xp = {10, 20, 30};   // resizable array\n    xp.push_back(40);\n\n    int total = 0;\n    for (int value : xp) {\n        total += value;\n    }\n    std::cout << \"total xp: \" << total << std::endl;\n    std::cout << \"vector size: \" << xp.size() << std::endl;\n\n    return 0;\n}\n```\n\n## Arrays vs. vectors\n\n- A plain array (`int scores[3]`) has a **fixed size** decided at compile time, it can never grow or shrink, and accessing an out-of-bounds index (like `scores[5]`) is undefined behavior, C++ won't stop you.\n- `std::vector<T>`, part of the Standard Template Library (STL), is a **resizable** array, `push_back` adds an element, `size()` tells you how many there are.\n- The range-based `for (int value : xp)` loop visits every element without needing an index, read it as \"for each value in xp\".\n\n> [!TIP]\n> When you're not sure how many elements you'll need, reach for `std::vector` by default, plain arrays are mostly useful when the size is small and fixed ahead of time.",
+      "quiz": {
+        "title": "Arrays & Vectors Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the main advantage of std::vector over a plain fixed-size array?",
+            "options": [
+              "It uses less memory always",
+              "It can grow and shrink at runtime",
+              "It is faster to access by index",
+              "It cannot store integers"
+            ],
+            "answer": "It can grow and shrink at runtime"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The method used to add an element to the end of a vector is ____().",
+            "options": [],
+            "answer": "push_back"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "An array declared as `int scores[3]` can change size after it is created.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-grade-calculator",
+      "title": "Final Project: Grade Calculator",
+      "order": 6,
+      "content": "# Final Project: Grade Calculator\n\nTime to combine control flow, functions, and vectors into one program.\n\n## Requirements\n\n1. Store a list of student scores using a `std::vector<int>`.\n2. Write a function that computes the average of the scores.\n3. Write a function that returns the highest and lowest score.\n4. Loop over the scores and print each one alongside a letter grade (A/B/C/D/F) based on thresholds you define.\n5. Print a final summary of the average, highest, and lowest scores using `std::cout`.\n\n## Stretch goals\n\n- Read scores from the user with `std::cin` instead of hardcoding them.\n- Use a `struct` to bundle a student's name together with their scores.\n- Split the logic into multiple small functions, each with one clear responsibility.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

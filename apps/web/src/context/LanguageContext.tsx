@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+'use client';
+
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 export type Language = 'en' | 'sv';
 
@@ -11,13 +13,16 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-function readStoredLanguage(): Language {
-  const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
-  return stored === 'en' || stored === 'sv' ? stored : 'sv';
-}
-
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(readStoredLanguage);
+  // Pages are prerendered at build time with the default language, so the stored
+  // preference can only be applied after hydration, reading it during render would
+  // make the first client paint disagree with the served HTML.
+  const [language, setLanguageState] = useState<Language>('sv');
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'en' || stored === 'sv') setLanguageState(stored);
+  }, []);
 
   function setLanguage(lang: Language) {
     setLanguageState(lang);

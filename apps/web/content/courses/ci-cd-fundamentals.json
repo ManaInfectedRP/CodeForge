@@ -1,0 +1,447 @@
+{
+  "slug": "ci-cd-fundamentals",
+  "title": "CI/CD Fundamentals",
+  "description": "Build real pipelines with GitHub Actions: automated testing, Docker image builds, deployment strategies, and pipeline secrets.",
+  "pathSlug": "cicd",
+  "pathName": "CI/CD",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "what-is-ci-cd-from-manual-deploys-to-pipelines",
+      "title": "What is CI/CD? From Manual Deploys to Pipelines",
+      "order": 1,
+      "content": "# What is CI/CD? From Manual Deploys to Pipelines\n\nBefore CI/CD, shipping code usually meant someone manually running tests, building the app, and copying files to a server, slow, error-prone, and something only whoever \"knows the deploy steps\" can safely do. **CI/CD** automates that entire path from commit to running in production.\n\n## Continuous Integration (CI)\n\n**CI** means every change gets automatically built and tested the moment it's pushed, catching integration problems (two people's changes conflicting, a change breaking existing behavior) within minutes instead of days.\n\n```\nPush code → CI server checks it out → installs deps → runs tests → reports pass/fail\n```\n\nThe core promise of CI: nobody merges code that doesn't pass the automated checks, so `main` stays in a known-good state.\n\n## Continuous Delivery vs. Continuous Deployment\n\nThese two terms are often confused, and the difference matters:\n\n| Term | What happens after CI passes |\n|---|---|\n| **Continuous Delivery** | A deployable build is produced and ready to ship, a human clicks a button to actually release it |\n| **Continuous Deployment** | Every change that passes CI is deployed to production automatically, no human in the loop |\n\nBoth require the same underlying automation (build, test, package), Continuous Deployment just removes the manual approval step entirely, appropriate once you trust your test suite and rollback process enough.\n\n## Why automate this at all\n\n- **Speed**: changes reach users in minutes/hours instead of a scheduled weekly release.\n- **Consistency**: the exact same automated steps run every time, no \"it worked on my machine\" deploy.\n- **Confidence**: a broken build is caught immediately, by CI, not discovered by a user in production.\n- **Auditability**: every deploy has a record of exactly what changed, what tests ran, and who approved it.\n\n> [!NOTE]\n> \"Pipeline\" is the general term for the sequence of automated steps (build → test → package → deploy), and it's the central concept the rest of this course builds on, concretely, with GitHub Actions.",
+      "quiz": {
+        "title": "CI/CD Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the core promise of Continuous Integration?",
+            "options": [
+              "Every deploy is manual",
+              "Nobody merges code that fails automated checks, keeping main in a known-good state",
+              "Tests are optional",
+              "Deploys happen once a month"
+            ],
+            "answer": "Nobody merges code that fails automated checks, keeping main in a known-good state"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the key difference between Continuous Delivery and Continuous Deployment?",
+            "options": [
+              "There is no difference",
+              "Continuous Deployment removes the manual approval step before releasing to production",
+              "Continuous Delivery does not run tests",
+              "Continuous Deployment only works with Docker"
+            ],
+            "answer": "Continuous Deployment removes the manual approval step before releasing to production"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Continuous Delivery means every passing change is automatically deployed to production with no human approval.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The general term for the sequence of automated build/test/package/deploy steps is a ____.",
+            "options": [],
+            "answer": "pipeline"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "A key benefit of CI is that broken code is caught immediately by automation rather than discovered by a user in production.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q6",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which of these is NOT typically a benefit of automating CI/CD?",
+            "options": [
+              "Speed",
+              "Consistency",
+              "Auditability",
+              "Eliminating the need for any tests"
+            ],
+            "answer": "Eliminating the need for any tests"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "building-a-pipeline-with-github-actions",
+      "title": "Building a Pipeline with GitHub Actions",
+      "order": 2,
+      "content": "# Building a Pipeline with GitHub Actions\n\n**GitHub Actions** is GitHub's built-in CI/CD system: workflows defined as YAML files living right in your repository, triggered automatically by events like a push or pull request.\n\n## Anatomy of a workflow\n\n```yaml\n# .github/workflows/ci.yml\nname: CI\n\non:\n  push:\n    branches: [main]\n  pull_request:\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '20'\n      - run: npm ci\n      - run: npm test\n```\n\n- `on` defines the **triggers**, here, every push to `main` and every pull request.\n- `jobs` is a set of independent units of work, each runs on a fresh **runner** (a temporary VM, `ubuntu-latest` here).\n- `steps` run in order within a job, each is either a shell command (`run:`) or a reusable **action** (`uses:`), a packaged, shareable step someone else already wrote.\n\n## Reusable actions\n\n`actions/checkout@v4` and `actions/setup-node@v4` are official actions maintained by GitHub, `checkout` clones your repo onto the runner (without it, the runner starts with an empty filesystem), `setup-node` installs a specific Node.js version. The GitHub Marketplace has thousands of community actions for almost anything (deploying to a cloud provider, sending a Slack notification, scanning for vulnerabilities).\n\n## Multiple jobs and dependencies\n\n```yaml\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps: [...]\n\n  deploy:\n    needs: test\n    runs-on: ubuntu-latest\n    steps: [...]\n```\n\n`needs: test` makes the `deploy` job wait for `test` to succeed first, and skips `deploy` entirely if `test` fails. Jobs without a `needs` relationship run in **parallel** by default, useful for running lint, unit tests, and type-checking simultaneously to get feedback faster.\n\n> [!TIP]\n> Keep your CI fast. A pipeline people are used to waiting 15 minutes for gets ignored or worked around, one that takes 90 seconds gets checked every time, run independent jobs in parallel, and cache dependencies (next lesson) wherever you can.",
+      "quiz": {
+        "title": "GitHub Actions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the 'on' key in a GitHub Actions workflow define?",
+            "options": [
+              "Which runner to use",
+              "The events that trigger the workflow",
+              "The programming language",
+              "The deployment target"
+            ],
+            "answer": "The events that trigger the workflow"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The actions/____@v4 action clones your repository onto the runner, without it the runner starts with an empty filesystem.",
+            "options": [],
+            "answer": "checkout"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Jobs in a workflow run in parallel by default unless one specifies needs to depend on another.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What happens to a job with needs: test if the test job fails?",
+            "options": [
+              "It runs anyway",
+              "It is skipped",
+              "It runs twice",
+              "It automatically fixes the test"
+            ],
+            "answer": "It is skipped"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "A runner is a persistent, long-lived server that keeps state between workflow runs.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "A packaged, reusable workflow step that someone else already wrote, referenced with uses:, is called an ____.",
+            "options": [],
+            "answer": "action"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "automated-testing-in-the-pipeline",
+      "title": "Automated Testing in the Pipeline",
+      "order": 3,
+      "content": "# Automated Testing in the Pipeline\n\nA pipeline that doesn't run your test suite isn't really \"CI\", it's just automated building. This lesson covers making tests a real, fast, reliable gate in your pipeline.\n\n## Fail fast\n\n```yaml\njobs:\n  ci:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with: { node-version: '20' }\n      - run: npm ci\n      - run: npm run lint\n      - run: npm run typecheck\n      - run: npm test\n```\n\nSteps run in order and **stop at the first failure** by default, if `npm run lint` fails, `npm test` never runs, no point spending minutes running a full test suite against code that doesn't even pass linting.\n\n## Caching dependencies\n\nReinstalling every dependency from scratch on every single run wastes minutes per build, adding up fast across a busy repository. Caching the package manager's download cache (not `node_modules` itself, which can hide subtle bugs if reused stale) speeds this up significantly:\n\n```yaml\n- uses: actions/setup-node@v4\n  with:\n    node-version: '20'\n    cache: 'npm'\n```\n\n`setup-node`'s built-in `cache: 'npm'` option automatically caches and restores npm's download cache between runs, keyed on your lockfile, install still runs, but mostly from local cache instead of re-downloading everything.\n\n## Test matrices\n\nTo verify your code works across multiple versions or environments, define a **matrix**, GitHub Actions runs the job once per combination automatically:\n\n```yaml\njobs:\n  test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        node-version: ['18', '20', '22']\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ matrix.node-version }}\n      - run: npm ci && npm test\n```\n\nThis runs the exact same job three times, once per Node version, in parallel, catching version-specific breakage before a user does.\n\n> [!WARNING]\n> A flaky test (one that sometimes fails for no code-related reason, a timing issue, a shared test database) is worse than a slow test, it trains your team to re-run failed pipelines out of habit instead of trusting red as \"something is actually wrong\". Fix or quarantine flaky tests aggressively.",
+      "quiz": {
+        "title": "Automated Testing Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "TRUE_FALSE",
+            "prompt": "By default, if an earlier step in a job fails, later steps in that same job still run.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does setup-node's cache: 'npm' option do?",
+            "options": [
+              "Caches node_modules directly",
+              "Caches npm's download cache, keyed on your lockfile",
+              "Skips running npm install entirely",
+              "Disables tests"
+            ],
+            "answer": "Caches npm's download cache, keyed on your lockfile"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A strategy: ____ block runs the same job multiple times, once per combination of specified values (like Node versions).",
+            "options": [],
+            "answer": "matrix"
+          },
+          {
+            "id": "q4",
+            "type": "TRUE_FALSE",
+            "prompt": "Caching node_modules directly, rather than the package manager download cache, can hide subtle bugs if reused stale.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q5",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why is a flaky test considered worse than a slow one?",
+            "options": [
+              "It costs more money",
+              "It trains the team to distrust and ignore failures",
+              "It cannot be fixed",
+              "It only affects one branch"
+            ],
+            "answer": "It trains the team to distrust and ignore failures"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "Running lint and typecheck before the full test suite, so a broken build fails immediately, is often called failing ____.",
+            "options": [],
+            "answer": "fast"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "build-artifacts-and-docker-images-in-ci",
+      "title": "Build Artifacts and Docker Images in CI",
+      "order": 4,
+      "content": "# Build Artifacts and Docker Images in CI\n\nOnce tests pass, most pipelines produce something deployable, a compiled binary, a bundled frontend, or, very commonly today, a **Docker image**. This lesson builds and pushes one from CI.\n\n## Building and pushing an image\n\n```yaml\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Log in to registry\n        uses: docker/login-action@v3\n        with:\n          username: ${{ secrets.REGISTRY_USER }}\n          password: ${{ secrets.REGISTRY_TOKEN }}\n      - name: Build and push\n        run: |\n          docker build -t myregistry/web:${{ github.sha }} .\n          docker push myregistry/web:${{ github.sha }}\n```\n\n`secrets.REGISTRY_USER`/`REGISTRY_TOKEN` pull encrypted repository secrets into the workflow at runtime, never hardcode credentials directly in the YAML (covered in more depth in the secrets-management lesson).\n\n## Tagging strategy\n\nTagging every image build matters more than it looks: it's how you know exactly what's running, and how you roll back.\n\n| Tag style | Example | Tradeoff |\n|---|---|---|\n| Commit SHA | `web:a1b2c3d` | Always unique, traces directly to exact code, not human-friendly |\n| Semantic version | `web:1.4.2` | Human-friendly, requires a versioning/release process |\n| `latest` | `web:latest` | Convenient, but ambiguous, \"latest\" changes meaning over time, avoid for production deploys |\n\nA common, robust approach: always tag with the commit SHA (guaranteed unique, always traceable), and *additionally* tag stable releases with a semantic version for human readability.\n\n## Uploading build artifacts\n\nNot every pipeline needs a Docker image, sometimes you just need to pass a build output (a compiled bundle, a test report) from one job to another:\n\n```yaml\n- uses: actions/upload-artifact@v4\n  with:\n    name: dist\n    path: dist/\n\n# in a later job:\n- uses: actions/download-artifact@v4\n  with:\n    name: dist\n```\n\n> [!NOTE]\n> Artifacts uploaded with `upload-artifact` are how you pass files **between jobs** in the same workflow run (each job gets its own fresh runner with no shared filesystem), it's not for long-term storage, that's what a registry or object storage (like S3) is for.",
+      "quiz": {
+        "title": "Build Artifacts & Images Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why should you avoid deploying with only the latest tag in production?",
+            "options": [
+              "latest is not a valid Docker tag",
+              "latest is ambiguous and changes meaning over time",
+              "latest images are always broken",
+              "Docker does not support tags"
+            ],
+            "answer": "latest is ambiguous and changes meaning over time"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Tagging a Docker image with the commit ____ guarantees a unique tag that always traces back to the exact code that built it.",
+            "options": [],
+            "answer": "SHA"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Repository secrets like registry credentials should be hardcoded directly into the workflow YAML for simplicity.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is actions/upload-artifact used for?",
+            "options": [
+              "Deploying to production",
+              "Passing files between jobs in the same workflow run",
+              "Encrypting secrets",
+              "Building Docker images"
+            ],
+            "answer": "Passing files between jobs in the same workflow run"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Each job in a workflow run gets its own fresh runner with no filesystem shared with other jobs by default.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q6",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What's a common, robust Docker tagging approach?",
+            "options": [
+              "Only ever use latest",
+              "Tag with the commit SHA always, and additionally a semantic version for stable releases",
+              "Never tag images",
+              "Use a random UUID for every tag"
+            ],
+            "answer": "Tag with the commit SHA always, and additionally a semantic version for stable releases"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "continuous-deployment-strategies",
+      "title": "Continuous Deployment Strategies",
+      "order": 5,
+      "content": "# Continuous Deployment Strategies\n\nGetting a new build out doesn't have to mean \"stop the old version, start the new one\" (and the downtime that implies). Different deployment strategies trade off complexity for safety and zero-downtime releases.\n\n## Rolling deployment\n\nReplace old instances/Pods with new ones gradually, a few at a time, as covered in the Kubernetes course's Deployments lesson, this is the default behavior for a Kubernetes Deployment. At any moment, some traffic hits the old version and some hits the new one.\n\n## Blue-green deployment\n\nRun two full, identical environments, **blue** (currently live) and **green** (the new version), deploy entirely to green, test it for real, then switch all traffic over atomically:\n\n```\nBefore:  Router → Blue (v1.4)     Green (v1.5, idle)\nSwitch:  Router → Blue (v1.4, idle)     Green (v1.5)\n```\n\nIf something's wrong with green, you switch traffic straight back to blue, instant rollback, no redeploying anything. The cost: you need double the infrastructure running during the switch.\n\n## Canary deployment\n\nSend a small percentage of real traffic (say 5%) to the new version, watch error rates and latency, then gradually increase that percentage if everything looks healthy:\n\n```\n5% of traffic  → v1.5 (canary)\n95% of traffic → v1.4 (stable)\n```\n\nThis catches problems that only show up under real production traffic and load, while limiting the blast radius to a small slice of users if something's wrong.\n\n## Feature flags: decoupling deploy from release\n\nA **feature flag** wraps new code in a runtime toggle, so the code can be deployed to production while still being turned *off* for real users:\n\n```\nif (featureFlags.isEnabled('new-checkout')) {\n  return renderNewCheckout();\n}\nreturn renderOldCheckout();\n```\n\nThis separates two things that rolling/blue-green/canary strategies bundle together: *deploying* code (getting it running in production) and *releasing* a feature (turning it on for users). You can deploy on Tuesday and flip the flag on Friday, no redeploy needed, and instantly turn it back off if something's wrong.\n\n> [!TIP]\n> These strategies aren't mutually exclusive, a very common real setup is: canary + feature flags together, deploy the new version to a small percentage of infrastructure (canary), with the risky new behavior additionally behind a flag that's off by default, two independent safety nets instead of one.",
+      "quiz": {
+        "title": "Deployment Strategies Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In a blue-green deployment, what happens if something's wrong with the new (green) version after switching?",
+            "options": [
+              "You must redeploy from scratch",
+              "You switch traffic straight back to blue instantly",
+              "The whole app goes down",
+              "You wait 24 hours for it to fix itself"
+            ],
+            "answer": "You switch traffic straight back to blue instantly"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A canary deployment sends all traffic to the new version immediately.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A ____ flag wraps new code in a runtime toggle, decoupling deploying code from releasing a feature to users.",
+            "options": [],
+            "answer": "feature"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the main cost of a blue-green deployment strategy?",
+            "options": [
+              "It's slower than rolling deployments",
+              "You need double the infrastructure running during the switch",
+              "It cannot be automated",
+              "It requires downtime"
+            ],
+            "answer": "You need double the infrastructure running during the switch"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "With feature flags, you can deploy code to production while keeping it turned off for real users.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "A ____ deployment sends a small percentage of real traffic to the new version before gradually increasing it.",
+            "options": [],
+            "answer": "canary"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "secrets-and-environment-management-in-pipelines",
+      "title": "Secrets and Environment Management in Pipelines",
+      "order": 6,
+      "content": "# Secrets and Environment Management in Pipelines\n\nA pipeline that builds and deploys your app almost always needs credentials, registry logins, cloud provider access, database passwords. Handling these safely is one of the most consequential parts of CI/CD to get right.\n\n## Repository/organization secrets\n\nCI platforms provide an encrypted secrets store separate from your code, referenced in workflows without ever appearing in the YAML or logs:\n\n```yaml\nsteps:\n  - name: Deploy\n    env:\n      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}\n      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}\n    run: ./deploy.sh\n```\n\nGitHub Actions automatically **redacts** any value matching a registered secret from logs, if a step accidentally echoes `$AWS_SECRET_ACCESS_KEY`, the log shows `***` instead of the real value.\n\n## Least-privilege deploy credentials\n\nThe credentials your pipeline uses to deploy should follow the same rule as everything else: only what's needed. A pipeline deploying a static site to one S3 bucket doesn't need account-wide admin access, give it a role/user scoped to exactly that bucket (and nothing else), the same IAM principle from the AWS course, applied to your CI system's credentials specifically.\n\n## Environment-specific configuration\n\nDifferent environments (staging, production) usually need different config: different database URLs, different feature flag defaults, different API keys. GitHub Actions **Environments** let you scope secrets and required approvals per environment:\n\n```yaml\njobs:\n  deploy-production:\n    environment: production\n    runs-on: ubuntu-latest\n    steps:\n      - run: ./deploy.sh\n```\n\nAn `environment: production` job can require manual approval before running, and only has access to secrets scoped to that environment, `staging` secrets and `production` secrets never mix, even within the same repository.\n\n## OIDC: no long-lived secrets at all\n\nThe most modern approach skips storing cloud credentials as secrets entirely: **OIDC (OpenID Connect)** lets your CI platform request short-lived, auto-expiring credentials directly from your cloud provider for each run, nothing long-lived to leak in the first place.\n\n> [!WARNING]\n> A leaked CI secret is one of the most common ways real production incidents start, because CI credentials are often broader than they need to be (\"just give it admin, it's easier\"). Treat pipeline credentials with the exact same least-privilege scrutiny you'd apply to a human's access.",
+      "quiz": {
+        "title": "Pipeline Secrets Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does GitHub Actions do if a step's output accidentally contains a registered secret's value?",
+            "options": [
+              "It crashes the workflow",
+              "It redacts the value in logs, showing *** instead",
+              "It emails the repository owner",
+              "Nothing, it prints the value in plain text"
+            ],
+            "answer": "It redacts the value in logs, showing *** instead"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A pipeline's deploy credentials should have broad, account-wide access to make deployment simpler.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "GitHub Actions ____ let you scope secrets and require manual approval per deployment target like staging or production.",
+            "options": [],
+            "answer": "Environments"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does OIDC let a CI platform do?",
+            "options": [
+              "Store secrets in plain text",
+              "Request short-lived, auto-expiring credentials from a cloud provider for each run",
+              "Skip running tests",
+              "Bypass IAM entirely"
+            ],
+            "answer": "Request short-lived, auto-expiring credentials from a cloud provider for each run"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Staging and production secrets scoped to different GitHub Actions Environments are automatically kept separate, even in the same repository.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "A leaked CI ____ is one of the most common ways real production security incidents start.",
+            "options": [],
+            "answer": "secret"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-full-ci-cd-pipeline-for-a-sample-app",
+      "title": "Final Project: Build a Full CI/CD Pipeline for a Sample App",
+      "order": 7,
+      "content": "# Final Project: Build a Full CI/CD Pipeline for a Sample App\n\nBring every piece together into one real, working pipeline for a small application of your choice.\n\n## Requirements\n\n1. Set up a GitHub Actions workflow that runs on every push and pull request: install dependencies, lint, and run the test suite, failing fast if any step fails.\n2. Cache dependencies so repeated runs are meaningfully faster than a cold run.\n3. Build a Docker image of your app in the pipeline and tag it with the commit SHA.\n4. Add a separate deploy job that only runs after the test job succeeds (`needs:`), deploying your image somewhere real (a container registry at minimum, a running service if you want to go further).\n5. Use at least one repository secret for a credential your pipeline needs, never hardcoded in the workflow file.\n\n## Stretch goals\n\n- Add a test matrix running your suite against two different runtime versions.\n- Use a GitHub Actions Environment with a required manual approval step before deploying to \"production\".\n- Add a simple feature flag to your app, and deploy a new feature behind it, turned off by default.\n\nSubmit a link to your finished project (a repo with your workflow file, and a note on what it actually deploys to) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

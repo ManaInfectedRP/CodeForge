@@ -1,0 +1,304 @@
+{
+  "slug": "cirq-fundamentals",
+  "title": "Cirq Fundamentals",
+  "description": "Learn quantum computing with Google's Cirq SDK: build circuits from qubits and operations, create superposition and entanglement, run repetition-based simulations, build a quantum random number generator, and simulate realistic hardware noise.",
+  "pathSlug": "python",
+  "pathName": "Python",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "setup-and-your-first-circuit",
+      "title": "Setup and Your First Circuit",
+      "order": 1,
+      "content": "# Setup and Your First Circuit\n\n**Cirq** is Google's open-source Python SDK for quantum computing. It covers the same core ideas as any quantum SDK, qubits, gates, superposition, entanglement, and measurement, with its own particular style: circuits are built by appending **operations** (a gate applied to specific qubits) rather than calling a method per gate type.\n\n## Installing Cirq\n\nLike Qiskit, Cirq depends on compiled numerical libraries not available in this course's browser sandbox, write and run this project locally with a real Python install.\n\n```bash\npip install cirq\n```\n\n## Qubits and circuits\n\n```\nimport cirq\n\nqubit = cirq.LineQubit(0)\ncircuit = cirq.Circuit()\ncircuit.append(cirq.X(qubit))\ncircuit.append(cirq.measure(qubit, key='result'))\n\nprint(circuit)\n```\n\n- `cirq.LineQubit(0)` creates a qubit identified by position `0` on an imaginary line, Cirq's qubits are explicit objects you create and pass around, rather than implicit indices into a circuit.\n- `cirq.Circuit()` starts an empty circuit, and `.append(...)` adds **operations** to it, one at a time (or as a list).\n- `cirq.X(qubit)` is an **operation**: the `X` gate applied to a specific qubit. In Cirq, gates (`cirq.X`) and operations (a gate applied to a qubit, `cirq.X(qubit)`) are distinct: a gate is reusable and qubit-agnostic, an operation is that gate bound to a specific target.\n- `cirq.measure(qubit, key='result')` measures the qubit and tags the result with a string `key`, used later to look up that specific measurement's outcome (Cirq doesn't use a separate classical register the way Qiskit does).\n- `print(circuit)` renders an ASCII diagram of the circuit, just like Qiskit's `draw()`.\n\n> [!NOTE]\n> Every code block in this course needs a real local Python + Cirq install to run, quantum simulation depends on compiled numerical libraries this course's browser sandbox doesn't have. Treat this course like the Pygame or Kivy projects: read, understand, and run the code on your own machine.",
+      "quiz": {
+        "title": "Setup and Your First Circuit Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In Cirq, what is the difference between a gate and an operation?",
+            "options": [
+              "There's no difference, the terms are interchangeable",
+              "A gate is reusable and qubit-agnostic, an operation is that gate applied to specific qubit(s)",
+              "A gate can only be used once",
+              "An operation is a whole circuit"
+            ],
+            "answer": "A gate is reusable and qubit-agnostic, an operation is that gate applied to specific qubit(s)"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "cirq.measure(qubit, key='result') tags a measurement with a string key used to look up its outcome later.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "circuit.____(operation) adds an operation to a Cirq circuit.",
+            "options": [],
+            "answer": "append"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "qubits-and-superposition",
+      "title": "Qubits and Superposition",
+      "order": 2,
+      "content": "# Qubits and Superposition\n\nJust like Qiskit's Hadamard gate, Cirq's `cirq.H` puts a qubit into an equal superposition, a genuine mix of `0` and `1` until measured.\n\n## Simulating without measuring\n\n```\nimport cirq\n\nqubit = cirq.LineQubit(0)\ncircuit = cirq.Circuit()\ncircuit.append(cirq.H(qubit))\n\nsimulator = cirq.Simulator()\nresult = simulator.simulate(circuit)\nprint(result.dirac_notation())          # something like 0.71|0> + 0.71|1>\nprint(abs(result.final_state_vector) ** 2)  # [0.5, 0.5]\n```\n\n- `cirq.Simulator()` is Cirq's local simulator, `.simulate(circuit)` runs a circuit **without any measurement**, returning the exact final quantum state (only possible on a simulator, exactly like Qiskit's `Statevector`).\n- `result.dirac_notation()` prints the state using physicists' bra-ket notation, `|0>` and `|1>` are the two basis states, and the numbers in front are amplitudes.\n- `result.final_state_vector` is the raw list of complex amplitudes, squaring their absolute values (`abs(...) ** 2`) converts each amplitude into a probability, mirroring Qiskit's `state.probabilities()`.\n\n## Measurement still collapses the state\n\n```\ncircuit_measured = cirq.Circuit()\ncircuit_measured.append(cirq.H(qubit))\ncircuit_measured.append(cirq.measure(qubit, key='result'))\n\nresult = simulator.simulate(circuit_measured)\nprint(result.measurements['result'])  # a single definite outcome, 0 or 1\n```\n\n`result.measurements` is a dictionary keyed by the measurement `key`s you assigned with `cirq.measure(..., key=...)`, once a qubit is measured, its superposition is gone, exactly as in Qiskit, the physics doesn't change, only the SDK's syntax does.\n\n> [!TIP]\n> Cirq's `.simulate()` (no measurement, exact state) versus `.run()` (with measurement, shot-based) map directly onto Qiskit's `Statevector` versus `AerSimulator`, same two-step teaching approach, different method names.",
+      "quiz": {
+        "title": "Qubits and Superposition Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does simulator.simulate(circuit) return when the circuit has no measurement?",
+            "options": [
+              "A single random bitstring",
+              "The exact final quantum state (amplitudes), only possible on a simulator",
+              "An error, simulate() requires measurement",
+              "The circuit diagram"
+            ],
+            "answer": "The exact final quantum state (amplitudes), only possible on a simulator"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "result.measurements is a dictionary keyed by the string 'key' assigned in cirq.measure(...).",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "result.____ ____() prints a quantum state using physicists' bra-ket notation like 0.71|0> + 0.71|1>.",
+            "options": [],
+            "answer": "dirac notation"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "quantum-gates",
+      "title": "Quantum Gates",
+      "order": 3,
+      "content": "# Quantum Gates\n\nCirq ships the same core gate set you'd expect from any quantum SDK, applied through the operation pattern from lesson 1: `gate(qubit)`.\n\n## Single-qubit gates\n\n```\nimport cirq\n\nq = cirq.LineQubit(0)\ncircuit = cirq.Circuit()\ncircuit.append(cirq.X(q))  # NOT: flips |0> <-> |1>\ncircuit.append(cirq.Z(q))  # flips the sign of the |1> amplitude\ncircuit.append(cirq.H(q))  # Hadamard: creates/undoes superposition\n\nprint(circuit)\n```\n\nExactly the same roles as Qiskit's `x`, `z`, and `h`, `X` for a classical-style flip, `H` for superposition, `Z` mostly useful combined with other gates.\n\n## A two-qubit gate: CNOT\n\n```\nq0, q1 = cirq.LineQubit.range(2)\n\ncircuit = cirq.Circuit()\ncircuit.append(cirq.H(q0))          # put q0 into superposition\ncircuit.append(cirq.X(q1))          # flip q1 to |1>\ncircuit.append(cirq.CNOT(q0, q1))   # flip q1 IF q0 measures as |1>\n\nprint(circuit)\n```\n\n`cirq.LineQubit.range(2)` is a convenience for creating multiple qubits at once, equivalent to `[cirq.LineQubit(0), cirq.LineQubit(1)]`. `cirq.CNOT(control, target)` behaves identically to Qiskit's `cx`, it's the gate that lets one qubit's state influence another, the mechanism behind entanglement.\n\n## Chaining operations\n\nAppending accepts a single operation or a list, both build up the circuit the same way:\n\n```\nq0, q1, q2 = cirq.LineQubit.range(3)\n\ncircuit = cirq.Circuit([\n    cirq.H(q0),\n    cirq.CNOT(q0, q1),\n    cirq.CNOT(q1, q2),\n    cirq.X(q2),\n])\n\nprint(circuit)\n```\n\nPassing a list directly to `cirq.Circuit([...])` is a common shorthand once you know every operation you want up front, rather than calling `.append()` repeatedly.\n\n> [!NOTE]\n> Cirq operations are just as reversible as Qiskit's, the underlying physics of quantum gates doesn't depend on which SDK you're using, only the Python syntax for expressing it changes.",
+      "quiz": {
+        "title": "Quantum Gates Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does cirq.CNOT(q0, q1) do?",
+            "options": [
+              "Measures q0",
+              "Flips q1, but only if q0 is |1>",
+              "Swaps q0 and q1",
+              "Deletes q1"
+            ],
+            "answer": "Flips q1, but only if q0 is |1>"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "cirq.LineQubit.range(3) is a shorthand for creating 3 LineQubits at once.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "circuit.append(...) accepts either a single operation or a ____ of operations.",
+            "options": [],
+            "answer": "list"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "entanglement-and-bell-states",
+      "title": "Entanglement and Bell States",
+      "order": 4,
+      "content": "# Entanglement and Bell States\n\nThe same `H` + `CNOT` combination that builds a Bell state in Qiskit builds one in Cirq too, entanglement is a property of the physics, not of any particular SDK.\n\n## Building and inspecting a Bell state\n\n```\nimport cirq\n\nq0, q1 = cirq.LineQubit.range(2)\n\ncircuit = cirq.Circuit([\n    cirq.H(q0),\n    cirq.CNOT(q0, q1),\n])\n\nsimulator = cirq.Simulator()\nresult = simulator.simulate(circuit)\nprint(result.dirac_notation())\nprint(abs(result.final_state_vector) ** 2)  # ~[0.5, 0, 0, 0.5] for |00>, |01>, |10>, |11>\n```\n\nThe probability vector has 4 entries, one per possible 2-qubit outcome in order `00, 01, 10, 11`. Just like Qiskit's Bell state, only `00` and `11` have non-zero probability, `01`/`10` are impossible: measure either qubit and you instantly know the other's outcome.\n\n## Verifying with repeated measurement\n\n```\ncircuit_measured = cirq.Circuit([\n    cirq.H(q0),\n    cirq.CNOT(q0, q1),\n    cirq.measure(q0, q1, key='result'),\n])\n\nresult = simulator.run(circuit_measured, repetitions=1000)\nprint(result.histogram(key='result'))\n```\n\n`cirq.measure(q0, q1, key='result')` measures both qubits under one shared key, and `.run(circuit, repetitions=1000)` (Cirq's equivalent of Qiskit's `shots`) executes the circuit 1000 times. `result.histogram(key='result')` tallies the outcomes, covered in full in the next lesson.\n\n> [!TIP]\n> Whichever SDK you use, the pattern for verifying entanglement is identical: build `H` + `CNOT`, run it many times, and confirm the \"impossible\" outcomes (`01`/`10`) never (or almost never, on noisy real hardware) appear.",
+      "quiz": {
+        "title": "Entanglement and Bell States Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In the 4-entry probability vector [00, 01, 10, 11] for a Cirq Bell state, which entries are zero?",
+            "options": [
+              "Index 0 and 3 (00 and 11)",
+              "Index 1 and 2 (01 and 10)",
+              "Only index 0",
+              "None are zero"
+            ],
+            "answer": "Index 1 and 2 (01 and 10)"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "cirq.Simulator().run(circuit, repetitions=1000) is Cirq's equivalent of Qiskit's shots=1000.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Building a Bell state in any quantum SDK requires an H gate followed by a ____ gate.",
+            "options": [],
+            "answer": "CNOT"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "measurement-and-running-the-simulator",
+      "title": "Measurement and Running the Simulator",
+      "order": 5,
+      "content": "# Measurement and Running the Simulator\n\nLike Qiskit's shot-based `AerSimulator`, Cirq's `.run()` method executes a circuit with measurement many times and tallies the results, this is what a real device would give you, no direct access to amplitudes.\n\n## Running with repetitions\n\n```\nimport cirq\n\nq0, q1 = cirq.LineQubit.range(2)\ncircuit = cirq.Circuit([\n    cirq.H(q0),\n    cirq.CNOT(q0, q1),\n    cirq.measure(q0, q1, key='result'),\n])\n\nsimulator = cirq.Simulator()\nresult = simulator.run(circuit, repetitions=1024)\ncounts = result.histogram(key='result')\nprint(counts)  # Counter({0: ~512, 3: ~512})\n```\n\n- `repetitions=1024` is Cirq's name for what Qiskit calls `shots`, run the whole circuit 1024 independent times.\n- `result.histogram(key='result')` tallies outcomes for the measurement tagged `'result'`, returned as a `Counter`. Notice the keys are **integers**, not bitstrings like Qiskit's `'00'`/`'11'`, Cirq encodes a multi-qubit measurement as one combined integer (`0` = `00`, `3` = `11` for 2 qubits), where Qiskit keeps it as a string.\n\n## Converting to a bitstring, if you want one\n\n```\nfor value, count in counts.items():\n    bitstring = format(value, '02b')  # pad to 2 bits\n    print(bitstring, '->', count)\n```\n\n`format(value, '02b')` converts an integer to its binary string representation, padded to 2 digits, exactly the inverse of the `int(bitstring, 2)` conversion from the RNG lesson.\n\n## Statistical noise, same as any SDK\n\n```\nresult_small = simulator.run(circuit, repetitions=10)\nprint(result_small.histogram(key='result'))  # could easily be lopsided with so few repetitions\n```\n\nExactly like Qiskit, fewer repetitions means a noisier estimate of the true 50/50 distribution, this isn't an SDK quirk, it's the statistics of sampling any random process a small number of times.\n\n> [!NOTE]\n> `counts` only ever contains `0` (`00`) and `3` (`11`), the same entanglement result from the previous lesson's exact `Statevector`-equivalent probabilities, now observed empirically through repeated measurement.",
+      "quiz": {
+        "title": "Measurement and Simulation Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is Cirq's name for what Qiskit calls 'shots'?",
+            "options": [
+              "iterations",
+              "repetitions",
+              "trials",
+              "runs"
+            ],
+            "answer": "repetitions"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "result.histogram(key=...) returns outcomes keyed by integer, not bitstring, for a multi-qubit measurement.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "format(value, '02b') converts an integer to a binary string, padded to ____ digits.",
+            "options": [],
+            "answer": "2"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "building-a-quantum-random-number-generator",
+      "title": "Building a Quantum Random Number Generator",
+      "order": 6,
+      "content": "# Building a Quantum Random Number Generator\n\nThe same idea from the Qiskit course, superposition plus measurement equals genuine, physically unpredictable randomness, works identically in Cirq, just with different method names.\n\n## The Cirq version\n\n```\nimport cirq\n\ndef quantum_random_bits(n_bits):\n    qubits = cirq.LineQubit.range(n_bits)\n    circuit = cirq.Circuit()\n    circuit.append(cirq.H(q) for q in qubits)               # every qubit into superposition\n    circuit.append(cirq.measure(*qubits, key='result'))\n\n    simulator = cirq.Simulator()\n    result = simulator.run(circuit, repetitions=1)           # one measurement, one random outcome\n    value = result.measurements['result'][0]                 # a length-n_bits array of 0s and 1s\n    bitstring = ''.join(str(bit) for bit in value)\n    return int(bitstring, 2)\n\nprint(quantum_random_bits(8))  # a random integer from 0 to 255\nprint(quantum_random_bits(8))  # a different one, genuinely unpredictable\n```\n\n- `circuit.append(cirq.H(q) for q in qubits)` appends an `H` operation for every qubit in one line, a generator expression works here exactly like the list-of-operations pattern from earlier lessons.\n- `cirq.measure(*qubits, key='result')` measures all `n_bits` qubits at once under a single key, unpacked with `*qubits` since `measure` takes qubits as separate positional arguments.\n- `result.measurements['result']` is a 2D array (one row per repetition), `[0]` grabs the single repetition's row, an array of individual `0`/`1` bit values, which then gets joined into a bitstring and parsed as base-2, exactly like the Qiskit version.\n\n## Why the physics matters more than the syntax\n\nNotice this lesson is almost a line-by-line translation of the Qiskit RNG function, that's the point: the *physical* source of randomness (measuring a qubit in superposition) is identical regardless of which SDK expresses it. What differs is purely how each library's API is shaped, `shots` vs `repetitions`, bitstrings vs integer histograms, a classical register vs measurement keys.\n\n> [!TIP]\n> If you've completed both this course and the Qiskit one, try porting a circuit from one SDK to the other from memory, it's one of the best ways to confirm you understand the underlying quantum concepts rather than just one library's syntax.",
+      "quiz": {
+        "title": "Quantum RNG Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why does quantum_random_bits use cirq.measure(*qubits, key='result') instead of measuring each qubit separately?",
+            "options": [
+              "It's required syntax with no real benefit",
+              "It measures every qubit at once under a single shared key, giving one combined bit array per repetition",
+              "It makes the circuit run faster",
+              "Cirq cannot measure multiple qubits"
+            ],
+            "answer": "It measures every qubit at once under a single shared key, giving one combined bit array per repetition"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The physical source of randomness (measuring superposition) is the same in Cirq and Qiskit, only the API syntax differs.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "cirq.measure(*qubits, key='result') unpacks the qubits list using Python's ____ operator.",
+            "options": [],
+            "answer": "*"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "running-on-real-quantum-hardware",
+      "title": "Running on Real Quantum Hardware",
+      "order": 7,
+      "content": "# Running on Real Quantum Hardware\n\nEverything so far has run on `cirq.Simulator()`, an ideal, noise-free simulator. Google's real quantum processors exist too, but access works quite differently from IBM's more open model.\n\n## Google Quantum AI access\n\n```\nimport cirq_google\n\n# Real hardware access via Google Quantum AI requires an allowlisted Google Cloud\n# project, this is not a self-serve signup the way IBM Quantum's free tier is.\nengine = cirq_google.Engine(project_id='your-google-cloud-project-id')\nprocessor = engine.get_processor('processor_id')\n\nresult = processor.run(circuit, repetitions=1000)\nprint(result.histogram(key='result'))\n```\n\n*This needs an allowlisted Google Cloud project and real hardware access, so it's read-only here.* Unlike IBM Quantum's public free tier (sign up and run within minutes), Google Quantum AI hardware access has historically required an approved research or partnership relationship, most learners will develop and run entirely on `cirq.Simulator()`.\n\n## Cirq still models noise, without needing real hardware\n\nCirq lets you simulate *with* realistic noise, without needing hardware access at all, useful for understanding what real results would look like:\n\n```\nimport cirq\n\nq0, q1 = cirq.LineQubit.range(2)\ncircuit = cirq.Circuit([\n    cirq.H(q0),\n    cirq.CNOT(q0, q1),\n    cirq.measure(q0, q1, key='result'),\n])\n\nnoisy_circuit = circuit.with_noise(cirq.depolarize(p=0.02))  # 2% error rate per operation\n\nsimulator = cirq.Simulator()\nresult = simulator.run(noisy_circuit, repetitions=1000)\nprint(result.histogram(key='result'))  # small numbers of 1 and 2 (01/10) will now appear\n```\n\n`circuit.with_noise(cirq.depolarize(p=0.02))` returns a *new* circuit where every operation has a small chance (`p=0.02`, 2%) of introducing a random error, a simplified model of the real gate errors and decoherence discussed conceptually in the Qiskit course's hardware lesson. Running this noisy circuit will occasionally produce the \"impossible\" `01`/`10` outcomes, exactly what you'd expect to see on real, imperfect hardware.\n\n> [!NOTE]\n> Simulating noise like this is genuinely useful even if you never get access to real hardware, it lets you reason about how robust an algorithm is to imperfection before ever submitting a job to any provider.",
+      "quiz": {
+        "title": "Real Quantum Hardware Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How does access to Google's real quantum hardware typically differ from IBM Quantum's free tier?",
+            "options": [
+              "They are identical, both are instant self-serve signups",
+              "Google Quantum AI hardware access has historically required an approved/allowlisted project, unlike IBM's open free tier",
+              "Google requires payment up front, IBM does not",
+              "Neither offers any hardware access"
+            ],
+            "answer": "Google Quantum AI hardware access has historically required an approved/allowlisted project, unlike IBM's open free tier"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "circuit.with_noise(cirq.depolarize(p=0.02)) lets you simulate realistic hardware errors without needing real hardware access.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "cirq.____(p=0.02) is a noise model giving each operation a small chance of a random error.",
+            "options": [],
+            "answer": "depolarize"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-and-verify-an-entangled-circuit",
+      "title": "Final Project: Build and Verify an Entangled Circuit",
+      "order": 8,
+      "content": "# Final Project: Build and Verify an Entangled Circuit\n\nEvery piece from this course now exists on its own: building circuits, superposition, gates, entanglement, shot-based measurement, and a quantum random number generator. This final project assembles several of them into one small, verifiable quantum program.\n\n## Requirements\n\nYour finished `quantum_project.py` should satisfy every one of these:\n\n1. Build a 2-qubit Bell state circuit (`H` then `CNOT`).\n2. Inspect it with `simulator.simulate(...)` and print its exact probabilities, confirming the `01`/`10` outcomes are (numerically) zero.\n3. Run the same circuit (with measurement added) on `cirq.Simulator()` with at least 1000 repetitions, and print the resulting histogram.\n4. Write a Python function `verify_entanglement(counts)` that checks every observed outcome in the histogram is either `0` or `3` (allow a small tolerance if you experiment with noisy simulation in the stretch goals), and prints whether entanglement was verified.\n5. Reuse (or rewrite) the `quantum_random_bits(n_bits)` function from the RNG lesson, and use it to generate and print 5 random numbers between 0 and 255.\n\n```\nimport cirq\n\ndef build_bell_circuit():\n    q0, q1 = cirq.LineQubit.range(2)\n    circuit = cirq.Circuit([cirq.H(q0), cirq.CNOT(q0, q1)])\n    return circuit, q0, q1\n\ndef verify_entanglement(counts):\n    valid = all(outcome in (0, 3) for outcome in counts)\n    print('Entanglement verified!' if valid else 'Unexpected outcome, entanglement broken or noisy simulation.')\n    return valid\n\n# 1-2: build and inspect\ncircuit, q0, q1 = build_bell_circuit()\nsimulator = cirq.Simulator()\nstate_result = simulator.simulate(circuit)\nprint('Probabilities:', abs(state_result.final_state_vector) ** 2)\n\n# 3-4: run and verify\ncircuit.append(cirq.measure(q0, q1, key='result'))\nrun_result = simulator.run(circuit, repetitions=1000)\ncounts = run_result.histogram(key='result')\nprint('Counts:', counts)\nverify_entanglement(counts)\n```\n\n## Stretch goals\n\n- Add `circuit.with_noise(cirq.depolarize(p=0.02))` before running, and check how `verify_entanglement` handles the occasional `1`/`2` outcomes noise introduces, does your tolerance need adjusting?\n- Build a 3-qubit **GHZ state** (`H` on q0, `CNOT(q0, q1)`, `CNOT(q1, q2)`) and extend `verify_entanglement` to check that only `0` (`000`) or `7` (`111`) appear.\n- Add a simple **quantum coin flip** game: use `quantum_random_bits(1)` to decide a winner, and explain in a comment why this is fundamentally fairer than `random.randint(0, 1)`.\n- If you have access to Google Quantum AI hardware, run your circuit there and compare to both the ideal and noisy-simulated results.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.",
+      "requiresSubmission": true
+    }
+  ]
+}

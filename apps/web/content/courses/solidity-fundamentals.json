@@ -1,0 +1,263 @@
+{
+  "slug": "solidity-fundamentals",
+  "title": "Solidity Fundamentals",
+  "description": "Write smart contracts for Ethereum: state variables, functions and visibility, access control, mappings, and events.",
+  "pathSlug": "solidity",
+  "pathName": "Solidity",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "introduction-to-smart-contracts-solidity",
+      "title": "Introduction to Smart Contracts & Solidity",
+      "order": 1,
+      "content": "# Introduction to Smart Contracts & Solidity\n\nA **smart contract** is a program that lives on a blockchain, deployed once, then executed automatically and identically by every node in the network, no company or server can be shut down or quietly change its behavior. **Solidity** is the language most Ethereum smart contracts are written in.\n\n## Your first contract\n\n```solidity\n// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\ncontract Greeter {\n    string public greeting = \"Hello, Kodstigen!\";\n\n    function setGreeting(string memory newGreeting) public {\n        greeting = newGreeting;\n    }\n}\n```\n\n- `pragma solidity ^0.8.20;` pins which compiler version this contract expects, the `^` allows any compatible 0.8.x version, protecting against breaking changes in future major versions.\n- `contract Greeter { ... }` is the closest thing Solidity has to a class, it bundles state and functions together, like a Java or C# class deployed permanently to the blockchain.\n- `string public greeting` is a **state variable**, permanently stored on the blockchain itself, `public` automatically generates a free getter function for it.\n\n## The EVM\n\nSolidity compiles to bytecode that runs on the **EVM** (Ethereum Virtual Machine), conceptually similar to how Java compiles to bytecode for the JVM, except every EVM node in the world executes the same bytecode and must reach the exact same result, that's what makes it trustworthy without a central authority.\n\n> [!WARNING]\n> Once deployed, a smart contract's code **cannot be changed**. There's no patching a bug in production the way you'd redeploy a web server, this is exactly why security and careful testing matter so much more here than in most other kinds of programming.",
+      "quiz": {
+        "title": "Smart Contracts Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the EVM do?",
+            "options": [
+              "Stores files for a website",
+              "Executes smart contract bytecode identically across every network node",
+              "Compiles Java to bytecode",
+              "Mines new Bitcoin"
+            ],
+            "answer": "Executes smart contract bytecode identically across every network node"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A deployed smart contract's code can be edited later the same way you would redeploy a web server.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The pragma line at the top of a Solidity file pins which compiler ____ the contract expects.",
+            "options": [],
+            "answer": "version"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "state-variables-and-data-types",
+      "title": "State Variables and Data Types",
+      "order": 2,
+      "content": "# State Variables and Data Types\n\nA **state variable** is permanently stored on the blockchain as part of the contract's data, every write to one costs real money (**gas**), which shapes how Solidity code is written more than almost anything else.\n\n```solidity\ncontract Wallet {\n    uint256 public balance;          // unsigned integer, 256 bits\n    address public owner;             // an Ethereum address\n    bool public isLocked;\n    string public label = \"Savings\";\n\n    constructor() {\n        owner = msg.sender;   // the account that deployed the contract\n        balance = 0;\n    }\n}\n```\n\n## Core types\n\n| Type | Meaning |\n|---|---|\n| `uint256` | Unsigned integer, 0 or positive, the most common numeric type |\n| `int256` | Signed integer, can be negative |\n| `address` | A 20-byte Ethereum account or contract address |\n| `bool` | true or false |\n| `string` / `bytes` | Text or raw byte data |\n\nSolidity has no floating-point type at all, financial logic is done in whole-number units (like storing cents instead of dollars) to avoid the rounding errors that plague floating-point money math in other languages.\n\n## msg.sender\n\n`msg.sender` is a special, always-available variable holding the address that called the current function, it's the foundation almost every access-control check in Solidity is built on, \"is the caller allowed to do this?\"\n\n```solidity\nfunction withdraw() public {\n    require(msg.sender == owner, \"Not the owner\");\n    // ...\n}\n```",
+      "quiz": {
+        "title": "State Variables Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why does Solidity have no floating-point type?",
+            "options": [
+              "The EVM cannot store numbers",
+              "To avoid rounding errors in financial calculations, using whole-number units instead",
+              "Floating point was removed in a recent update",
+              "It is a bug that will be fixed"
+            ],
+            "answer": "To avoid rounding errors in financial calculations, using whole-number units instead"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "msg.sender always holds the address that called the current function.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The Solidity type used to store an Ethereum account or contract address is: ____",
+            "options": [],
+            "answer": "address"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "functions-and-visibility",
+      "title": "Functions and Visibility",
+      "order": 3,
+      "content": "# Functions and Visibility\n\nEvery Solidity function needs an explicit **visibility**, controlling who can call it, and a **mutability** annotation, telling the EVM (and gas estimators) whether it touches the blockchain's state at all.\n\n```solidity\ncontract Counter {\n    uint256 private count;\n\n    function increment() public {\n        count += 1;   // modifies state, costs gas\n    }\n\n    function getCount() public view returns (uint256) {\n        return count;  // only reads state, free to call\n    }\n\n    function double(uint256 n) public pure returns (uint256) {\n        return n * 2;   // touches no state at all, purely computes\n    }\n}\n```\n\n## Visibility\n\n| Modifier | Callable from |\n|---|---|\n| `public` | Anyone, and from within the contract |\n| `external` | Only from outside the contract |\n| `internal` | This contract and contracts that inherit from it |\n| `private` | Only this exact contract |\n\n## Mutability\n\n- `view` functions read state but never modify it, calling one from outside costs **no gas**.\n- `pure` functions don't even read state, they're a pure computation on their inputs, also free to call.\n- Functions with neither modify state, and always cost gas when called as a real transaction.\n\n> [!TIP]\n> Marking a read-only function `view` isn't just documentation, the compiler enforces it, if you accidentally write to a state variable inside a function marked `view`, it simply won't compile.",
+      "quiz": {
+        "title": "Functions and Visibility Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which function type touches no state at all, purely computing from its inputs?",
+            "options": [
+              "view",
+              "pure",
+              "external",
+              "payable"
+            ],
+            "answer": "pure"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Calling a view function from outside the contract (not as part of a state-changing transaction) costs no gas.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The visibility modifier that only allows a function to be called from outside the contract is: ____",
+            "options": [],
+            "answer": "external"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "modifiers-and-access-control",
+      "title": "Modifiers and Access Control",
+      "order": 4,
+      "content": "# Modifiers and Access Control\n\nA **modifier** wraps reusable logic, most commonly an access-control check, around a function, avoiding copy-pasting the same `require` statement into every function that needs it.\n\n```solidity\ncontract Vault {\n    address public owner;\n\n    constructor() {\n        owner = msg.sender;\n    }\n\n    modifier onlyOwner() {\n        require(msg.sender == owner, \"Not the owner\");\n        _;   // this is where the wrapped function's body runs\n    }\n\n    function withdraw(uint256 amount) public onlyOwner {\n        // only the owner can ever reach this point\n    }\n\n    function setOwner(address newOwner) public onlyOwner {\n        owner = newOwner;\n    }\n}\n```\n\nThe `_;` inside a modifier marks exactly where the decorated function's own body gets spliced in, everything before `_;` runs first (here, the ownership check), and if `require` fails, the function body after it never executes at all, the whole transaction reverts.\n\n## require, revert, and assert\n\n```solidity\nfunction transfer(address to, uint256 amount) public {\n    require(amount > 0, \"Amount must be positive\");   // validate input\n    require(balance[msg.sender] >= amount, \"Insufficient balance\");\n    balance[msg.sender] -= amount;\n    balance[to] += amount;\n}\n```\n\n`require` checks a condition and reverts the **entire transaction** (undoing every state change made so far in it) with an error message if it fails, this all-or-nothing behavior is fundamental, a smart contract transaction can never be left half-finished.",
+      "quiz": {
+        "title": "Modifiers and Access Control Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does _; represent inside a modifier?",
+            "options": [
+              "A syntax error placeholder",
+              "Where the decorated function's body gets inserted",
+              "A private variable",
+              "The end of the contract"
+            ],
+            "answer": "Where the decorated function's body gets inserted"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "If a require() check fails partway through a function, all state changes made earlier in that same transaction are undone.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A reusable block of logic, commonly an access check, wrapped around a function is called a ____.",
+            "options": [],
+            "answer": "modifier"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "mappings-structs-and-arrays",
+      "title": "Mappings, Structs and Arrays",
+      "order": 5,
+      "content": "# Mappings, Structs and Arrays\n\nSolidity's core data structures for organizing on-chain state, each with tradeoffs shaped by the fact that every operation costs gas.\n\n## Mappings\n\nA mapping is a key-value store, Solidity's version of a hash map, but with a twist: it has **no length**, and no way to iterate over its keys, every possible key conceptually already exists, mapped to its type's default (zero) value:\n\n```solidity\nmapping(address => uint256) public balances;\n\nfunction deposit() public payable {\n    balances[msg.sender] += msg.value;\n}\n```\n\nThere's no \"key not found\" error, `balances[someRandomAddress]` simply returns `0` if nothing was ever set, exactly the same as if it had explicitly been set to zero.\n\n## Structs\n\n```solidity\nstruct Player {\n    string name;\n    uint256 xp;\n    bool active;\n}\n\nmapping(address => Player) public players;\n\nfunction register(string memory name) public {\n    players[msg.sender] = Player(name, 0, true);\n}\n```\n\nMappings and structs combine constantly, exactly like the pattern above, associating a wallet address with a whole record of data about it.\n\n## Arrays\n\n```solidity\naddress[] public registeredPlayers;\n\nfunction register2() public {\n    registeredPlayers.push(msg.sender);\n}\n```\n\nUnlike mappings, arrays **do** have a length and can be iterated, but looping over a large on-chain array in a function costs gas proportional to its size, and can even become too expensive to call at all if it grows large enough. This is exactly why mappings, not arrays, are the default choice for most on-chain lookups.",
+      "quiz": {
+        "title": "Mappings, Structs and Arrays Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What happens when you read a mapping key that was never explicitly set?",
+            "options": [
+              "It throws an error",
+              "It returns the type's default (zero) value",
+              "It returns null",
+              "The transaction reverts"
+            ],
+            "answer": "It returns the type's default (zero) value"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Looping over a large on-chain array can become expensive or even too costly to call as gas usage grows with its size.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Solidity's key-value data structure, which has no length and cannot be iterated, is called a ____.",
+            "options": [],
+            "answer": "mapping"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "events-and-error-handling",
+      "title": "Events and Error Handling",
+      "order": 6,
+      "content": "# Events and Error Handling\n\nSmart contracts run in an isolated environment with no built-in \"print to console\" for the outside world, **events** are how a contract communicates what happened to applications and users watching the blockchain.\n\n```solidity\ncontract Token {\n    mapping(address => uint256) public balances;\n\n    event Transfer(address indexed from, address indexed to, uint256 amount);\n\n    function transfer(address to, uint256 amount) public {\n        require(amount > 0, \"Amount must be positive\");\n        require(balances[msg.sender] >= amount, \"Insufficient balance\");\n\n        balances[msg.sender] -= amount;\n        balances[to] += amount;\n\n        emit Transfer(msg.sender, to, amount);\n    }\n}\n```\n\n`emit Transfer(...)` writes a permanent, cheap-to-store log entry to the blockchain, off-chain applications (like a wallet's UI, or a block explorer) listen for these events instead of constantly polling contract state, it's how \"your transaction went through\" notifications actually work under the hood. `indexed` parameters can be efficiently searched/filtered by event listeners.\n\n## Custom errors\n\nModern Solidity favors custom errors over plain string messages, they're significantly cheaper in gas:\n\n```solidity\nerror InsufficientBalance(uint256 available, uint256 requested);\n\nfunction withdraw(uint256 amount) public {\n    if (balances[msg.sender] < amount) {\n        revert InsufficientBalance(balances[msg.sender], amount);\n    }\n    balances[msg.sender] -= amount;\n}\n```\n\n`revert` with a custom error immediately stops execution and undoes all state changes in the current transaction, exactly like `require`, but lets you attach structured data (here, the actual vs. requested amounts) instead of just a plain string.",
+      "quiz": {
+        "title": "Events and Error Handling Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the main purpose of an event in Solidity?",
+            "options": [
+              "To store data more cheaply than a state variable",
+              "To let off-chain applications know something happened on-chain",
+              "To validate function inputs",
+              "To restrict who can call a function"
+            ],
+            "answer": "To let off-chain applications know something happened on-chain"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Custom errors are generally cheaper in gas than plain require() string messages.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The keyword used to write an event to the blockchain's log is: ____ Transfer(...)",
+            "options": [],
+            "answer": "emit"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-simple-token-contract",
+      "title": "Final Project: Build a Simple Token Contract",
+      "order": 7,
+      "content": "# Final Project: Build a Simple Token Contract\n\nCombine everything from this course into a simple, ERC-20-style fungible token contract, the same basic pattern underlying most tokens on Ethereum.\n\n## Requirements\n\n1. Declare state variables for `name`, `symbol`, `totalSupply`, and a `mapping(address => uint256)` for balances.\n2. In the constructor, mint the entire `totalSupply` to `msg.sender` (the deployer).\n3. Implement `function transfer(address to, uint256 amount) public returns (bool)`, using `require` to check the sender has enough balance, updating both balances, and emitting a `Transfer` event.\n4. Implement `function balanceOf(address account) public view returns (uint256)`.\n5. Add an `onlyOwner`-style modifier and a `mint(address to, uint256 amount)` function restricted to the contract's owner, that increases `totalSupply` and the recipient's balance.\n6. Use a custom error (not a plain string) for the insufficient-balance case in `transfer`.\n\n## Stretch goals\n\n- Add `approve`/`transferFrom` to support spending on someone else's behalf (the rest of the real ERC-20 standard).\n- Add a `burn(uint256 amount)` function that destroys tokens from the caller's own balance.\n- Write a few test cases (using Hardhat or Foundry) proving transfer fails correctly when the sender has insufficient balance.\n\nSubmit a link to your finished contract below, an instructor will review it before you can mark this lesson complete. Good luck!",
+      "requiresSubmission": true
+    }
+  ]
+}

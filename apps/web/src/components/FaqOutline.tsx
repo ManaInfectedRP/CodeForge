@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Language } from '../context/LanguageContext';
+import type { Language } from '@/context/LanguageContext';
 
 export function slugifyFaqTitle(title: string) {
   return title

@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import Editor from 'react-simple-code-editor';
 import {
@@ -10,8 +12,8 @@ import {
   runLua,
   runPythonInSession,
   type RunnableLang,
-} from '../lib/sandbox';
-import { highlight, type PrismLang } from '../lib/prism';
+} from '@/lib/sandbox';
+import { highlight, type PrismLang } from '@/lib/prism';
 
 export { normalizeLang, type RunnableLang };
 

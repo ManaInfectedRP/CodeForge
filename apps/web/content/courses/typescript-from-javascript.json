@@ -1,0 +1,205 @@
+{
+  "slug": "typescript-from-javascript",
+  "title": "TypeScript from JavaScript",
+  "description": "Level up your JavaScript with static types, interfaces, and compiler-driven confidence.",
+  "pathSlug": "typescript",
+  "pathName": "TypeScript",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "why-typescript",
+      "title": "Why TypeScript?",
+      "order": 1,
+      "content": "# Why TypeScript?\n\nTypeScript adds **static types** on top of JavaScript, the compiler checks that your code is internally consistent *before* it ever runs, catching whole categories of bugs that would otherwise only show up at runtime, in production, in front of a user.\n\n```ts\nfunction greet(name: string): string {\n  return `Hello, ${name}`;\n}\n\nconsole.log(greet('Kodstigen'));\n\n// greet(42) ❌ the compiler rejects this before the code ever runs:\n// \"Argument of type 'number' is not assignable to parameter of type 'string'\"\n```\n\n## What changed from JavaScript\n\n- `name: string` declares that the `name` parameter must be a string, pass anything else and the compiler stops you immediately, instead of the bug surfacing later as a confusing runtime error.\n- `): string` after the parameter list declares the function's **return type**, if the function body tried to `return 42` instead, that would be a compile error too.\n- Every valid JavaScript program is already valid TypeScript, you can add types gradually, file by file, instead of rewriting everything at once.\n\n## Compile time vs. runtime\n\nTypeScript types only exist while you're writing and compiling code, they're checked once, then stripped away entirely. The JavaScript that actually runs in a browser or Node.js has no idea types ever existed, this is why TypeScript can catch bugs early without slowing down the program itself.\n\n*Note: the playground runs TypeScript by stripping the types, full type checking happens in your editor and compiler.*",
+      "quiz": {
+        "title": "TypeScript Intro Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "TRUE_FALSE",
+            "prompt": "TypeScript types are checked at compile time, not at runtime.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "TypeScript files typically use the file extension .____",
+            "options": [],
+            "answer": "ts"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "interfaces-and-types",
+      "title": "Interfaces and Types",
+      "order": 2,
+      "content": "# Interfaces and Types\n\nAs programs grow, describing the *shape* of your data becomes just as important as describing its logic. TypeScript gives you two main tools for that: **interfaces** and **type aliases**.\n\n```ts\ninterface Course {\n  id: string;\n  title: string;\n  lessons: number;\n  published?: boolean; // optional\n}\n\ntype Role = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN'; // union type\n\nfunction describe(course: Course, role: Role): string {\n  return `${role} viewing \"${course.title}\" (${course.lessons} lessons)`;\n}\n\nconsole.log(describe({ id: 'c1', title: 'TypeScript from JavaScript', lessons: 12 }, 'STUDENT'));\n```\n\n## Interfaces describe object shapes\n\n`interface Course { ... }` says: \"a `Course` is an object with exactly these properties.\" Passing an object missing `title`, or with a `lessons` that's a string instead of a number, is a compile error. The `?` after `published` marks it **optional**, an object can be a valid `Course` with or without it.\n\n## Union types restrict the possible values\n\n`type Role = 'STUDENT' | 'INSTRUCTOR' | 'ADMIN';` means a `Role` can only ever be one of those three exact strings, nothing else. Try passing `'ADMINISTRATOR'` where a `Role` is expected, and the compiler catches the typo immediately, something plain JavaScript could never do.\n\n> [!NOTE]\n> `interface` and `type` overlap a lot in practice, a common convention is: use `interface` for the shape of objects, and `type` for unions, primitives, or anything an interface can't express.",
+      "quiz": {
+        "title": "Types Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the ? in `published?: boolean` mean?",
+            "options": [
+              "The property is nullable",
+              "The property is optional",
+              "The property is readonly",
+              "The property is private"
+            ],
+            "answer": "The property is optional"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which symbol combines types into a union?",
+            "options": [
+              "&",
+              "|",
+              "+",
+              "::"
+            ],
+            "answer": "|"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "generics",
+      "title": "Generics",
+      "order": 3,
+      "content": "# Generics\n\n**Generics** let you write a function or type once and have it work correctly with whatever type gets passed in, without losing type safety.\n\n```ts\nfunction firstElement<T>(items: T[]): T | undefined {\n  return items[0];\n}\n\nconsole.log(firstElement([1, 2, 3]));        // inferred as number | undefined\nconsole.log(firstElement(['a', 'b', 'c']));   // inferred as string | undefined\n\ninterface Box<T> {\n  value: T;\n}\n\nconst numberBox: Box<number> = { value: 42 };\nconsole.log(numberBox.value);\n```\n\nThink of `<T>` as a placeholder: \"whatever type you give me, I'll give the same type back out.\" The compiler figures out `T` automatically from the argument you pass, and still catches mistakes, `firstElement([1, 2, 3])[0].toUpperCase()` would be a compile error because that element is a `number`, not a `string`.",
+      "quiz": {
+        "title": "Generics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "FILL_BLANK",
+            "prompt": "A generic type parameter is conventionally named a single capital letter, most commonly ____.",
+            "options": [],
+            "answer": "T"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the main benefit of using generics?",
+            "options": [
+              "They disable type checking for flexibility",
+              "They let you reuse code across types while staying type-safe",
+              "They convert all types to any",
+              "They are only usable with arrays"
+            ],
+            "answer": "They let you reuse code across types while staying type-safe"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "firstElement<string>(...) and firstElement<number>(...) can share the exact same function implementation.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "enums-and-advanced-types",
+      "title": "Enums and Advanced Types",
+      "order": 4,
+      "content": "# Enums and Advanced Types\n\n## Enums\n\nAn `enum` gives a set of related constants readable names.\n\n```ts\nenum Role {\n  Student = 'STUDENT',\n  Instructor = 'INSTRUCTOR',\n  Admin = 'ADMIN',\n}\n\nfunction permissions(role: Role): string[] {\n  switch (role) {\n    case Role.Admin:\n      return ['read', 'write', 'delete'];\n    case Role.Instructor:\n      return ['read', 'write'];\n    default:\n      return ['read'];\n  }\n}\n\nconsole.log(permissions(Role.Instructor));\n```\n\n## Discriminated unions\n\nCombining a union type with a shared \"tag\" property lets TypeScript narrow which shape you're working with.\n\n```ts\ntype ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };\n\nfunction unwrap<T>(result: ApiResult<T>): T {\n  if (!result.ok) throw new Error(result.error);\n  return result.data; // TypeScript knows result is the { ok: true } branch here\n}\n\nconsole.log(unwrap({ ok: true, data: 42 }));\n```\n\nThe `ok` property is the discriminant, checking it narrows `result` to exactly one branch of the union inside each `if`.",
+      "quiz": {
+        "title": "Enums & Unions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What kind of type is `{ ok: true; data: T } | { ok: false; error: string }`?",
+            "options": [
+              "A generic constraint",
+              "A discriminated union",
+              "An enum",
+              "An intersection type"
+            ],
+            "answer": "A discriminated union"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The keyword used to define a set of named constants in TypeScript is ____.",
+            "options": [],
+            "answer": "enum"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Checking a shared property like `result.ok` lets TypeScript narrow the type inside an if branch.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "classes-and-access-modifiers",
+      "title": "Classes and Access Modifiers",
+      "order": 5,
+      "content": "# Classes and Access Modifiers\n\nTypeScript classes add access modifiers on top of JavaScript classes to enforce encapsulation at compile time.\n\n```ts\nclass Account {\n  private balance: number;\n  readonly owner: string;\n\n  constructor(owner: string, startingBalance = 0) {\n    this.owner = owner;\n    this.balance = startingBalance;\n  }\n\n  deposit(amount: number): number {\n    this.balance += amount;\n    return this.balance;\n  }\n\n  getBalance(): number {\n    return this.balance;\n  }\n}\n\nconst acct = new Account('Ada', 100);\nacct.deposit(50);\nconsole.log(acct.owner, acct.getBalance());\n\n// acct.balance ❌ the compiler rejects this before the code ever runs:\n// \"Property 'balance' is private and only accessible within class 'Account'\"\n```\n\n## Modifiers\n\n| Modifier | Meaning |\n|----------|---------|\n| `public` (default) | Accessible from anywhere |\n| `private` | Only accessible inside the class itself |\n| `readonly` | Can be set once (usually in the constructor), never reassigned after |",
+      "quiz": {
+        "title": "Classes Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does marking a field `private` do?",
+            "options": [
+              "Makes it read-only",
+              "Prevents it from being accessed outside the class",
+              "Makes it optional",
+              "Turns it into a generic"
+            ],
+            "answer": "Prevents it from being accessed outside the class"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A field marked ____ can be set once but never reassigned afterward.",
+            "options": [],
+            "answer": "readonly"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "By default, class fields in TypeScript are public.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-typed-task-tracker",
+      "title": "Final Project: Typed Task Tracker",
+      "order": 6,
+      "content": "# Final Project: Typed Task Tracker\n\nTime to combine interfaces, generics, unions, and classes into one typed program.\n\n## Requirements\n\n1. Define an interface (or type) describing a `Task`: `id`, `title`, `done`, and `priority: 'low' | 'medium' | 'high'`.\n2. Write a generic `Store<T>` class (or a set of typed functions) that can add, remove, and list items of any type, then use it to manage `Task` objects.\n3. Write a function that filters tasks by priority and returns a properly typed result.\n4. Model an \"add task\" operation as a discriminated union or use an `enum` somewhere meaningful, e.g. a result type that can succeed or fail validation.\n5. Make sure the whole file compiles with no implicit `any`s, add explicit types anywhere inference doesn't cover you.\n\n## Stretch goals\n\n- Sort tasks by priority.\n- Add a `readonly createdAt` field set in the constructor.\n- Split your types into a separate file and import them with `import`/`export`.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+{
+  "slug": "html-foundations",
+  "title": "HTML Foundations",
+  "description": "The building blocks of every website: structure, semantics, forms, and accessibility with HTML.",
+  "pathSlug": "html",
+  "pathName": "HTML",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "what-is-html-structure-of-a-web-page",
+      "title": "What Is HTML? Structure of a Web Page",
+      "order": 1,
+      "content": "# What Is HTML? Structure of a Web Page\n\nHTML (HyperText Markup Language) is not a programming language, it's a **markup** language: it describes the structure and meaning of content on a page, not how to compute anything. Every website you've ever visited, however fancy, has HTML underneath it.\n\n## The skeleton of every page\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <title>My First Page</title>\n  </head>\n  <body>\n    <h1>Hello, world!</h1>\n    <p>This is my first web page.</p>\n  </body>\n</html>\n```\n\n| Piece | Purpose |\n|---|---|\n| `<!DOCTYPE html>` | Tells the browser this is a modern HTML5 document. |\n| `<html lang=\"en\">` | The root element; `lang` helps screen readers and search engines. |\n| `<head>` | Metadata: title, character encoding, linked stylesheets, not visible content. |\n| `<body>` | Everything the visitor actually sees. |\n\n## Elements, tags, and attributes\n\nAn **element** is usually written as an opening tag, some content, and a closing tag: `<p>content</p>`. Some elements are **void elements** and never have a closing tag or content, like `<img>` or `<br>`.\n\nAn **attribute** adds extra information to a tag, written inside the opening tag as `name=\"value\"`:\n\n```html\n<img src=\"cat.jpg\" alt=\"A sleeping cat\" width=\"300\" />\n```\n\nHere `src`, `alt`, and `width` are all attributes of the `img` element.\n\n> [!NOTE]\n> HTML elements can nest inside each other, but they must close in the reverse order they opened, `<p><strong>bold</strong></p>` is valid, `<p><strong>bold</p></strong>` is not.",
+      "quiz": {
+        "title": "HTML Structure Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which part of an HTML document holds the visible page content?",
+            "options": [
+              "<head>",
+              "<body>",
+              "<title>",
+              "<meta>"
+            ],
+            "answer": "<body>"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Void elements like <img> never have a closing tag.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "In <img src=\"cat.jpg\" alt=\"A cat\" />, \"src\" and \"alt\" are called ____.",
+            "options": [],
+            "answer": "attributes"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "text-content-headings-paragraphs-and-lists",
+      "title": "Text Content: Headings, Paragraphs, and Lists",
+      "order": 2,
+      "content": "# Text Content: Headings, Paragraphs, and Lists\n\nMost of a web page is text, and HTML gives you a small set of elements to describe what kind of text it is.\n\n## Headings and paragraphs\n\n```html\n<h1>Kodstigen</h1>\n<h2>Learn to Code</h2>\n<p>Kodstigen is a platform for learning to code through interactive lessons and projects.</p>\n```\n\nThere are six heading levels, `<h1>` through `<h6>`, from most to least important. Use exactly one `<h1>` per page, it's the page's main title, and don't skip levels just to make text smaller, that's what CSS is for.\n\n## Lists\n\n```html\n<ul>\n  <li>HTML</li>\n  <li>CSS</li>\n  <li>JavaScript</li>\n</ul>\n\n<ol>\n  <li>Write the HTML</li>\n  <li>Style it with CSS</li>\n  <li>Add behavior with JavaScript</li>\n</ol>\n```\n\n- `<ul>` is an **unordered list** (bullets), use it when order doesn't matter.\n- `<ol>` is an **ordered list** (numbers), use it when sequence matters, like steps in a recipe.\n- Every item in either list goes inside an `<li>` (list item).\n\n## Inline emphasis\n\n```html\n<p>This is <strong>very important</strong> and this is <em>subtly emphasized</em>.</p>\n```\n\n`<strong>` and `<em>` carry real semantic meaning (importance and emphasis) that screen readers announce differently, they're not just \"bold\" and \"italic\". The purely visual tags `<b>` and `<i>` still exist but should be reserved for cases with no semantic meaning at all.",
+      "quiz": {
+        "title": "Text Content Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which list type should you use for numbered, sequential steps?",
+            "options": [
+              "<ul>",
+              "<ol>",
+              "<li>",
+              "<dl>"
+            ],
+            "answer": "<ol>"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A page should generally have more than one <h1> so search engines see multiple important topics.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Every item inside a <ul> or <ol> must be wrapped in an ____ element.",
+            "options": [],
+            "answer": "li"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "links-images-and-semantic-elements",
+      "title": "Links, Images, and Semantic Elements",
+      "order": 3,
+      "content": "# Links, Images, and Semantic Elements\n\n## Links\n\n```html\n<a href=\"https://example.com\">Visit Example</a>\n<a href=\"/about.html\">About page (relative link)</a>\n<a href=\"https://example.com\" target=\"_blank\" rel=\"noopener\">Opens in a new tab</a>\n```\n\nThe `href` attribute is where the link goes. Links can point to other sites (absolute URLs) or other pages on your own site (relative URLs). `target=\"_blank\"` opens a new tab, and should be paired with `rel=\"noopener\"` so the new page can't control the original tab.\n\n## Images\n\n```html\n<img src=\"logo.png\" alt=\"Kodstigen logo\" width=\"120\" height=\"120\" />\n```\n\n`alt` text is not optional, it's read aloud by screen readers and shown if the image fails to load. A decorative image with no informational value can use `alt=\"\"`, but never omit the attribute entirely.\n\n## Semantic layout elements\n\nInstead of wrapping everything in generic `<div>`s, HTML5 gives you elements that describe a section's *role* on the page:\n\n| Element | Role |\n|---|---|\n| `<header>` | Introductory content, often a logo and navigation. |\n| `<nav>` | A block of navigation links. |\n| `<main>` | The primary content, unique to this page, one per page. |\n| `<section>` | A thematic grouping of content, usually with its own heading. |\n| `<article>` | Self-contained content that would make sense on its own (a blog post, a product card). |\n| `<footer>` | Closing content, like copyright or contact links. |\n\n```html\n<header>\n  <h1>Kodstigen</h1>\n  <nav>\n    <a href=\"/\">Home</a>\n    <a href=\"/courses\">Courses</a>\n  </nav>\n</header>\n<main>\n  <article>\n    <h2>Why Learn to Code?</h2>\n    <p>...</p>\n  </article>\n</main>\n<footer>\n  <p>&copy; 2026 Kodstigen</p>\n</footer>\n```\n\n> [!TIP]\n> Semantic elements look identical to a `<div>` by default, their real value is meaning: screen readers, browsers, and search engines all use them to understand your page's structure.",
+      "quiz": {
+        "title": "Links & Semantics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which attribute tells the browser where a link should navigate to?",
+            "options": [
+              "src",
+              "href",
+              "link",
+              "to"
+            ],
+            "answer": "href"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The alt attribute on an <img> can safely be left out if the image is purely decorative.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The semantic element for a block of navigation links is <____>.",
+            "options": [],
+            "answer": "nav"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "building-forms",
+      "title": "Building Forms",
+      "order": 4,
+      "content": "# Building Forms\n\nForms are how HTML collects input from a visitor: search boxes, login screens, checkout pages.\n\n## A basic form\n\n```html\n<form action=\"/submit\" method=\"POST\">\n  <label for=\"username\">Username</label>\n  <input type=\"text\" id=\"username\" name=\"username\" required />\n\n  <label for=\"email\">Email</label>\n  <input type=\"email\" id=\"email\" name=\"email\" required />\n\n  <label for=\"plan\">Plan</label>\n  <select id=\"plan\" name=\"plan\">\n    <option value=\"free\">Free</option>\n    <option value=\"pro\">Pro</option>\n  </select>\n\n  <button type=\"submit\">Sign Up</button>\n</form>\n```\n\n- `action` is the URL the data is sent to; `method` is usually `GET` (data in the URL, for searches/filters) or `POST` (data in the request body, for anything that changes data).\n- Every `<input>` needs a matching `<label>`, connected by `for` on the label and `id` on the input. This isn't cosmetic, screen reader users rely on it, and it lets sighted users click the label text to focus the field.\n\n## Input types matter\n\n```html\n<input type=\"text\" />\n<input type=\"email\" />\n<input type=\"password\" />\n<input type=\"number\" min=\"0\" max=\"100\" />\n<input type=\"checkbox\" />\n<input type=\"radio\" name=\"tier\" value=\"free\" />\n<input type=\"date\" />\n```\n\nEach `type` changes both the on-screen keyboard/widget shown (especially on mobile) and what the browser validates automatically, `type=\"email\"` alone gives you free client-side validation for a well-formed address.\n\n> [!WARNING]\n> Client-side form validation (like `required` or `type=\"email\"`) improves the experience, but it is never a substitute for validating input on the server. Anyone can bypass it entirely by sending a request directly.",
+      "quiz": {
+        "title": "Forms Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How do you connect a <label> to its <input> for accessibility?",
+            "options": [
+              "Put them next to each other in the HTML",
+              "Match the label's \"for\" attribute to the input's \"id\"",
+              "Wrap the input in <strong>",
+              "Give both the same name attribute"
+            ],
+            "answer": "Match the label's \"for\" attribute to the input's \"id\""
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Client-side validation like the \"required\" attribute means you no longer need to validate on the server.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The form attribute that controls where submitted data is sent is ____.",
+            "options": [],
+            "answer": "action"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "tables-and-accessibility",
+      "title": "Tables and Accessibility",
+      "order": 5,
+      "content": "# Tables and Accessibility\n\n## Tables\n\nHTML tables are for **tabular data**, rows and columns of related values, not for page layout (that job belongs to CSS).\n\n```html\n<table>\n  <thead>\n    <tr>\n      <th>Course</th>\n      <th>Lessons</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr>\n      <td>HTML Foundations</td>\n      <td>6</td>\n    </tr>\n    <tr>\n      <td>CSS Foundations</td>\n      <td>6</td>\n    </tr>\n  </tbody>\n</table>\n```\n\n`<thead>` groups the header row, `<tbody>` groups the data rows, and each `<th>` (header cell) is announced by screen readers as a column label for every `<td>` (data cell) beneath it.\n\n## Why accessibility matters\n\nAccessible HTML isn't an extra feature, it's what makes your site usable for people using screen readers, keyboard-only navigation, or voice control, and it usually makes the site better for everyone else too.\n\n- Use real buttons (`<button>`) and links (`<a>`) instead of `<div onclick>`, they come with keyboard support and screen-reader semantics for free.\n- Always give images meaningful `alt` text.\n- Keep a logical heading order (`h1` → `h2` → `h3`), don't skip levels.\n- Make sure interactive elements are reachable and usable with the Tab key alone.\n\n```html\n<!-- Bad: no keyboard support, no semantics -->\n<div onclick=\"submitForm()\">Submit</div>\n\n<!-- Good: works with keyboard, mouse, and screen readers -->\n<button onclick=\"submitForm()\">Submit</button>\n```\n\n> [!TIP]\n> A quick way to sanity-check accessibility: unplug your mouse and try to use the whole page with only Tab, Shift+Tab, and Enter. If you get stuck, so will some of your visitors.",
+      "quiz": {
+        "title": "Tables & Accessibility Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the main reason to prefer <button> over a clickable <div> for actions?",
+            "options": [
+              "It looks better by default",
+              "It comes with keyboard and screen-reader support built in",
+              "It loads faster",
+              "Divs cannot have click handlers"
+            ],
+            "answer": "It comes with keyboard and screen-reader support built in"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "HTML tables should be used for arranging general page layout, like columns of unrelated content.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The table element that groups the header row is <____>.",
+            "options": [],
+            "answer": "thead"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-multi-section-personal-portfolio-page",
+      "title": "Final Project: Build a Multi-Section Personal Portfolio Page",
+      "order": 6,
+      "content": "# Final Project: Build a Multi-Section Personal Portfolio Page\n\nBring together everything from this course into a single, real page.\n\n## Requirements\n\n1. Use a full HTML5 skeleton (`<!DOCTYPE html>`, `<html lang=\"en\">`, `<head>` with a `<title>`).\n2. Include a `<header>` with your name and a `<nav>` linking to at least three sections on the page (`<a href=\"#projects\">`, etc.).\n3. Include a `<main>` with at least three `<section>`s: an \"About Me\", a \"Projects\" list using semantic `<article>` elements, and a \"Contact\" section with a working `<form>` (name, email, message, submit button, every input properly labeled).\n4. Use at least one `<ul>` or `<ol>`, at least one `<img>` with meaningful `alt` text, and a heading hierarchy that doesn't skip levels.\n5. Include a `<footer>` with a copyright line.\n\n## Stretch goals\n\n- Add a `<table>` summarizing your skills and proficiency levels.\n- Make every interactive element reachable and usable with only the keyboard.\n- Validate your page's HTML using the [W3C Markup Validator](https://validator.w3.org/) and fix any errors it reports.\n\nSubmit a link to your finished page (a repo, CodePen, or hosted URL) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

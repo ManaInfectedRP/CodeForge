@@ -1,0 +1,181 @@
+{
+  "slug": "lua-intermediate-oop-closures-patterns",
+  "title": "Lua Intermediate: OOP, Closures & Patterns",
+  "description": "Go beyond the basics: closures and private state, full class hierarchies with inheritance, Lua string patterns, and proper error handling with pcall/xpcall.",
+  "pathSlug": "lua",
+  "pathName": "Lua",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "closures-and-upvalues",
+      "title": "Closures and Upvalues",
+      "order": 1,
+      "content": "# Closures and Upvalues\n\nLua functions can reference variables from an enclosing scope even after that scope has returned, this is a **closure**. The captured variable is called an **upvalue**.\n\n## A closure example\n\n```lua\nlocal function makeCounter()\n  local count = 0\n  return function()\n    count = count + 1\n    return count\n  end\nend\n\nlocal counter1 = makeCounter()\nlocal counter2 = makeCounter()\n\nprint(counter1()) -- 1\nprint(counter1()) -- 2\nprint(counter2()) -- 1, a separate count upvalue from counter1's\n```\n\nEach call to `makeCounter` creates a **fresh** `count` variable, the inner function closes over that specific instance, not a shared global. `counter1` and `counter2` don't interfere with each other.\n\n## Why this matters\n\nClosures are how you build private state without a class: `count` isn't reachable from outside the returned function, there's no way to read or reset it except by calling `counter1()` again. This pattern shows up constantly, for example a memoized/cached computation.\n\n```lua\nlocal function memoize(fn)\n  local cache = {}\n  return function(n)\n    if cache[n] == nil then\n      cache[n] = fn(n)\n    end\n    return cache[n]\n  end\nend\n\nlocal slowSquare = function(n) return n * n end\nlocal fastSquare = memoize(slowSquare)\n\nprint(fastSquare(5)) -- computes and caches\nprint(fastSquare(5)) -- returns the cached value\n```\n\n> [!NOTE]\n> An upvalue is shared by reference, not copied. If two closures created in the *same* call to `makeCounter` both capture the same `count`, calling one will affect what the other sees. Each *separate call* to `makeCounter`, though, creates a brand-new `count`.",
+      "quiz": {
+        "title": "Closures Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the name for a variable an inner function captures from its enclosing scope?",
+            "options": [
+              "A global",
+              "An upvalue",
+              "A metatable",
+              "A vararg"
+            ],
+            "answer": "An upvalue"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Two separate calls to the same closure-returning function share the exact same captured variable.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A function that captures variables from its enclosing scope is called a ____.",
+            "options": [],
+            "answer": "closure"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "object-oriented-lua-classes-and-inheritance",
+      "title": "Object-Oriented Lua: Classes and Inheritance",
+      "order": 2,
+      "content": "# Object-Oriented Lua: Classes and Inheritance\n\nThe Fundamentals course showed how `setmetatable` and `__index` turn a plain table into something like an instance. Here we build a full **class hierarchy** with inheritance.\n\n## A base class\n\n```lua\nlocal Animal = {}\nAnimal.__index = Animal\n\nfunction Animal.new(name)\n  return setmetatable({ name = name }, Animal)\nend\n\nfunction Animal:speak()\n  return self.name .. \" makes a sound.\"\nend\n```\n\n## Inheriting from it\n\n```lua\nlocal Dog = setmetatable({}, { __index = Animal }) -- Dog falls back to Animal\nDog.__index = Dog\n\nfunction Dog.new(name)\n  local self = Animal.new(name)   -- reuse the base constructor\n  return setmetatable(self, Dog)   -- but tag the instance as a Dog\nend\n\nfunction Dog:speak() -- overrides Animal:speak\n  return self.name .. \" says woof!\"\nend\n\nlocal generic = Animal.new(\"Creature\")\nlocal rex = Dog.new(\"Rex\")\n\nprint(generic:speak()) -- Creature makes a sound.\nprint(rex:speak())      -- Rex says woof!\n```\n\nTwo `__index` links are at work: `Dog`'s metatable points `__index` at `Animal`, so a `Dog` instance whose class table (`Dog`) doesn't have a method falls through to `Animal`. Because `Dog:speak` *is* defined, it wins over `Animal:speak`, this is how overriding works.\n\n## Calling the parent's method\n\n```lua\nfunction Dog:speak()\n  return Animal.speak(self) .. \" (a very good boy)\"\nend\n```\n\nCalling `Animal.speak(self)` directly (dot syntax, explicit `self`) is how Lua does \"super.method()\" calls, there's no dedicated `super` keyword.\n\n> [!TIP]\n> This two-metatable pattern (class table linked to a parent class table, instances linked to their class table) is the idiomatic way OOP frameworks implement inheritance under the hood, now you know exactly what they're doing for you.",
+      "quiz": {
+        "title": "OOP & Inheritance Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "To call a parent class's overridden method from a subclass, you...",
+            "options": [
+              "Use the super keyword",
+              "Call ParentClass.method(self, ...) directly",
+              "Lua does this automatically",
+              "It is not possible"
+            ],
+            "answer": "Call ParentClass.method(self, ...) directly"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Overriding Animal:speak with Dog:speak means Dog instances no longer have access to Animal's version unless explicitly called.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The metamethod that makes a missing method lookup fall back to another table is ____.",
+            "options": [],
+            "answer": "__index"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "string-patterns-deep-dive",
+      "title": "String Patterns Deep Dive",
+      "order": 3,
+      "content": "# String Patterns Deep Dive\n\nLua doesn't have full regular expressions, instead it has a lighter-weight **pattern** system built into `string.find`, `string.match`, `string.gmatch`, and `string.gsub`. Patterns cover the vast majority of real-world text processing without needing a heavyweight regex engine.\n\n## Character classes\n\n| Class | Matches |\n|---|---|\n| `%a` | a letter |\n| `%d` | a digit |\n| `%s` | whitespace |\n| `%w` | a letter or digit |\n| `%p` | punctuation |\n| `.`  | any character |\n\nUppercase versions (`%A`, `%D`, ...) match the *complement*. Quantifiers `*`, `+`, `-`, and `?` work similarly to regex, though `-` is a **lazy** (shortest) repeat, unlike `*`'s greedy repeat.\n\n## Capturing groups\n\n```lua\nlocal date = \"2026-07-06\"\nlocal year, month, day = date:match(\"(%d+)-(%d+)-(%d+)\")\nprint(year, month, day) -- 2026  07  06\n```\n\nParentheses in a pattern create a **capture**, `string.match` returns one value per capture (or the whole match if there are none).\n\n## Iterating all matches with gmatch\n\n```lua\nlocal text = \"cat, dog, bird\"\nfor word in text:gmatch(\"%a+\") do\n  print(word)\nend\n-- cat\n-- dog\n-- bird\n```\n\n## Search-and-replace with gsub\n\n```lua\nlocal sentence = \"Lua is great, Lua is fast\"\nlocal replaced, count = sentence:gsub(\"Lua\", \"Kodstigen\")\nprint(replaced) -- Kodstigen is great, Kodstigen is fast\nprint(count)    -- 2\n\n-- gsub can also take a function to compute each replacement\nlocal upper = sentence:gsub(\"%a+\", function(word) return word:upper() end)\nprint(upper) -- LUA IS GREAT, LUA IS FAST\n```\n\n`gsub` returns **two** values: the new string, and how many replacements were made, don't forget the second one if you only want the string.\n\n> [!WARNING]\n> Lua patterns are not regular expressions, features like alternation (`a|b`), non-capturing groups, and lookahead don't exist. For genuinely complex text processing, projects typically reach for a dedicated regex library instead of stretching patterns past what they're good at.",
+      "quiz": {
+        "title": "String Patterns Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which character class matches a single digit in a Lua pattern?",
+            "options": [
+              "%a",
+              "%d",
+              "%s",
+              "%w"
+            ],
+            "answer": "%d"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "string.gsub returns only the new string, never a replacement count.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Parentheses in a Lua pattern create a ____, which string.match returns as a separate value.",
+            "options": [],
+            "answer": "capture"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "error-handling-pcall-xpcall-and-error",
+      "title": "Error Handling: pcall, xpcall, and error",
+      "order": 4,
+      "content": "# Error Handling: pcall, xpcall, and error\n\nLua doesn't have try/catch, instead errors are handled with the built-in functions `pcall`, `xpcall`, `error`, and `assert`.\n\n## Raising errors\n\n```lua\nlocal function withdraw(balance, amount)\n  if amount > balance then\n    error(\"insufficient funds\")\n  end\n  return balance - amount\nend\n```\n\nCalling `error(message)` immediately stops execution and unwinds the call stack, exactly like `throw` in other languages, except the \"catch\" is a separate function call rather than a block.\n\n## Catching errors with pcall\n\n```lua\nlocal ok, result = pcall(withdraw, 100, 150)\n\nif ok then\n  print(\"New balance: \" .. result)\nelse\n  print(\"Failed: \" .. result) -- result holds the error message here\nend\n```\n\n`pcall` (\"protected call\") runs a function and catches any error it raises. It always returns a boolean first (`true` if no error, `false` if one occurred), followed by either the function's return value(s), or the error message.\n\n## assert: a shortcut for a common check\n\n```lua\nlocal function withdraw(balance, amount)\n  assert(amount <= balance, \"insufficient funds\")\n  return balance - amount\nend\n```\n\n`assert(condition, message)` is sugar for \"if condition is falsy, error(message)\", used constantly to validate function arguments up front.\n\n## xpcall: catching errors with a custom handler\n\n```lua\nlocal function riskyOperation()\n  error({ code = 42, reason = \"something broke\" }) -- errors can be any value, not just strings\nend\n\nlocal ok, err = xpcall(riskyOperation, function(e)\n  if type(e) == \"table\" then\n    return \"Error \" .. e.code .. \": \" .. e.reason\n  end\n  return tostring(e)\nend)\n\nprint(err) -- Error 42: something broke\n```\n\n`xpcall` is like `pcall` but takes a second argument, a **message handler** that runs while the stack is still unwound (useful for attaching a stack trace, or normalizing non-string error values like the table above).\n\n> [!TIP]\n> Reach for `assert` for \"this should never happen if the caller used the API correctly\" checks, and reserve `error` + `pcall` for situations the caller is expected to actually handle, like a failed network request or invalid user input.",
+      "quiz": {
+        "title": "Error Handling Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does pcall return first, before any of the wrapped function's own results?",
+            "options": [
+              "The error message",
+              "A boolean success flag",
+              "Nothing",
+              "The function itself"
+            ],
+            "answer": "A boolean success flag"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "In Lua, error() can only be called with a string message.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "____(condition, message) raises an error with the given message if condition is falsy.",
+            "options": [],
+            "answer": "assert"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-contact-book-with-validated-errors",
+      "title": "Final Project: Build a Contact Book with Validated Errors",
+      "order": 5,
+      "content": "# Final Project: Build a Contact Book with Validated Errors\n\nCombine closures, OOP, patterns, and error handling into one small but real program: a contact book.\n\n## Requirements\n\n1. Model a `ContactBook` \"class\" (metatable + `__index`, like the Object-Oriented lesson) with methods to add, remove, and list contacts.\n2. Each contact needs a name and an email; validate the email with a string pattern (at minimum, requires an `@` and at least one `.` after it) and `error()`/`assert()` if it's invalid.\n3. Wrap every call that adds a contact in `pcall`, so a bad email prints a friendly error message instead of crashing the whole program.\n4. Add a `search(term)` method that uses `string.find` or `gmatch` to return every contact whose name contains `term` (case-insensitive).\n5. Use a closure to track how many contacts have ever been added in total (including ones later removed), exposed through a `ContactBook:totalEverAdded()` method, without storing it as a plain field on the instance.\n\n## Stretch goals\n\n- Support multiple emails per contact (a table of emails instead of one string).\n- Add an `export()` method that returns a single formatted string listing every contact, built with `table.concat`.\n- Persist contacts to a file with Lua's `io` library and reload them on startup (only relevant if you're running outside this course's browser sandbox).\n\nSubmit a link to your finished script (a repo or gist) below, an instructor will review it before you can mark this lesson complete.",
+      "requiresSubmission": true
+    }
+  ]
+}

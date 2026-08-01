@@ -1,0 +1,222 @@
+{
+  "slug": "sql-fundamentals",
+  "title": "SQL Fundamentals",
+  "description": "Learn to query, filter, join, and aggregate data with SQL, the standard language for relational databases.",
+  "pathSlug": "sql",
+  "pathName": "SQL",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "introduction-to-sql-and-select",
+      "title": "Introduction to SQL and SELECT",
+      "order": 1,
+      "content": "# Introduction to SQL and SELECT\n\nSQL (Structured Query Language) is how you talk to a **relational database**, data organized into tables made of rows and columns. Almost every application with a database uses SQL under the hood.\n\nImagine a `students` table:\n\n| id | name | xp |\n|----|------|-----|\n| 1 | Ada | 120 |\n| 2 | Grace | 95 |\n| 3 | Alan | 60 |\n\n## Selecting data\n\n```sql\nSELECT name, xp\nFROM students;\n\nSELECT *\nFROM students;\n```\n\n- `SELECT` lists the columns you want back, or `*` for every column.\n- `FROM` says which table to read from.\n- Every statement ends with a semicolon `;`.\n\n> [!NOTE]\n> SQL keywords like `SELECT` and `FROM` aren't case-sensitive (`select` works too), but writing them in `UPPERCASE` is the near-universal convention, it makes queries easier to scan.",
+      "quiz": {
+        "title": "SQL Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does SQL stand for?",
+            "options": [
+              "Structured Query Language",
+              "Sequential Query Logic",
+              "System Query Layer",
+              "Structured Question Language"
+            ],
+            "answer": "Structured Query Language"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ clause specifies which table a query reads from.",
+            "options": [],
+            "answer": "FROM"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "SQL keywords like SELECT and FROM are not case-sensitive.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "filtering-with-where",
+      "title": "Filtering with WHERE",
+      "order": 2,
+      "content": "# Filtering with WHERE\n\n```sql\nSELECT name, xp\nFROM students\nWHERE xp >= 100;\n\nSELECT name\nFROM students\nWHERE name LIKE 'A%';\n```\n\n## Comparisons and patterns\n\n- `WHERE` filters rows before they're returned, only rows where the condition is true make it into the result.\n- `LIKE 'A%'` matches names starting with `A`, `%` is a wildcard for \"anything, any length\".\n- Combine conditions with `AND` / `OR`, and control the result order with `ORDER BY`:\n\n```sql\nSELECT name, xp\nFROM students\nWHERE xp >= 50 AND name != 'Ada'\nORDER BY xp DESC;\n```\n\n`ORDER BY xp DESC` sorts highest-XP first, drop `DESC` (or use `ASC`) to sort lowest first.",
+      "quiz": {
+        "title": "WHERE Clause Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which keyword matches a text pattern like a prefix or suffix?",
+            "options": [
+              "MATCH",
+              "LIKE",
+              "HAS",
+              "IN"
+            ],
+            "answer": "LIKE"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "To sort query results from highest to lowest, you add ORDER BY column ____.",
+            "options": [],
+            "answer": "DESC"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The WHERE clause filters rows before they are included in the result set.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "joining-tables",
+      "title": "Joining Tables",
+      "order": 3,
+      "content": "# Joining Tables\n\nRelational databases spread data across multiple tables, a `JOIN` combines rows from two tables based on a shared column.\n\nGiven `students(id, name)` and `enrollments(student_id, course_title)`:\n\n```sql\nSELECT students.name, enrollments.course_title\nFROM students\nJOIN enrollments ON students.id = enrollments.student_id;\n```\n\n`ON students.id = enrollments.student_id` tells the database how to match rows between the two tables.\n\n## INNER JOIN vs. LEFT JOIN\n\n- A plain `JOIN` (short for `INNER JOIN`) only returns rows that have a match in **both** tables.\n- A `LEFT JOIN` keeps every row from the left (first) table, filling in `NULL` for columns from the right table when there's no match, useful for finding students with **zero** enrollments.\n\n```sql\nSELECT students.name, enrollments.course_title\nFROM students\nLEFT JOIN enrollments ON students.id = enrollments.student_id;\n```",
+      "quiz": {
+        "title": "Joins Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does a JOIN need in order to combine rows from two tables?",
+            "options": [
+              "A shared, matching column",
+              "Identical column names everywhere",
+              "The same number of rows in each table",
+              "Nothing extra"
+            ],
+            "answer": "A shared, matching column"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A ____ JOIN keeps every row from the left table even when there is no match, filling in NULLs.",
+            "options": [],
+            "answer": "LEFT"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "An INNER JOIN only returns rows that have a match in both tables.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "aggregating-with-group-by",
+      "title": "Aggregating with GROUP BY",
+      "order": 4,
+      "content": "# Aggregating with GROUP BY\n\n**Aggregate functions** summarize many rows into one value, `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`. `GROUP BY` buckets rows before aggregating.\n\n```sql\nSELECT course_title, COUNT(*) AS student_count\nFROM enrollments\nGROUP BY course_title;\n```\n\nThis counts how many enrollment rows exist per `course_title`, one summary row per group.\n\n## Filtering groups with HAVING\n\n`WHERE` filters individual rows **before** grouping, `HAVING` filters the grouped results **after** aggregating:\n\n```sql\nSELECT course_title, AVG(xp) AS average_xp\nFROM enrollments\nJOIN students ON students.id = enrollments.student_id\nGROUP BY course_title\nHAVING AVG(xp) > 50;\n```\n\nYou can't write `WHERE AVG(xp) > 50`, the average doesn't exist yet at the point `WHERE` runs, that's exactly what `HAVING` is for.",
+      "quiz": {
+        "title": "Aggregation Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which clause filters groups after aggregation, where WHERE cannot be used?",
+            "options": [
+              "WHERE",
+              "HAVING",
+              "FILTER",
+              "GROUP"
+            ],
+            "answer": "HAVING"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "COUNT(*) counts the number of ____ in each group.",
+            "options": [],
+            "answer": "rows"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "You can filter on an aggregate result like COUNT(*) using a plain WHERE clause.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "modifying-data-insert-update-delete",
+      "title": "Modifying Data: INSERT, UPDATE, DELETE",
+      "order": 5,
+      "content": "# Modifying Data: INSERT, UPDATE, DELETE\n\nSo far every example has only read data. These three statements change it.\n\n```sql\nINSERT INTO students (name, xp)\nVALUES ('Grace', 0);\n\nUPDATE students\nSET xp = xp + 25\nWHERE name = 'Grace';\n\nDELETE FROM students\nWHERE xp = 0 AND name = 'Inactive User';\n```\n\n- `INSERT INTO table (columns) VALUES (...)` adds a new row.\n- `UPDATE table SET column = value WHERE ...` modifies existing rows that match the condition.\n- `DELETE FROM table WHERE ...` removes matching rows.\n\n> [!WARNING]\n> `UPDATE` and `DELETE` without a `WHERE` clause apply to **every row in the table**. Forgetting the `WHERE` is one of the most common, and most costly, mistakes in SQL, always double-check it before running either statement.",
+      "quiz": {
+        "title": "Modifying Data Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which statement adds a brand-new row to a table?",
+            "options": [
+              "UPDATE",
+              "INSERT",
+              "CREATE",
+              "ADD"
+            ],
+            "answer": "INSERT"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Running UPDATE students SET xp = 0 without a ____ clause would reset every row.",
+            "options": [],
+            "answer": "WHERE"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Forgetting the WHERE clause on an UPDATE or DELETE is a common and costly mistake.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-query-a-mini-course-catalog",
+      "title": "Final Project: Query a Mini Course Catalog",
+      "order": 6,
+      "content": "# Final Project: Query a Mini Course Catalog\n\nTime to combine everything into a set of real queries against a small schema of your own design, with tables like `students(id, name, xp)`, `courses(id, title)`, and `enrollments(student_id, course_id)`.\n\n## Requirements\n\n1. Write a `SELECT` with a `WHERE` clause that lists all students above a given XP threshold.\n2. Write a query that `JOIN`s students and enrollments (and courses) to show which courses each student is taking.\n3. Write a query using `GROUP BY` and `COUNT` to show how many students are enrolled in each course.\n4. Write an `UPDATE` statement that safely modifies a specific row, with a `WHERE` clause.\n5. Write an `INSERT` statement that adds a new student.\n\n## Stretch goals\n\n- Use a `LEFT JOIN` to find students with zero enrollments.\n- Use `HAVING` to find courses with more than a set number of students.\n- Add a `DELETE` statement (with a safe `WHERE` clause!) for removing a dropped enrollment.\n\nSubmit a link to your schema and queries (e.g. a repo or gist) below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

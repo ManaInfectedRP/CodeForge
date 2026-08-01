@@ -1,7 +1,9 @@
-import type { LearningPathDto } from '@codeforge/shared';
+'use client';
+
+import type { LearningPath } from '@/lib/content';
 
 interface Props {
-  path: LearningPathDto;
+  path: LearningPath;
   onClick: () => void;
 }
 

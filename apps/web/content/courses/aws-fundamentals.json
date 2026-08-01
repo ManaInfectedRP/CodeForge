@@ -1,0 +1,452 @@
+{
+  "slug": "aws-fundamentals",
+  "title": "AWS Fundamentals",
+  "description": "Regions and IAM, EC2, S3, VPC networking, and serverless with Lambda and API Gateway.",
+  "pathSlug": "aws",
+  "pathName": "AWS",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "why-aws-regions-availability-zones-and-iam",
+      "title": "Why AWS? Regions, Availability Zones, and IAM",
+      "order": 1,
+      "content": "# Why AWS? Regions, Availability Zones, and IAM\n\n**AWS (Amazon Web Services)** rents out compute, storage, networking, and dozens of higher-level services on demand, instead of buying and racking your own servers, you provision what you need in minutes and pay for what you use.\n\n## Regions and Availability Zones\n\nAWS infrastructure is organized geographically:\n\n| Concept | What it is |\n|---|---|\n| **Region** | A geographic area (e.g. `us-east-1`, `eu-north-1`), fully independent of other regions |\n| **Availability Zone (AZ)** | One or more physically separate data centers within a region |\n\nA region typically has 3+ AZs. Spreading resources across multiple AZs is the standard way to survive a single data center failure without any downtime, if one AZ has a power outage, your app keeps running in the others.\n\n## IAM: Identity and Access Management\n\n**IAM** controls *who* (or *what*) can do *what* in your AWS account. Getting this right is one of the most important skills in AWS, misconfigured IAM is behind a huge share of real-world cloud security incidents.\n\n- **Users**: an identity for a person, with long-lived credentials.\n- **Roles**: a set of permissions that something can *assume* temporarily, EC2 instances, Lambda functions, and even users from another AWS account can assume a role instead of using long-lived credentials.\n- **Policies**: JSON documents that actually define permissions, attached to users, roles, or groups.\n\n```json\n{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": \"s3:GetObject\",\n      \"Resource\": \"arn:aws:s3:::my-bucket/*\"\n    }\n  ]\n}\n```\n\nThis policy allows reading objects from one specific S3 bucket, nothing else. This is the **principle of least privilege**: grant exactly the permissions something needs, and nothing more.\n\n> [!WARNING]\n> Never use your AWS account's root user for everyday work, and never hardcode long-lived access keys into application code. Create an IAM user (or better, a role) with only the permissions a task actually needs.",
+      "quiz": {
+        "title": "AWS Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is an Availability Zone?",
+            "options": [
+              "A pricing tier",
+              "One or more physically separate data centers within a region",
+              "A type of IAM policy",
+              "A backup region on another continent"
+            ],
+            "answer": "One or more physically separate data centers within a region"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does an IAM Role let you do that a long-lived IAM user credential doesn't?",
+            "options": [
+              "Nothing, they are identical",
+              "Be assumed temporarily by a service or another account without long-lived credentials",
+              "Automatically create S3 buckets",
+              "Bypass all billing"
+            ],
+            "answer": "Be assumed temporarily by a service or another account without long-lived credentials"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Spreading resources across multiple Availability Zones helps an app survive a single data center failure.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The principle of ____ privilege means granting exactly the permissions something needs, and nothing more.",
+            "options": [],
+            "answer": "least"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "It's a recommended practice to use the AWS account's root user for everyday development work.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What actually defines the specific permissions granted to a user, role, or group?",
+            "options": [
+              "A Region",
+              "An Availability Zone",
+              "A Policy",
+              "A VPC"
+            ],
+            "answer": "A Policy"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "ec2-virtual-servers-in-the-cloud",
+      "title": "EC2: Virtual Servers in the Cloud",
+      "order": 2,
+      "content": "# EC2: Virtual Servers in the Cloud\n\n**EC2 (Elastic Compute Cloud)** rents virtual machines, called **instances**, by the second. It's the most fundamental AWS compute service, and the one most other services are conceptually built on top of.\n\n## Launching an instance\n\nEvery EC2 instance starts from an **AMI (Amazon Machine Image)**, a template that includes an operating system and optionally pre-installed software. AWS provides official AMIs (Amazon Linux, Ubuntu, Windows Server), and you can create your own from a configured instance to reuse later.\n\nKey choices when launching an instance:\n- **Instance type** (e.g. `t3.micro`, `m5.large`), determines vCPUs, memory, and network performance. The letter is the family (general purpose, compute-optimized, memory-optimized...), the number is the generation, the suffix is the size.\n- **Key pair**, an SSH key you use to log in, AWS never stores your private key.\n- **Security group**, a virtual firewall controlling what traffic can reach the instance.\n\n## Security groups\n\n```\nInbound rules:\n  - Port 22 (SSH)  from 203.0.113.4/32   (your IP only)\n  - Port 443 (HTTPS) from 0.0.0.0/0       (anyone)\n\nOutbound rules:\n  - All traffic to 0.0.0.0/0\n```\n\nSecurity groups are **stateful**: if you allow inbound traffic on a port, the matching response traffic is automatically allowed out, you don't need a separate outbound rule for replies. They're also **allow-only**, you can't write an explicit \"deny\" rule, only choose what to allow.\n\n## Elastic IPs\n\nA regular EC2 instance's public IP changes if you stop and start it. An **Elastic IP** is a static public IP you allocate to your account and attach to an instance, giving you a stable address that survives stop/start cycles (though it costs a small amount if it's allocated but not attached to a running instance, to discourage hoarding unused addresses).\n\n> [!TIP]\n> For anything long-running and public-facing, put a load balancer in front of your EC2 instances instead of relying on a single instance's Elastic IP, that way you can add/replace instances without ever changing the address your users hit.",
+      "quiz": {
+        "title": "EC2 Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does an AMI provide when launching an EC2 instance?",
+            "options": [
+              "A security group",
+              "A template including an OS and optionally pre-installed software",
+              "A billing alert",
+              "A VPC"
+            ],
+            "answer": "A template including an OS and optionally pre-installed software"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Security groups require a separate outbound rule to allow response traffic for an allowed inbound connection.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A security group can only specify what traffic to ____, it has no explicit deny rules.",
+            "options": [],
+            "answer": "allow"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What problem does an Elastic IP solve?",
+            "options": [
+              "An instance's public IP normally changes on stop/start, an Elastic IP stays the same",
+              "It encrypts network traffic",
+              "It replaces the need for a security group",
+              "It automatically scales instances"
+            ],
+            "answer": "An instance's public IP normally changes on stop/start, an Elastic IP stays the same"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "You should rely on a single EC2 instance's Elastic IP for a long-running, public-facing service instead of using a load balancer.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "The AWS SSH credential used to log into an instance is called a ____ pair.",
+            "options": [],
+            "answer": "key"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "s3-object-storage",
+      "title": "S3: Object Storage",
+      "order": 3,
+      "content": "# S3: Object Storage\n\n**S3 (Simple Storage Service)** stores files (called **objects**) inside **buckets**. It's not a filesystem or a database, it's built for storing and retrieving whole objects (images, backups, static files, logs) at massive scale and very high durability.\n\n## Buckets and objects\n\n```bash\naws s3 mb s3://my-app-uploads\naws s3 cp photo.jpg s3://my-app-uploads/users/42/photo.jpg\naws s3 ls s3://my-app-uploads/users/42/\n```\n\n- A **bucket** name must be globally unique across all of AWS, not just your account.\n- An **object key** (`users/42/photo.jpg`) looks like a file path, but S3 has no real folders, it's really just one flat namespace of keys that happens to use `/` as a visual separator in the console.\n\n## Storage classes\n\nNot all data needs to be equally fast to access. S3 offers multiple **storage classes** with different cost/retrieval-speed tradeoffs:\n\n| Class | Use case |\n|---|---|\n| Standard | Frequently accessed data |\n| Standard-IA (Infrequent Access) | Accessed rarely, but needs to be available instantly when it is |\n| Glacier | Long-term archives, retrieval takes minutes to hours, much cheaper storage |\n\nYou can set a **lifecycle rule** to automatically move objects to a cheaper class (or delete them) after a certain age, e.g. move logs to Glacier after 90 days.\n\n## Versioning and static website hosting\n\nEnabling **versioning** on a bucket keeps every version of an object instead of overwriting it, protecting against accidental deletes/overwrites (at the cost of storing every version).\n\nS3 can also serve static files directly as a website:\n\n```bash\naws s3 website s3://my-site --index-document index.html --error-document 404.html\n```\n\n## Bucket policies\n\nA **bucket policy** is a JSON document (using the same policy language as IAM) attached directly to a bucket, controlling who can access it:\n\n```json\n{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Principal\": \"*\",\n      \"Action\": \"s3:GetObject\",\n      \"Resource\": \"arn:aws:s3:::my-site/*\"\n    }\n  ]\n}\n```\n\n> [!WARNING]\n> A bucket policy with `\"Principal\": \"*\"` and `s3:GetObject` makes every object in that bucket **publicly readable by anyone on the internet**, exactly what you want for a public website's assets, and exactly what you very much don't want for a bucket holding user data or backups. Misconfigured public buckets are one of the most common real-world AWS security incidents.",
+      "quiz": {
+        "title": "S3 Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What must be globally unique across all of AWS, not just your account?",
+            "options": [
+              "An object key",
+              "A bucket name",
+              "An IAM user",
+              "A security group"
+            ],
+            "answer": "A bucket name"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "S3 has real, nested folders, similar to a traditional filesystem.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "An S3 ____ rule can automatically move objects to a cheaper storage class or delete them after a certain age.",
+            "options": [],
+            "answer": "lifecycle"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which storage class is meant for long-term archives with retrieval taking minutes to hours?",
+            "options": [
+              "Standard",
+              "Standard-IA",
+              "Glacier",
+              "ClusterIP"
+            ],
+            "answer": "Glacier"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Enabling versioning on a bucket keeps every version of an object instead of overwriting it.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q6",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does a bucket policy with Principal: * and s3:GetObject do?",
+            "options": [
+              "Deletes the bucket",
+              "Makes every object in the bucket publicly readable by anyone",
+              "Encrypts all objects",
+              "Restricts access to your account only"
+            ],
+            "answer": "Makes every object in the bucket publicly readable by anyone"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "vpc-networking-your-resources",
+      "title": "VPC: Networking Your Resources",
+      "order": 4,
+      "content": "# VPC: Networking Your Resources\n\nA **VPC (Virtual Private Cloud)** is your own private, isolated slice of the AWS network, where you control IP ranges, subnets, and routing for everything you launch inside it.\n\n## Subnets: public vs. private\n\nA VPC is divided into **subnets**, and each subnet is either:\n- **Public**: has a route to an **Internet Gateway**, so resources in it can be reached from (and reach) the public internet directly.\n- **Private**: has no direct route to the internet, used for things that should never be directly reachable, like a database.\n\n```\nVPC: 10.0.0.0/16\n  Public subnet:  10.0.1.0/24   (web servers, load balancers)\n  Private subnet: 10.0.2.0/24   (databases, internal services)\n```\n\nA common, secure pattern: put your load balancer and web servers in a public subnet, and your database in a private subnet that's only reachable from inside the VPC.\n\n## Route tables and the Internet Gateway\n\nA **route table** is a set of rules deciding where network traffic from a subnet gets sent. What makes a subnet \"public\" isn't a special setting, it's simply that its route table sends `0.0.0.0/0` (all other traffic) to an **Internet Gateway** attached to the VPC:\n\n```\nDestination      Target\n10.0.0.0/16       local\n0.0.0.0/0         igw-0123456789\n```\n\n## NAT Gateway: outbound internet for private subnets\n\nResources in a private subnet still often need **outbound** internet access (to download OS updates, call an external API), without being directly reachable from the internet. A **NAT Gateway**, placed in a public subnet, provides exactly that: private-subnet resources route outbound traffic through it, but nothing from the internet can initiate a connection back in.\n\n```\nPrivate subnet route table:\nDestination      Target\n10.0.0.0/16       local\n0.0.0.0/0         nat-0123456789\n```\n\n> [!NOTE]\n> This public-subnet/private-subnet/NAT-gateway pattern is extremely common, it's the default shape of almost every \"real\" production VPC: internet-facing things sit in public subnets, everything else sits in private subnets with outbound-only access through a NAT Gateway.",
+      "quiz": {
+        "title": "VPC Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What makes a subnet 'public' in AWS?",
+            "options": [
+              "Its name contains the word public",
+              "Its route table sends internet-bound traffic to an Internet Gateway",
+              "It has no security group",
+              "It is the first subnet created"
+            ],
+            "answer": "Its route table sends internet-bound traffic to an Internet Gateway"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A database should typically be placed in a public subnet so it is easy to reach.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A ____ Gateway lets resources in a private subnet make outbound internet connections without being directly reachable from the internet.",
+            "options": [],
+            "answer": "NAT"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is a route table?",
+            "options": [
+              "A firewall rule list",
+              "A set of rules deciding where a subnet's network traffic gets sent",
+              "An IAM policy",
+              "A DNS record"
+            ],
+            "answer": "A set of rules deciding where a subnet's network traffic gets sent"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Traffic from the internet can freely initiate new connections into a private subnet through a NAT Gateway.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "A VPC is your own private, isolated slice of the AWS ____, where you control IP ranges and routing.",
+            "options": [],
+            "answer": "network"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "serverless-with-lambda-and-api-gateway",
+      "title": "Serverless with Lambda and API Gateway",
+      "order": 5,
+      "content": "# Serverless with Lambda and API Gateway\n\nSo far every service has meant managing a running server (EC2 instances, at minimum). **Lambda** flips that: you upload a function, and AWS runs it only when triggered, you never provision or manage a server at all.\n\n## Writing a Lambda function\n\n```\nexports.handler = async (event) => {\n  const name = event.queryStringParameters?.name ?? 'world';\n  return {\n    statusCode: 200,\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ message: `Hello, ${name}!` }),\n  };\n};\n```\n\nA Lambda function is just a handler function with a defined input (`event`) and output shape, AWS packages it, runs it in an isolated environment, and you're billed per invocation and per millisecond of execution time, nothing while it's idle.\n\n## Triggers\n\nLambda functions don't run on their own, something has to **invoke** them:\n\n| Trigger | Use case |\n|---|---|\n| API Gateway | Turn a function into an HTTP endpoint |\n| S3 event | Run a function whenever a file is uploaded to a bucket |\n| Scheduled (EventBridge) | Run a function on a cron-like schedule |\n| SQS queue | Process messages from a queue as they arrive |\n\n## API Gateway: HTTP in front of Lambda\n\n**API Gateway** is what turns a Lambda function into a real REST API with a public URL, handling routing, request validation, throttling, and API keys in front of your function.\n\n```\nGET /hello  →  API Gateway  →  Lambda (handler above)  →  response\n```\n\nYou define routes in API Gateway, each one maps to a Lambda function (or another backend), API Gateway handles the HTTP layer, your function just receives a plain JavaScript object describing the request.\n\n## Cold starts\n\nThe tradeoff for not managing servers: the **first** invocation after a period of inactivity has to initialize a fresh execution environment before running your code, called a **cold start**, adding noticeable latency (tens to hundreds of milliseconds, sometimes more for larger runtimes/dependencies). Subsequent invocations reuse a warm environment and are fast.\n\n> [!TIP]\n> If cold-start latency matters for your use case (a user-facing API with strict latency requirements), keep your function's dependencies small, and consider **provisioned concurrency**, which keeps a set number of execution environments pre-warmed at all times, for an additional cost.",
+      "quiz": {
+        "title": "Lambda & API Gateway Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What do you pay for with AWS Lambda?",
+            "options": [
+              "A fixed monthly fee regardless of usage",
+              "Only invocations and execution time, nothing while idle",
+              "Only the size of the deployed code",
+              "A flat per-server cost like EC2"
+            ],
+            "answer": "Only invocations and execution time, nothing while idle"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does API Gateway do for a Lambda function?",
+            "options": [
+              "Encrypts the function's code",
+              "Turns it into a real HTTP endpoint with routing, throttling, and more",
+              "Automatically writes the function for you",
+              "Replaces the need for IAM"
+            ],
+            "answer": "Turns it into a real HTTP endpoint with routing, throttling, and more"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A Lambda function can only be triggered by API Gateway, no other AWS service.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The extra latency on the first invocation after inactivity, while a fresh execution environment initializes, is called a ____ start.",
+            "options": [],
+            "answer": "cold"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "Provisioned concurrency keeps a set number of execution environments pre-warmed to reduce cold starts, at an additional cost.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q6",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which trigger would you use to run a Lambda function whenever a file is uploaded to a bucket?",
+            "options": [
+              "API Gateway",
+              "S3 event",
+              "SQS queue",
+              "EC2 instance"
+            ],
+            "answer": "S3 event"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "iam-roles-billing-and-the-well-architected-basics",
+      "title": "IAM Roles, Billing, and the Well-Architected Basics",
+      "order": 6,
+      "content": "# IAM Roles, Billing, and the Well-Architected Basics\n\nTwo last practical topics that matter on every real AWS project: giving your compute the right permissions without hardcoding credentials, and not getting an unpleasant billing surprise.\n\n## IAM roles for services, not just people\n\nThe single most important AWS security habit: an EC2 instance or Lambda function should be given an **IAM role**, not a hardcoded access key, to call other AWS services.\n\n```\nLambda function → assumes an IAM Role → temporary credentials → calls S3, DynamoDB, etc.\n```\n\nThe role is attached to the Lambda function (or EC2 instance) itself, AWS automatically provides temporary, auto-rotating credentials to your code, your application code never sees or stores a long-lived secret at all.\n\n```\n{\n  \"Effect\": \"Allow\",\n  \"Action\": [\"s3:GetObject\", \"s3:PutObject\"],\n  \"Resource\": \"arn:aws:s3:::my-app-uploads/*\"\n}\n```\n\nAttach this policy to the Lambda's execution role, and the function can read/write that one bucket, and nothing else, without a single access key in its code or environment variables.\n\n## Budgets and cost alerts\n\nAWS bills for exactly what you use, which is powerful but means an unexpected spike (a runaway loop calling an expensive API, a forgotten large instance) shows up on your bill, not before it happens. **AWS Budgets** lets you set a threshold and get alerted (or even trigger an action) before costs run away:\n\n```\nBudget: $50/month\nAlert at: 80% ($40) and 100% ($50)\n```\n\nSetting at least one budget alert on any real account, even a generous one, is a cheap insurance policy against a costly surprise.\n\n## The Well-Architected Framework, briefly\n\nAWS's **Well-Architected Framework** organizes best practices into six pillars:\n\n| Pillar | Cares about |\n|---|---|\n| Operational Excellence | Running and monitoring systems, learning from operations |\n| Security | Protecting data, systems, and assets |\n| Reliability | Recovering from failure, meeting demand |\n| Performance Efficiency | Using resources efficiently as demand changes |\n| Cost Optimization | Avoiding unnecessary spend |\n| Sustainability | Minimizing environmental impact |\n\nYou don't need to memorize the framework in depth this early, but recognizing the six pillars helps you understand *why* AWS documentation and architecture reviews keep bringing up the same handful of concerns.\n\n> [!NOTE]\n> Everything in this course so far, IAM roles over hardcoded keys, private subnets for databases, budgets, multi-AZ deployments, is really just the Security, Reliability, and Cost Optimization pillars in practice.",
+      "quiz": {
+        "title": "IAM Roles & Billing Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What should an EC2 instance or Lambda function use to call other AWS services, instead of a hardcoded access key?",
+            "options": [
+              "A public S3 bucket",
+              "An IAM role",
+              "A NAT Gateway",
+              "A security group"
+            ],
+            "answer": "An IAM role"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Credentials provided to a service through an IAM role are temporary and auto-rotating.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "AWS ____ lets you set a spending threshold and get alerted before costs run away.",
+            "options": [],
+            "answer": "Budgets"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How many pillars does the AWS Well-Architected Framework have?",
+            "options": [
+              "3",
+              "4",
+              "5",
+              "6"
+            ],
+            "answer": "6"
+          },
+          {
+            "id": "q5",
+            "type": "TRUE_FALSE",
+            "prompt": "AWS bills a fixed amount regardless of how many resources you actually use.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q6",
+            "type": "FILL_BLANK",
+            "prompt": "Protecting data, systems, and assets is the concern of the ____ pillar in the Well-Architected Framework.",
+            "options": [],
+            "answer": "Security"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-deploy-a-serverless-api-on-aws",
+      "title": "Final Project: Deploy a Serverless API on AWS",
+      "order": 7,
+      "content": "# Final Project: Deploy a Serverless API on AWS\n\nCombine IAM, Lambda, API Gateway, and S3 into one real, working serverless API.\n\n## Requirements\n\n1. Write at least two Lambda functions (e.g. a `GET /items` and a `POST /items`) and expose them through API Gateway with real routes.\n2. Give each Lambda function's execution role only the specific permissions it needs (e.g. the write function gets `s3:PutObject`, the read function only gets `s3:GetObject`), not broad admin access.\n3. Store data in S3 (as JSON objects) or another AWS data store of your choice, read and written through your Lambda functions, not hardcoded.\n4. Set up at least one AWS Budget alert on the account you're using, even a small one, as practice for a real project.\n5. Document your architecture (which resources you created and how they connect) in a short README.\n\n## Stretch goals\n\n- Put your S3 bucket behind a bucket policy that blocks all public access, and confirm your Lambda functions can still read/write it via their IAM role.\n- Add a scheduled (EventBridge) Lambda function that runs on a timer, e.g. cleaning up old data.\n- Put your whole setup in a VPC with a private subnet, and give your Lambda functions VPC access to reach a resource that isn't publicly exposed.\n\nSubmit a link to your finished project (a repo, or a written architecture summary with screenshots of your working API) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

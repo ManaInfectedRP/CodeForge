@@ -1,0 +1,582 @@
+[
+  {
+    "slug": "node-js-backend-fundamentals",
+    "title": "Node.js Backend Fundamentals",
+    "description": "From your first console.log to a deployed REST API with authentication, the complete Node.js foundation.",
+    "pathSlug": "nodejs",
+    "pathName": "Node.js",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "python-for-absolute-beginners",
+    "title": "Python for Absolute Beginners",
+    "description": "Learn programming from zero with the most beginner-friendly language in the world.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "mongodb-with-fastapi-python",
+    "title": "MongoDB with FastAPI & Python",
+    "description": "Build a real, async REST API with FastAPI and MongoDB: Pydantic models, CRUD with Motor, and a full backend project.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "build-asteroids-using-python-and-pygame",
+    "title": "Build Asteroids using Python and Pygame",
+    "description": "Build a clone of the classic Asteroids game using Pygame and object-oriented programming concepts. This guided project will help you understand how to use Pygame to create a game loop, handle user input, and manage game state. You'll also learn how to use object-oriented programming to create game objects and manage their interactions.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "build-a-match-3-game-using-python-and-kivy",
+    "title": "Build a Match-3 Game using Python and Kivy",
+    "description": "Build a Candy Crush-style Match-3 puzzle game with Kivy, the Python framework for cross-platform apps and mobile games. You'll model the board as plain Python data, render it with Kivy's layout and button widgets, handle taps to select and swap adjacent gems, detect 3-in-a-row matches, and resolve cascades until the board settles.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 8,
+    "quizCount": 7,
+    "isPublic": false
+  },
+  {
+    "slug": "retrieval-augmented-generation-rag-with-python",
+    "title": "Retrieval-Augmented Generation (RAG) with Python",
+    "description": "Build a complete RAG pipeline from scratch in 8 steps: collecting documents, chunking, embedding, vector storage, embedding a query, retrieval, augmentation, and generating a grounded LLM response. You'll write real, runnable Python for every step, no API key required until the very last one.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 9,
+    "quizCount": 8,
+    "isPublic": false
+  },
+  {
+    "slug": "build-your-own-ai-coding-agent",
+    "title": "Build Your Own AI Coding Agent",
+    "description": "Learn how LLMs, function calling, and agent loops actually work by building a real AI coding agent: send prompts via OpenRouter and the OpenAI SDK, write the tool functions your agent needs, wire up function calling, then give it a feedback loop so it can autonomously read, run, and fix a real bug.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 4,
+    "quizCount": 3,
+    "isPublic": false
+  },
+  {
+    "slug": "qiskit-fundamentals",
+    "title": "Qiskit Fundamentals",
+    "description": "Learn quantum computing with IBM's Qiskit SDK: build circuits, create superposition and entanglement, run shot-based simulations, build a genuine quantum random number generator, and understand how real quantum hardware differs from an ideal simulator.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 8,
+    "quizCount": 7,
+    "isPublic": false
+  },
+  {
+    "slug": "cirq-fundamentals",
+    "title": "Cirq Fundamentals",
+    "description": "Learn quantum computing with Google's Cirq SDK: build circuits from qubits and operations, create superposition and entanglement, run repetition-based simulations, build a quantum random number generator, and simulate realistic hardware noise.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 8,
+    "quizCount": 7,
+    "isPublic": false
+  },
+  {
+    "slug": "machine-learning-fundamentals-with-scikit-learn",
+    "title": "Machine Learning Fundamentals with scikit-learn",
+    "description": "Learn classical machine learning with scikit-learn: train classifiers and regressors, split and evaluate data properly, understand precision/recall beyond accuracy, scale features safely with Pipeline, and validate models with cross-validation and GridSearchCV. Every lesson runs live in your browser, no local install needed.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 8,
+    "quizCount": 7,
+    "isPublic": false
+  },
+  {
+    "slug": "langchain-building-llm-applications-with-python",
+    "title": "LangChain: Building LLM Applications with Python",
+    "description": "Build real LLM applications with LangChain: prompt templates and chat models, LCEL chains, retrieval-augmented generation, tools and agents, and stateful multi-step workflows with LangGraph.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "modern-javascript-essentials",
+    "title": "Modern JavaScript Essentials",
+    "description": "DOM manipulation, array methods, and async programming, everything the modern web is built on.",
+    "pathSlug": "javascript",
+    "pathName": "JavaScript",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "json-the-dom",
+    "title": "JSON & the DOM",
+    "description": "Parse and generate JSON, then use it to build and update real DOM elements, the pattern behind every JSON-driven web UI.",
+    "pathSlug": "javascript",
+    "pathName": "JavaScript",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "typescript-from-javascript",
+    "title": "TypeScript from JavaScript",
+    "description": "Level up your JavaScript with static types, interfaces, and compiler-driven confidence.",
+    "pathSlug": "typescript",
+    "pathName": "TypeScript",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "langchain-js-building-llm-applications-with-typescript",
+    "title": "LangChain.js: Building LLM Applications with TypeScript",
+    "description": "Build real, typed LLM applications with LangChain.js: chat models and prompt templates, LCEL chains with .pipe(), retrieval-augmented generation, tools and agents, and stateful multi-step workflows with LangGraph.js.",
+    "pathSlug": "typescript",
+    "pathName": "TypeScript",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "typescript-intermediate-utility-types-narrowing-advanced-types",
+    "title": "TypeScript Intermediate: Utility Types, Narrowing & Advanced Types",
+    "description": "Go beyond the basics: compose types with Partial, Pick, Omit & Record, narrow unknown values safely with type guards and predicates, build mapped and template literal types, constrain and default generics, write function overloads, and use satisfies to keep precise inference.",
+    "pathSlug": "typescript",
+    "pathName": "TypeScript",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "build-a-typed-rest-api-with-express-typescript-zod",
+    "title": "Build a Typed REST API with Express, TypeScript & Zod",
+    "description": "Build a real, validated REST API: Zod schemas as a single source of truth for runtime validation and inferred TypeScript types, typed Express handlers and middleware, validated environment configuration, integration tests with Vitest & Supertest, and a full typed CRUD project.",
+    "pathSlug": "typescript",
+    "pathName": "TypeScript",
+    "lessonCount": 8,
+    "quizCount": 7,
+    "isPublic": false
+  },
+  {
+    "slug": "c-plus-plus-foundations",
+    "title": "C++ Foundations",
+    "description": "Compiled programming, pointers, and memory, the bedrock of systems development.",
+    "pathSlug": "cpp",
+    "pathName": "C++",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "build-breakout-using-c-plus-plus-and-sfml",
+    "title": "Build Breakout using C++ and SFML",
+    "description": "Build a classic Breakout/Arkanoid clone with SFML, C++'s go-to library for 2D graphics and games. You'll open a window and run a real-time game loop, build a keyboard-controlled paddle and a bouncing ball as classes, lay out a grid of destructible bricks, detect collisions with SFML's rectangle intersection, and track score and lives until you win or lose.",
+    "pathSlug": "cpp",
+    "pathName": "C++",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "build-a-horse-race-simulator-using-c-plus-plus-sfml-a-skip-list",
+    "title": "Build a Horse Race Simulator using C++, SFML & a Skip List",
+    "description": "Build a live horse race with a real data structure powering it: a skip list keeps every horse's rank correctly sorted as distances change dozens of times a second, the same technique Redis uses for sorted-set leaderboards. Covers skip list theory, insert/search/delete from scratch, and wiring it into an SFML race loop with a live leaderboard and finish-line detection.",
+    "pathSlug": "cpp",
+    "pathName": "C++",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "build-a-tower-defense-game-using-c-plus-plus-raylib-a-pathfinding",
+    "title": "Build a Tower Defense Game using C++, Raylib & A* Pathfinding",
+    "description": "Build a maze-style tower defense game with Raylib (a simpler, immediate-mode alternative to SFML) and a from-scratch A* pathfinding implementation: enemies navigate a grid using open/closed sets and a Manhattan-distance heuristic, and legally reroute around every tower a player places, since placing a tower re-runs A* to make sure the goal never gets sealed off entirely.",
+    "pathSlug": "cpp",
+    "pathName": "C++",
+    "lessonCount": 8,
+    "quizCount": 7,
+    "isPublic": false
+  },
+  {
+    "slug": "git-version-control-fundamentals",
+    "title": "Git & Version Control Fundamentals",
+    "description": "Learn to track changes, branch, merge, and collaborate on code using Git, the version control system behind virtually every modern software project.",
+    "pathSlug": "git",
+    "pathName": "Git",
+    "lessonCount": 5,
+    "quizCount": 4,
+    "isPublic": false
+  },
+  {
+    "slug": "react-fundamentals",
+    "title": "React Fundamentals",
+    "description": "Component-based UI development with React, JSX, props, state, hooks, and building real interactive apps.",
+    "pathSlug": "react",
+    "pathName": "React",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "react-expo",
+    "title": "React-Expo",
+    "description": "Take React from the browser to your phone: build real mobile apps with Expo, file-based navigation, native device APIs, and ship a build with EAS.",
+    "pathSlug": "react",
+    "pathName": "React",
+    "lessonCount": 9,
+    "quizCount": 8,
+    "isPublic": false
+  },
+  {
+    "slug": "build-tetris-using-react-native-and-expo",
+    "title": "Build Tetris using React Native and Expo",
+    "description": "Build the classic block-stacking game for mobile with Expo and TypeScript: a 10x20 board, all 7 tetrominoes with rotation, a gravity-driven game loop, touch controls, line-clearing, scoring, and a fair 7-bag next-piece queue.",
+    "pathSlug": "react",
+    "pathName": "React",
+    "lessonCount": 8,
+    "quizCount": 7,
+    "isPublic": false
+  },
+  {
+    "slug": "animating-with-react-native-skia",
+    "title": "Animating with React Native Skia",
+    "description": "High-performance 2D graphics and animation for React Native: the Skia Canvas, shapes and paths, animated values, transforms, and gesture-driven motion.",
+    "pathSlug": "react",
+    "pathName": "React",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "c-sharp-foundations",
+    "title": "C# Foundations",
+    "description": "Learn statically-typed, object-oriented programming with C# and the .NET ecosystem, from your first program to building console applications.",
+    "pathSlug": "csharp",
+    "pathName": "C#",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "c-sharp-intermediate-oop-interfaces-events",
+    "title": "C# Intermediate: OOP, Interfaces & Events",
+    "description": "Go deeper into object-oriented C#: inheritance and polymorphism, interfaces vs abstract classes, generics, exception handling, delegates and events, and lambda expressions with Func/Action.",
+    "pathSlug": "csharp",
+    "pathName": "C#",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "c-sharp-async-programming-task-async-await-cancellation",
+    "title": "C# Async Programming: Task, async/await & Cancellation",
+    "description": "Master asynchronous C#: what async/await actually do, running work concurrently with Task.WhenAll and Task.WhenAny, cancelling long-running operations with CancellationToken, handling exceptions across async code, and streaming results with IAsyncEnumerable.",
+    "pathSlug": "csharp",
+    "pathName": "C#",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "unity-essentials-physics-ui-gameplay-systems",
+    "title": "Unity Essentials: Physics, UI & Gameplay Systems",
+    "description": "Build real gameplay in Unity: Rigidbody physics with collisions and triggers, raycasting, the UGUI Canvas system, the Input System, data-driven design with ScriptableObjects, object pooling for performance, and saving player data with PlayerPrefs and JSON.",
+    "pathSlug": "csharp",
+    "pathName": "C#",
+    "lessonCount": 8,
+    "quizCount": 7,
+    "isPublic": false
+  },
+  {
+    "slug": "c-sharp-for-unity-coroutines-multiplayer-networking",
+    "title": "C# for Unity: Coroutines & Multiplayer Networking",
+    "description": "Go from console apps to game code: GameObjects and the MonoBehaviour lifecycle, coroutines with IEnumerator for timed and multi-frame logic, and multiplayer networking with Netcode for GameObjects (NetworkObject, RPCs, NetworkVariables).",
+    "pathSlug": "csharp",
+    "pathName": "C#",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "build-a-2d-platformer-using-unity-and-c-sharp",
+    "title": "Build a 2D Platformer using Unity and C#",
+    "description": "Build a complete, playable platformer from scratch: a Rigidbody2D player controller with a ground check, Tilemap level design, a smooth bounded camera follow, Animator-driven run/jump/idle animations, collectible coins and patrolling enemies, and a UI wired up to score, health, and level completion.",
+    "pathSlug": "csharp",
+    "pathName": "C#",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "sql-fundamentals",
+    "title": "SQL Fundamentals",
+    "description": "Learn to query, filter, join, and aggregate data with SQL, the standard language for relational databases.",
+    "pathSlug": "sql",
+    "pathName": "SQL",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "node-js-prisma-postgresql",
+    "title": "Node.js, Prisma & PostgreSQL",
+    "description": "Go from raw SQL to a real, type-safe backend: model your data with Prisma, migrate a PostgreSQL database, and query it from a Node.js application.",
+    "pathSlug": "sql",
+    "pathName": "SQL",
+    "lessonCount": 12,
+    "quizCount": 11,
+    "isPublic": false
+  },
+  {
+    "slug": "docker-fundamentals",
+    "title": "Docker Fundamentals",
+    "description": "Package, ship, and run applications anywhere with containers, images, Dockerfiles, and Docker Compose.",
+    "pathSlug": "docker",
+    "pathName": "Docker",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "azure-fundamentals",
+    "title": "Azure Fundamentals",
+    "description": "Deploy, host, and scale real applications in the cloud with Microsoft Azure.",
+    "pathSlug": "azure",
+    "pathName": "Azure",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "kubernetes-fundamentals",
+    "title": "Kubernetes Fundamentals",
+    "description": "Orchestrate containers at scale: Pods, Deployments, Services, config and storage, and real kubectl workflows.",
+    "pathSlug": "kubernetes",
+    "pathName": "Kubernetes",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "aws-fundamentals",
+    "title": "AWS Fundamentals",
+    "description": "Regions and IAM, EC2, S3, VPC networking, and serverless with Lambda and API Gateway.",
+    "pathSlug": "aws",
+    "pathName": "AWS",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "ci-cd-fundamentals",
+    "title": "CI/CD Fundamentals",
+    "description": "Build real pipelines with GitHub Actions: automated testing, Docker image builds, deployment strategies, and pipeline secrets.",
+    "pathSlug": "cicd",
+    "pathName": "CI/CD",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "logging-and-observability",
+    "title": "Logging and Observability",
+    "description": "The three pillars of observability: structured logging, metrics and time-series data, distributed tracing, and alerting that does not burn out your team.",
+    "pathSlug": "observability",
+    "pathName": "Observability",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "grc-fundamentals",
+    "title": "GRC Fundamentals",
+    "description": "Governance, Risk, and Compliance for engineers: policies and accountability, risk registers, SOC 2/ISO 27001/GDPR, and building audit-ready controls with real evidence.",
+    "pathSlug": "grc",
+    "pathName": "GRC",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "prompt-engineering-vibe-coding",
+    "title": "Prompt Engineering & Vibe Coding",
+    "description": "What to think about before, during, and after using an AI coding assistant: writing effective prompts, giving the right context, and reviewing what it builds.",
+    "pathSlug": "ai-coding",
+    "pathName": "AI Coding",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "agentic-coding-workflows",
+    "title": "Agentic Coding Workflows",
+    "description": "Work with autonomous coding agents, not just chat: plan mode, tool permissions and blast radius, closing the verification loop, and reviewing multi-file diffs safely.",
+    "pathSlug": "ai-coding",
+    "pathName": "AI Coding",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "html-foundations",
+    "title": "HTML Foundations",
+    "description": "The building blocks of every website: structure, semantics, forms, and accessibility with HTML.",
+    "pathSlug": "html",
+    "pathName": "HTML",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "css-foundations",
+    "title": "CSS Foundations",
+    "description": "Style and lay out the web: the box model, Flexbox, Grid, responsive design, and animation with CSS.",
+    "pathSlug": "css",
+    "pathName": "CSS",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "lua-fundamentals",
+    "title": "Lua Fundamentals",
+    "description": "A lightweight, embeddable scripting language: variables, tables, functions, and metatables, from your first script to a text adventure.",
+    "pathSlug": "lua",
+    "pathName": "Lua",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "lua-intermediate-oop-closures-patterns",
+    "title": "Lua Intermediate: OOP, Closures & Patterns",
+    "description": "Go beyond the basics: closures and private state, full class hierarchies with inheritance, Lua string patterns, and proper error handling with pcall/xpcall.",
+    "pathSlug": "lua",
+    "pathName": "Lua",
+    "lessonCount": 5,
+    "quizCount": 4,
+    "isPublic": false
+  },
+  {
+    "slug": "lua-advanced-coroutines-metamethods-performance",
+    "title": "Lua Advanced: Coroutines, Metamethods & Performance",
+    "description": "Cooperative multitasking with coroutines, operator overloading and __call/__newindex, variadic functions, and garbage collection with weak tables.",
+    "pathSlug": "lua",
+    "pathName": "Lua",
+    "lessonCount": 5,
+    "quizCount": 4,
+    "isPublic": false
+  },
+  {
+    "slug": "cybersecurity-fundamentals",
+    "title": "Cybersecurity Fundamentals",
+    "description": "Think like an attacker to defend like a pro: the CIA triad, common attack vectors, network and web app security, cryptography, and access control.",
+    "pathSlug": "cybersecurity",
+    "pathName": "Cybersecurity",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "c-programming",
+    "title": "C Programming",
+    "description": "Get close to the machine: structs, pointers, manual memory management, and build your own garbage collector from scratch.",
+    "pathSlug": "c",
+    "pathName": "C",
+    "lessonCount": 11,
+    "quizCount": 11,
+    "isPublic": false
+  },
+  {
+    "slug": "linux-fundamentals",
+    "title": "Linux Fundamentals",
+    "description": "The command line, filesystems, processes, permissions, and setting up a real development environment.",
+    "pathSlug": "linux",
+    "pathName": "Linux",
+    "lessonCount": 7,
+    "quizCount": 7,
+    "isPublic": false
+  },
+  {
+    "slug": "java-foundations",
+    "title": "Java Foundations",
+    "description": "Statically-typed, object-oriented programming on the JVM: classes, collections, generics, and interfaces.",
+    "pathSlug": "java",
+    "pathName": "Java",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "modding-minecraft-with-forge",
+    "title": "Modding Minecraft with Forge",
+    "description": "Get a Forge mod running, then build your own custom item, block, and crafting recipe for Minecraft using Java and the Forge modding API.",
+    "pathSlug": "java",
+    "pathName": "Java",
+    "lessonCount": 6,
+    "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "kotlin-foundations",
+    "title": "Kotlin Foundations",
+    "description": "A modern, concise language for the JVM and Android: null safety, data classes, extension functions, and idiomatic Java interop.",
+    "pathSlug": "kotlin",
+    "pathName": "Kotlin",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "go-fundamentals",
+    "title": "Go Fundamentals",
+    "description": "A simple, fast, compiled language built for concurrency: structs, goroutines, channels, and error handling.",
+    "pathSlug": "go",
+    "pathName": "Go",
+    "lessonCount": 8,
+    "quizCount": 7,
+    "isPublic": false
+  },
+  {
+    "slug": "solidity-fundamentals",
+    "title": "Solidity Fundamentals",
+    "description": "Write smart contracts for Ethereum: state variables, functions and visibility, access control, mappings, and events.",
+    "pathSlug": "solidity",
+    "pathName": "Solidity",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "gdscript-fundamentals",
+    "title": "GDScript Fundamentals",
+    "description": "Godot's built-in scripting language: nodes, the scene tree, signals, and building real gameplay behavior.",
+    "pathSlug": "gdscript",
+    "pathName": "GDScript",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "sample-programming-basics",
+    "title": "Programming Basics: Your First Steps",
+    "description": "A free introduction to programming with JavaScript, variables, data types, conditionals, and loops, capped off with the classic FizzBuzz exercise. The first lesson is open to everyone, no account required.",
+    "pathSlug": "public",
+    "pathName": "Public Paths",
+    "lessonCount": 5,
+    "quizCount": 4,
+    "isPublic": true
+  }
+]

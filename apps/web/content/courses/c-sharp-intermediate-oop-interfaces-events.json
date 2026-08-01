@@ -1,0 +1,263 @@
+{
+  "slug": "c-sharp-intermediate-oop-interfaces-events",
+  "title": "C# Intermediate: OOP, Interfaces & Events",
+  "description": "Go deeper into object-oriented C#: inheritance and polymorphism, interfaces vs abstract classes, generics, exception handling, delegates and events, and lambda expressions with Func/Action.",
+  "pathSlug": "csharp",
+  "pathName": "C#",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "inheritance-and-polymorphism",
+      "title": "Inheritance and Polymorphism",
+      "order": 1,
+      "content": "# Inheritance and Polymorphism\n\n**Inheritance** lets one class reuse and extend another's members. A **derived class** inherits fields and methods from a **base class**, and can override its behavior.\n\n```csharp\nclass Animal\n{\n    public string Name;\n\n    public Animal(string name) => Name = name;\n\n    public virtual string Speak() => $\"{Name} makes a sound.\";\n}\n\nclass Dog : Animal\n{\n    public Dog(string name) : base(name) { }\n\n    public override string Speak() => $\"{Name} barks.\";\n}\n\nAnimal a = new Dog(\"Rex\");\nConsole.WriteLine(a.Speak()); // \"Rex barks.\"\n```\n\n## The pieces\n\n- `class Dog : Animal` means `Dog` inherits from `Animal`.\n- `: base(name)` calls the base class's constructor.\n- `virtual` on a base method marks it as overridable, `override` on the derived method replaces it.\n- **Polymorphism**: even though `a` is declared as `Animal`, calling `Speak()` runs `Dog`'s version, because the actual object at runtime is a `Dog`. That's why the last line prints \"Rex barks.\" and not \"Rex makes a sound.\"\n\n## sealed and base member access\n\n- `sealed override` prevents classes that inherit from `Dog` from overriding `Speak()` any further.\n- Inside an overriding method, `base.Speak()` calls the base class's original implementation.",
+      "quiz": {
+        "title": "Inheritance & Polymorphism Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which keyword lets a derived class replace a base class's virtual method?",
+            "options": [
+              "new",
+              "override",
+              "virtual",
+              "sealed"
+            ],
+            "answer": "override"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A method marked ____ in the base class can be replaced by a derived class using override.",
+            "options": [],
+            "answer": "virtual"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "In C#, a class can inherit from more than one base class.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "interfaces-and-abstract-classes",
+      "title": "Interfaces and Abstract Classes",
+      "order": 2,
+      "content": "# Interfaces and Abstract Classes\n\nTwo ways to define a contract that other classes must implement, with different tradeoffs.\n\n```csharp\ninterface IDamageable\n{\n    void TakeDamage(int amount);\n}\n\nabstract class Character\n{\n    public int Health = 100;\n\n    public abstract void Attack(); // no body, must be implemented\n\n    public void Heal(int amount) => Health += amount; // shared behavior\n}\n\nclass Player : Character, IDamageable\n{\n    public override void Attack() => Console.WriteLine(\"Player attacks!\");\n    public void TakeDamage(int amount) => Health -= amount;\n}\n```\n\n## Interfaces\n\n- An `interface` declares members with no implementation, any class or struct that implements it must provide one.\n- A class can implement **multiple** interfaces (C# only allows single inheritance from a base class, but unlimited interfaces).\n- Interfaces describe *what* a type can do (`IDamageable`, `IComparable`), regardless of what it *is*.\n\n## Abstract classes\n\n- An `abstract class` can mix fully-implemented members (`Heal`) with `abstract` members that force derived classes to implement them (`Attack`).\n- You cannot create an instance of an abstract class directly (`new Character()` is an error), only of a concrete subclass.\n- A class can inherit from only **one** base class (abstract or not), but implement any number of interfaces.\n\n## When to use which\n\n| | Interface | Abstract class |\n|---|---|---|\n| Shared implementation? | No | Yes |\n| Multiple per class? | Yes | No, only one base class |\n| Use for | \"can do\" contracts | \"is a\" shared foundation |",
+      "quiz": {
+        "title": "Interfaces & Abstract Classes Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How many interfaces can a single class implement?",
+            "options": [
+              "Zero",
+              "Exactly one",
+              "Any number",
+              "Two at most"
+            ],
+            "answer": "Any number"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "You cannot create an instance of an ____ class directly, only of a concrete subclass.",
+            "options": [],
+            "answer": "abstract"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "An interface can declare instance fields (variables) directly.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "generics",
+      "title": "Generics",
+      "order": 3,
+      "content": "# Generics\n\nA **generic** type or method works with any type, decided when it's used, without giving up type safety or duplicating code.\n\n```csharp\nclass Stack<T>\n{\n    private List<T> items = new List<T>();\n\n    public void Push(T item) => items.Add(item);\n\n    public T Pop()\n    {\n        T last = items[^1];\n        items.RemoveAt(items.Count - 1);\n        return last;\n    }\n}\n\nvar numbers = new Stack<int>();\nnumbers.Push(5);\nnumbers.Push(10);\nConsole.WriteLine(numbers.Pop()); // 10\n\nvar names = new Stack<string>();\nnames.Push(\"Ada\");\n```\n\n## The pieces\n\n- `<T>` is a **type parameter**, a placeholder that gets filled in with a real type (`int`, `string`, ...) when the class or method is used.\n- `Stack<int>` and `Stack<string>` are both backed by the same `Stack<T>` code, but the compiler enforces that a `Stack<int>` only ever holds `int`s.\n- Generic **methods** work the same way: `T Max<T>(T a, T b) where T : IComparable<T>`.\n- `where T : SomeConstraint` restricts what `T` can be, e.g. `where T : class` (reference types only) or `where T : IDamageable`.\n\n## Why not just use object?\n\nA non-generic collection typed as `object` would compile but let you push mismatched types, and would need a cast (with a runtime risk) every time you read a value out. Generics catch that mistake at compile time instead.",
+      "quiz": {
+        "title": "Generics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does <T> represent in a generic class like Stack<T>?",
+            "options": [
+              "A namespace",
+              "A type parameter filled in when the type is used",
+              "A base class",
+              "An interface"
+            ],
+            "answer": "A type parameter filled in when the type is used"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A clause like where T : IComparable<T> is called a type ____.",
+            "options": [],
+            "answer": "constraint"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Generics catch type mismatches at compile time instead of at runtime.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "exception-handling",
+      "title": "Exception Handling",
+      "order": 4,
+      "content": "# Exception Handling\n\nThings go wrong at runtime: a file is missing, a network call times out, a user types letters into a number field. **Exceptions** let you handle that without crashing the whole program.\n\n```csharp\ntry\n{\n    int[] scores = { 90, 85, 77 };\n    Console.WriteLine(scores[5]); // out of range\n}\ncatch (IndexOutOfRangeException ex)\n{\n    Console.WriteLine($\"Invalid index: {ex.Message}\");\n}\nfinally\n{\n    Console.WriteLine(\"Always runs, whether or not an exception happened.\");\n}\n```\n\n## The pieces\n\n- `try` wraps code that might throw.\n- `catch (SomeException ex)` runs if that exception type (or a subclass of it) is thrown inside the `try` block, you can stack multiple `catch` blocks for different exception types.\n- `finally` runs no matter what, whether the `try` succeeded, threw, or the catch itself re-threw, use it for cleanup (closing a file, releasing a resource).\n- `throw` raises an exception yourself: `throw new ArgumentException(\"amount must be positive\");`.\n\n## Custom exceptions\n\n```csharp\nclass InsufficientXpException : Exception\n{\n    public InsufficientXpException(string message) : base(message) { }\n}\n\nif (xp < required)\n    throw new InsufficientXpException($\"Need {required} XP, only have {xp}.\");\n```\n\nA custom exception inherits from `Exception` (or a more specific built-in one) and gives calling code something precise to catch, instead of catching the broad, generic `Exception`.",
+      "quiz": {
+        "title": "Exception Handling Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which block always runs, whether or not an exception was thrown?",
+            "options": [
+              "try",
+              "catch",
+              "finally",
+              "throw"
+            ],
+            "answer": "finally"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ keyword raises an exception yourself.",
+            "options": [],
+            "answer": "throw"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A custom exception class typically inherits from Exception.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "delegates-and-events",
+      "title": "Delegates and Events",
+      "order": 5,
+      "content": "# Delegates and Events\n\nA **delegate** is a type-safe reference to a method, it lets you pass a method around like a value, store it in a variable, and call it later.\n\n```csharp\ndelegate void Notify(string message);\n\nclass Alarm\n{\n    public event Notify OnTriggered;\n\n    public void Trigger()\n    {\n        Console.WriteLine(\"Alarm triggered!\");\n        OnTriggered?.Invoke(\"Intruder detected\");\n    }\n}\n\nclass Program\n{\n    static void Main()\n    {\n        var alarm = new Alarm();\n        alarm.OnTriggered += message => Console.WriteLine($\"Security notified: {message}\");\n        alarm.OnTriggered += message => Console.WriteLine($\"Logged: {message}\");\n\n        alarm.Trigger();\n    }\n}\n```\n\n## The pieces\n\n- `delegate void Notify(string message);` declares a delegate type, any method matching that signature (`void`, one `string` parameter) can be assigned to it.\n- `event Notify OnTriggered;` exposes a delegate as an **event**, code outside `Alarm` can subscribe (`+=`) or unsubscribe (`-=`), but can't invoke it directly or overwrite other subscribers, only `Alarm` itself can call `Invoke`.\n- `?.Invoke(...)` safely calls every subscribed method, and does nothing if nobody has subscribed yet (`OnTriggered` would be `null`).\n- Multiple methods can subscribe to the same event, they all run, in the order they were added, when it's invoked.\n\n## Why events instead of calling methods directly?\n\nEvents **decouple** the class raising them from whoever reacts to them: `Alarm` doesn't need to know that a security system or a logger exists, it just announces \"something happened,\" and anything that cares can subscribe.",
+      "quiz": {
+        "title": "Delegates & Events Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the event keyword restrict, compared to a plain public delegate field?",
+            "options": [
+              "Nothing, they are identical",
+              "Outside code can subscribe or unsubscribe, but not invoke it directly",
+              "Only one method can ever subscribe",
+              "It can only be used with strings"
+            ],
+            "answer": "Outside code can subscribe or unsubscribe, but not invoke it directly"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Subscribing to an event uses the ____ operator, unsubscribing uses -=.",
+            "options": [],
+            "answer": "+="
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Multiple methods can subscribe to the same event.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "lambda-expressions-func-action",
+      "title": "Lambda Expressions, Func & Action",
+      "order": 6,
+      "content": "# Lambda Expressions, Func & Action\n\nA **lambda expression** is a compact, inline way to write a method, most useful when you need to pass a small piece of behavior somewhere, like a callback or a LINQ predicate.\n\n```csharp\nFunc<int, int, int> add = (a, b) => a + b;\nConsole.WriteLine(add(3, 4)); // 7\n\nAction<string> log = message => Console.WriteLine($\"[LOG] {message}\");\nlog(\"Server started\");\n\nList<int> scores = new List<int> { 55, 82, 91, 40 };\nList<int> passing = scores.Where(s => s >= 70).ToList();\n```\n\n## Func and Action\n\n- `Func<T1, ..., TResult>` is a built-in delegate type for a method that **returns** a value, the last type parameter is always the return type. `Func<int, int, int>` takes two `int`s and returns an `int`.\n- `Action<T1, ...>` is the same idea for a method that returns **nothing** (`void`). `Action<string>` takes one `string` and returns nothing, plain `Action` takes no parameters at all.\n- Both are just delegate types the .NET library already defines, so you don't need your own `delegate` declaration for common shapes.\n\n## Lambda syntax\n\n- `(a, b) => a + b` is shorthand for a method taking `a` and `b`, and returning `a + b`.\n- A single parameter can drop the parentheses: `s => s >= 70`.\n- A lambda can capture variables from its surrounding scope (a **closure**), a lambda defined inside a method can still use that method's local variables even after being passed elsewhere.",
+      "quiz": {
+        "title": "Lambdas, Func & Action Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which built-in delegate type represents a method that returns void?",
+            "options": [
+              "Func",
+              "Action",
+              "Predicate",
+              "Delegate"
+            ],
+            "answer": "Action"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "In Func<int, int, int>, the ____ type parameter is always the return type.",
+            "options": [],
+            "answer": "last"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A lambda expression can capture and use variables from its surrounding scope.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-event-driven-inventory-system",
+      "title": "Final Project: Event-Driven Inventory System",
+      "order": 7,
+      "content": "# Final Project: Event-Driven Inventory System\n\nCombine interfaces, generics, and events into one small system.\n\n## Requirements\n\n1. Define an `IItem` interface with at least a `Name` and a `Value` property.\n2. Create a generic `Inventory<T> where T : IItem` class that can `Add(T item)` and `Remove(T item)`, backed by a `List<T>`.\n3. Add an `event Action<T> OnItemAdded` (or a custom delegate) on `Inventory<T>` that fires whenever an item is added.\n4. Subscribe to `OnItemAdded` from outside the class to print a message like `\"Added: {item.Name} ({item.Value} gold)\"`.\n5. Wrap any invalid operation (e.g. removing an item that isn't in the inventory) in a **custom exception** and handle it with `try/catch` where the inventory is used.\n6. Create at least two classes implementing `IItem` (e.g. `Weapon`, `Potion`) and add instances of both to the same `Inventory<IItem>`.\n\n## Stretch goals\n\n- Add a `TotalValue` property using LINQ's `Sum`.\n- Add an `OnItemRemoved` event too.\n- Make `Inventory<T>` implement `IEnumerable<T>` so it can be used directly in a `foreach` loop.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

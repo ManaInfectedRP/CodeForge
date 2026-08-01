@@ -1,0 +1,222 @@
+{
+  "slug": "lua-fundamentals",
+  "title": "Lua Fundamentals",
+  "description": "A lightweight, embeddable scripting language: variables, tables, functions, and metatables, from your first script to a text adventure.",
+  "pathSlug": "lua",
+  "pathName": "Lua",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "why-lua-getting-started",
+      "title": "Why Lua? Getting Started",
+      "order": 1,
+      "content": "# Why Lua? Getting Started\n\nLua is a small, fast, embeddable scripting language. You'll rarely run a \"Lua application\" on its own, instead, Lua gets embedded inside something bigger: game engines (Roblox, Love2D, World of Warcraft addons), Neovim configuration, and even network appliances.\n\n## Why it's popular for embedding\n\n- **Tiny and fast**, the reference interpreter is a few hundred KB and famously quick for a dynamic language.\n- **Simple to embed**, a C program can create a Lua interpreter, hand it data, and call Lua functions in only a few lines.\n- **Small core language**, few keywords, one data structure (the table) that does almost everything.\n\n## Your first script\n\n```lua\nprint(\"Hello from Lua!\")\n\nlocal name = \"Kodstigen\"\nprint(\"Welcome to \" .. name)\n```\n\nRun it with:\n\n```bash\nlua hello.lua\n```\n\n- `print` writes a line to standard output.\n- `local` declares a variable scoped to the current block, without it, a variable is **global** by default, almost always a mistake.\n- `..` is the string concatenation operator (Lua does not overload `+` for strings the way JavaScript does).\n\n> [!NOTE]\n> Lua array/table indices start at **1**, not 0. This trips up almost everyone coming from C-family languages, and it's worth committing to memory right now.",
+      "quiz": {
+        "title": "Lua Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which operator concatenates two strings in Lua?",
+            "options": [
+              "+",
+              "&",
+              "..",
+              "."
+            ],
+            "answer": ".."
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Lua table and array indices start at 1 by convention, not 0.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Declaring a variable with the ____ keyword scopes it to the current block instead of making it global.",
+            "options": [],
+            "answer": "local"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "variables-types-and-control-flow",
+      "title": "Variables, Types, and Control Flow",
+      "order": 2,
+      "content": "# Variables, Types, and Control Flow\n\nLua is dynamically typed, a variable's type is decided by whatever value it currently holds, and can change at runtime.\n\n## Basic types\n\n```lua\nlocal xp = 100          -- number (Lua has no separate int/float, just \"number\")\nlocal name = \"Ada\"       -- string\nlocal passed = true      -- boolean\nlocal nothing = nil      -- absence of a value\nlocal scores = {90, 85, 100} -- table (used for arrays, maps, and objects)\n\nprint(type(xp), type(name), type(passed), type(nothing), type(scores))\n```\n\n`nil` is Lua's \"no value\", it's what an undeclared variable holds, and it's the only value besides `false` that counts as falsy in a condition.\n\n## Control flow\n\n```lua\nlocal xp = 45\n\nif xp >= 50 then\n  print(\"Level up!\")\nelseif xp >= 25 then\n  print(\"Halfway there.\")\nelse\n  print(\"Keep going.\")\nend\n\nfor i = 1, 5 do\n  print(\"Lesson \" .. i)\nend\n\nlocal count = 0\nwhile count < 3 do\n  print(\"count = \" .. count)\n  count = count + 1\nend\n```\n\n- Every block (`if`, `for`, `while`, functions) is closed with the keyword `end`, there are no curly braces in Lua.\n- `for i = 1, 5 do ... end` is a **numeric for loop**: start, stop, and an optional step (`for i = 10, 1, -1` counts down).\n- Only `nil` and `false` are falsy, everything else, including `0` and `\"\"`, is truthy. This is a common gotcha for people coming from JavaScript or Python.\n\n> [!WARNING]\n> Unlike most C-family languages, `0` is **truthy** in Lua. `if 0 then print(\"yes\") end` prints \"yes\". Only `nil` and `false` are falsy.",
+      "quiz": {
+        "title": "Types & Control Flow Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which two values are considered \"falsy\" in a Lua condition?",
+            "options": [
+              "nil and false",
+              "0 and \"\"",
+              "nil and 0",
+              "false and 0"
+            ],
+            "answer": "nil and false"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Lua uses curly braces { } to open and close if/for/while blocks.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Every Lua block (if, for, while, function) must be closed with the keyword ____.",
+            "options": [],
+            "answer": "end"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "tables-lua-s-only-data-structure",
+      "title": "Tables: Lua's Only Data Structure",
+      "order": 3,
+      "content": "# Tables: Lua's Only Data Structure\n\nLua has exactly one built-in data structure, the **table**, and it does the job of arrays, dictionaries/maps, and even objects in other languages.\n\n## Tables as arrays\n\n```lua\nlocal scores = {90, 85, 100}\n\nprint(scores[1])       -- 90, indices start at 1\nprint(#scores)          -- 3, the length operator\n\ntable.insert(scores, 75)  -- appends to the end\ntable.remove(scores, 1)   -- removes the first element, shifts the rest down\n\nfor i, score in ipairs(scores) do\n  print(i, score)\n end\n```\n\n`ipairs` iterates a table in order from index 1 until the first `nil`, exactly what you want for array-like tables.\n\n## Tables as maps/objects\n\n```lua\nlocal player = {\n  name = \"Ada\",\n  xp = 250,\n  [\"favorite color\"] = \"blue\", -- keys with spaces need bracket syntax\n}\n\nprint(player.name)               -- dot syntax, sugar for player[\"name\"]\nprint(player[\"favorite color\"])  -- bracket syntax, required for non-identifier keys\n\nplayer.level = 3 -- adding a new key is just an assignment\n\nfor key, value in pairs(player) do\n  print(key, value)\nend\n```\n\n`pairs` iterates every key in a table, in an unspecified order, use it for map-style tables where order doesn't matter. `player.name` and `player[\"name\"]` always refer to the exact same table entry, dot syntax is purely a convenience for string keys that are valid identifiers.\n\n> [!TIP]\n> Because arrays, maps, and objects are all \"just a table\" in Lua, a single table can even mix both styles: numeric indices for a list part and named keys for extra fields on the same object.",
+      "quiz": {
+        "title": "Tables Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which built-in function iterates an array-like table in order from index 1?",
+            "options": [
+              "pairs",
+              "ipairs",
+              "next",
+              "table.iter"
+            ],
+            "answer": "ipairs"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "player.name and player[\"name\"] refer to the same table entry.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The # operator in front of a table, like #scores, returns the table's ____.",
+            "options": [],
+            "answer": "length"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "functions-and-scope",
+      "title": "Functions and Scope",
+      "order": 4,
+      "content": "# Functions and Scope\n\nFunctions in Lua are values, they can be stored in variables, passed as arguments, and returned from other functions, just like tables or numbers.\n\n## Defining and calling functions\n\n```lua\nlocal function add(a, b)\n  return a + b\nend\n\nprint(add(2, 3)) -- 5\n\n-- Multiple return values\nlocal function minMax(numbers)\n  local lo, hi = numbers[1], numbers[1]\n  for _, n in ipairs(numbers) do\n    if n < lo then lo = n end\n    if n > hi then hi = n end\n  end\n  return lo, hi\nend\n\nlocal lowest, highest = minMax({4, 1, 9, 2})\nprint(lowest, highest) -- 1  9\n```\n\nLua functions can return **multiple values** at once, something many other languages need a tuple or object to fake.\n\n## Scope with local vs. global\n\n```lua\nxp = 100        -- global! visible everywhere, including other files\n\nlocal function levelUp()\n  local bonus = 10 -- local: only visible inside this function\n  xp = xp + bonus\nend\n\nlevelUp()\nprint(xp) -- 110\nprint(bonus) -- nil, bonus does not exist outside levelUp\n```\n\n> [!WARNING]\n> Forgetting `local` silently creates a **global** variable, visible to your entire program (and, if you're embedded in a game or app, potentially to other scripts too). Get in the habit of typing `local` in front of every variable and function unless you deliberately want it global.\n\n## Functions as arguments\n\n```lua\nlocal function forEach(list, callback)\n  for _, item in ipairs(list) do\n    callback(item)\n  end\nend\n\nforEach({\"a\", \"b\", \"c\"}, function(item)\n  print(\"Item: \" .. item)\nend)\n```\n\nPassing an anonymous `function(...) ... end` directly as an argument is idiomatic Lua, this is exactly how callback-style APIs (like button click handlers in game engines) are typically used.",
+      "quiz": {
+        "title": "Functions & Scope Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What happens if you assign to a variable without the \"local\" keyword inside a function?",
+            "options": [
+              "It causes a syntax error",
+              "It creates a global variable",
+              "It is scoped to that function only",
+              "Lua infers whether it should be local automatically"
+            ],
+            "answer": "It creates a global variable"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A Lua function can return more than one value at a time.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The keyword used to define a function in Lua is ____.",
+            "options": [],
+            "answer": "function"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "metatables-and-modules",
+      "title": "Metatables and Modules",
+      "order": 5,
+      "content": "# Metatables and Modules\n\n## Metatables: customizing table behavior\n\nA **metatable** is a table attached to another table that defines how it behaves for operations it doesn't natively support, like addition, or missing-key lookups. This is how Lua achieves \"object-oriented programming\" without a built-in `class` keyword.\n\n```lua\nlocal Vector = {}\nVector.__index = Vector -- missing keys on an instance fall back to Vector\n\nfunction Vector.new(x, y)\n  local self = setmetatable({}, Vector)\n  self.x = x\n  self.y = y\n  return self\nend\n\nfunction Vector:length()\n  return math.sqrt(self.x ^ 2 + self.y ^ 2)\nend\n\nlocal v = Vector.new(3, 4)\nprint(v:length()) -- 5.0\n```\n\n- `setmetatable(t, mt)` attaches metatable `mt` to table `t`.\n- `__index` is a special metamethod: when you look up a key that `v` doesn't have directly (like `length`), Lua checks `__index` next, this is how \"instances\" share methods defined on a common table.\n- `function Vector:length()` is sugar for `function Vector.length(self)`, the colon automatically adds a hidden `self` first parameter, and `v:length()` automatically passes `v` as that `self`.\n\n## Modules\n\nLua organizes reusable code into modules: files that return a table of functions. In a real project this would be two separate files:\n\n```\n-- mathutils.lua\nlocal M = {}\n\nfunction M.double(n)\n  return n * 2\nend\n\nreturn M\n```\n\n```\n-- main.lua\nlocal mathutils = require(\"mathutils\")\nprint(mathutils.double(21)) -- 42\n```\n\n`require` loads a module by name, runs it once, and caches its returned value, calling `require` again for the same module returns the cached table instead of re-running the file. This course's sandbox only runs one file at a time, so here's the same idea inlined into a single runnable script:\n\n```lua\nlocal function newMathUtils() -- stands in for a separate mathutils.lua file\n  local M = {}\n\n  function M.double(n)\n    return n * 2\n  end\n\n  return M\nend\n\nlocal mathutils = newMathUtils() -- in a real project: require(\"mathutils\")\nprint(mathutils.double(21)) -- 42\n```\n\n> [!TIP]\n> If you've used JavaScript's ES modules or Python's imports, `require` will feel familiar, the key difference is that a Lua module file explicitly `return`s the table of things it wants to expose, instead of using an `export` keyword.",
+      "quiz": {
+        "title": "Metatables & Modules Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which metamethod lets a table fall back to another table when a key is missing?",
+            "options": [
+              "__missing",
+              "__index",
+              "__default",
+              "__fallback"
+            ],
+            "answer": "__index"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Calling require(\"mathutils\") twice runs the mathutils.lua file twice.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The function used to attach a metatable to a table is ____(t, mt).",
+            "options": [],
+            "answer": "setmetatable"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-text-adventure-game-in-lua",
+      "title": "Final Project: Build a Text Adventure Game in Lua",
+      "order": 6,
+      "content": "# Final Project: Build a Text Adventure Game in Lua\n\nPut tables, functions, and control flow together into a small, playable text adventure.\n\n## Requirements\n\n1. Model at least three rooms as a table of tables, each with a description and a table of exits (e.g. `{ north = \"cave\", south = \"forest\" }`).\n2. Track the player's current room and inventory (a table used as a list) in local state.\n3. Write a main loop that prints the current room's description, reads a command from the player, and reacts to at least: moving through an exit, picking up an item, and checking inventory.\n4. Use functions to organize the logic, at minimum, a function to describe the current room and a function to handle a single command.\n5. Add a win condition, e.g. reaching a specific room, or collecting a specific item, that ends the loop with a victory message.\n\n## Stretch goals\n\n- Use a metatable so every room and item shares common behavior (like a generic `:describe()` method).\n- Split your rooms/items data into a separate module file and `require` it from your main script.\n- Add simple combat or a puzzle that requires an item from one room to progress past another.\n\nSubmit a link to your finished script (a repo or gist) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

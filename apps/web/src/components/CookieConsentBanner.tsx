@@ -1,6 +1,8 @@
-import { Link } from 'react-router-dom';
-import { useLanguage } from '../context/LanguageContext';
-import { useCookieConsent } from '../context/CookieConsentContext';
+'use client';
+
+import Link from 'next/link';
+import { useLanguage } from '@/context/LanguageContext';
+import { useCookieConsent } from '@/context/CookieConsentContext';
 
 const translations = {
   en: {
@@ -36,7 +38,7 @@ export function CookieConsentBanner() {
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
         <p id="cookie-consent-text" className="text-sm text-slate-300">
           {t.text}{' '}
-          <Link to="/privacy" className="underline hover:text-white">
+          <Link href="/privacy" className="underline hover:text-white">
             {t.learnMore}
           </Link>
         </p>

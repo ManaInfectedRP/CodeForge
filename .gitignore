@@ -1,7 +1,8 @@
 node_modules/
-dist/
+.next/
+out/
+next-env.d.ts
+tsconfig.tsbuildinfo
 .env
-apps/api/uploads/
 *.local
 .DS_Store
-apps/api/prisma/migrations/**/migration_lock.toml.bak

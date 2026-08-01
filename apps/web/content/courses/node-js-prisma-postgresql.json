@@ -1,0 +1,468 @@
+{
+  "slug": "node-js-prisma-postgresql",
+  "title": "Node.js, Prisma & PostgreSQL",
+  "description": "Go from raw SQL to a real, type-safe backend: model your data with Prisma, migrate a PostgreSQL database, and query it from a Node.js application.",
+  "pathSlug": "sql",
+  "pathName": "SQL",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "why-prisma-connecting-node-js-to-postgresql",
+      "title": "Why Prisma? Connecting Node.js to PostgreSQL",
+      "order": 1,
+      "content": "# Why Prisma? Connecting Node.js to PostgreSQL\n\nYou've written raw SQL by hand. Now let's connect a real Node.js application to a real PostgreSQL database, and see how **Prisma** makes that connection type-safe and far less error-prone.\n\n## The stack\n\n```\nNode.js application\n        │\n        ▼\n  Prisma Client   (generated, type-safe query API)\n        │\n        ▼\n  PostgreSQL database\n```\n\nPrisma is an **ORM** (Object-Relational Mapper) for Node.js and TypeScript. You describe your data once, in a schema file, and Prisma generates:\n\n- **Prisma Client**, a fully-typed query API your app calls instead of writing SQL strings by hand.\n- **Migrations**, versioned SQL files that evolve your database schema safely over time.\n\n## Why not just write SQL directly?\n\nYou still can, Prisma Client executes real SQL under the hood. What it adds is:\n\n- **Type safety**, your editor autocompletes column names and catches typos before you ever run the code.\n- **Migrations tracked in version control**, so your team and your database never drift out of sync.\n- Protection against SQL injection by default, since every query is parameterized.\n\n> [!NOTE]\n> Everything you learned in the SQL Fundamentals course still applies, Prisma generates SQL very close to what you'd write by hand, it just does it for you, safely.",
+      "quiz": {
+        "title": "Prisma Intro Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is Prisma?",
+            "options": [
+              "A PostgreSQL hosting provider",
+              "An ORM that generates a type-safe query API and manages migrations",
+              "A frontend framework",
+              "A replacement for JavaScript"
+            ],
+            "answer": "An ORM that generates a type-safe query API and manages migrations"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Prisma Client is generated from a ____ file that describes your data models.",
+            "options": [],
+            "answer": "schema"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Prisma Client still executes real SQL against the database under the hood.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "setting-up-postgresql-and-a-prisma-project",
+      "title": "Setting Up PostgreSQL and a Prisma Project",
+      "order": 2,
+      "content": "# Setting Up PostgreSQL and a Prisma Project\n\n## 1. Get a PostgreSQL database running\n\nLocally (via Docker) or a hosted free tier both work, either way you end up with a **connection string**:\n\n```\npostgresql://USER:PASSWORD@HOST:PORT/DATABASE\n```\n\n## 2. Create a Node project and install Prisma\n\n```bash\nnpm init -y\nnpm install prisma --save-dev\nnpm install @prisma/client\nnpx prisma init\n```\n\n`npx prisma init` creates:\n\n- `prisma/schema.prisma`, where you'll define your data models.\n- `.env`, with a `DATABASE_URL` placeholder for your connection string.\n\n## 3. Point it at your database\n\n```\nDATABASE_URL=\"postgresql://postgres:secret@localhost:5432/blog_dev?schema=public\"\n```\n\nPrisma reads `DATABASE_URL` from your environment, never hardcode credentials directly in `schema.prisma`.",
+      "quiz": {
+        "title": "Setup Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which command scaffolds a new prisma/schema.prisma file and a .env template?",
+            "options": [
+              "npx prisma generate",
+              "npx prisma init",
+              "npx prisma migrate dev",
+              "npm install prisma"
+            ],
+            "answer": "npx prisma init"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Prisma reads the database connection string from the environment variable ____.",
+            "options": [],
+            "answer": "DATABASE_URL"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Database credentials should be hardcoded directly inside schema.prisma.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "defining-your-prisma-schema",
+      "title": "Defining Your Prisma Schema",
+      "order": 3,
+      "content": "# Defining Your Prisma Schema\n\n`prisma/schema.prisma` has three parts: a generator, a datasource, and one or more models.\n\n```\ngenerator client {\n  provider = \"prisma-client-js\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id    Int     @id @default(autoincrement())\n  email String  @unique\n  name  String?\n}\n```\n\n## Reading a model\n\n- Each field has a name, a type (`Int`, `String`, `Boolean`, `DateTime`, ...), and optional attributes.\n- `@id` marks the primary key.\n- `@default(autoincrement())` lets PostgreSQL assign the next integer automatically, exactly like `SERIAL` in raw SQL.\n- `@unique` adds a unique constraint, no two users can share an email.\n- A trailing `?` (like `String?`) makes a field optional, it maps to a nullable column.\n\nEvery model becomes a table, every field becomes a column, this is the same shape of data you already modeled in the SQL Fundamentals course, just described declaratively instead of with `CREATE TABLE`.",
+      "quiz": {
+        "title": "Schema Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which attribute marks a field as the primary key?",
+            "options": [
+              "@unique",
+              "@primary",
+              "@id",
+              "@key"
+            ],
+            "answer": "@id"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A field type written with a trailing ____ mark, like String?, is optional in the database.",
+            "options": [],
+            "answer": "?"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Every model block in schema.prisma becomes a table in the database.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "migrations-with-prisma-migrate",
+      "title": "Migrations with Prisma Migrate",
+      "order": 4,
+      "content": "# Migrations with Prisma Migrate\n\nA **migration** is a versioned, applied change to your database schema. Prisma Migrate generates and runs the SQL for you, based on the differences it sees in `schema.prisma`.\n\n```bash\nnpx prisma migrate dev --name init\n```\n\nThis command:\n\n1. Compares your schema to the database's current state.\n2. Generates a plain SQL migration file (you can open and read it, it's just `CREATE TABLE`, `ALTER TABLE`, and so on).\n3. Applies it to your database.\n4. Regenerates Prisma Client so your code's types match the new schema.\n\nEach migration lives in `prisma/migrations/<timestamp>_init/migration.sql`, committed to version control alongside your code, exactly like the rest of your app's history.\n\n## Inspecting your data\n\n```bash\nnpx prisma studio\n```\n\nOpens a local, visual browser for your database, handy for checking that a migration or query did what you expected.",
+      "quiz": {
+        "title": "Migrations Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does npx prisma migrate dev generate?",
+            "options": [
+              "A plain SQL migration file that gets applied to the database",
+              "A compiled binary",
+              "A new PostgreSQL server",
+              "A JSON config file only"
+            ],
+            "answer": "A plain SQL migration file that gets applied to the database"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "npx prisma ____ opens a local, visual browser for your database.",
+            "options": [],
+            "answer": "studio"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Prisma migration files are meant to be committed to version control.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "prisma-client-basic-crud",
+      "title": "Prisma Client: Basic CRUD",
+      "order": 5,
+      "content": "# Prisma Client: Basic CRUD\n\nOnce your schema is migrated, Prisma Client gives you a typed method for every model.\n\n```\nimport { PrismaClient } from '@prisma/client';\nconst prisma = new PrismaClient();\n\n// Create\nconst user = await prisma.user.create({\n  data: { email: 'ada@example.com', name: 'Ada' },\n});\n\n// Read\nconst users = await prisma.user.findMany();\nconst one = await prisma.user.findUnique({ where: { id: 1 } });\n\n// Update\nconst updated = await prisma.user.update({\n  where: { id: 1 },\n  data: { name: 'Ada Lovelace' },\n});\n\n// Delete\nawait prisma.user.delete({ where: { id: 1 } });\n```\n\n*This needs a running Node.js process connected to a real PostgreSQL database, so it's read-only here, you'll run code exactly like this in the final project.*\n\nNotice the shape: every method takes a single options object (`where`, `data`, ...), and every method returns a fully-typed result, your editor knows `user.email` is a `string` without you writing a type annotation anywhere.",
+      "quiz": {
+        "title": "CRUD Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which Prisma Client method fetches every row that matches optional filters?",
+            "options": [
+              "findOne",
+              "findMany",
+              "getAll",
+              "selectAll"
+            ],
+            "answer": "findMany"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "prisma.user.____({ where: { id: 1 } }) fetches a single user by a unique field.",
+            "options": [],
+            "answer": "findUnique"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Prisma Client's create and update methods return the affected row, fully typed.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "filtering-sorting-and-pagination",
+      "title": "Filtering, Sorting, and Pagination",
+      "order": 6,
+      "content": "# Filtering, Sorting, and Pagination\n\nPrisma Client mirrors the `WHERE`, `ORDER BY`, and `LIMIT`/`OFFSET` you already know from SQL, as options on `findMany`.\n\n```\nconst topPosts = await prisma.post.findMany({\n  where: {\n    published: true,\n    title: { contains: 'Prisma' },\n  },\n  orderBy: { createdAt: 'desc' },\n  skip: 0,\n  take: 10,\n});\n```\n\n## Mapping to SQL\n\n| Prisma option | SQL equivalent |\n|---|---|\n| `where: { published: true }` | `WHERE published = true` |\n| `orderBy: { createdAt: 'desc' }` | `ORDER BY created_at DESC` |\n| `take: 10` | `LIMIT 10` |\n| `skip: 20` | `OFFSET 20` |\n\n`skip` + `take` together give you **pagination**, page 3 of 10-per-page results is `skip: 20, take: 10`.",
+      "quiz": {
+        "title": "Filtering & Pagination Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which Prisma option is equivalent to SQL's LIMIT?",
+            "options": [
+              "skip",
+              "take",
+              "limit",
+              "first"
+            ],
+            "answer": "take"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ option in findMany is equivalent to SQL's OFFSET.",
+            "options": [],
+            "answer": "skip"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Prisma's orderBy option maps directly to SQL's ORDER BY clause.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "modeling-relations-one-to-many-and-many-to-many",
+      "title": "Modeling Relations: One-to-Many and Many-to-Many",
+      "order": 7,
+      "content": "# Modeling Relations: One-to-Many and Many-to-Many\n\nJust like the `JOIN`s you wrote in SQL, Prisma models real relationships between tables, but you declare them once in the schema.\n\n## One-to-many\n\nOne `User` can have many `Post`s:\n\n```\nmodel User {\n  id    Int    @id @default(autoincrement())\n  email String @unique\n  posts Post[]\n}\n\nmodel Post {\n  id       Int    @id @default(autoincrement())\n  title    String\n  authorId Int\n  author   User   @relation(fields: [authorId], references: [id])\n}\n```\n\n`authorId` is a real foreign-key column, `author`/`posts` are the Prisma-side relation fields you query through.\n\n## Many-to-many\n\nA `Post` can have many `Tag`s, and a `Tag` can apply to many `Post`s:\n\n```\nmodel Post {\n  id    Int   @id @default(autoincrement())\n  title String\n  tags  Tag[]\n}\n\nmodel Tag {\n  id    Int    @id @default(autoincrement())\n  name  String @unique\n  posts Post[]\n}\n```\n\nPrisma automatically creates and manages the hidden join table behind the scenes, the same `_PostToTag` style table you'd have written by hand in SQL.",
+      "quiz": {
+        "title": "Relations Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In a one-to-many relation, which side holds the actual foreign-key column?",
+            "options": [
+              "The \"many\" side (e.g. Post.authorId)",
+              "The \"one\" side (e.g. User)",
+              "Neither, Prisma stores it separately",
+              "Both sides equally"
+            ],
+            "answer": "The \"many\" side (e.g. Post.authorId)"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "A many-to-many relation like Post.tags and Tag.posts is backed by a hidden ____ table.",
+            "options": [],
+            "answer": "join"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "For an implicit many-to-many relation, you must manually create the join table yourself.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "querying-relations-with-include-and-select",
+      "title": "Querying Relations with include and select",
+      "order": 8,
+      "content": "# Querying Relations with include and select\n\nBy default, Prisma Client only returns a model's own columns, related data has to be requested explicitly.\n\n```\n// Fetch a user together with their posts\nconst userWithPosts = await prisma.user.findUnique({\n  where: { id: 1 },\n  include: { posts: true },\n});\n\n// Shape exactly which fields come back\nconst summaries = await prisma.post.findMany({\n  select: {\n    title: true,\n    author: { select: { name: true } },\n  },\n});\n\n// Create a user and their first post in one call\nconst newUser = await prisma.user.create({\n  data: {\n    email: 'grace@example.com',\n    name: 'Grace',\n    posts: { create: [{ title: 'Hello, Prisma!' }] },\n  },\n});\n```\n\n`include` adds related records on top of all normal fields, `select` replaces the default fields entirely, letting you return only what you need. A **nested write** like the `posts: { create: [...] }` above creates both rows in a single call.",
+      "quiz": {
+        "title": "Include & Select Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the include option do?",
+            "options": [
+              "Replaces all fields with only the ones listed",
+              "Adds related records on top of the normal fields",
+              "Deletes unrelated records",
+              "Renames columns"
+            ],
+            "answer": "Adds related records on top of the normal fields"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Creating a user and a related post in a single call, via posts: { create: [...] }, is called a nested ____.",
+            "options": [],
+            "answer": "write"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "By default, Prisma Client automatically includes every related model on every query.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "transactions-and-data-integrity",
+      "title": "Transactions and Data Integrity",
+      "order": 9,
+      "content": "# Transactions and Data Integrity\n\nSome operations only make sense together. If you move XP from one account to another, both the debit and the credit must succeed, or neither should.\n\n## Batch transactions\n\n```\nconst [fromAccount, toAccount] = await prisma.$transaction([\n  prisma.account.update({ where: { id: 1 }, data: { xp: { decrement: 50 } } }),\n  prisma.account.update({ where: { id: 2 }, data: { xp: { increment: 50 } } }),\n]);\n```\n\nIf either update fails, PostgreSQL rolls back both, your data never ends up half-changed.\n\n## Interactive transactions\n\nFor logic that needs to check something in between steps, pass a function instead:\n\n```\nawait prisma.$transaction(async (tx) => {\n  const from = await tx.account.findUniqueOrThrow({ where: { id: 1 } });\n  if (from.xp < 50) throw new Error('Insufficient XP');\n\n  await tx.account.update({ where: { id: 1 }, data: { xp: { decrement: 50 } } });\n  await tx.account.update({ where: { id: 2 }, data: { xp: { increment: 50 } } });\n});\n```\n\nThrowing anywhere inside the callback rolls back every query that already ran in that transaction.",
+      "quiz": {
+        "title": "Transactions Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What happens if one query inside a prisma.$transaction([...]) call fails?",
+            "options": [
+              "Only that query is skipped, the rest still commit",
+              "All queries in the transaction are rolled back",
+              "The database is deleted",
+              "Nothing, errors inside transactions are ignored"
+            ],
+            "answer": "All queries in the transaction are rolled back"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Throwing an error inside an interactive $transaction callback function ____ every query that already ran in it.",
+            "options": [],
+            "answer": "rolls back"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Transactions guarantee that a group of related writes either all succeed or all fail together.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "building-a-rest-api-with-express-and-prisma",
+      "title": "Building a REST API with Express and Prisma",
+      "order": 10,
+      "content": "# Building a REST API with Express and Prisma\n\nWiring Prisma into an Express route handler looks almost exactly like the CRUD calls from earlier, just inside a request handler.\n\n```\nimport express from 'express';\nimport { PrismaClient } from '@prisma/client';\n\nconst app = express();\nconst prisma = new PrismaClient();\napp.use(express.json());\n\napp.get('/api/posts', async (req, res) => {\n  const posts = await prisma.post.findMany({\n    where: { published: true },\n    include: { author: { select: { name: true } } },\n    orderBy: { createdAt: 'desc' },\n  });\n  res.json(posts);\n});\n\napp.post('/api/posts', async (req, res) => {\n  try {\n    const post = await prisma.post.create({ data: req.body });\n    res.status(201).json(post);\n  } catch (err) {\n    res.status(400).json({ error: 'Could not create post' });\n  }\n});\n\napp.listen(4000);\n```\n\nOne `PrismaClient` instance is created once and reused across every request, creating a new one per request would open far too many database connections.",
+      "quiz": {
+        "title": "Express + Prisma Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How many PrismaClient instances should a typical Express app create?",
+            "options": [
+              "One per request",
+              "One, reused across every request",
+              "One per database table",
+              "It does not matter"
+            ],
+            "answer": "One, reused across every request"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Wrapping a Prisma call in try/catch inside a route handler lets you return a proper error ____ code instead of crashing.",
+            "options": [],
+            "answer": "status"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Prisma Client calls inside an Express route handler must be awaited, just like anywhere else.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "seeding-and-testing-your-database",
+      "title": "Seeding and Testing Your Database",
+      "order": 11,
+      "content": "# Seeding and Testing Your Database\n\nA **seed script** fills a fresh database with starter data, so you (and your teammates) aren't testing against an empty database every time.\n\n```\n// prisma/seed.ts\nimport { PrismaClient } from '@prisma/client';\nconst prisma = new PrismaClient();\n\nasync function main() {\n  await prisma.user.create({\n    data: {\n      email: 'ada@example.com',\n      name: 'Ada',\n      posts: { create: [{ title: 'My first post' }] },\n    },\n  });\n}\n\nmain().finally(() => prisma.$disconnect());\n```\n\nWire it up in `package.json`:\n\n```\n{\n  \"prisma\": {\n    \"seed\": \"tsx prisma/seed.ts\"\n  }\n}\n```\n\nThen run it with:\n\n```bash\nnpx prisma db seed\n```\n\n## Resetting during development\n\n```bash\nnpx prisma migrate reset\n```\n\nDrops your dev database, reapplies every migration from scratch, and reruns your seed script, an easy way to get back to a known, clean state while building.\n\n> [!TIP]\n> This whole platform's own course catalog, including this lesson, is generated by exactly this kind of seed script.",
+      "quiz": {
+        "title": "Seeding Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the purpose of a seed script?",
+            "options": [
+              "To back up production data",
+              "To fill a fresh database with starter data for development",
+              "To compile TypeScript",
+              "To generate the Prisma schema"
+            ],
+            "answer": "To fill a fresh database with starter data for development"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "npx prisma migrate ____ drops the dev database, reapplies migrations, and reruns the seed script.",
+            "options": [],
+            "answer": "reset"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A seed script is typically run against a production database with real user data.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-blog-api-with-prisma-postgresql",
+      "title": "Final Project: Build a Blog API with Prisma & PostgreSQL",
+      "order": 12,
+      "content": "# Final Project: Build a Blog API with Prisma & PostgreSQL\n\nTime to combine everything, schema design, migrations, relations, transactions, and Express, into one real project.\n\n## Requirements\n\n1. Design a `schema.prisma` with at least two related models (e.g. `User` and `Post`, one-to-many).\n2. Generate and run a migration with `npx prisma migrate dev` against a real PostgreSQL database.\n3. Build a REST API in Express with full CRUD endpoints for at least one model, backed by Prisma Client.\n4. Implement one list endpoint that supports filtering, sorting, and pagination (`where`, `orderBy`, `skip`/`take`).\n5. Use `prisma.$transaction` somewhere the logic genuinely requires it (e.g. an operation that touches two related records atomically).\n6. Write a `prisma/seed.ts` script that populates a few starter rows.\n\n## Stretch goals\n\n- Add a many-to-many relation (e.g. tags on posts) and an endpoint that filters by tag.\n- Return pagination metadata (total count, page number) alongside the results.\n- Write at least one automated test for an endpoint.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

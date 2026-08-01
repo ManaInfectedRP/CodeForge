@@ -1,0 +1,222 @@
+{
+  "slug": "mongodb-with-fastapi-python",
+  "title": "MongoDB with FastAPI & Python",
+  "description": "Build a real, async REST API with FastAPI and MongoDB: Pydantic models, CRUD with Motor, and a full backend project.",
+  "pathSlug": "python",
+  "pathName": "Python",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "why-fastapi-and-mongodb",
+      "title": "Why FastAPI and MongoDB?",
+      "order": 1,
+      "content": "# Why FastAPI and MongoDB?\n\nYou've learned Python the language, now let's build a real backend with it. **FastAPI** is a modern, high-performance Python web framework, and **MongoDB** is a NoSQL database that stores flexible, JSON-like documents instead of rigid rows and columns.\n\n## Why FastAPI\n\n- **Fast to write**, path operations are plain Python functions with type hints.\n- **Automatic validation**, request and response data is checked against the types you declare.\n- **Free interactive docs**, every API automatically gets a Swagger UI page at `/docs`.\n- **Async-first**, built to handle many concurrent requests efficiently.\n\n## Why MongoDB\n\nA relational database (like the PostgreSQL you may have used with SQL) stores data in tables with a fixed set of columns. MongoDB stores **documents**, JSON-like objects that can have nested data and don't all need identical fields:\n\n```\n{\n  \"_id\": \"64f1b2c3d4e5f6\",\n  \"title\": \"Buy groceries\",\n  \"done\": false,\n  \"tags\": [\"errands\", \"urgent\"]\n}\n```\n\n> [!NOTE]\n> Neither approach is \"better\", relational databases shine when your data has clear, stable structure and relationships; document databases shine when your data is nested, varies shape, or evolves quickly.",
+      "quiz": {
+        "title": "FastAPI & MongoDB Intro Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does FastAPI automatically generate for every API you build?",
+            "options": [
+              "A mobile app",
+              "Interactive documentation at /docs",
+              "A MongoDB cluster",
+              "CSS styles"
+            ],
+            "answer": "Interactive documentation at /docs"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "MongoDB stores data as flexible, JSON-like ____ instead of rows in a fixed table.",
+            "options": [],
+            "answer": "documents"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Every document in a MongoDB collection must have exactly the same fields.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "setting-up-fastapi-and-mongodb",
+      "title": "Setting Up FastAPI and MongoDB",
+      "order": 2,
+      "content": "# Setting Up FastAPI and MongoDB\n\n## 1. Install the pieces\n\n```bash\npip install fastapi uvicorn motor\n```\n\n- `fastapi`, the web framework itself.\n- `uvicorn`, the server that actually runs your FastAPI app.\n- `motor`, the official **async** MongoDB driver for Python.\n\n## 2. A minimal app\n\n```\nfrom fastapi import FastAPI\n\napp = FastAPI()\n\n@app.get(\"/\")\nasync def root():\n    return {\"message\": \"Hello, Kodstigen!\"}\n```\n\nRun it with:\n\n```bash\nuvicorn main:app --reload\n```\n\n`--reload` restarts the server automatically whenever you save a file, handy during development.\n\n## 3. Connecting to MongoDB\n\n```\nfrom motor.motor_asyncio import AsyncIOMotorClient\n\nclient = AsyncIOMotorClient(\"mongodb://localhost:27017\")\ndb = client.kodstigen_db\ntasks_collection = db.tasks\n```\n\nA MongoDB server organizes data into **databases**, which contain **collections** (roughly, a collection is like a table), which contain **documents** (roughly, a document is like a row).",
+      "quiz": {
+        "title": "Setup Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which package actually runs (serves) a FastAPI application?",
+            "options": [
+              "fastapi",
+              "uvicorn",
+              "motor",
+              "pip"
+            ],
+            "answer": "uvicorn"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Running uvicorn with the ____ flag restarts the server automatically when files change.",
+            "options": [],
+            "answer": "--reload"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "In MongoDB, a collection contains documents, similar to how a table contains rows.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "defining-data-models-with-pydantic",
+      "title": "Defining Data Models with Pydantic",
+      "order": 3,
+      "content": "# Defining Data Models with Pydantic\n\nFastAPI uses **Pydantic** models to describe the shape of your data, then automatically validates incoming requests against them.\n\n```\nfrom pydantic import BaseModel\nfrom typing import Optional\n\nclass Task(BaseModel):\n    title: str\n    done: bool = False\n    tags: list[str] = []\n\nclass TaskOut(Task):\n    id: str\n```\n\n## What this buys you\n\n- If a request is missing `title`, or sends the wrong type, FastAPI rejects it with a clear `422` error automatically, your code never even runs.\n- `done: bool = False` gives that field a default, so callers don't have to include it.\n- `TaskOut` reuses `Task` and adds an `id` field, useful for responses (which include a database-assigned id) versus requests (which don't have one yet).\n\n> [!TIP]\n> Think of Pydantic models as the FastAPI equivalent of a SQL table schema, they're where you write down the \"shape\" your data must have.",
+      "quiz": {
+        "title": "Pydantic Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What happens if a request body is missing a required field on a Pydantic model?",
+            "options": [
+              "FastAPI fills it in with null",
+              "FastAPI automatically rejects the request with a validation error",
+              "The server crashes",
+              "The field is silently ignored"
+            ],
+            "answer": "FastAPI automatically rejects the request with a validation error"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Pydantic model classes inherit from ____.",
+            "options": [],
+            "answer": "BaseModel"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Giving a field a default value, like `done: bool = False`, makes it optional in requests.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "basic-crud-with-motor",
+      "title": "Basic CRUD with Motor",
+      "order": 4,
+      "content": "# Basic CRUD with Motor\n\nMotor's methods mirror MongoDB's query language closely, and every call is `async`.\n\n```\n# Create\nresult = await tasks_collection.insert_one({\"title\": \"Buy groceries\", \"done\": False})\nnew_id = result.inserted_id\n\n# Read one\ntask = await tasks_collection.find_one({\"_id\": new_id})\n\n# Read many\ncursor = tasks_collection.find({\"done\": False})\nincomplete_tasks = await cursor.to_list(length=100)\n\n# Update\nawait tasks_collection.update_one({\"_id\": new_id}, {\"$set\": {\"done\": True}})\n\n# Delete\nawait tasks_collection.delete_one({\"_id\": new_id})\n```\n\n## Reading the pieces\n\n- The first argument to each method is a **filter**, a document describing which record(s) to match, `{}` matches everything.\n- `find()` returns a **cursor**, not the data itself, you iterate it (or call `.to_list()`) to actually fetch documents.\n- `update_one` needs an update operator like `$set`, MongoDB won't just replace the whole document unless you ask it to.",
+      "quiz": {
+        "title": "CRUD Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does tasks_collection.find({...}) return?",
+            "options": [
+              "A list of documents directly",
+              "A single document",
+              "A cursor you iterate to get documents",
+              "A count"
+            ],
+            "answer": "A cursor you iterate to get documents"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "To update specific fields on a document without replacing the whole thing, you use the ____ operator.",
+            "options": [],
+            "answer": "$set"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Every Motor method call must be awaited.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "building-rest-endpoints",
+      "title": "Building REST Endpoints",
+      "order": 5,
+      "content": "# Building REST Endpoints\n\nWiring a Pydantic model and Motor together inside a path operation gives you a real REST endpoint.\n\n```\nfrom fastapi import FastAPI, HTTPException\n\napp = FastAPI()\n\n@app.post(\"/tasks\", response_model=TaskOut)\nasync def create_task(task: Task):\n    result = await tasks_collection.insert_one(task.model_dump())\n    created = await tasks_collection.find_one({\"_id\": result.inserted_id})\n    return {**created, \"id\": str(created[\"_id\"])}\n\n@app.get(\"/tasks/{task_id}\", response_model=TaskOut)\nasync def get_task(task_id: str):\n    task = await tasks_collection.find_one({\"_id\": ObjectId(task_id)})\n    if task is None:\n        raise HTTPException(status_code=404, detail=\"Task not found\")\n    return {**task, \"id\": str(task[\"_id\"])}\n```\n\n## Key ideas\n\n- `{task_id}` in the route path becomes a function parameter automatically, FastAPI calls this **path parameter binding**.\n- `task: Task` as a parameter tells FastAPI to parse and validate the request body as a `Task`.\n- `response_model=TaskOut` shapes and validates what gets sent back, and shows up correctly in the auto-generated docs.\n- Raising `HTTPException` is how you return a non-200 status code with a message.",
+      "quiz": {
+        "title": "Endpoints Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How do you return a 404 response from inside a FastAPI path operation?",
+            "options": [
+              "return 404",
+              "raise HTTPException(status_code=404, ...)",
+              "app.error(404)",
+              "response.status = 404"
+            ],
+            "answer": "raise HTTPException(status_code=404, ...)"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "Writing {task_id} inside a route path like \"/tasks/{task_id}\" is called a path ____.",
+            "options": [],
+            "answer": "parameter"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Declaring a parameter as `task: Task` tells FastAPI to validate the request body against the Task model.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-task-api-with-fastapi-mongodb",
+      "title": "Final Project: Build a Task API with FastAPI & MongoDB",
+      "order": 6,
+      "content": "# Final Project: Build a Task API with FastAPI & MongoDB\n\nTime to combine models, Motor, and path operations into a real API.\n\n## Requirements\n\n1. Define a Pydantic `Task` model with at least a title, a completed flag, and one more field of your choice.\n2. Connect to a MongoDB database (local, Docker, or a free Atlas cluster) using Motor.\n3. Build full CRUD endpoints, `POST /tasks`, `GET /tasks`, `GET /tasks/{id}`, `PUT /tasks/{id}`, and `DELETE /tasks/{id}`.\n4. Return a proper `404` when a requested task doesn't exist.\n5. Confirm your endpoints work using the automatic docs at `/docs`.\n\n## Stretch goals\n\n- Add a query parameter to filter tasks by `done` status.\n- Add pagination with `skip`/`limit` query parameters.\n- Add a second collection (e.g. `users` or `projects`) with a relationship to tasks.\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

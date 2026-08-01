@@ -2,41 +2,32 @@
   "name": "@codeforge/web",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build && tsx scripts/prerender.ts",
-    "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@codeforge/shared": "*",
-    "axios": "^1.8.4",
+    "next": "^16.2.12",
     "picoc-js": "^1.0.12",
     "prismjs": "^1.30.0",
-    "qrcode": "^1.5.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-easy-crop": "^6.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.4.0",
     "react-simple-code-editor": "^0.14.1",
     "remark-gfm": "^4.0.1",
     "remark-github-blockquote-alert": "^2.1.0",
-    "socket.io-client": "^4.8.3",
     "sucrase": "^3.35.1",
     "wasmoon": "^1.16.0"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.0.15",
+    "@tailwindcss/postcss": "^4.0.15",
+    "@types/node": "^22.13.10",
     "@types/prismjs": "^1.26.6",
-    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
-    "@vitejs/plugin-react": "^4.3.4",
     "tailwindcss": "^4.0.15",
-    "tsx": "^4.23.0",
-    "typescript": "^5.8.2",
-    "vite": "^6.2.3"
+    "typescript": "^5.8.2"
   }
 }

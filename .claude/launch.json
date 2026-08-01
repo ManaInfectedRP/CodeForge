@@ -3,16 +3,10 @@
   "configurations": [
     {
       "name": "kodstigen-web",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "-w", "apps/web"],
-      "port": 5173,
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "apps/web", "--port", "3000"],
+      "port": 3000,
       "autoPort": true
-    },
-    {
-      "name": "kodstigen-api",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "-w", "apps/api"],
-      "port": 4000
     }
   ]
 }

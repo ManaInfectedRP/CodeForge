@@ -1,0 +1,200 @@
+{
+  "slug": "node-js-backend-fundamentals",
+  "title": "Node.js Backend Fundamentals",
+  "description": "From your first console.log to a deployed REST API with authentication, the complete Node.js foundation.",
+  "pathSlug": "nodejs",
+  "pathName": "Node.js",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "introduction-to-node-js",
+      "title": "Introduction to Node.js",
+      "order": 1,
+      "content": "# Introduction to Node.js\n\nNode.js is a JavaScript runtime built on Chrome's V8 engine. It lets you run JavaScript outside the browser, on servers, in CLIs, and in build tools.\n\n## Why Node.js?\n\n- **Non-blocking I/O**, handles thousands of concurrent connections efficiently.\n- **One language everywhere**, share code and skills between frontend and backend.\n- **npm**, the largest package ecosystem in the world.\n\n## Your first program\n\n```js\n// hello.js\nconsole.log('Hello from Node.js!');\n```\n\nRun it with:\n\n```bash\nnode hello.js\n```",
+      "quiz": {
+        "title": "Node.js Basics",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What engine does Node.js use to execute JavaScript?",
+            "options": [
+              "SpiderMonkey",
+              "V8",
+              "JavaScriptCore",
+              "Chakra"
+            ],
+            "answer": "V8"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Node.js can only run JavaScript inside a web browser.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The command to run a file called app.js with Node is: ____ app.js",
+            "options": [],
+            "answer": "node"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "variables-and-data-types",
+      "title": "Variables and Data Types",
+      "order": 2,
+      "content": "# Variables and Data Types\n\nJavaScript in Node.js supports `let`, `const`, and (legacy) `var`.\n\n```js\nconst name = 'Kodstigen';   // cannot be reassigned\nlet xp = 0;                 // can be reassigned\nxp += 10;\n\nconsole.log(name, 'has', xp, 'XP');\nconsole.log('typeof name:', typeof name);\n```\n\n## Core types\n\n| Type | Example |\n|------|---------|\n| string | `'hello'` |\n| number | `42`, `3.14` |\n| boolean | `true` |\n| object | `{ id: 1 }` |\n| array | `[1, 2, 3]` |\n| null / undefined | absence of value |\n\nPrefer `const` by default; use `let` only when you need to reassign.",
+      "quiz": {
+        "title": "Variables Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which keyword declares a variable that cannot be reassigned?",
+            "options": [
+              "var",
+              "let",
+              "const",
+              "static"
+            ],
+            "answer": "const"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the output of: console.log(typeof [1, 2, 3])",
+            "options": [
+              "array",
+              "object",
+              "list",
+              "undefined"
+            ],
+            "answer": "object"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "functions-and-modules",
+      "title": "Functions and Modules",
+      "order": 3,
+      "content": "# Functions and Modules\n\n## Functions\n\n```js\nfunction add(a, b) {\n  return a + b;\n}\n\nconst multiply = (a, b) => a * b;\n\nconsole.log('add(2, 3) =', add(2, 3));\nconsole.log('multiply(4, 5) =', multiply(4, 5));\n```\n\n## ES Modules\n\nSplit code across files with `import`/`export` (module files need a real Node.js project, so this example is read-only):\n\n```\n// math.js\nexport function add(a, b) {\n  return a + b;\n}\n\n// app.js\nimport { add } from './math.js';\nconsole.log(add(2, 3)); // 5\n```\n\nSet `\"type\": \"module\"` in package.json to use ES modules natively.",
+      "quiz": {
+        "title": "Functions & Modules Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "FILL_BLANK",
+            "prompt": "To bring a named export into another file you use the ____ keyword.",
+            "options": [],
+            "answer": "import"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Arrow functions are declared with the => syntax.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "building-an-express-server",
+      "title": "Building an Express Server",
+      "order": 4,
+      "content": "# Building an Express Server\n\nExpress is the most popular web framework for Node.js.\n\n```\nimport express from 'express';\n\nconst app = express();\napp.use(express.json());\n\napp.get('/api/health', (req, res) => {\n  res.json({ status: 'ok' });\n});\n\napp.listen(4000, () => console.log('Listening on :4000'));\n```\n\n*Server code runs in Node.js, not in the browser playground, you'll run this for real in the final project.*\n\n## Key concepts\n\n- **Routes** map an HTTP method + path to a handler.\n- **Middleware** functions run in order before your handler (parsing, auth, logging).\n- **req / res**, the request and response objects.",
+      "quiz": {
+        "title": "Express Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which middleware parses incoming JSON request bodies?",
+            "options": [
+              "express.static()",
+              "express.json()",
+              "express.router()",
+              "express.parse()"
+            ],
+            "answer": "express.json()"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What HTTP method is typically used to create a new resource?",
+            "options": [
+              "GET",
+              "POST",
+              "DELETE",
+              "HEAD"
+            ],
+            "answer": "POST"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Middleware functions execute after the final route handler sends its response.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "rest-apis-and-authentication",
+      "title": "REST APIs and Authentication",
+      "order": 5,
+      "content": "# REST APIs and Authentication\n\n## REST conventions\n\n| Method | Path | Meaning |\n|--------|------|---------|\n| GET | /api/courses | list courses |\n| GET | /api/courses/:id | one course |\n| POST | /api/courses | create |\n| PUT | /api/courses/:id | update |\n| DELETE | /api/courses/:id | delete |\n\n## JWT authentication\n\n1. User logs in with credentials.\n2. Server verifies and signs a **JSON Web Token**.\n3. Client sends it back on every request: `Authorization: Bearer <token>`.\n4. Middleware verifies the signature and attaches the user to the request.\n\nNever store plain-text passwords, hash them with bcrypt.",
+      "quiz": {
+        "title": "REST & Auth Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "FILL_BLANK",
+            "prompt": "JWTs are sent in the Authorization header using the ____ scheme.",
+            "options": [],
+            "answer": "Bearer"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which library is commonly used to hash passwords in Node.js?",
+            "options": [
+              "md5",
+              "bcrypt",
+              "base64",
+              "crypto-random"
+            ],
+            "answer": "bcrypt"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-url-shortener",
+      "title": "Final Project: URL Shortener",
+      "order": 6,
+      "content": "# Final Project: URL Shortener\n\nTime to put it all together. Build a URL shortener API with:\n\n## Requirements\n\n1. `POST /api/links`, accepts a long URL, returns a short code.\n2. `GET /:code`, redirects to the original URL.\n3. `GET /api/links/:code/stats`, visit count and creation date.\n4. Persist links in PostgreSQL.\n5. Validate URLs and handle unknown codes with a 404.\n\n## Stretch goals\n\n- Rate limiting\n- Custom short codes\n- Expiring links\n\nSubmit your repository link below when you are done, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}

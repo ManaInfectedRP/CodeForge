@@ -1,0 +1,222 @@
+{
+  "slug": "langchain-js-building-llm-applications-with-typescript",
+  "title": "LangChain.js: Building LLM Applications with TypeScript",
+  "description": "Build real, typed LLM applications with LangChain.js: chat models and prompt templates, LCEL chains with .pipe(), retrieval-augmented generation, tools and agents, and stateful multi-step workflows with LangGraph.js.",
+  "pathSlug": "typescript",
+  "pathName": "TypeScript",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "why-langchain-js-chat-models-and-prompt-templates",
+      "title": "Why LangChain.js? Chat Models and Prompt Templates",
+      "order": 1,
+      "content": "# Why LangChain.js? Chat Models and Prompt Templates\n\nEverything LangChain does in Python, standardizing prompts, models, and chains behind one interface, has a first-class TypeScript port: **LangChain.js**. If you already know TypeScript's type system, this course reuses that strength directly, chains here are typed end to end.\n\n## Chat models\n\n```ts\nimport { ChatOpenAI } from '@langchain/openai';\n\nconst model = new ChatOpenAI({ model: 'gpt-4o-mini', apiKey: 'YOUR_API_KEY' });\nconst response = await model.invoke('What is a large language model?');\nconsole.log(response.content);\n```\n\n*This needs a real API key and network access, so it's read-only here.* `model.invoke(...)` is `async`, every LangChain.js call that talks to a model returns a `Promise`, matching how you'd already call any other network API in TypeScript.\n\n## Prompt templates\n\n```ts\nimport { ChatPromptTemplate } from '@langchain/core/prompts';\n\nconst prompt = ChatPromptTemplate.fromMessages([\n  ['system', 'You are a helpful assistant that explains topics simply.'],\n  ['human', 'Explain {topic} in two sentences.'],\n]);\n\nconst messages = await prompt.invoke({ topic: 'recursion' });\nconsole.log(messages);\n```\n\n`{topic}` is a placeholder, filled in from whatever object you pass to `.invoke()`, the same `prompt` object is reusable with `{ topic: 'closures' }` or any other value, without rewriting the wording.\n\n## Why not just template strings yourself?\n\nYou could interpolate a plain TypeScript template string instead, and for a single, throwaway prompt, that's fine. `ChatPromptTemplate` starts paying off once you need to: reuse the same prompt in multiple places, compose it with a model and parser (next lesson), or swap the underlying model without touching the prompt at all.\n\n> [!TIP]\n> `.invoke()` is the one method every LangChain.js \"Runnable\" (models, prompts, chains, retrievers) implements. Once you've learned it once, you already know how to call any piece in the library.",
+      "quiz": {
+        "title": "LangChain.js Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does model.invoke(...) return in LangChain.js?",
+            "options": [
+              "A plain string, synchronously",
+              "A Promise, since it calls out to a model over the network",
+              "It's fire-and-forget, nothing is returned",
+              "A generator function"
+            ],
+            "answer": "A Promise, since it calls out to a model over the network"
+          },
+          {
+            "id": "q2",
+            "type": "FILL_BLANK",
+            "prompt": "In a ChatPromptTemplate, {topic} is a ____ filled in from the object passed to .invoke().",
+            "options": [],
+            "answer": "placeholder"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Every LangChain.js Runnable, models, prompts, chains, and retrievers, implements the same .invoke() method.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "chains-with-lcel-composing-runnables-in-typescript",
+      "title": "Chains with LCEL: Composing Runnables in TypeScript",
+      "order": 2,
+      "content": "# Chains with LCEL: Composing Runnables in TypeScript\n\nLCEL (LangChain Expression Language) composes in TypeScript the same way it does in Python, except instead of the `|` operator (which TypeScript doesn't let you overload), LangChain.js uses an explicit `.pipe()` method to chain `Runnable`s together.\n\n## Building a chain with .pipe()\n\n```ts\nimport { ChatOpenAI } from '@langchain/openai';\nimport { ChatPromptTemplate } from '@langchain/core/prompts';\nimport { StringOutputParser } from '@langchain/core/output_parsers';\n\nconst prompt = ChatPromptTemplate.fromMessages([\n  ['system', 'You are a helpful assistant that explains topics simply.'],\n  ['human', 'Explain {topic} in two sentences.'],\n]);\nconst model = new ChatOpenAI({ model: 'gpt-4o-mini' });\nconst parser = new StringOutputParser();\n\nconst chain = prompt.pipe(model).pipe(parser);\nconst result = await chain.invoke({ topic: 'recursion' });\nconsole.log(result);\n```\n\n*This needs a real API key, so it's read-only here.* `prompt.pipe(model).pipe(parser)` reads left to right, exactly like Python's `prompt | model | parser`: the input object flows into `prompt`, its output flows into `model`, and the model's response flows into `parser`, which extracts a plain `string`. `result` is typed as `string`, not a message object you'd need to unwrap.\n\n## Batching\n\n```ts\nconst topics = [{ topic: 'recursion' }, { topic: 'closures' }, { topic: 'binary search' }];\nconst results = await chain.batch(topics);\n```\n\n*Also read-only here, since it calls the model.* Because `chain` is itself a `Runnable`, it gets `.batch()` (many inputs) and `.stream()` (token-by-token output) automatically, the same three methods every piece in the pipeline already had.\n\n## Why types matter here\n\nEach piece in a `.pipe()` chain is generically typed by its input and output, `ChatPromptTemplate` outputs a message type that `ChatOpenAI` accepts as input, and `StringOutputParser` narrows that model's response down to `string`. If you tried to pipe two incompatible pieces together, TypeScript's compiler catches the mismatch before you ever run the code, one of the concrete advantages of building LLM chains in a typed language.\n\n> [!NOTE]\n> `.pipe()` and Python's `|` do exactly the same thing: build a new `Runnable` from smaller ones. The syntax differs because operator overloading isn't available in TypeScript, the composition model underneath is identical.",
+      "quiz": {
+        "title": "LCEL in TypeScript Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In LangChain.js, what replaces Python's | operator for composing a chain?",
+            "options": [
+              "The + operator",
+              "The .pipe() method",
+              "A special JSX syntax",
+              "There is no equivalent"
+            ],
+            "answer": "The .pipe() method"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Because a LangChain.js chain is itself a Runnable, it automatically gets .batch() and .stream() without extra code.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "TypeScript's compiler can catch a mismatch between two incompatible pieces piped together, because each Runnable is generically typed by its input and ____ type.",
+            "options": [],
+            "answer": "output"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "retrieval-augmented-generation-with-langchain-js",
+      "title": "Retrieval-Augmented Generation with LangChain.js",
+      "order": 3,
+      "content": "# Retrieval-Augmented Generation with LangChain.js\n\nLangChain.js ships the same RAG building blocks as its Python counterpart: text splitters, embeddings, vector stores, and retrievers, all typed and composable with `.pipe()`.\n\n## Splitting text\n\n```ts\nimport { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';\n\nconst splitter = new RecursiveCharacterTextSplitter({ chunkSize: 200, chunkOverlap: 20 });\nconst chunks = await splitter.splitText('LangChain is a framework for building applications with LLMs...');\nconsole.log(chunks.length, chunks[0]);\n```\n\nLike its Python counterpart, `RecursiveCharacterTextSplitter` prefers splitting on paragraph and sentence boundaries before falling back to a fixed size, keeping chunks semantically coherent, `chunkOverlap` repeats a few characters between adjacent chunks so a fact near a boundary isn't cut cleanly in half.\n\n## Embedding and storing\n\n```ts\nimport { OpenAIEmbeddings } from '@langchain/openai';\nimport { MemoryVectorStore } from 'langchain/vectorstores/memory';\n\nconst embeddings = new OpenAIEmbeddings({ model: 'text-embedding-3-small' });\nconst vectorstore = await MemoryVectorStore.fromTexts(\n  chunks,\n  chunks.map((_, i) => ({ id: i })),\n  embeddings\n);\nconst retriever = vectorstore.asRetriever({ k: 3 });\n```\n\n*This needs a real API key to compute embeddings, so it's read-only here.* `MemoryVectorStore.fromTexts` takes the chunks, per-chunk metadata (here, just an `id`), and the embeddings model, embedding every chunk and keeping the vectors in memory for similarity search. `.asRetriever({ k: 3 })` wraps it as a `Runnable` returning the 3 most similar chunks for a given query.\n\n## Wiring retrieval into a chain\n\n```ts\nimport { ChatPromptTemplate } from '@langchain/core/prompts';\nimport { StringOutputParser } from '@langchain/core/output_parsers';\nimport { RunnableSequence, RunnablePassthrough } from '@langchain/core/runnables';\nimport type { Document } from '@langchain/core/documents';\n\nconst prompt = ChatPromptTemplate.fromTemplate(\n  'Answer the question using only this context:\\n{context}\\n\\nQuestion: {question}'\n);\n\nconst formatDocs = (docs: Document[]) => docs.map((d) => d.pageContent).join('\\n\\n');\n\nconst ragChain = RunnableSequence.from([\n  { context: retriever.pipe(formatDocs), question: new RunnablePassthrough() },\n  prompt,\n  model,\n  new StringOutputParser(),\n]);\n\nconst answer = await ragChain.invoke('What is LangChain?');\n```\n\n*Read-only, needs a real model and vector store.* `RunnableSequence.from([...])` is the explicit, array-based way to build a multi-step chain, the object in the first step runs both branches on the same input in parallel: `retriever.pipe(formatDocs)` turns the question into formatted context, while `new RunnablePassthrough()` forwards the original question unchanged, exactly mirroring the Python version's dictionary syntax.\n\n> [!WARNING]\n> \"Using only this context\" in the prompt is what keeps the model grounded in your retrieved documents instead of answering from its own training data, drop that instruction and you've built a chatbot that ignores the very documents you retrieved.",
+      "quiz": {
+        "title": "LangChain.js RAG Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does RunnableSequence.from([...]) do?",
+            "options": [
+              "Runs steps in a random order",
+              "Builds an explicit, array-based multi-step chain",
+              "Only works with a single step",
+              "Replaces the need for a prompt template"
+            ],
+            "answer": "Builds an explicit, array-based multi-step chain"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "new RunnablePassthrough() forwards its input unchanged, useful for passing the original question alongside retrieved context.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "chunkOverlap repeats a few characters between adjacent chunks so a fact near a boundary isn't ____ in half.",
+            "options": [],
+            "answer": "cut"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "tools-and-agents-in-langchain-js",
+      "title": "Tools and Agents in LangChain.js",
+      "order": 4,
+      "content": "# Tools and Agents in LangChain.js\n\nA LangChain.js **tool** wraps a TypeScript function with a name, description, and typed schema so a model can request it, and an **agent executor** repeatedly calls the model, executes any requested tools, and feeds results back, until the model gives a final answer.\n\n## Defining a tool\n\n```ts\nimport { tool } from '@langchain/core/tools';\nimport { z } from 'zod';\n\nconst getWordLength = tool(\n  async ({ word }) => word.length,\n  {\n    name: 'get_word_length',\n    description: 'Return the number of characters in a word.',\n    schema: z.object({ word: z.string() }),\n  }\n);\n```\n\nThe `schema` uses **Zod**, a TypeScript-first validation library, to describe exactly what arguments the tool accepts, LangChain.js converts that schema into the JSON Schema the model actually sees, and validates the model's arguments against it before your function ever runs, malformed input is rejected before it reaches your code, not after.\n\n## Binding tools to a model\n\n```ts\nconst modelWithTools = model.bindTools([getWordLength]);\nconst response = await modelWithTools.invoke('How many letters are in the word \"LangChain\"?');\nconsole.log(response.tool_calls);\n```\n\n*This needs a real API key, so it's read-only here.* `.bindTools()` returns a new model that can respond with a `tool_calls` array when it decides a tool is relevant, the model never runs `getWordLength` itself, it only requests that your code do so.\n\n## The agent executor\n\n```ts\nimport { createToolCallingAgent, AgentExecutor } from 'langchain/agents';\n\nconst agent = await createToolCallingAgent({ llm: model, tools: [getWordLength], prompt });\nconst executor = new AgentExecutor({ agent, tools: [getWordLength] });\n\nconst result = await executor.invoke({ input: 'How many letters are in the word \"LangChain\"?' });\nconsole.log(result.output);\n```\n\n*Read-only, needs a real model.* `AgentExecutor` is the loop: call the model, check for `tool_calls`, run any requested tools, append their results, and repeat until the model returns a final plain-text answer instead of another tool request.\n\n> [!NOTE]\n> A Zod schema does double duty here: it's what generates the tool's JSON Schema description for the model, and it's what validates the model's arguments before your function runs, one source of truth instead of two things to keep in sync by hand.",
+      "quiz": {
+        "title": "Tools & Agents in TS Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What library does LangChain.js use to define a tool's argument schema?",
+            "options": [
+              "Joi",
+              "Zod",
+              "Yup",
+              "class-validator"
+            ],
+            "answer": "Zod"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "LangChain.js validates a model's tool call arguments against the Zod schema before the tool function runs.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "model.bindTools([...]) returns a new model that can respond with a ____ array when it decides to call a tool.",
+            "options": [],
+            "answer": "tool_calls"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "langgraph-js-stateful-multi-step-workflows",
+      "title": "LangGraph.js: Stateful, Multi-Step Workflows",
+      "order": 5,
+      "content": "# LangGraph.js: Stateful, Multi-Step Workflows\n\nJust like its Python counterpart, **LangGraph.js** models a workflow as an explicit graph of typed state, nodes, and edges, instead of an implicit \"loop until done.\" It's the tool to reach for once `AgentExecutor`'s simple loop isn't enough, when you need branches, loops back to an earlier step, or several cooperating steps.\n\n## Defining typed state\n\n```ts\nimport { Annotation } from '@langchain/langgraph';\n\nconst ResearchState = Annotation.Root({\n  question: Annotation<string>,\n  searchResults: Annotation<string>,\n  answer: Annotation<string>,\n});\n```\n\n`Annotation.Root` defines the shape of the state every node reads and updates, typed just like any other TypeScript object, at any point in the graph's execution, the current state is a plain, inspectable, fully-typed value.\n\n## Defining nodes\n\n```ts\nasync function searchNode(state: typeof ResearchState.State) {\n  const results = `(pretend search results for: ${state.question})`;\n  return { searchResults: results };\n}\n\nasync function answerNode(state: typeof ResearchState.State) {\n  const promptText = `Question: ${state.question}\nResearch: ${state.searchResults}\nAnswer:`;\n  return { answer: `(pretend model answer based on: ${promptText})` };\n}\n```\n\nEach node is a plain async function that receives the current state and returns a partial object of updates to merge in, a real `searchNode` would call a search tool and `answerNode` would run an LCEL chain, kept as placeholders here since both need real API access.\n\n## Wiring the graph\n\n```ts\nimport { StateGraph, END } from '@langchain/langgraph';\n\nconst graph = new StateGraph(ResearchState)\n  .addNode('search', searchNode)\n  .addNode('answer', answerNode)\n  .addEdge('__start__', 'search')\n  .addEdge('search', 'answer')\n  .addEdge('answer', END);\n\nconst app = graph.compile();\nconst result = await app.invoke({ question: 'What is LangGraph.js?', searchResults: '', answer: '' });\nconsole.log(result.answer);\n```\n\n`addEdge('search', 'answer')` is a fixed transition, `addEdge('answer', END)` marks `answer` as terminal, `END` is a special constant meaning \"the graph is finished here.\"\n\n## Conditional edges\n\n```ts\nfunction needsMoreResearch(state: typeof ResearchState.State): 'search' | 'answer' {\n  return state.searchResults.length < 20 ? 'search' : 'answer';\n}\n\ngraph.addConditionalEdges('search', needsMoreResearch, { search: 'search', answer: 'answer' });\n```\n\n`addConditionalEdges` routes to a different next node based on a function of the current state, here looping back to `search` if results still look too thin, this explicit, typed branching is what a plain `AgentExecutor` loop doesn't give you directly.\n\n> [!TIP]\n> The return type `'search' | 'answer'` on `needsMoreResearch` is doing real work: TypeScript checks that the routing function can only return names of nodes that actually exist in the graph.",
+      "quiz": {
+        "title": "LangGraph.js Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does Annotation.Root define in LangGraph.js?",
+            "options": [
+              "A single node's logic",
+              "The typed shape of the state every node reads and updates",
+              "The final output parser",
+              "A database connection"
+            ],
+            "answer": "The typed shape of the state every node reads and updates"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "addConditionalEdges lets a graph route to a different next node depending on the current state, unlike a fixed addEdge.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "In LangGraph.js, ____ is the special constant marking a node as the terminal step of the graph.",
+            "options": [],
+            "answer": "END"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-typed-rag-assistant-with-langchain-js-and-langgraph-js",
+      "title": "Final Project: Build a Typed RAG Assistant with LangChain.js and LangGraph.js",
+      "order": 6,
+      "content": "# Final Project: Build a Typed RAG Assistant with LangChain.js and LangGraph.js\n\nCombine everything from this course, typed chains, retrieval, tools, and LangGraph.js, into one working research assistant, given a question, it should decide whether it needs more retrieved context, pull from a small local knowledge base, and produce a final grounded, typed answer.\n\n## Requirements\n\n1. Set up a real API key and install `@langchain/core`, `@langchain/openai` (or your provider's package), and `@langchain/langgraph`.\n2. Build a small local knowledge base (3-5 short text documents on any topic you like) and set up a retriever for it, using the splitting and vector store pattern from the Retrieval lesson.\n3. Define a typed state with `Annotation.Root`, at least a `question`, `context`, and `answer` field.\n4. Build a LangGraph.js graph with at least three nodes: one that retrieves context for the question, one that decides (via `addConditionalEdges`) whether the retrieved context is sufficient or another retrieval pass is needed, and one that generates the final answer using an LCEL chain (`.pipe()`) grounded in the retrieved context.\n5. Compile and run the graph on at least three different questions, one clearly answerable from your knowledge base and one that isn't, confirm the assistant behaves sensibly in both cases (e.g. says it doesn't know, rather than making something up).\n\n## Stretch goals\n\n- Add a Zod-defined tool (e.g. a calculator, or a fake \"current date\" function) and a node that lets the model call it when relevant, on top of retrieval.\n- Add a loop limit (a counter field in state) so a conditional edge can't send the graph back to retrieval forever.\n- Type the graph's final result end to end, so `result.answer` is a `string` your calling code can rely on without a cast.\n\nSubmit a link to your finished project (a repo or gist) below, an instructor will review it before you can mark this lesson complete.",
+      "requiresSubmission": true
+    }
+  ]
+}

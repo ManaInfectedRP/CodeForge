@@ -1,5 +1,7 @@
+'use client';
+
 import { useEffect } from 'react';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Props {
   onClose: () => void;

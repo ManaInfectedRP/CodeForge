@@ -1,150 +1,104 @@
 # ⚒️ Kodstigen
 
-A modern programming learning platform. Students pick learning paths (C++, Python, JavaScript, TypeScript, Node.js), enroll in courses, complete lessons, pass quizzes, and earn XP while keeping a daily streak alive.
+A programming learning platform, built as a **static site**. Students pick a learning path
+(Python, JavaScript, C++, Kubernetes, …), work through interactive lessons, run real code in
+the browser, take quizzes, and solve coding challenges. No account, no server, no database.
 
 ## Tech stack
 
 | Layer | Tech |
 |-------|------|
-| API | Node.js, Express, TypeScript, Prisma, JWT, Zod |
-| Web | React 19, TypeScript, Vite, Tailwind CSS v4, React Router, Axios |
-| Database | PostgreSQL |
-| Shared | `@codeforge/shared`, DTOs and types used by both API and web |
+| App | Next.js 16 (App Router, `output: 'export'`), React 19, TypeScript, Tailwind CSS v4 |
+| Content | JSON files in `apps/web/content`, read at build time |
+| Runtimes | Pyodide (Python), Web Worker (JS/TS), wasmoon (Lua), picoc-js (C), sandboxed iframe (HTML) |
+| Hosting | Render.com static site |
 
 ## Repo layout
 
 ```
 apps/
-  api/        Express + Prisma backend (port 4000)
-  web/        React + Vite frontend (port 5173, proxies /api to the backend)
-packages/
-  shared/     TypeScript types shared across apps
+  web/
+    content/          the entire course catalog as JSON (see below)
+    public/           images, language logos
+    src/app/          routes (App Router)
+    src/components/   UI, all client-side
+    src/lib/          content readers, code sandboxes, Prism setup
+build.sh              build entrypoint used by Render (with .next/cache reuse)
+render.yaml           Render blueprint: one static site, nothing else
 ```
 
 ## Getting started
 
-Prerequisites: Node.js 20+, a running PostgreSQL server.
-
-### Fast boot (one command)
-
-```bash
-./fastboot.sh          # install deps, migrate, seed, start api + web
-./fastboot.sh --fresh  # same, but wipe and recreate the database first
-```
-
-On Windows, run it from Git Bash: `bash fastboot.sh`.
-
-**Stopping**: Ctrl+C often won't fully stop it on Windows, the server is spawned several process layers deep (`npm` → `concurrently` → `npm` → `tsx watch` → `node`), and Windows console control events don't reliably propagate through that many `cmd.exe`/`npm.cmd` wrappers under Git Bash, leaving an orphaned `node` process still holding the port. Run `npm run stop` (or `bash stop.sh`) to force-kill whatever's actually listening on 4000/5173.
-
-### Manual steps
+Prerequisites: Node.js 20+ and [Yarn 1.x](https://classic.yarnpkg.com/) (`npm i -g yarn`,
+or `corepack enable` from an elevated shell).
 
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Configure the database connection
-#    Edit apps/api/.env, default is postgres:postgres@localhost:5432/kodstigen
-
-# 3. Create the schema and seed demo data
-npm run db:migrate      # runs prisma migrate dev (creates the kodstigen DB schema)
-npm run db:seed         # 5 learning paths, 5 courses, lessons, quizzes, 10 coding challenges, 12 achievements, demo accounts
-
-# 4. Run both apps
-npm run dev             # api on :4000, web on :5173
+yarn install
+yarn dev            # http://localhost:3000
 ```
 
-Open http://localhost:5173.
+Other scripts:
 
-### Demo accounts
-
-| Role | Email | Password |
-|------|-------|----------|
-| Student | student@kodstigen.dev | student123 |
-| Instructor | instructor@kodstigen.dev | instructor123 |
-| Admin | admin@kodstigen.dev | admin123 |
-
-## What's implemented (v0.1, core slice)
-
-- **Auth**, register, login, JWT sessions, role model (student / instructor / admin)
-- **Learning paths**, the five language paths with difficulty, lesson counts, and multi-select onboarding
-- **Course catalog**, browse by path, enroll, per-course curriculum view
-- **Lessons**, markdown content, video slot, prev/next navigation, mark-complete
-- **Quizzes**, multiple choice, true/false, and fill-in-the-blank; graded server-side (answers never leave the API); pass/fail against a passing score
-- **Gamification**, XP for lessons (+10), first quiz pass (+25), and first challenge solve (+30), daily streak tracking
-- **Dashboard**, XP, streak, enrolled courses with completion %, recent activity, selected paths
-- **Code playground**, every python/js/ts code block in a lesson is an editable editor with Run/Reset and an output panel. Code executes in the student's browser, fully sandboxed: Python via Pyodide (CPython on WebAssembly, lazy-loaded from CDN on first run), JavaScript in a Web Worker with a 5s timeout, TypeScript stripped with Sucrase then run as JS. C++/bash blocks stay static.
-- **Coding challenges** (`/challenges`), 10 seeded problems plus instructor-authored ones (Easy/Medium/Hard) solvable in Python, JavaScript, or TypeScript. Submissions run client-side in the same sandbox as the playground, but grading is server-authoritative: expected outputs for hidden test cases never leave the API, only inputs do, mirroring how quiz answers are graded.
-- **Leaderboard** (`/leaderboard`), top students ranked by XP with streak and challenges-solved columns
-- **Achievements** (`/achievements`), 12 badges that unlock automatically across XP, streak, lessons, quizzes, and challenges milestones
-- **Instructor authoring** (`/teach`), create draft courses, write markdown lessons with live preview, upload lesson videos, build quizzes (all three question types), reorder/delete lessons, submit for review; create draft coding challenges with per-language starter code and manually-entered test cases, submit for review; a step-by-step **guide page** (`/teach/guide`) walks through both workflows
-- **Admin review** (`/admin`, `/admin/challenges`), approve or send back pending courses and challenges with feedback, unpublish live ones; only approved content appears to students
-
-## API overview
-
+```bash
+yarn build          # static export into apps/web/out
+yarn typecheck
 ```
-POST /api/auth/register        create account
-POST /api/auth/login           get JWT
-GET  /api/auth/me              current user
-GET  /api/paths                learning paths (+ selected flags when authed)
-PUT  /api/me/paths             set my learning paths
-GET  /api/me/dashboard         dashboard payload
-GET  /api/courses?path=slug    published courses
-GET  /api/courses/:id          course detail + my progress
-POST /api/courses/:id/enroll   enroll
-GET  /api/lessons/:id          lesson content + quiz (no answers)
-POST /api/lessons/:id/complete mark complete, award XP
-POST /api/quizzes/:id/attempts submit answers, get graded result
-GET  /api/challenges           list challenges (+ solved flags when authed)
-GET  /api/challenges/:id       challenge detail, starter code, examples, test-case inputs (no expected outputs)
-POST /api/challenges/:id/submit submit test-case results, get graded result, award XP
-GET  /api/leaderboard          top students by XP
-GET  /api/achievements         achievement definitions + my unlock status
 
-# Instructor (role: INSTRUCTOR or ADMIN)
-GET/POST /api/instructor/courses               list / create draft courses
-GET/PUT  /api/instructor/courses/:id           edit course details
-POST /api/instructor/courses/:id/submit        submit draft for review
-POST /api/instructor/courses/:id/lessons       add lesson
-GET/PUT/DELETE /api/instructor/lessons/:id     edit / remove lesson
-POST /api/instructor/lessons/:id/move          reorder lesson
-PUT  /api/instructor/lessons/:id/quiz          replace lesson quiz
-GET/POST /api/instructor/challenges            list / create draft challenges
-GET/PUT  /api/instructor/challenges/:id        edit challenge details
-PUT  /api/instructor/challenges/:id/test-cases replace all test cases
-POST /api/instructor/challenges/:id/submit     submit draft for review
+`yarn build` writes a complete, self-contained site to `apps/web/out` (~480 pages). Serve
+that directory with any static file server to preview the real artifact.
 
-# Admin (role: ADMIN)
-GET  /api/admin/courses?status=             all courses by status
-POST /api/admin/courses/:id/approve         publish
-POST /api/admin/courses/:id/reject          send back with feedback
-POST /api/admin/courses/:id/unpublish       pull a live course
-GET  /api/admin/challenges?status=          all challenges by status
-POST /api/admin/challenges/:id/approve      publish
-POST /api/admin/challenges/:id/reject       send back with feedback
-POST /api/admin/challenges/:id/unpublish    pull a live challenge
-```
+## Content
+
+Everything a student sees is generated from JSON under `apps/web/content`:
+
+| File | What it holds |
+|------|---------------|
+| `paths.json` | the 28 learning paths (+ the `public` holder path for the free sample course) |
+| `courses.json` | course index: slug, title, description, path, lesson/quiz counts |
+| `courses/<slug>.json` | one course, with every lesson's markdown and quiz |
+| `challenges.json` | all coding challenges, with starter code and test cases |
+| `blog.json` | blog posts |
+| `testimonials.json` | student reviews shown on the landing page (empty by default) |
+
+**Adding a course**: create `content/courses/<slug>.json` (copy an existing one for the
+shape), then add a matching entry to `content/courses.json`. `pathSlug` must match a slug in
+`paths.json`. Routes, the sitemap, and the catalog pick it up on the next build, there is
+nothing to migrate or seed.
+
+**Adding a challenge**: append an object to `content/challenges.json`. `testCases[].isHidden`
+still controls what's shown as an "Example" versus only revealed after running all tests, but
+note that everything in this file ships to the browser, hidden expected outputs included,
+grading happens client-side now.
+
+**Lesson markdown**: fenced code blocks in a runnable language become interactive:
+`python`/`js`/`ts`/`lua`/`c` render a `CodePlayground` with a Run button, `html` renders a
+live sandboxed preview. Everything else is statically syntax-highlighted. Consecutive Python
+blocks in one lesson share an interpreter namespace, like notebook cells.
+
+## How code execution works
+
+Nothing is sent anywhere. Each language runs locally in the visitor's browser:
+
+- **Python** via [Pyodide](https://pyodide.org) (CPython on WebAssembly), lazy-loaded from a
+  CDN on first run; `numpy`/`pandas`/`scikit-learn` are fetched on demand.
+- **JavaScript** in a Web Worker with a 5s timeout, so an infinite loop can be killed.
+- **TypeScript** stripped with [Sucrase](https://sucrase.io), then run as JavaScript.
+- **Lua** via [wasmoon](https://github.com/ceifa/wasmoon), **C** via
+  [picoc-js](https://github.com/KritR/picoc-wasm), both in workers for the same timeout reason.
+- **HTML** in an iframe with `sandbox="allow-scripts"` and no same-origin access.
+
+Quizzes and coding challenges are graded in the browser using the same sandbox.
 
 ## Deploying to Render.com
 
-The repo ships a [render.yaml](render.yaml) blueprint: push to GitHub, then in the Render
-dashboard choose **New → Blueprint** and point it at the repo. It provisions a PostgreSQL
-database and a single web service that runs the API and serves the built frontend
-(migrations + seed run during build). Set the `SMTP_*` env vars in the dashboard to send
-real verification emails, until then, verification links are printed to the service logs.
-Note: on the free plan uploaded lesson videos are lost on redeploy; enable the disk
-(commented in the blueprint) on a paid instance to persist them.
+Push to GitHub, then in the Render dashboard choose **New → Blueprint** and point it at the
+repo. [render.yaml](render.yaml) provisions a single static site that runs
+[build.sh](build.sh) and serves `apps/web/out` from Render's CDN. `build.sh` restores and
+saves `.next/cache` between builds via `$XDG_CACHE_HOME`, which keeps rebuilds fast.
 
-## Certificates & email verification
+## What this used to be
 
-- Completing every lesson **and** passing every quiz in a course unlocks a
-  **Claim your certificate** button on the course page. The certificate page shows the
-  student, course, date, certificate ID, and a QR code; anyone can verify it (no login)
-  at `/verify/<code>`, the QR points there. Print/save as PDF from the certificate page.
-- New accounts get a verification email (24h-expiry, single-use token). Unverified users
-  see a banner with a resend button; `/verify-email?token=…` completes the flow. Without
-  SMTP configured the API logs the link to the console so local dev still works.
-
-## Roadmap (from the full spec)
-
-Certificates with QR verification ·
-discussion forums
+Through v0.1 Kodstigen ran an Express + Prisma + PostgreSQL backend with accounts, XP and
+streaks, enrollment and progress tracking, a leaderboard, achievements, certificates with QR
+verification, community chat, instructor course authoring, and an admin review queue. All of
+it lived in `apps/api` and is still in the git history if it's ever needed again.

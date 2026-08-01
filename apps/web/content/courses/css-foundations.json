@@ -1,0 +1,222 @@
+{
+  "slug": "css-foundations",
+  "title": "CSS Foundations",
+  "description": "Style and lay out the web: the box model, Flexbox, Grid, responsive design, and animation with CSS.",
+  "pathSlug": "css",
+  "pathName": "CSS",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "what-is-css-selectors-and-the-cascade",
+      "title": "What Is CSS? Selectors and the Cascade",
+      "order": 1,
+      "content": "# What Is CSS? Selectors and the Cascade\n\nCSS (Cascading Style Sheets) controls how HTML looks: colors, fonts, spacing, layout, and more. HTML says *what* something is, CSS says *how it appears*.\n\n## Three ways to add CSS\n\n```html\n<link rel=\"stylesheet\" href=\"styles.css\" />\n```\n\nAn external stylesheet, linked from `<head>`, is almost always the right choice: it's cacheable and keeps style separate from structure.\n\n## Selectors\n\n```css\np { color: navy; }              /* every <p> */\n.card { padding: 16px; }        /* every element with class=\"card\" */\n#logo { width: 120px; }         /* the one element with id=\"logo\" */\nnav a { text-decoration: none; } /* every <a> inside a <nav> */\n```\n\n| Selector | Matches |\n|---|---|\n| `element` | Every element of that tag, e.g. `p`, `h1` |\n| `.class` | Every element with that class attribute |\n| `#id` | The single element with that id |\n| `a b` | Every `b` element nested anywhere inside an `a` |\n\n## The cascade and specificity\n\nWhen two rules target the same element and property, CSS decides the winner using **specificity**: IDs beat classes, classes beat plain elements. If specificity ties, the rule that appears *later* in the stylesheet wins.\n\n```css\np { color: navy; }        /* specificity: 0-0-1 */\n.highlight { color: gold; } /* specificity: 0-1-0, wins over the rule above */\n#alert { color: red; }     /* specificity: 1-0-0, wins over both */\n```\n\n> [!WARNING]\n> `!important` overrides normal specificity entirely and is very hard to override again later. Treat it as a last resort, almost every specificity fight can be solved by writing a more specific (or simpler) selector instead.",
+      "quiz": {
+        "title": "Selectors & Cascade Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Given equal specificity, which rule wins when two CSS rules conflict?",
+            "options": [
+              "The shorter one",
+              "The one written first",
+              "The one written last",
+              "Whichever uses a class"
+            ],
+            "answer": "The one written last"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "An ID selector (#logo) has higher specificity than a class selector (.logo).",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A selector that targets every element with class=\"card\" is written as ____card.",
+            "options": [],
+            "answer": "."
+          }
+        ]
+      }
+    },
+    {
+      "slug": "the-box-model",
+      "title": "The Box Model",
+      "order": 2,
+      "content": "# The Box Model\n\nEvery element on a page is rendered as a rectangular box, and every box is built from the same four layers, from the inside out.\n\n```css\n.card {\n  width: 300px;\n  padding: 16px;      /* space between content and border */\n  border: 2px solid #333; /* the border itself */\n  margin: 24px;       /* space outside the border, between this box and others */\n}\n```\n\n| Layer | What it does |\n|---|---|\n| Content | The actual text/images, sized by `width`/`height`. |\n| Padding | Transparent space inside the border, pushes content inward. |\n| Border | A visible (or invisible) line around the padding. |\n| Margin | Transparent space outside the border, pushes other elements away. |\n\n## box-sizing\n\nBy default, `width` only sets the *content* width, padding and border are added on top, so a `300px`-wide box with `16px` padding and a `2px` border actually takes up `336px`. Most developers override this globally:\n\n```css\n*, *::before, *::after {\n  box-sizing: border-box;\n}\n```\n\nWith `border-box`, `width: 300px` means the *whole box*, content, padding, and border, is 300px total, which is far more predictable when building layouts.\n\n## display: block vs. inline\n\n- **Block** elements (`<div>`, `<p>`, `<h1>`) take the full available width and stack vertically; `width`/`height`/`margin` all apply normally.\n- **Inline** elements (`<span>`, `<a>`) only take up as much width as their content and sit in the flow of text; vertical `margin`/`height` are ignored.\n- `display: inline-block` gives you the best of both, flows like text but respects `width`/`height`/`margin`.\n\n> [!TIP]\n> When a layout looks subtly \"off\" by a few pixels, the box model is the first thing to check, open devtools and look at the computed padding, border, and margin for the element in question.",
+      "quiz": {
+        "title": "Box Model Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which box-model layer sits directly outside the border?",
+            "options": [
+              "Content",
+              "Padding",
+              "Margin",
+              "Outline"
+            ],
+            "answer": "Margin"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "With box-sizing: border-box, the width property includes padding and border.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The CSS property that adds transparent space between an element's content and its border is ____.",
+            "options": [],
+            "answer": "padding"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "flexbox-one-dimensional-layouts",
+      "title": "Flexbox: One-Dimensional Layouts",
+      "order": 3,
+      "content": "# Flexbox: One-Dimensional Layouts\n\nFlexbox arranges items along a single line, row or column, and is the workhorse for navbars, toolbars, cards, and centering content.\n\n```css\n.nav {\n  display: flex;\n  flex-direction: row;      /* default: left to right */\n  justify-content: space-between; /* spacing along the main axis */\n  align-items: center;      /* alignment along the cross axis */\n  gap: 16px;\n}\n```\n\n```html\n<div class=\"nav\">\n  <span>Logo</span>\n  <a href=\"/courses\">Courses</a>\n  <a href=\"/login\">Login</a>\n</div>\n```\n\n## The two axes\n\nFlexbox thinks in terms of a **main axis** (the direction set by `flex-direction`) and a **cross axis** (perpendicular to it).\n\n| Property | Controls | Common values |\n|---|---|---|\n| `justify-content` | Spacing along the main axis | `flex-start`, `center`, `space-between`, `space-around` |\n| `align-items` | Alignment along the cross axis | `flex-start`, `center`, `stretch` |\n| `flex-wrap` | Whether items wrap to new lines | `nowrap` (default), `wrap` |\n| `gap` | Space between items | any length, e.g. `16px` |\n\n## Sizing individual items\n\n```css\n.sidebar { flex: 0 0 250px; } /* never grow, never shrink, fixed 250px */\n.content { flex: 1; }         /* grow to fill remaining space */\n```\n\n`flex: grow shrink basis` controls how a specific child behaves inside the flex container, `flex: 1` is shorthand for \"take an equal share of whatever space is left\".\n\n> [!TIP]\n> Centering something perfectly, both horizontally and vertically, used to be a running joke in CSS. With Flexbox it's three lines: `display: flex; justify-content: center; align-items: center;`.",
+      "quiz": {
+        "title": "Flexbox Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which property controls spacing of flex items along the main axis?",
+            "options": [
+              "align-items",
+              "justify-content",
+              "flex-wrap",
+              "gap"
+            ],
+            "answer": "justify-content"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "By default, flex items will wrap onto new lines when they run out of horizontal space.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "To turn any element into a flex container, you set display: ____.",
+            "options": [],
+            "answer": "flex"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "css-grid-two-dimensional-layouts",
+      "title": "CSS Grid: Two-Dimensional Layouts",
+      "order": 4,
+      "content": "# CSS Grid: Two-Dimensional Layouts\n\nWhere Flexbox handles a single row or column, Grid handles rows *and* columns together, ideal for full page layouts and card galleries.\n\n```css\n.page {\n  display: grid;\n  grid-template-columns: 200px 1fr;\n  grid-template-rows: auto 1fr auto;\n  gap: 16px;\n  min-height: 100vh;\n}\n```\n\n```html\n<div class=\"page\">\n  <header style=\"grid-column: 1 / -1;\">Header</header>\n  <nav>Sidebar</nav>\n  <main>Content</main>\n  <footer style=\"grid-column: 1 / -1;\">Footer</footer>\n</div>\n```\n\n## Defining tracks\n\n- `grid-template-columns: 200px 1fr` creates two columns: a fixed 200px sidebar and a flexible column that takes the rest (`1fr` = \"one fraction of the remaining space\").\n- `repeat()` avoids repetition: `grid-template-columns: repeat(3, 1fr)` creates three equal columns.\n- `grid-column: 1 / -1` makes an element span from the first line to the very last, a common trick for a full-width header or footer in a grid.\n\n## A responsive card gallery in one line\n\n```css\n.gallery {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));\n  gap: 16px;\n}\n```\n\nThis creates as many 200px-minimum columns as fit the container, and stretches them evenly to fill any leftover space, all without a single media query.\n\n> [!TIP]\n> A common rule of thumb: reach for Flexbox when you're arranging items in one direction (a toolbar, a list of tags), reach for Grid when you're arranging a whole page or a two-dimensional layout (rows *and* columns together).",
+      "quiz": {
+        "title": "CSS Grid Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the \"1fr\" unit represent in a grid track definition?",
+            "options": [
+              "Exactly 1 pixel",
+              "One fraction of the remaining available space",
+              "A fixed percentage of the viewport",
+              "One row of text"
+            ],
+            "answer": "One fraction of the remaining available space"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "CSS Grid can only control columns, not rows.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The property used to turn an element into a grid container is display: ____.",
+            "options": [],
+            "answer": "grid"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "responsive-design-transitions-and-animations",
+      "title": "Responsive Design, Transitions, and Animations",
+      "order": 5,
+      "content": "# Responsive Design, Transitions, and Animations\n\n## Media queries\n\nA **media query** applies CSS only when certain conditions are true, most often, viewport width, letting one stylesheet adapt to phones, tablets, and desktops.\n\n```css\n.gallery {\n  grid-template-columns: 1fr; /* single column by default (mobile) */\n}\n\n@media (min-width: 768px) {\n  .gallery {\n    grid-template-columns: repeat(3, 1fr); /* three columns on wider screens */\n  }\n}\n```\n\n> [!TIP]\n> Writing your base styles for mobile first, then adding `min-width` media queries for larger screens, tends to produce simpler CSS than starting from desktop and fighting your way down.\n\n## Transitions\n\nA **transition** smoothly animates a property change over time instead of snapping instantly.\n\n```css\n.button {\n  background: #2563eb;\n  transition: background 0.2s ease, transform 0.2s ease;\n}\n.button:hover {\n  background: #1d4ed8;\n  transform: translateY(-2px);\n}\n```\n\n`transition: property duration easing` says *which* property to animate, *how long* it takes, and *how* it accelerates.\n\n## Keyframe animations\n\nFor anything more complex than a two-state hover effect, use `@keyframes`:\n\n```css\n@keyframes pulse {\n  0%   { opacity: 1; }\n  50%  { opacity: 0.4; }\n  100% { opacity: 1; }\n}\n\n.loading-dot {\n  animation: pulse 1.2s ease-in-out infinite;\n}\n```\n\n`@keyframes` defines named stops along the animation as percentages, then `animation` on the element says which keyframes to use, how long one cycle takes, and how many times to repeat (`infinite` for forever).\n\n> [!WARNING]\n> Animating `width`, `height`, `top`, or `left` forces the browser to recompute layout on every frame and can look janky. Prefer animating `transform` and `opacity`, which the browser can run on the GPU without recalculating layout at all.",
+      "quiz": {
+        "title": "Responsive & Animation Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which two CSS properties are cheapest to animate because they skip layout recalculation?",
+            "options": [
+              "width and height",
+              "top and left",
+              "transform and opacity",
+              "margin and padding"
+            ],
+            "answer": "transform and opacity"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A \"mobile first\" approach means writing base styles for small screens, then overriding with min-width media queries for larger ones.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The CSS at-rule used to define named animation steps is @____.",
+            "options": [],
+            "answer": "keyframes"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-style-a-responsive-landing-page",
+      "title": "Final Project: Style a Responsive Landing Page",
+      "order": 6,
+      "content": "# Final Project: Style a Responsive Landing Page\n\nTake a plain HTML page (your own, or a simple one you write for this project) and turn it into a polished, responsive landing page.\n\n## Requirements\n\n1. Set `box-sizing: border-box` globally and use a consistent spacing scale (e.g. multiples of 8px) for padding and margin.\n2. Build the page's navigation bar with Flexbox (logo on one side, links on the other).\n3. Build at least one section, like a feature list or pricing cards, using CSS Grid with `repeat()` and `minmax()` so it reflows automatically.\n4. Add at least one `@media` breakpoint that meaningfully changes the layout between mobile and desktop (e.g. stacked cards become a 3-column grid).\n5. Add at least one `transition` (e.g. on button hover) and one `@keyframes` animation somewhere on the page.\n\n## Stretch goals\n\n- Add a dark mode using the `prefers-color-scheme` media query.\n- Use CSS custom properties (`--brand-color: #2563eb;`) for your color palette so the whole page can be re-themed by changing a handful of variables.\n- Run the page through Lighthouse in Chrome DevTools and address any layout-related warnings.\n\nSubmit a link to your finished page (a repo, CodePen, or hosted URL) below, an instructor will review it before you can mark this lesson complete. Good luck! 🚀",
+      "requiresSubmission": true
+    }
+  ]
+}
