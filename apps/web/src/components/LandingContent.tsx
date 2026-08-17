@@ -28,7 +28,7 @@ const translations = {
     showLess: 'Visa mindre',
     readFullReview: 'Läs hela recensionen',
     stars: 'stjärnor',
-    heroLead: 'Din väg mot en karriär som mjukvaruutvecklare.',
+    heroLead: 'Din stig mot en karriär som mjukvaruutvecklare.',
     subtitle:
       'Kliv för kliv, från din första rad kod till din första utvecklarroll. Interaktiva kurser, verkliga projekt och quiz i alla möjliga programmeringsspråk.',
     browseCourses: 'Bläddra bland kurserna',
