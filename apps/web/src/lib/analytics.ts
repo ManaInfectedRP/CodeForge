@@ -16,8 +16,12 @@ export function loadGoogleAnalytics() {
   loaded = true;
 
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer!.push(args);
+  // gtag.js only treats a pushed `arguments` object as a command; pushing a plain array
+  // (e.g. via `(...args) => dataLayer.push(args)`) makes gtag('config', …) a silent no-op,
+  // so GA4 never initializes and no hit is ever sent.
+  window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer!.push(arguments);
   };
   window.gtag('js', new Date());
   window.gtag('config', GA_MEASUREMENT_ID);
