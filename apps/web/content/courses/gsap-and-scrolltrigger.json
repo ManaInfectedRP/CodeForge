@@ -1,0 +1,345 @@
+{
+  "slug": "gsap-and-scrolltrigger",
+  "title": "GSAP and ScrollTrigger",
+  "description": "Animate the web with GSAP: tweens, eases, and staggers, timelines that stay maintainable, then ScrollTrigger for scrubbed, pinned, scroll-driven scenes, parallax, and the batching, matchMedia, and reduced-motion work that keeps it fast and accessible. Every demo runs live in the lesson.",
+  "pathSlug": "javascript",
+  "pathName": "JavaScript",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "your-first-tween",
+      "title": "Your First Tween",
+      "order": 1,
+      "content": "# Your First Tween\n\n**GSAP** (the GreenSock Animation Platform) animates anything with a numeric value: CSS properties, SVG attributes, canvas objects, plain JavaScript variables. It exists because CSS transitions run out of road quickly, sequencing, mid-flight control, scroll-linked playback, and cross-browser transform handling are all things GSAP does and CSS does not.\n\n## The three core tweens\n\nA **tween** animates a set of targets from one state to another.\n\n- `gsap.to(targets, vars)`, animate *to* the values you give, from wherever the element currently is.\n- `gsap.from(targets, vars)`, animate *from* those values to the element's current CSS. This is the entrance-animation workhorse.\n- `gsap.fromTo(targets, fromVars, toVars)`, state both ends explicitly, for when you can't rely on the current values.\n\nPress **Preview** to run this, then edit the numbers and run it again:\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #0f172a; color: #e2e8f0; }\n    .box { width: 64px; height: 64px; border-radius: 12px; background: #10b981; margin-bottom: 16px; }\n  </style>\n</head>\n<body>\n  <div class=\"box\"></div>\n  <p>Edit the values below and hit Preview again.</p>\n\n  <script>\n    gsap.to('.box', {\n      x: 220,\n      rotation: 360,\n      backgroundColor: '#38bdf8',\n      duration: 1.5,\n      ease: 'power2.out'\n    });\n  </script>\n</body>\n</html>\n```\n\n- The first argument is a **target**: a CSS selector string, an element, an array, or a NodeList. A selector animates every match.\n- `x: 220` is GSAP shorthand for `transform: translateX(220px)`. Always prefer `x`/`y` over `left`/`top`: transforms are composited by the GPU and don't force the browser to recalculate layout on every frame.\n- `duration` is in **seconds**, not milliseconds.\n- `ease` shapes the motion over time. `power2.out` starts fast and settles, which reads as natural because real objects decelerate.\n\n## Special properties\n\nNot every key in the `vars` object is a property to animate. These control the tween itself:\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #0f172a; color: #e2e8f0; }\n    .dot { width: 40px; height: 40px; border-radius: 50%; background: #f59e0b; }\n    #log { font: 12px ui-monospace, monospace; color: #94a3b8; margin-top: 12px; }\n  </style>\n</head>\n<body>\n  <div class=\"dot\"></div>\n  <div id=\"log\"></div>\n\n  <script>\n    const log = (m) => document.getElementById('log').textContent += m + '  ';\n\n    gsap.to('.dot', {\n      y: 120,\n      duration: 0.8,\n      delay: 0.3,\n      repeat: 2,\n      yoyo: true,\n      ease: 'power1.inOut',\n      onStart: () => log('start'),\n      onComplete: () => log('complete')\n    });\n  </script>\n</body>\n</html>\n```\n\n- `delay` waits before starting; `repeat: 2` plays three times in total (the original plus two repeats); `repeat: -1` loops forever.\n- `yoyo: true` makes every other repetition run backwards, so the motion returns instead of snapping back.\n- `onStart`, `onUpdate`, `onComplete`, and `onRepeat` are callbacks. `onUpdate` fires every frame, so keep it cheap.\n\n> [!TIP]\n> A tween returns a Tween instance, so `const t = gsap.to(...)` gives you `t.pause()`, `t.play()`, `t.reverse()`, `t.progress(0.5)`, and `t.timeScale(2)`. Playback control like this is the main thing you give up by animating in pure CSS.",
+      "quiz": {
+        "title": "Your First Tween Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why does GSAP recommend animating x and y instead of left and top?",
+            "options": [
+              "x and y compile to transforms, which are GPU-composited and don't force layout recalculation",
+              "left and top are deprecated",
+              "x and y accept larger values",
+              "left and top cannot be animated by GSAP"
+            ],
+            "answer": "x and y compile to transforms, which are GPU-composited and don't force layout recalculation"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "In GSAP, the duration property is measured in milliseconds.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "gsap.____() animates elements from the values you specify to their current CSS values, which makes it ideal for entrance animations.",
+            "options": [],
+            "answer": "from"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "eases-stagger-and-targets",
+      "title": "Eases, Stagger, and Targets",
+      "order": 2,
+      "content": "# Eases, Stagger, and Targets\n\nTwo tweens with identical durations can feel completely different. The difference is the ease, and, when several elements move, the stagger.\n\n## Eases\n\nAn **ease** maps elapsed time to progress. GSAP's names combine a curve with a direction:\n\n- `power1` through `power4`, increasingly sharp acceleration. `power4.out` is dramatic; `power1.out` is subtle.\n- `.out` decelerates into the end, `.in` accelerates out of the start, `.inOut` does both.\n- `back.out(1.7)` overshoots and settles, good for things appearing.\n- `elastic.out(1, 0.3)` springs; `bounce.out` drops and bounces.\n- `none` (linear) for continuous motion like a marquee, where acceleration would look wrong.\n\nThe rule that covers most cases: things **entering** use `.out`, things **leaving** use `.in`, and things moving between two on-screen states use `.inOut`.\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #0f172a; color: #e2e8f0; }\n    .row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }\n    .label { width: 110px; font: 12px ui-monospace, monospace; color: #94a3b8; }\n    .bar { width: 32px; height: 20px; border-radius: 6px; background: #6366f1; }\n  </style>\n</head>\n<body>\n  <div class=\"row\"><span class=\"label\">none</span><div class=\"bar\" data-ease=\"none\"></div></div>\n  <div class=\"row\"><span class=\"label\">power2.out</span><div class=\"bar\" data-ease=\"power2.out\"></div></div>\n  <div class=\"row\"><span class=\"label\">back.out(1.7)</span><div class=\"bar\" data-ease=\"back.out(1.7)\"></div></div>\n  <div class=\"row\"><span class=\"label\">elastic.out(1,.3)</span><div class=\"bar\" data-ease=\"elastic.out(1, 0.3)\"></div></div>\n  <div class=\"row\"><span class=\"label\">bounce.out</span><div class=\"bar\" data-ease=\"bounce.out\"></div></div>\n\n  <script>\n    gsap.utils.toArray('.bar').forEach((bar) => {\n      gsap.to(bar, { x: 200, duration: 1.6, ease: bar.dataset.ease, repeat: -1, repeatDelay: 0.6 });\n    });\n  </script>\n</body>\n</html>\n```\n\n- `gsap.utils.toArray(selector)` converts any selector, NodeList, or array-like into a real array so you can `map`/`forEach` over it.\n- Each bar travels the same distance in the same time; only the ease differs. Watch how much personality that one string carries.\n\n## Stagger\n\nWhen one tween targets many elements, `stagger` offsets their start times.\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #0f172a; }\n    .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; max-width: 420px; }\n    .cell { aspect-ratio: 1; border-radius: 8px; background: #22d3ee; }\n  </style>\n</head>\n<body>\n  <div class=\"grid\"></div>\n\n  <script>\n    const grid = document.querySelector('.grid');\n    for (let i = 0; i < 24; i++) grid.appendChild(document.createElement('div')).className = 'cell';\n\n    gsap.from('.cell', {\n      scale: 0,\n      opacity: 0,\n      duration: 0.6,\n      ease: 'back.out(1.7)',\n      stagger: { each: 0.05, from: 'center', grid: [3, 8] },\n      repeat: -1,\n      repeatDelay: 1\n    });\n  </script>\n</body>\n</html>\n```\n\n- `stagger: 0.05` is the short form: each target starts 0.05s after the previous one.\n- The object form adds control: `from: 'start' | 'center' | 'end' | 'edges' | 'random'` or an index, `grid: [rows, cols]` for two-dimensional ripples, and `amount` to spread the *total* stagger over a fixed time regardless of how many elements there are.\n- `amount` is the safer choice for dynamic lists: `each: 0.05` over 200 items takes ten seconds, while `amount: 0.6` always finishes in the same window.\n\n> [!NOTE]\n> `gsap.from` with `opacity: 0` briefly shows the element at its final state before the first frame if the page renders slowly. Set the initial state in CSS (or with `gsap.set`) when that flash matters.",
+      "quiz": {
+        "title": "Eases, Stagger, and Targets Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which ease is the conventional choice for an element entering the screen?",
+            "options": [
+              "power2.out, because it decelerates into its final position",
+              "power2.in, because it accelerates away",
+              "none, because linear motion is neutral",
+              "bounce.in, because it is the most noticeable"
+            ],
+            "answer": "power2.out, because it decelerates into its final position"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "stagger: { amount: 0.6 } spreads the total stagger across 0.6 seconds no matter how many elements there are.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "gsap.utils.____() turns a selector or NodeList into a real array you can iterate.",
+            "options": [],
+            "answer": "toArray"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "timelines",
+      "title": "Timelines",
+      "order": 3,
+      "content": "# Timelines\n\nSequencing tweens with `delay` values works until you change one duration and every later delay is wrong. A **timeline** is a container that positions tweens relative to each other, and it is the single most useful thing in GSAP.\n\n## Building a sequence\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #0f172a; color: #e2e8f0; }\n    .card { width: 180px; padding: 14px; border-radius: 12px; background: #1e293b; border: 1px solid #334155; }\n    h3 { margin: 0 0 6px; font-size: 15px; }\n    p { margin: 0; font-size: 12px; color: #94a3b8; }\n    .badge { display: inline-block; margin-top: 10px; padding: 3px 8px; border-radius: 999px;\n             background: #10b981; color: #052e16; font-size: 11px; font-weight: 700; }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <h3>Kodstigen</h3>\n    <p>Timelines keep sequences honest.</p>\n    <span class=\"badge\">GSAP</span>\n  </div>\n\n  <script>\n    const tl = gsap.timeline({ defaults: { duration: 0.5, ease: 'power2.out' }, repeat: -1, repeatDelay: 1.2 });\n\n    tl.from('.card', { scale: 0.85, opacity: 0 })\n      .from('h3',    { y: 20, opacity: 0 }, '-=0.25')\n      .from('p',     { y: 20, opacity: 0 }, '<0.1')\n      .from('.badge',{ scale: 0, ease: 'back.out(2)' }, '-=0.1');\n  </script>\n</body>\n</html>\n```\n\n- `gsap.timeline({ defaults })` applies those vars to every child tween, so you set `duration` and `ease` once.\n- Tweens added with no position parameter start when the previous one ends. That's the default and it's usually what you want.\n- The methods **chain**, because each returns the timeline.\n\n## The position parameter\n\nThe third argument of `.to()` / `.from()` places the tween on the timeline:\n\n| Value | Meaning |\n| --- | --- |\n| *(omitted)* | at the end of the timeline |\n| `'-=0.25'` | 0.25s before the end, an **overlap** |\n| `'+=0.5'` | 0.5s after the end, a gap |\n| `1.5` | at absolute time 1.5s |\n| `'<'` | at the *start* of the previous tween |\n| `'<0.1'` | 0.1s after the previous tween's start |\n| `'>'` | at the *end* of the previous tween |\n| `'myLabel'` | at a label added with `tl.addLabel('myLabel')` |\n\nSmall overlaps (`'-=0.2'`) are what separate animation that feels designed from animation that feels like a list of steps.\n\n## Controlling the whole sequence\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #0f172a; color: #e2e8f0; }\n    button { margin-right: 6px; padding: 6px 10px; border: 0; border-radius: 8px; background: #334155;\n             color: #e2e8f0; font-size: 12px; cursor: pointer; }\n    .ball { width: 44px; height: 44px; border-radius: 50%; background: #f472b6; margin: 18px 0; }\n  </style>\n</head>\n<body>\n  <div class=\"ball\"></div>\n  <button id=\"play\">play</button>\n  <button id=\"pause\">pause</button>\n  <button id=\"reverse\">reverse</button>\n  <button id=\"fast\">timeScale 3</button>\n\n  <script>\n    const tl = gsap.timeline({ paused: true })\n      .to('.ball', { x: 240, duration: 1, ease: 'power1.inOut' })\n      .to('.ball', { y: 60, backgroundColor: '#a78bfa', duration: 0.6 })\n      .to('.ball', { rotation: 360, duration: 0.8 });\n\n    play.onclick = () => tl.play();\n    pause.onclick = () => tl.pause();\n    reverse.onclick = () => tl.reverse();\n    fast.onclick = () => tl.timeScale(tl.timeScale() === 1 ? 3 : 1);\n  </script>\n</body>\n</html>\n```\n\n- A timeline exposes the same controls as a tween: `play`, `pause`, `reverse`, `restart`, `seek(time)`, `progress(0..1)`, `timeScale(n)`.\n- `progress()` is the hook that ScrollTrigger uses in the next lessons: scroll position in, timeline progress out.\n- Timelines nest. `masterTl.add(sectionTl)` composes a page-level sequence out of self-contained pieces, which is how real projects stay maintainable.\n\n> [!TIP]\n> Build long sequences with `tl.timeScale(4)` while developing so you're not waiting through the intro on every reload, then set it back to 1.",
+      "quiz": {
+        "title": "Timelines Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the position parameter '-=0.3' do when adding a tween to a timeline?",
+            "options": [
+              "Starts it 0.3 seconds before the end of the timeline, overlapping the previous tween",
+              "Delays it by 0.3 seconds",
+              "Shortens its duration by 0.3 seconds",
+              "Starts it 0.3 seconds after the previous tween ends"
+            ],
+            "answer": "Starts it 0.3 seconds before the end of the timeline, overlapping the previous tween"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A timeline's defaults object applies its values to every child tween added to that timeline.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Calling tl.____(0.5) jumps a timeline to its halfway point, and is the property ScrollTrigger drives when scrubbing.",
+            "options": [],
+            "answer": "progress"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "scrolltrigger-basics",
+      "title": "ScrollTrigger Basics",
+      "order": 4,
+      "content": "# ScrollTrigger Basics\n\n**ScrollTrigger** is a GSAP plugin that connects animations to scroll position. Register it once, then attach a `scrollTrigger` object to any tween or timeline.\n\n```\n<script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n<script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n<script>gsap.registerPlugin(ScrollTrigger);</script>\n```\n\n## start, end, and markers\n\nThe `start` and `end` strings each take two values: **\"trigger-element-position scroller-position\"**. `start: 'top 80%'` means \"when the top of the trigger element reaches 80% down the viewport\".\n\nTurn on `markers: true` while developing, it draws the four positions on screen and removes essentially all guesswork.\n\nScroll the preview below:\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }\n    .spacer { height: 220px; display: grid; place-items: center; color: #64748b; font-size: 13px; }\n    .panel { margin: 0 24px; padding: 20px; border-radius: 14px; background: #1e293b; border: 1px solid #334155; }\n  </style>\n</head>\n<body>\n  <div class=\"spacer\">scroll down inside this frame</div>\n  <div class=\"panel\" id=\"one\"><h3>Fades in once</h3><p>toggleActions: play none none none</p></div>\n  <div class=\"spacer\">keep scrolling</div>\n  <div class=\"panel\" id=\"two\"><h3>Plays and reverses</h3><p>toggleActions: play none none reverse</p></div>\n  <div class=\"spacer\">and back up again</div>\n\n  <script>\n    gsap.registerPlugin(ScrollTrigger);\n\n    gsap.from('#one', {\n      opacity: 0, y: 40, duration: 0.8, ease: 'power2.out',\n      scrollTrigger: { trigger: '#one', start: 'top 85%', markers: true }\n    });\n\n    gsap.from('#two', {\n      opacity: 0, x: -60, duration: 0.8, ease: 'power2.out',\n      scrollTrigger: { trigger: '#two', start: 'top 85%', toggleActions: 'play none none reverse', markers: true }\n    });\n  </script>\n</body>\n</html>\n```\n\n## toggleActions\n\n`toggleActions` is four space-separated commands for four events, in this order:\n\n`onEnter  onLeave  onEnterBack  onLeaveBack`\n\nEach is one of `play`, `pause`, `resume`, `reverse`, `restart`, `reset`, `complete`, `none`. The default is `'play none none none'`: it plays once on the way down and then stays put.\n\n- `'play none none reverse'`, plays going down, rewinds when you scroll back above it. The most common choice for section reveals.\n- `'restart pause resume reset'`, a fully re-playable element.\n\n## once, and cleaning up\n\n- `once: true` kills the ScrollTrigger after it first fires, the cheapest option for one-shot entrance animations.\n- In a single-page app, call `ScrollTrigger.getAll().forEach(t => t.kill())` when unmounting a page, or use `gsap.context()` to scope and revert everything at once. Stale triggers pointing at removed DOM nodes are the number one ScrollTrigger bug.\n\n> [!WARNING]\n> Remove `markers: true` before shipping. They're rendered as real DOM elements and they will show up in production.",
+      "quiz": {
+        "title": "ScrollTrigger Basics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does start: 'top 85%' mean?",
+            "options": [
+              "Fire when the top of the trigger element reaches 85% down the viewport",
+              "Fire when the page is 85% scrolled",
+              "Fire when 85% of the element is visible",
+              "Fire 85 pixels from the top of the element"
+            ],
+            "answer": "Fire when the top of the trigger element reaches 85% down the viewport"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The four values in toggleActions correspond to onEnter, onLeave, onEnterBack, and onLeaveBack.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Setting ____: true on a ScrollTrigger draws labeled start/end indicators on screen while developing.",
+            "options": [],
+            "answer": "markers"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "scrub-and-pin",
+      "title": "Scrubbing and Pinning",
+      "order": 5,
+      "content": "# Scrubbing and Pinning\n\nTwo options turn ScrollTrigger from \"fire an animation\" into \"the scrollbar *is* the timeline\": `scrub` and `pin`.\n\n## scrub\n\n`scrub: true` links animation progress directly to scroll progress between `start` and `end`, so scrolling backwards runs it backwards. `scrub: 1` adds one second of catch-up smoothing, which almost always looks better than the raw value.\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }\n    .bar { position: fixed; top: 0; left: 0; height: 4px; width: 100%; background: #10b981; transform-origin: left center; transform: scaleX(0); z-index: 5; }\n    .spacer { height: 300px; display: grid; place-items: center; color: #64748b; font-size: 13px; }\n    .box { width: 70px; height: 70px; border-radius: 14px; background: #6366f1; margin: 0 auto; }\n  </style>\n</head>\n<body>\n  <div class=\"bar\"></div>\n  <div class=\"spacer\">scroll, then scroll back up</div>\n  <div id=\"section\" class=\"spacer\"><div class=\"box\"></div></div>\n  <div class=\"spacer\">the box tracks the scrollbar exactly</div>\n\n  <script>\n    gsap.registerPlugin(ScrollTrigger);\n\n    gsap.to('.bar', {\n      scaleX: 1, ease: 'none',\n      scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: true }\n    });\n\n    gsap.to('.box', {\n      x: 120, rotation: 180, backgroundColor: '#f472b6', ease: 'none',\n      scrollTrigger: { trigger: '#section', start: 'top bottom', end: 'bottom top', scrub: 1 }\n    });\n  </script>\n</body>\n</html>\n```\n\n- With `scrub`, use `ease: 'none'` on the tween. The scrollbar is already providing the timing, and an ease on top makes the motion feel disconnected from the finger.\n- A scroll progress bar is `scaleX` from 0 to 1 over the whole document, note that scaling a transform is far cheaper than animating `width`.\n\n## pin\n\n`pin: true` fixes the trigger element in place while the scroll range plays out, then releases it. ScrollTrigger inserts a spacer element so the rest of the page doesn't jump.\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }\n    .spacer { height: 260px; display: grid; place-items: center; color: #64748b; font-size: 13px; }\n    .stage { height: 240px; display: grid; place-items: center; background: #1e293b; border-block: 1px solid #334155; }\n    .word { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }\n  </style>\n</head>\n<body>\n  <div class=\"spacer\">scroll down</div>\n  <section class=\"stage\"><div class=\"word\">pinned</div></section>\n  <div class=\"spacer\">released again</div>\n\n  <script>\n    gsap.registerPlugin(ScrollTrigger);\n\n    gsap.to('.word', {\n      scale: 2.4, color: '#38bdf8', ease: 'none',\n      scrollTrigger: { trigger: '.stage', start: 'top top', end: '+=400', scrub: true, pin: true }\n    });\n  </script>\n</body>\n</html>\n```\n\n- `end: '+=400'` means \"400 pixels of scrolling after the start\". For pinned sections this is the natural unit: it's literally how long the section holds.\n- Pin the **container**, animate its children. Pinning an element you're also transforming leads to conflicts.\n- `pinSpacing: false` skips the inserted spacer when you want the next section to scroll *over* the pinned one.\n- `anticipatePin: 1` reduces the flicker some browsers show when a pin starts during fast scrolling.\n\n> [!WARNING]\n> A pinned element cannot live inside a parent with `overflow: hidden` or a CSS `transform`, both break `position: fixed`. If a pin \"doesn't work\", check the ancestors first.",
+      "quiz": {
+        "title": "Scrubbing and Pinning Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why should a scrubbed tween normally use ease: 'none'?",
+            "options": [
+              "The scroll position already supplies the timing, so an extra ease decouples the motion from the user's scrolling",
+              "Other eases are not supported with scrub",
+              "It makes the animation faster",
+              "It prevents ScrollTrigger from pinning"
+            ],
+            "answer": "The scroll position already supplies the timing, so an extra ease decouples the motion from the user's scrolling"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "scrub: 1 adds about one second of smoothing so the animation catches up to the scrollbar instead of tracking it exactly.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "An end value of '+=400' means the trigger ends 400 ____ of scrolling after the start.",
+            "options": [],
+            "answer": "pixels"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "scroll-driven-timelines-and-parallax",
+      "title": "Scroll-Driven Timelines and Parallax",
+      "order": 6,
+      "content": "# Scroll-Driven Timelines and Parallax\n\nOne ScrollTrigger per element gets unwieldy fast. Attaching a **timeline** to a single trigger gives you a whole choreographed scene under one scroll range, which is how scrollytelling sections are actually built.\n\n## A timeline on one trigger\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }\n    .spacer { height: 240px; display: grid; place-items: center; color: #64748b; font-size: 13px; }\n    .scene { height: 240px; position: relative; background: #111c33; overflow: hidden; }\n    .title { position: absolute; inset: 0; display: grid; place-items: center; font-size: 24px; font-weight: 800; }\n    .chip { position: absolute; bottom: 24px; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }\n    .c1 { left: 24px; background: #10b981; color: #052e16; }\n    .c2 { left: 50%; transform: translateX(-50%); background: #38bdf8; color: #082f49; }\n    .c3 { right: 24px; background: #f472b6; color: #4a044e; }\n  </style>\n</head>\n<body>\n  <div class=\"spacer\">scroll into the scene</div>\n  <section class=\"scene\">\n    <div class=\"title\">Scroll-driven</div>\n    <span class=\"chip c1\">tween</span>\n    <span class=\"chip c2\">timeline</span>\n    <span class=\"chip c3\">trigger</span>\n  </section>\n  <div class=\"spacer\">done</div>\n\n  <script>\n    gsap.registerPlugin(ScrollTrigger);\n\n    const tl = gsap.timeline({\n      defaults: { ease: 'none' },\n      scrollTrigger: { trigger: '.scene', start: 'top bottom', end: 'bottom top', scrub: 1 }\n    });\n\n    tl.from('.title', { scale: 0.6, opacity: 0, duration: 1 })\n      .from('.chip', { y: 60, opacity: 0, duration: 1, stagger: 0.3 }, '-=0.5')\n      .to('.title', { letterSpacing: '0.15em', duration: 1 }, '<');\n  </script>\n</body>\n</html>\n```\n\n- The `scrollTrigger` object lives on the **timeline**, not on the individual tweens. Positions and overlaps now map onto scroll distance.\n- With `scrub`, a timeline's total duration is only a set of *proportions*: whatever it adds up to gets stretched across the scroll range. So use durations to express relative weight, and control the actual pace with `end`.\n\n## Parallax\n\nParallax is one line: move background layers less than the scroll, foreground layers more.\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }\n    .spacer { height: 200px; display: grid; place-items: center; color: #64748b; font-size: 13px; }\n    .hero { position: relative; height: 260px; overflow: hidden; background: #0b1220; }\n    .layer { position: absolute; border-radius: 50%; }\n    .back  { width: 220px; height: 220px; left: 10%;  top: 20px; background: #1e3a8a; }\n    .mid   { width: 130px; height: 130px; left: 45%;  top: 70px; background: #0ea5e9; }\n    .front { width: 70px;  height: 70px;  left: 72%;  top: 120px; background: #f59e0b; }\n  </style>\n</head>\n<body>\n  <div class=\"spacer\">scroll slowly</div>\n  <section class=\"hero\">\n    <div class=\"layer back\"  data-speed=\"0.2\"></div>\n    <div class=\"layer mid\"   data-speed=\"0.5\"></div>\n    <div class=\"layer front\" data-speed=\"1.1\"></div>\n  </section>\n  <div class=\"spacer\">and back up</div>\n\n  <script>\n    gsap.registerPlugin(ScrollTrigger);\n\n    gsap.utils.toArray('.layer').forEach((layer) => {\n      gsap.to(layer, {\n        y: () => -160 * parseFloat(layer.dataset.speed),\n        ease: 'none',\n        scrollTrigger: { trigger: '.hero', start: 'top bottom', end: 'bottom top', scrub: true, invalidateOnRefresh: true }\n      });\n    });\n  </script>\n</body>\n</html>\n```\n\n- **Function-based values**: `y: () => -160 * speed` is evaluated per element and re-evaluated on refresh, which is what makes the distance responsive instead of hard-coded.\n- `invalidateOnRefresh: true` tells ScrollTrigger to recompute those functions when the viewport resizes. Without it, a phone rotation leaves you with desktop distances.\n- Keep parallax subtle. Layer offsets beyond about 20% of the section height read as broken rather than deep, and they're a common motion-sickness trigger.\n\n> [!TIP]\n> `gsap.utils.mapRange`, `clamp`, and `wrap` do the arithmetic these effects usually need: `gsap.utils.mapRange(0, 1, -100, 100, progress)`.",
+      "quiz": {
+        "title": "Scroll-Driven Timelines Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "When a timeline is scrubbed by a ScrollTrigger, what do its tween durations control?",
+            "options": [
+              "Only the relative proportions, since the whole timeline is stretched across the scroll range",
+              "The exact number of seconds each step takes",
+              "How many pixels of scrolling each step needs",
+              "Nothing at all"
+            ],
+            "answer": "Only the relative proportions, since the whole timeline is stretched across the scroll range"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "invalidateOnRefresh: true makes ScrollTrigger re-evaluate function-based values when the viewport is resized.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Moving background layers less than the scroll distance and foreground layers more creates a ____ effect.",
+            "options": [],
+            "answer": "parallax"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "responsive-accessible-and-fast",
+      "title": "Responsive, Accessible, and Fast",
+      "order": 7,
+      "content": "# Responsive, Accessible, and Fast\n\nAnimation that looks great on a designer's monitor and janks on a phone, or makes a motion-sensitive visitor ill, is not finished work. Three tools cover almost all of it.\n\n## gsap.matchMedia\n\n`matchMedia` runs setup code per media query and **automatically reverts** everything created inside it when the query stops matching.\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #0f172a; color: #e2e8f0; }\n    .box { width: 60px; height: 60px; border-radius: 12px; background: #10b981; }\n    #state { margin-top: 14px; font: 12px ui-monospace, monospace; color: #94a3b8; }\n  </style>\n</head>\n<body>\n  <div class=\"box\"></div>\n  <div id=\"state\"></div>\n\n  <script>\n    gsap.registerPlugin(ScrollTrigger);\n    const mm = gsap.matchMedia();\n    const state = document.getElementById('state');\n\n    mm.add({\n      isDesktop: '(min-width: 700px)',\n      isMobile: '(max-width: 699px)',\n      reduced: '(prefers-reduced-motion: reduce)'\n    }, (ctx) => {\n      const { isDesktop, reduced } = ctx.conditions;\n      state.textContent = 'desktop=' + isDesktop + '  reduced=' + reduced;\n\n      if (reduced) {\n        gsap.set('.box', { x: 0, opacity: 1 });\n        return;\n      }\n\n      gsap.to('.box', { x: isDesktop ? 260 : 90, duration: 1.2, ease: 'power2.out', repeat: -1, yoyo: true });\n    });\n  </script>\n</body>\n</html>\n```\n\n- Everything created inside the callback is scoped to it; when the query stops matching, GSAP kills those tweens and ScrollTriggers and reverts inline styles. No manual cleanup.\n- `ctx.conditions` tells you which queries currently match, so one callback can handle several.\n- Returning a cleanup function from the callback runs your own teardown too.\n\n## prefers-reduced-motion\n\nSome people get genuinely nauseated by parallax and large scroll-driven movement, and the OS setting is how they tell you. Respect it:\n\n- **Remove** large movement, parallax, scale, and rotation.\n- **Keep** opacity fades and small (a few pixels) transitions, which are almost universally fine and preserve the sense of state change.\n- Make sure content is in its final, readable state, never leave something stuck at `opacity: 0` because the animation that would have revealed it was skipped.\n\nThe matchMedia block above is the pattern: check `reduced` first, `gsap.set` the end state, return early.\n\n## Performance\n\n- Animate `transform` (`x`, `y`, `scale`, `rotation`) and `opacity`. These are composited. `width`, `height`, `top`, `left`, and `margin` force **layout** on every frame, which is what jank is made of.\n- `force3D: true` promotes an element to its own layer; useful, but every layer costs memory, so don't blanket-apply it.\n- Read layout values once, outside `onUpdate`. Measuring inside a per-frame callback causes forced synchronous layout.\n- Call `ScrollTrigger.refresh()` after anything changes page height (fonts loading, images without dimensions, an accordion opening). ScrollTrigger caches positions, and stale positions are the second most common bug after stale triggers.\n- Set explicit dimensions on images and reserve space for late-loading content, both to avoid layout shift and to keep trigger positions honest.\n\n> [!TIP]\n> Test on a real mid-range phone, not just a throttled desktop. Fifty pinned sections that are smooth on a laptop can be unusable on the device most visitors actually hold.",
+      "quiz": {
+        "title": "Responsive and Accessible Animation Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does gsap.matchMedia() do that a plain window.matchMedia listener does not?",
+            "options": [
+              "It automatically reverts the tweens and ScrollTriggers created inside it when the query stops matching",
+              "It works without JavaScript",
+              "It makes animations run on the GPU",
+              "It replaces ScrollTrigger"
+            ],
+            "answer": "It automatically reverts the tweens and ScrollTriggers created inside it when the query stops matching"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "When prefers-reduced-motion is set, it is fine to skip the reveal animation and leave the element at opacity 0.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Call ScrollTrigger.____() after anything changes the page height, so cached trigger positions are recalculated.",
+            "options": [],
+            "answer": "refresh"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "practical-scroll-patterns",
+      "title": "Practical Scroll Patterns",
+      "order": 8,
+      "content": "# Practical Scroll Patterns\n\nFour patterns cover most of what real sites need. Each one below is complete and editable.\n\n## 1. Batched reveal on scroll\n\n`ScrollTrigger.batch` groups elements that enter together into one tween, instead of creating one trigger per card. On a long list this is a large performance difference.\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #0f172a; color: #e2e8f0; }\n    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }\n    .card { padding: 22px 14px; border-radius: 12px; background: #1e293b; border: 1px solid #334155; font-size: 13px; }\n    .lead { color: #64748b; font-size: 13px; margin-bottom: 16px; }\n  </style>\n</head>\n<body>\n  <p class=\"lead\">Scroll down inside this frame.</p>\n  <div class=\"grid\"></div>\n\n  <script>\n    gsap.registerPlugin(ScrollTrigger);\n    const grid = document.querySelector('.grid');\n    for (let i = 1; i <= 12; i++) {\n      const c = document.createElement('div');\n      c.className = 'card';\n      c.textContent = 'Card ' + i;\n      grid.appendChild(c);\n    }\n\n    gsap.set('.card', { opacity: 0, y: 30 });\n    ScrollTrigger.batch('.card', {\n      start: 'top 92%',\n      onEnter: (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 0.5, stagger: 0.08, ease: 'power2.out' })\n    });\n  </script>\n</body>\n</html>\n```\n\n- `gsap.set` establishes the hidden state immediately, which prevents the flash of fully-styled content before the first frame.\n- `onEnter` receives the array of elements that crossed the line in the same frame, so they stagger as a group.\n\n## 2. Horizontal scroll section\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }\n    .spacer { height: 200px; display: grid; place-items: center; color: #64748b; font-size: 13px; }\n    .rail { height: 240px; overflow: hidden; }\n    .track { display: flex; height: 100%; width: 400%; }\n    .slide { flex: 1; display: grid; place-items: center; font-size: 22px; font-weight: 800; }\n    .s1 { background: #1e3a8a; } .s2 { background: #0e7490; } .s3 { background: #4c1d95; } .s4 { background: #9d174d; }\n  </style>\n</head>\n<body>\n  <div class=\"spacer\">scroll down to go sideways</div>\n  <section class=\"rail\">\n    <div class=\"track\">\n      <div class=\"slide s1\">01</div><div class=\"slide s2\">02</div>\n      <div class=\"slide s3\">03</div><div class=\"slide s4\">04</div>\n    </div>\n  </section>\n  <div class=\"spacer\">back to vertical</div>\n\n  <script>\n    gsap.registerPlugin(ScrollTrigger);\n\n    gsap.to('.track', {\n      xPercent: -75, ease: 'none',\n      scrollTrigger: { trigger: '.rail', start: 'top top', end: '+=900', scrub: 1, pin: true, invalidateOnRefresh: true }\n    });\n  </script>\n</body>\n</html>\n```\n\n- `xPercent: -75` moves the track by 75% of its own width, which is `(slides - 1) / slides` for four slides. Percent-based means it survives a resize.\n- Scroll distance (`end: '+=900'`) is what tunes the pace. Longer feels heavier.\n\n## 3. Counting up a statistic\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }\n    .spacer { height: 220px; display: grid; place-items: center; color: #64748b; font-size: 13px; }\n    .stat { text-align: center; font-size: 44px; font-weight: 800; color: #10b981; }\n    .cap { text-align: center; color: #94a3b8; font-size: 13px; }\n  </style>\n</head>\n<body>\n  <div class=\"spacer\">scroll down</div>\n  <div class=\"stat\" id=\"count\">0</div>\n  <div class=\"cap\">lessons completed</div>\n  <div class=\"spacer\">&nbsp;</div>\n\n  <script>\n    gsap.registerPlugin(ScrollTrigger);\n    const el = document.getElementById('count');\n    const obj = { n: 0 };\n\n    gsap.to(obj, {\n      n: 12480, duration: 2, ease: 'power1.out',\n      onUpdate: () => { el.textContent = Math.round(obj.n).toLocaleString(); },\n      scrollTrigger: { trigger: el, start: 'top 85%', once: true }\n    });\n  </script>\n</body>\n</html>\n```\n\n- GSAP animates **any object property**, not just DOM styles. Tween a plain `{ n: 0 }` and write the value out in `onUpdate`.\n- `once: true` because a counter that resets every time you scroll past is annoying.\n\n## 4. Sticky header that hides on scroll down\n\n```html\n<!doctype html>\n<html>\n<head>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js\"></script>\n  <style>\n    body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }\n    header { position: fixed; top: 0; left: 0; right: 0; height: 46px; display: flex; align-items: center;\n             padding: 0 16px; background: #1e293b; border-bottom: 1px solid #334155; font-weight: 700; z-index: 5; }\n    .spacer { height: 300px; display: grid; place-items: center; color: #64748b; font-size: 13px; }\n  </style>\n</head>\n<body>\n  <header>Kodstigen</header>\n  <div class=\"spacer\" style=\"padding-top:46px\">scroll down: header hides</div>\n  <div class=\"spacer\">scroll up: it comes back</div>\n  <div class=\"spacer\">&nbsp;</div>\n\n  <script>\n    gsap.registerPlugin(ScrollTrigger);\n    const show = gsap.to('header', { y: 0, duration: 0.3, ease: 'power2.out', paused: true });\n    const hide = gsap.to('header', { y: -50, duration: 0.3, ease: 'power2.in', paused: true });\n\n    ScrollTrigger.create({\n      start: 'top -80',\n      end: 99999,\n      onUpdate: (self) => { self.direction === 1 ? hide.play() : show.play(); }\n    });\n  </script>\n</body>\n</html>\n```\n\n- `ScrollTrigger.create` without a tween is the general form: you get `onUpdate`, `onEnter`, `onToggle`, and `self.direction` (1 down, -1 up), `self.progress`, and `self.velocity()`.\n- Two paused tweens, played on demand, beats creating a new tween per scroll event.\n\n> [!TIP]\n> Every one of these is a component, not a page. Build them in isolation, then compose. Debugging a hundred-line ScrollTrigger scene is much harder than debugging four small ones.",
+      "quiz": {
+        "title": "Practical Scroll Patterns Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the advantage of ScrollTrigger.batch over one ScrollTrigger per card?",
+            "options": [
+              "Elements entering in the same frame animate as one staggered group, with far fewer triggers to manage",
+              "It removes the need to register the plugin",
+              "It works without scrubbing",
+              "It automatically pins each card"
+            ],
+            "answer": "Elements entering in the same frame animate as one staggered group, with far fewer triggers to manage"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "GSAP can tween properties of a plain JavaScript object, not only DOM element styles.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Inside a ScrollTrigger onUpdate callback, self.____ is 1 when scrolling down and -1 when scrolling up.",
+            "options": [],
+            "answer": "direction"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-animated-landing-page",
+      "title": "Final Project: An Animated Landing Page",
+      "order": 9,
+      "content": "# Final Project: An Animated Landing Page\n\nBuild a single-page scroll experience that uses everything in this course, and that stays usable for someone who has motion sensitivity or a slow phone.\n\n## Requirements\n\nBuild one HTML file (plus CSS and JS, inline or separate) with at least five full sections.\n\n**1. Hero, on load**\n- A GSAP timeline that reveals headline, subhead, and call-to-action with overlapping positions, not one after another.\n- At least one `stagger`, and a deliberate ease choice per element you can justify.\n\n**2. Section reveals, on scroll**\n- Use `ScrollTrigger.batch` for a grid or list of at least eight items.\n- Set the hidden state with `gsap.set` so nothing flashes before the first frame.\n- Use `toggleActions` (or `once: true`) deliberately, and say why in a comment.\n\n**3. A pinned, scrubbed scene**\n- Pin one section and drive a timeline with `scrub`, at least three choreographed steps.\n- Tune `end` so the section holds for a sensible distance on both a laptop and a phone.\n\n**4. A scroll-linked detail**\n- A progress bar, a counter, a parallax layer set, or a horizontal rail. One is enough, done well.\n\n**5. Responsive and accessible**\n- `gsap.matchMedia` with distinct desktop and mobile behaviour: mobile must do less, not the same thing scaled down.\n- A `(prefers-reduced-motion: reduce)` branch that sets final states and skips large movement, while keeping the page fully readable.\n- Everything reachable and readable with JavaScript disabled, no content may depend on an animation to become visible.\n\n**6. Performance**\n- Animate only transforms and opacity in the scroll-linked work.\n- No `markers: true` left in.\n- Call `ScrollTrigger.refresh()` after web fonts load, or set explicit image dimensions so trigger positions are stable.\n\n## Deliverables\n\n1. The working page.\n2. A short `NOTES.md`: your ease choices and why, where you chose overlap over sequence, what mobile does differently, and what you removed for reduced motion.\n3. Evidence you tested at a narrow viewport and with reduced motion enabled, screenshots or a short screen recording.\n\n## What good looks like\n\n- The animation supports the reading order instead of competing with it; nothing important is hidden until it's scrolled to twice.\n- Scrubbed motion uses `ease: 'none'`, entrances use `.out`.\n- The reduced-motion version still feels finished, not stripped.\n- Nothing shifts layout as it animates, and the page doesn't jank on a mid-range phone.\n\n> [!TIP]\n> Build the page with no animation first, and make it good. Animation added to a solid page reads as polish; animation used to distract from a weak page reads as noise.",
+      "requiresSubmission": true
+    }
+  ]
+}

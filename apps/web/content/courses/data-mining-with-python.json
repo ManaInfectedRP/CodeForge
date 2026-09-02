@@ -1,0 +1,345 @@
+{
+  "slug": "data-mining-with-python",
+  "title": "Data Mining with Python",
+  "description": "Find real patterns in messy data: explore and clean with pandas, engineer features, mine association rules for market baskets, segment customers with k-means, group text with TF-IDF, and flag outliers with Isolation Forest. Every lesson runs live in your browser, no install needed.",
+  "pathSlug": "python",
+  "pathName": "Python",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "what-data-mining-is",
+      "title": "What Data Mining Is",
+      "order": 1,
+      "content": "# What Data Mining Is\n\n**Data mining** is the practice of digging useful, non-obvious patterns out of data you already have. A report tells you *what happened* (\"we sold 4,120 units in March\"). Data mining tries to answer *what is going on underneath*: which customers behave alike, which products get bought together, which transactions don't look like the others.\n\n## The five tasks\n\nAlmost every data mining project is one of these five shapes:\n\n| Task | Question it answers | Example |\n| --- | --- | --- |\n| Classification | Which labeled group does this belong to? | Is this email spam? |\n| Regression | What number comes next? | What will this house sell for? |\n| Clustering | Which rows are similar to each other? | Segment customers with no labels |\n| Association | What co-occurs? | People who buy bread also buy butter |\n| Anomaly detection | What doesn't fit? | Flag a suspicious payment |\n\nClassification and regression need **labels**, someone must already have written down the right answer for historical rows. Clustering, association, and anomaly detection do not, which is why they're often the only options on a fresh dataset.\n\n## CRISP-DM, the process everyone actually uses\n\n**CRISP-DM** (Cross-Industry Standard Process for Data Mining) is the loop this course follows:\n\n1. **Business understanding**, what decision will this change? If nothing changes, stop here.\n2. **Data understanding**, load it, look at it, find out what's missing and what's wrong.\n3. **Data preparation**, clean, join, encode, engineer features. Realistically 60-80% of the work.\n4. **Modeling**, run the algorithm. Usually the quickest step.\n5. **Evaluation**, is the pattern real, and is it useful?\n6. **Deployment**, put it somewhere a decision-maker or a system can act on.\n\nIt's a loop, not a line: evaluation almost always sends you back to preparation.\n\n```python\nimport pandas as pd\n\nsales = pd.DataFrame({\n    'customer': ['ana', 'bo', 'ana', 'cai', 'bo', 'ana'],\n    'product':  ['bread', 'milk', 'butter', 'bread', 'bread', 'milk'],\n    'amount':   [25.0, 12.5, 30.0, 25.0, 27.5, 11.0],\n})\n\nprint(sales.groupby('customer')['amount'].agg(['count', 'sum', 'mean']))\nprint()\nprint('Most common product:', sales['product'].mode()[0])\n```\n\n- `pd.DataFrame({...})` builds a table from a dict of columns, the standard in-memory shape for all of data mining in Python.\n- `groupby('customer')` splits the rows into one group per customer, then `.agg([...])` computes several summaries per group at once.\n- `.mode()` returns the most frequent value(s); `[0]` takes the first, since ties return several.\n\n> [!NOTE]\n> Everything in this course runs directly in your browser. The first `import pandas` on a page downloads the runtime (a WebAssembly build of Python), which takes a moment, after that every block on the page is instant and shares the same variables, like notebook cells.",
+      "quiz": {
+        "title": "What Data Mining Is Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which data mining task groups similar rows together without using any labels?",
+            "options": [
+              "Clustering",
+              "Classification",
+              "Regression",
+              "Association"
+            ],
+            "answer": "Clustering"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "In CRISP-DM, data preparation is usually a much larger share of the work than modeling.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ mining task finds items that frequently co-occur, like bread and butter in the same basket.",
+            "options": [],
+            "answer": "association"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "exploring-data-with-pandas",
+      "title": "Exploring Data with pandas",
+      "order": 2,
+      "content": "# Exploring Data with pandas\n\nBefore any algorithm runs, you need to know the shape of what you have: how many rows, what types, what ranges, what is missing. This step is where most \"surprising model results\" get prevented.\n\n## Load and look\n\n```python\nimport pandas as pd\nimport numpy as np\n\nrng = np.random.default_rng(42)\nn = 200\n\ndf = pd.DataFrame({\n    'age': rng.integers(18, 70, n),\n    'spend': rng.normal(500, 150, n).round(2),\n    'channel': rng.choice(['web', 'app', 'store'], n, p=[0.5, 0.3, 0.2]),\n    'returned': rng.choice([0, 1], n, p=[0.85, 0.15]),\n})\n\nprint(df.shape)\nprint(df.head())\nprint(df.dtypes)\n```\n\n- `df.shape` is `(rows, columns)`, the first number you should always know.\n- `df.head()` prints the first five rows, enough to catch a column that loaded as text when you expected numbers.\n- `df.dtypes` shows the type pandas inferred per column, `object` almost always means \"string\".\n\n## Summarize\n\n```python\nprint(df.describe())\nprint()\nprint(df['channel'].value_counts(normalize=True))\nprint()\nprint('Missing per column:')\nprint(df.isna().sum())\n```\n\n- `describe()` gives count, mean, std, min, quartiles, and max for every numeric column, one call that exposes impossible values (a negative age, a max 100x the median).\n- `value_counts(normalize=True)` gives the share of each category, the fastest way to see class imbalance.\n- `isna().sum()` counts missing values per column. A column that is 90% missing is usually a column you drop.\n\n## Look for relationships\n\n```python\nprint(df.groupby('channel')['spend'].mean().round(2))\nprint()\nprint(df[['age', 'spend', 'returned']].corr().round(3))\n```\n\n- `groupby(...)[col].mean()` compares a numeric measure across categories, the workhorse of exploratory analysis.\n- `corr()` computes pairwise **Pearson correlation**, from -1 (perfect inverse) through 0 (no linear relationship) to +1. It only detects *linear* relationships, and a strong correlation is never by itself evidence of causation.\n\n> [!TIP]\n> Ask three questions of every new dataset: how big is it, what is missing, and does anything look impossible? All three are answered by `shape`, `isna().sum()`, and `describe()`.",
+      "quiz": {
+        "title": "Exploring Data with pandas Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which call gives you the count, mean, min, quartiles, and max of every numeric column at once?",
+            "options": [
+              "df.describe()",
+              "df.head()",
+              "df.shape",
+              "df.dtypes"
+            ],
+            "answer": "df.describe()"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A Pearson correlation near 0 proves the two columns are unrelated.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "df.____().sum() counts the missing values in each column.",
+            "options": [],
+            "answer": "isna"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "cleaning-and-preparing-data",
+      "title": "Cleaning and Preparing Data",
+      "order": 3,
+      "content": "# Cleaning and Preparing Data\n\nReal data arrives with duplicates, blanks, typos in category names, and values that cannot physically be true. Cleaning is not glamorous, and it decides how good every later result is.\n\n## Duplicates and inconsistent categories\n\n```python\nimport pandas as pd\n\nraw = pd.DataFrame({\n    'id':      [1, 2, 2, 3, 4, 5],\n    'city':    ['Malmo', 'malmo', 'malmo', ' Lund', 'LUND', None],\n    'income':  [320, 410, 410, None, 5000000, 380],\n})\n\ndf = raw.drop_duplicates(subset='id', keep='first').copy()\ndf['city'] = df['city'].str.strip().str.lower()\nprint(df)\nprint()\nprint(df['city'].value_counts(dropna=False))\n```\n\n- `drop_duplicates(subset='id')` removes rows repeating an identifier, duplicate rows silently double the weight of whatever they contain.\n- `.str.strip().str.lower()` collapses `' Lund'`, `'LUND'`, and `'lund'` into one category. Without it, a model treats them as three unrelated values.\n- `value_counts(dropna=False)` includes missing values in the tally instead of hiding them.\n\n## Missing values\n\nYou have three options, and they are not interchangeable:\n\n```python\nprint('drop rows:   ', len(df.dropna(subset=['income'])))\n\nfilled = df.copy()\nfilled['income'] = filled['income'].fillna(filled['income'].median())\nfilled['city'] = filled['city'].fillna('unknown')\n\nprint(filled)\n```\n\n- **Drop** the rows when they are few and the missingness looks random.\n- **Impute** with the median (robust to outliers, unlike the mean) for numbers, or an explicit `'unknown'` category for text, which preserves the information that the value was missing.\n- **Keep and flag** when missingness itself is a signal: `filled['income_missing'] = df['income'].isna().astype(int)`.\n\n## Outliers with the IQR rule\n\n```python\nq1, q3 = filled['income'].quantile([0.25, 0.75])\niqr = q3 - q1\nlow, high = q1 - 1.5 * iqr, q3 + 1.5 * iqr\n\nprint('bounds:', round(low, 1), 'to', round(high, 1))\nprint(filled[(filled['income'] < low) | (filled['income'] > high)])\n```\n\n- The **interquartile range** is the middle 50% of the data. The classic rule flags anything more than 1.5 IQRs outside the quartiles.\n- Flagging is not deleting. An income of 5,000,000 may be a typo (drop it), a different unit (fix it), or a genuine outlier that is the entire point of the analysis (keep it). Decide with domain knowledge, never automatically.\n\n> [!WARNING]\n> Never compute imputation values from your whole dataset if you plan to train and test a model on it, the fill value would leak information from the test rows into training. scikit-learn's `Pipeline` exists to prevent exactly this.",
+      "quiz": {
+        "title": "Cleaning and Preparing Data Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why is the median usually preferred over the mean when imputing a numeric column?",
+            "options": [
+              "It is far less affected by outliers",
+              "It is faster to compute",
+              "It is always an integer",
+              "It never produces missing values"
+            ],
+            "answer": "It is far less affected by outliers"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Values flagged by the 1.5 x IQR rule should always be deleted.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "df.drop_______() removes repeated rows from a DataFrame (the word after 'drop_').",
+            "options": [],
+            "answer": "duplicates"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "feature-engineering-and-encoding",
+      "title": "Feature Engineering and Encoding",
+      "order": 4,
+      "content": "# Feature Engineering and Encoding\n\nAlgorithms consume numbers, not strings, and they respond to the *shape* of those numbers. Feature engineering is where domain knowledge becomes columns.\n\n## Encoding categories\n\n```python\nimport pandas as pd\n\ndf = pd.DataFrame({\n    'channel': ['web', 'app', 'store', 'web', 'app'],\n    'size':    ['S', 'L', 'M', 'M', 'S'],\n    'spend':   [120, 240, 90, 310, 55],\n})\n\nonehot = pd.get_dummies(df['channel'], prefix='ch').astype(int)\norder = {'S': 0, 'M': 1, 'L': 2}\ndf['size_code'] = df['size'].map(order)\n\nprint(pd.concat([df, onehot], axis=1))\n```\n\n- **One-hot encoding** (`get_dummies`) makes one 0/1 column per category. Use it for **nominal** data, where no category is \"greater than\" another. `web=1, app=2, store=3` would falsely tell the model that store is three times web.\n- **Ordinal encoding** (`map` with an explicit order) is correct when the categories genuinely rank, like S < M < L.\n- One-hot on a high-cardinality column (10,000 postcodes) explodes the column count; group rare values into `'other'` first.\n\n## Deriving new columns\n\n```python\ndf['items'] = [2, 4, 1, 5, 1]\ndf['spend_per_item'] = (df['spend'] / df['items']).round(2)\ndf['big_spender'] = (df['spend'] > df['spend'].median()).astype(int)\ndf['spend_band'] = pd.cut(df['spend'], bins=[0, 100, 200, 1000],\n                          labels=['low', 'mid', 'high'])\nprint(df[['spend', 'items', 'spend_per_item', 'big_spender', 'spend_band']])\n```\n\n- **Ratios** often carry more signal than their parts: spend-per-item separates \"bought one expensive thing\" from \"bought many cheap things\".\n- `pd.cut` **bins** a continuous column into ranges, useful when the relationship is stepwise rather than smooth (and required for the association mining two lessons from now).\n- Binning throws information away in exchange for interpretability, which is a fine trade when a human has to act on the result.\n\n## Scaling\n\n```python\nfrom sklearn.preprocessing import StandardScaler, MinMaxScaler\n\nX = df[['spend', 'size_code']]\nprint(StandardScaler().fit_transform(X).round(2))\nprint()\nprint(MinMaxScaler().fit_transform(X).round(2))\n```\n\n- `StandardScaler` centers each column at mean 0 with standard deviation 1; `MinMaxScaler` squeezes it into 0-1.\n- Any algorithm that measures **distance**, k-means and k-NN especially, is dominated by whichever column has the largest raw range unless you scale first. Trees don't care.\n\n> [!TIP]\n> Feature engineering beats algorithm-shopping. A well-built ratio column moves results more than swapping a decision tree for a fancier model.",
+      "quiz": {
+        "title": "Feature Engineering and Encoding Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why is one-hot encoding preferred over mapping nominal categories to 1, 2, 3?",
+            "options": [
+              "Integer codes imply a false ordering and magnitude between categories",
+              "One-hot uses less memory",
+              "Integer codes cannot be stored in pandas",
+              "One-hot is faster to compute"
+            ],
+            "answer": "Integer codes imply a false ordering and magnitude between categories"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Distance-based algorithms like k-means are sensitive to the scale of each column.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "pd.____() splits a continuous column into labeled bins such as low/mid/high.",
+            "options": [],
+            "answer": "cut"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "association-rules-market-basket",
+      "title": "Association Rules and Market Basket Analysis",
+      "order": 5,
+      "content": "# Association Rules and Market Basket Analysis\n\n\"Customers who bought X also bought Y\" is **association rule mining**. Given a list of baskets, it finds itemsets that co-occur more often than chance would predict.\n\n## The three numbers\n\nFor a rule `X -> Y`:\n\n- **Support**: the share of all baskets containing both X and Y. How common is this pattern at all?\n- **Confidence**: of the baskets containing X, the share that also contain Y. How reliable is the rule?\n- **Lift**: confidence divided by the overall frequency of Y. **Lift > 1** means X genuinely makes Y more likely; **lift around 1** means the two are independent and the rule is worthless no matter how high its confidence.\n\nHigh confidence with lift 1.0 is the classic trap: \"people who buy anchovies also buy bags\" has 95% confidence only because 95% of everyone buys bags.\n\n## Mining rules from scratch\n\n```python\nfrom itertools import combinations\n\nbaskets = [\n    {'bread', 'butter', 'milk'}, {'bread', 'butter'}, {'bread', 'milk'},\n    {'beer', 'chips'}, {'bread', 'butter', 'jam'}, {'beer', 'chips', 'salsa'},\n    {'milk', 'cereal'}, {'bread', 'butter', 'milk', 'jam'}, {'beer', 'chips'},\n    {'bread', 'milk', 'cereal'},\n]\nn = len(baskets)\n\ndef support(items):\n    items = set(items)\n    return sum(1 for b in baskets if items <= b) / n\n\nitems = sorted({i for b in baskets for i in b})\nfrequent = [frozenset([i]) for i in items if support({i}) >= 0.2]\n\nrules = []\nfor a, b in combinations(frequent, 2):\n    for x, y in ((a, b), (b, a)):\n        s = support(x | y)\n        if s < 0.2:\n            continue\n        conf = s / support(x)\n        lift = conf / support(y)\n        rules.append((sorted(x), sorted(y), s, conf, lift))\n\nfor x, y, s, conf, lift in sorted(rules, key=lambda r: -r[4])[:5]:\n    print(x, '->', y, ' support=%.2f conf=%.2f lift=%.2f' % (s, conf, lift))\n```\n\n- `support(items)` counts the baskets in which `items` is a subset (`<=` on sets means \"is a subset of\").\n- The **minimum support threshold** (0.2 here) is what makes this tractable: an itemset can only be frequent if all of its subsets are frequent, so anything below the threshold prunes everything built on top of it. That pruning rule is the **Apriori principle**, and real implementations use it to avoid ever enumerating the 2^n possible itemsets.\n- Sorting by lift, not confidence, puts the genuinely surprising rules first.\n\n## Reading the results\n\n`{beer} -> {chips}` comes out with the highest lift: those two appear together in every basket where either appears. `{bread} -> {milk}` has decent confidence but a lift near 1, because milk is common everywhere. Only the first is worth acting on.\n\n> [!NOTE]\n> Library versions of this (`mlxtend`'s `apriori` and `association_rules`) do the same thing with far better pruning. Writing it once by hand is what makes their output interpretable when you use them.",
+      "quiz": {
+        "title": "Association Rules Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A rule has 90% confidence and a lift of 1.0. What does that mean?",
+            "options": [
+              "The rule is useless: X does not make Y any more likely than Y already is",
+              "The rule is excellent and should be acted on",
+              "The support must be very low",
+              "The confidence was computed incorrectly"
+            ],
+            "answer": "The rule is useless: X does not make Y any more likely than Y already is"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The Apriori principle says an itemset can only be frequent if all of its subsets are frequent.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "____ is the share of all baskets that contain every item in the itemset.",
+            "options": [],
+            "answer": "support"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "clustering-customers-with-k-means",
+      "title": "Clustering Customers with k-means",
+      "order": 6,
+      "content": "# Clustering Customers with k-means\n\nClustering finds groups in unlabeled data. Nobody tells the algorithm what a \"budget shopper\" is; it finds rows that sit near each other and you name the groups afterwards.\n\n## How k-means works\n\n1. Pick `k` random centers.\n2. Assign every point to its nearest center.\n3. Move each center to the mean of its assigned points.\n4. Repeat 2 and 3 until nothing moves.\n\nIt always converges, but to a *local* optimum, which is why `n_init=10` runs it ten times from different starts and keeps the best.\n\n```python\nimport numpy as np\nimport pandas as pd\nfrom sklearn.cluster import KMeans\nfrom sklearn.preprocessing import StandardScaler\n\nrng = np.random.default_rng(7)\ndf = pd.DataFrame({\n    'visits': np.concatenate([rng.normal(3, 1, 60), rng.normal(20, 3, 60), rng.normal(9, 2, 60)]),\n    'spend':  np.concatenate([rng.normal(80, 20, 60), rng.normal(1200, 200, 60), rng.normal(400, 60, 60)]),\n})\n\nX = StandardScaler().fit_transform(df)\nkm = KMeans(n_clusters=3, n_init=10, random_state=42)\ndf['cluster'] = km.fit_predict(X)\n\nprint(df.groupby('cluster').agg(n=('spend', 'size'),\n                                visits=('visits', 'mean'),\n                                spend=('spend', 'mean')).round(1))\n```\n\n- `StandardScaler` first, always: spend runs to 1200 and visits to 20, so without scaling the clusters would be decided by spend alone.\n- `fit_predict(X)` trains and returns each row's cluster label in one call.\n- The `groupby` afterwards is the actual deliverable, a **cluster profile** you can hand to someone: \"cluster 1 is 60 customers averaging 20 visits and 1200 spend, that's your VIP segment.\"\n\n## Choosing k\n\n```python\nfrom sklearn.metrics import silhouette_score\n\nfor k in range(2, 7):\n    km = KMeans(n_clusters=k, n_init=10, random_state=42).fit(X)\n    labels = km.labels_\n    print('k=%d  inertia=%8.1f  silhouette=%.3f' % (k, km.inertia_, silhouette_score(X, labels)))\n```\n\n- **Inertia** is the total squared distance from points to their center. It always falls as k rises, so you look for the **elbow**, the point where it stops falling steeply.\n- The **silhouette score** runs from -1 to 1 and rewards clusters that are tight and well separated; unlike inertia, it has a genuine maximum. Highest silhouette is a decent default choice of k.\n- Both are heuristics, not verdicts. Run the block above and k=2 edges out k=3 on silhouette, even though the data was generated with three distinct groups: two of them sit close enough that merging them scores marginally better.\n- Neither metric knows whether the clusters are *meaningful*. A statistically clean split that no one can act on is not a result.\n\n> [!WARNING]\n> k-means assumes clusters are roughly round and similarly sized. For elongated or nested shapes, reach for `DBSCAN`, which also labels leftover points as noise instead of forcing everything into a cluster.",
+      "quiz": {
+        "title": "Clustering with k-means Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why must features be scaled before running k-means?",
+            "options": [
+              "k-means uses distance, so the column with the largest raw range would dominate the clusters",
+              "Because KMeans rejects unscaled input",
+              "Scaling makes the algorithm reach a global optimum",
+              "Because inertia cannot be computed otherwise"
+            ],
+            "answer": "k-means uses distance, so the column with the largest raw range would dominate the clusters"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Inertia keeps decreasing as k increases, so the k with the lowest inertia is the best choice.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ score, ranging from -1 to 1, rewards clusters that are tight and well separated.",
+            "options": [],
+            "answer": "silhouette"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "text-mining-with-tf-idf",
+      "title": "Text Mining with TF-IDF",
+      "order": 7,
+      "content": "# Text Mining with TF-IDF\n\nMost data in an organization is text: tickets, reviews, emails. Text mining turns documents into vectors so the same clustering, classification, and similarity tools work on them.\n\n## Bag of words, then TF-IDF\n\nA **bag of words** counts term occurrences per document and throws away word order. The problem: \"the\" appears everywhere and carries no information.\n\n**TF-IDF** fixes that by multiplying two numbers:\n\n- **TF** (term frequency), how often the term appears in *this* document.\n- **IDF** (inverse document frequency), the inverse of how many documents contain the term at all.\n\nA term scores high only when it is frequent here and rare elsewhere, which is exactly what \"characteristic of this document\" means.\n\n```python\nfrom sklearn.feature_extraction.text import TfidfVectorizer\nimport pandas as pd\n\ndocs = [\n    'the delivery was late and the box was damaged',\n    'fast delivery, product works perfectly',\n    'the app crashes every time I open the settings',\n    'crashes on startup, please fix the app',\n    'late delivery again, still waiting for the refund',\n]\n\nvec = TfidfVectorizer(stop_words='english')\nX = vec.fit_transform(docs)\n\nprint('shape:', X.shape)\nframe = pd.DataFrame(X.toarray().round(2), columns=vec.get_feature_names_out())\nprint(frame[['delivery', 'crashes', 'app', 'late']])\n```\n\n- `TfidfVectorizer` tokenizes, lowercases, drops English **stop words**, and computes TF-IDF in one pass.\n- `X` is a **sparse matrix** of shape `(documents, vocabulary)`. Real corpora have tens of thousands of columns that are almost all zero, so sparse storage is what makes this feasible.\n- `min_df=2` (skipped here, with only five documents) drops terms appearing in fewer than two documents, the standard defence against typo-noise.\n\n## Similarity and grouping\n\n```python\nfrom sklearn.metrics.pairwise import cosine_similarity\nfrom sklearn.cluster import KMeans\n\nsim = cosine_similarity(X)\nprint(pd.DataFrame(sim.round(2)))\nprint()\n\nlabels = KMeans(n_clusters=2, n_init=10, random_state=0).fit_predict(X.toarray())\nfor label, doc in zip(labels, docs):\n    print(label, '|', doc)\n```\n\n- **Cosine similarity** compares the angle between two document vectors, not their length, so a long review and a short one about the same topic still score as similar. Euclidean distance would call them far apart purely for length.\n- Clustering on TF-IDF vectors groups the delivery complaints apart from the app-crash reports without anyone labeling a single ticket. That is **topic discovery**, and it's the standard first pass on a support inbox.\n\n> [!TIP]\n> `ngram_range=(1, 2)` makes the vectorizer keep two-word phrases as well. \"not working\" is a very different signal from \"not\" and \"working\" counted separately.",
+      "quiz": {
+        "title": "Text Mining with TF-IDF Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What makes a term score highly under TF-IDF?",
+            "options": [
+              "It is frequent in this document and rare across the whole corpus",
+              "It is frequent in every document",
+              "It is the longest word in the document",
+              "It appears in the first sentence"
+            ],
+            "answer": "It is frequent in this document and rare across the whole corpus"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Cosine similarity compares document vectors by angle, so document length affects it much less than Euclidean distance does.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Common words like 'the' and 'and' that carry little meaning are called ____ words.",
+            "options": [],
+            "answer": "stop"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "anomaly-detection",
+      "title": "Anomaly Detection",
+      "order": 8,
+      "content": "# Anomaly Detection\n\nAnomaly detection asks the opposite question from clustering: not \"what groups exist?\" but \"what doesn't belong?\". Fraud, failing sensors, and broken data pipelines all show up as points that don't fit the pattern.\n\n## Statistical baselines\n\n```python\nimport numpy as np\nimport pandas as pd\n\nrng = np.random.default_rng(3)\ns = pd.Series(np.concatenate([rng.normal(200, 40, 300), [1500, 1800, 25]]))\n\nz = (s - s.mean()) / s.std()\nprint('z-score flags:', s[z.abs() > 3].round(1).tolist())\n\nq1, q3 = s.quantile([0.25, 0.75])\niqr = q3 - q1\nprint('IQR flags:    ', s[(s < q1 - 1.5 * iqr) | (s > q3 + 1.5 * iqr)].round(1).tolist())\n```\n\n- The **z-score** measures how many standard deviations a value sits from the mean; |z| > 3 is the usual threshold. It assumes roughly normal data, and the outliers themselves inflate the mean and standard deviation, hiding milder ones.\n- The **IQR rule** uses quartiles, which outliers barely move, so it is the more robust of the two on skewed data.\n- Both are **univariate**: they look at one column at a time and cannot see a transaction that is ordinary in amount and ordinary in hour, but bizarre in that combination.\n\n## Multivariate detection with Isolation Forest\n\n```python\nfrom sklearn.ensemble import IsolationForest\n\nX = pd.DataFrame({\n    'amount': np.concatenate([rng.normal(200, 40, 300), [210, 195, 2400]]),\n    'hour':   np.concatenate([rng.integers(8, 20, 300), [3, 4, 12]]),\n})\n\nX['amount'] = X['amount'].round(1)\n\niso = IsolationForest(contamination=0.02, random_state=42)\nX['flag'] = iso.fit_predict(X[['amount', 'hour']])\nX['score'] = iso.decision_function(X[['amount', 'hour']]).round(3)\n\nprint(X[X['flag'] == -1].sort_values('score'))\n```\n\n- **Isolation Forest** builds random trees that split on random features; a point that gets isolated in very few splits is, by definition, unlike the rest. It scales well and assumes nothing about the shape of the distribution.\n- `fit_predict` returns `1` for inliers and `-1` for anomalies. `decision_function` gives the underlying score, more negative is more anomalous, and lets you rank cases rather than just flag them.\n- `contamination` is your estimate of the anomaly rate. It is a threshold you choose, not something the algorithm discovers, so tune it to the number of alerts a human can actually review.\n\n## Evaluating without labels\n\nPrecision and recall need ground truth you usually don't have. In practice you:\n\n- Have an analyst review a sample of flagged cases and measure **precision at k**, the share of the top k alerts that turned out to be real.\n- Track how the flagged rate drifts over time; a sudden jump usually means the *data* broke, not the world.\n\n> [!WARNING]\n> An anomaly is not automatically a problem, and a problem is not automatically an anomaly. Well-executed fraud tries hard to look average, which is why rule-based checks and anomaly detection are run together, not one instead of the other.",
+      "quiz": {
+        "title": "Anomaly Detection Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why is the IQR rule more robust than the z-score for flagging outliers?",
+            "options": [
+              "Outliers barely move the quartiles, but they do inflate the mean and standard deviation",
+              "The IQR rule works on categorical data",
+              "The z-score requires labeled data",
+              "The IQR rule is multivariate"
+            ],
+            "answer": "Outliers barely move the quartiles, but they do inflate the mean and standard deviation"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "IsolationForest's fit_predict returns -1 for the rows it considers anomalies.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ parameter of IsolationForest sets the expected proportion of anomalies in the data.",
+            "options": [],
+            "answer": "contamination"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-mine-a-retail-dataset",
+      "title": "Final Project: Mine a Retail Dataset",
+      "order": 9,
+      "content": "# Final Project: Mine a Retail Dataset\n\nPut the whole CRISP-DM loop together on one dataset: clean it, mine it three different ways, and report what a shop owner should actually do.\n\n## The data\n\n```python\nimport numpy as np\nimport pandas as pd\n\nrng = np.random.default_rng(11)\nn = 400\nseg = rng.choice([0, 1, 2], n, p=[0.5, 0.3, 0.2])\n\norders = pd.DataFrame({\n    'order_id': range(1, n + 1),\n    'visits': np.where(seg == 0, rng.normal(2, 1, n),\n              np.where(seg == 1, rng.normal(8, 2, n), rng.normal(22, 4, n))).round(),\n    'spend': np.where(seg == 0, rng.normal(90, 25, n),\n             np.where(seg == 1, rng.normal(430, 90, n), rng.normal(1300, 250, n))).round(2),\n    'channel': rng.choice(['web', 'app', 'store', 'Web', ' app '], n, p=[.4, .25, .2, .1, .05]),\n    'hour': rng.integers(0, 24, n),\n})\n\n# deliberate mess for you to clean up\norders.loc[rng.choice(n, 25, replace=False), 'spend'] = np.nan\norders = pd.concat([orders, orders.sample(12, random_state=1)], ignore_index=True)\n\nprint(orders.shape)\nprint(orders.head())\n```\n\n## Requirements\n\n**1. Clean it**\n\n- Drop duplicate `order_id` rows and report how many you removed.\n- Normalize `channel` so `'web'`, `'Web'`, and `' app '` fold into the right categories.\n- Handle missing `spend` with a documented choice, and say why you chose it.\n- Clamp or flag anything that fails a sanity check (negative spend, impossible visit counts).\n\n**2. Engineer features**\n\n- Add `spend_per_visit`.\n- Add a `spend_band` with `pd.cut` (low / mid / high) and an `hour_band` (night / morning / afternoon / evening).\n- One-hot encode `channel`.\n\n**3. Mine it three ways**\n\n- **Cluster** customers on scaled `visits` and `spend`. Choose k with the silhouette score, print a profile table per cluster, and give each cluster a human-readable name.\n- **Associate**: treat each order's `{channel, spend_band, hour_band}` as a basket and find the rules with the highest lift. Report only rules with lift > 1.2 and support > 0.05.\n- **Detect anomalies** on `spend` and `hour` with `IsolationForest`, and print the ten most anomalous orders by score.\n\n**4. Report**\n\nWrite a short markdown summary at the end of your file:\n\n- The three most useful patterns you found, in plain language.\n- One concrete action per pattern (a campaign, a threshold, an alert).\n- One caveat: something in the data that could make a pattern wrong.\n\n## Submission\n\nSubmit a single `.py` file or notebook that runs top to bottom without errors, plus the written report. Every result should be printed, not just computed.\n\n## What good looks like\n\n- Cleaning decisions are explained, not just performed.\n- Cluster names describe behaviour (\"occasional browsers\"), not indices (\"cluster 2\").\n- At least one rule is rejected in the write-up for having a lift near 1 despite high confidence.\n- The caveat is specific to this dataset, not a generic disclaimer.\n\n> [!TIP]\n> Do the reporting step first, as a comment block. Deciding what decision the analysis has to support keeps you from mining patterns nobody can act on.",
+      "requiresSubmission": true
+    }
+  ]
+}

@@ -17,7 +17,7 @@
     "estimatedHours": 88,
     "projectCount": 22,
     "description": "The friendliest way into programming, scripting, automation, data, and AI with Python.",
-    "lessonCount": 70
+    "lessonCount": 88
   },
   {
     "slug": "javascript",
@@ -27,7 +27,7 @@
     "estimatedHours": 70,
     "projectCount": 25,
     "description": "The language of the web. Build interactive sites and apps that run everywhere.",
-    "lessonCount": 12
+    "lessonCount": 21
   },
   {
     "slug": "typescript",

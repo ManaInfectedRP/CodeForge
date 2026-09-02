@@ -110,6 +110,26 @@
     "isPublic": false
   },
   {
+    "slug": "data-mining-with-python",
+    "title": "Data Mining with Python",
+    "description": "Find real patterns in messy data: explore and clean with pandas, engineer features, mine association rules for market baskets, segment customers with k-means, group text with TF-IDF, and flag outliers with Isolation Forest. Every lesson runs live in your browser, no install needed.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 9,
+    "quizCount": 8,
+    "isPublic": false
+  },
+  {
+    "slug": "big-data-fundamentals",
+    "title": "Big Data Fundamentals",
+    "description": "How data processing works when one machine is not enough: MapReduce and shuffles, columnar storage and partitioning, Spark's execution model, DataFrames and Spark SQL, diagnosing skew, streaming with watermarks, and lakehouse pipelines you can actually operate.",
+    "pathSlug": "python",
+    "pathName": "Python",
+    "lessonCount": 9,
+    "quizCount": 8,
+    "isPublic": false
+  },
+  {
     "slug": "modern-javascript-essentials",
     "title": "Modern JavaScript Essentials",
     "description": "DOM manipulation, array methods, and async programming, everything the modern web is built on.",
@@ -127,6 +147,16 @@
     "pathName": "JavaScript",
     "lessonCount": 6,
     "quizCount": 5,
+    "isPublic": false
+  },
+  {
+    "slug": "gsap-and-scrolltrigger",
+    "title": "GSAP and ScrollTrigger",
+    "description": "Animate the web with GSAP: tweens, eases, and staggers, timelines that stay maintainable, then ScrollTrigger for scrubbed, pinned, scroll-driven scenes, parallax, and the batching, matchMedia, and reduced-motion work that keeps it fast and accessible. Every demo runs live in the lesson.",
+    "pathSlug": "javascript",
+    "pathName": "JavaScript",
+    "lessonCount": 9,
+    "quizCount": 8,
     "isPublic": false
   },
   {
