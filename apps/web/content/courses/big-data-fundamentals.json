@@ -1,0 +1,345 @@
+{
+  "slug": "big-data-fundamentals",
+  "title": "Big Data Fundamentals",
+  "description": "How data processing works when one machine is not enough: MapReduce and shuffles, columnar storage and partitioning, Spark's execution model, DataFrames and Spark SQL, diagnosing skew, streaming with watermarks, and lakehouse pipelines you can actually operate.",
+  "pathSlug": "python",
+  "pathName": "Python",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "what-big-data-actually-means",
+      "title": "What Big Data Actually Means",
+      "order": 1,
+      "content": "# What Big Data Actually Means\n\n\"Big data\" is not a size in gigabytes. It's the point where **your data no longer fits the tool you were using**, and the fix is to change the shape of the computation rather than buy more memory.\n\n## The three Vs (and the two that came later)\n\n- **Volume**, more data than one machine can hold or scan in reasonable time.\n- **Velocity**, data arriving continuously rather than as a nightly file.\n- **Variety**, JSON, logs, images, and relational tables in the same pipeline.\n- **Veracity**, the quality is uneven and you must handle bad records without stopping.\n- **Value**, the reason for the other four: if nothing downstream changes, none of this is worth its cost.\n\n## Scale up vs scale out\n\n**Scaling up** means a bigger machine: more RAM, faster disks. It's simpler, it's often cheaper than people assume, and it hits a hard ceiling.\n\n**Scaling out** means many machines working in parallel on slices of the data. It has no ceiling in principle, and it buys that with three permanent costs:\n\n1. **Partitioning**, the data must be split into pieces that can be processed independently.\n2. **Coordination**, something must schedule the work and handle a machine dying halfway through.\n3. **Data movement**, whenever a computation needs rows from other partitions, they travel over the network, which is orders of magnitude slower than memory.\n\nEverything in this course, Spark included, is a strategy for keeping cost 3 as small as possible.\n\n## Do you actually need it?\n\n```python\nrows = 500_000_000\nbytes_per_row = 120\n\nraw_gb = rows * bytes_per_row / 1e9\nprint('raw size:            %.1f GB' % raw_gb)\nprint('columnar + parquet:  %.1f GB' % (raw_gb * 0.2))\nprint('one column of 8 of it: %.1f GB' % (raw_gb * 0.2 / 8))\n```\n\nHalf a billion rows sounds like a cluster problem. Stored as compressed columnar files, and with a query that touches one column out of eight, it's a few gigabytes, which a single laptop handles with pandas or DuckDB. **The most common big data mistake is reaching for a cluster before checking this arithmetic.**\n\nA cluster genuinely earns its keep when: the working set exceeds a single large machine, the job must finish faster than one machine can go, many teams share the same data, or the data never stops arriving.\n\n> [!NOTE]\n> The Spark code in this course is written to be read and run against a real cluster or a local `pyspark` install, it doesn't execute in the browser sandbox. Blocks that *do* run in the browser are plain Python and pandas, and they're marked as runnable by having a Run button.",
+      "quiz": {
+        "title": "What Big Data Actually Means Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which of these is the honest definition of a 'big data' problem?",
+            "options": [
+              "The data no longer fits the tool you were using, so the computation itself must change shape",
+              "Any dataset larger than one terabyte",
+              "Any dataset stored in the cloud",
+              "Any dataset with more than a million rows"
+            ],
+            "answer": "The data no longer fits the tool you were using, so the computation itself must change shape"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Scaling out to a cluster introduces network data movement, which is far slower than reading from memory.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Volume, velocity, variety, veracity, and ____ are the five Vs of big data.",
+            "options": [],
+            "answer": "value"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "mapreduce-from-scratch",
+      "title": "MapReduce from Scratch",
+      "order": 2,
+      "content": "# MapReduce from Scratch\n\nEvery distributed data framework, Spark included, is a descendant of **MapReduce**. Understanding the three phases in plain Python makes Spark's behaviour, and its performance traps, obvious.\n\n## The three phases\n\n1. **Map**: transform each input record independently into zero or more `(key, value)` pairs. Perfectly parallel, no coordination needed.\n2. **Shuffle**: group all pairs with the same key onto the same machine. This is the *only* phase that moves data across the network, and it is where the time goes.\n3. **Reduce**: combine the values for each key into a result. Parallel again, one task per key group.\n\n```python\nfrom collections import defaultdict\n\nlogs = [\n    'GET /home 200', 'GET /pricing 200', 'GET /home 500',\n    'POST /login 401', 'GET /home 200', 'POST /login 200',\n    'GET /pricing 500', 'GET /home 200',\n]\n\ndef mapper(line):\n    method, path, status = line.split()\n    yield (path, 1 if status == '200' else 0)\n\n# map\npairs = [p for line in logs for p in mapper(line)]\n\n# shuffle\ngrouped = defaultdict(list)\nfor key, value in pairs:\n    grouped[key].append(value)\n\n# reduce\nfor path, values in sorted(grouped.items()):\n    print(path, 'requests=%d ok=%d ok_rate=%.2f' % (len(values), sum(values), sum(values) / len(values)))\n```\n\n- The mapper never sees more than one record, which is exactly why it can run on a thousand machines at once.\n- `grouped` is the shuffle made visible: every value for `/home` had to end up in one place before the reduce could start.\n- The reducer sees one key's values and nothing else. That constraint is what makes the model scale, and what makes some computations (a global median, a sort) awkward.\n\n## Combiners: shrinking the shuffle\n\n```python\nfrom collections import Counter\n\npartitions = [logs[:4], logs[4:]]\n\n# each machine pre-aggregates its own partition before anything moves\npartials = []\nfor part in partitions:\n    local = Counter()\n    for line in part:\n        _, path, status = line.split()\n        local[path] += 1\n    partials.append(local)\n    print('partition sends', len(local), 'records instead of', len(part))\n\ntotal = Counter()\nfor p in partials:\n    total.update(p)\nprint(dict(total))\n```\n\n- A **combiner** is a reducer run locally on each partition before the shuffle. Counting 10 million rows down to 50 keys locally means 50 records cross the network instead of 10 million.\n- This only works when the reduce operation is **associative and commutative**, sum, count, min, max, yes; median, no. Spark's `reduceByKey` combines; its `groupByKey` does not, which is the single most repeated performance advice in Spark.\n\n> [!TIP]\n> When a distributed job is slow, the first question is almost never \"is my logic slow?\". It's \"how much data crosses the network, and can I make it smaller before it does?\".",
+      "quiz": {
+        "title": "MapReduce from Scratch Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which MapReduce phase moves data across the network?",
+            "options": [
+              "Shuffle",
+              "Map",
+              "Reduce",
+              "None of them"
+            ],
+            "answer": "Shuffle"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A combiner can be used for any reduce function, including computing an exact median.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ phase transforms each input record independently into key/value pairs.",
+            "options": [],
+            "answer": "map"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "distributed-storage-and-file-formats",
+      "title": "Distributed Storage and File Formats",
+      "order": 3,
+      "content": "# Distributed Storage and File Formats\n\nBefore compute comes storage. How bytes are laid out on disk decides how much a query has to read, and reading less is the cheapest optimization there is.\n\n## Where the data lives\n\n- **HDFS**, the classic: files split into large blocks (128 MB default), each replicated across three machines. Compute is scheduled near the block, moving the code to the data.\n- **Object storage** (S3, Azure Blob/ADLS, GCS), the modern default: storage and compute are fully separate, you pay for what you keep, and you scale the cluster independently. The cost is that every read is a network read, so file layout matters even more.\n\nBoth share a hard rule: **many small files are the enemy**. Every file costs a listing entry, an open, and a task. Aim for files in the hundreds of megabytes, and compact small ones on a schedule.\n\n## Row formats vs columnar formats\n\n| | CSV / JSON | Avro | Parquet / ORC |\n| --- | --- | --- | --- |\n| Layout | row | row | column |\n| Schema | none / inline | embedded | embedded |\n| Compression | poor | good | excellent |\n| Read 2 of 50 columns | reads all 50 | reads all 50 | reads 2 |\n| Good for | interchange | streaming writes, record-at-a-time | analytics |\n\n**Columnar** means all values of one column are stored together. Two consequences: values of the same type compress extremely well (often 5-10x), and a query that selects three columns physically skips the rest of the file. This is why analytical pipelines land data as Parquet almost without exception.\n\n```python\nimport pandas as pd\n\ndf = pd.DataFrame({\n    'day': ['2026-01-01'] * 3 + ['2026-01-02'] * 3,\n    'country': ['SE', 'NO', 'SE', 'SE', 'DK', 'NO'],\n    'amount': [100, 250, 90, 310, 45, 120],\n})\n\n# what partitioning by day and country would produce on disk\nfor (day, country), part in df.groupby(['day', 'country']):\n    print('day=%s/country=%s/part-0000.parquet  (%d rows)' % (day, country, len(part)))\n```\n\n## Partitioning and predicate pushdown\n\nWriting files into directories named `day=2026-01-01/country=SE/` is **partitioning**. A query filtered to one day then reads one directory and never lists the rest, this is **partition pruning**.\n\nInside each Parquet file, min/max statistics per column chunk let the reader skip whole blocks that cannot match the filter, which is **predicate pushdown**. Together they routinely cut a scan by 100x.\n\n- Partition on **low-cardinality columns you filter on constantly** (date, region).\n- Never partition on a high-cardinality column like `user_id`, you'd get millions of tiny files, the exact problem partitioning was meant to avoid.\n\n> [!WARNING]\n> Partitioning is a physical layout decision that is expensive to change later. Choose it from the queries you actually run, not from what looks tidy.",
+      "quiz": {
+        "title": "Distributed Storage and File Formats Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why is Parquet so much faster than CSV for analytical queries?",
+            "options": [
+              "It is columnar, so a query reads only the columns it needs and compresses far better",
+              "It stores fewer rows",
+              "It is always kept in memory",
+              "It skips schema validation"
+            ],
+            "answer": "It is columnar, so a query reads only the columns it needs and compresses far better"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Partitioning by a high-cardinality column such as user_id is a good default.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Skipping whole files or blocks because their min/max statistics cannot match a filter is called predicate ____.",
+            "options": [],
+            "answer": "pushdown"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "apache-spark-the-execution-model",
+      "title": "Apache Spark: The Execution Model",
+      "order": 4,
+      "content": "# Apache Spark: The Execution Model\n\nSpark is the standard engine for large-scale batch and streaming processing. Its API looks like pandas; its behaviour is nothing like pandas, and the difference is the execution model.\n\n## Driver, executors, partitions\n\n- The **driver** runs your program, builds the plan, and schedules work. Your `main` lives here.\n- **Executors** are the worker processes. Each has memory and a number of cores, and each core runs one **task** at a time.\n- A DataFrame is split into **partitions**. One partition, one task. Partition count is the unit of parallelism: 8 partitions on a 100-core cluster means 92 idle cores.\n\n```\nfrom pyspark.sql import SparkSession\n\nspark = (SparkSession.builder\n         .appName(\"orders-report\")\n         .config(\"spark.sql.shuffle.partitions\", \"200\")\n         .getOrCreate())\n\norders = spark.read.parquet(\"s3://warehouse/orders/\")\nprint(orders.rdd.getNumPartitions())\n```\n\n## Transformations are lazy, actions are not\n\n```\nfrom pyspark.sql import functions as F\n\nbig = orders.filter(F.col(\"amount\") > 100)          # lazy, nothing runs\nby_country = big.groupBy(\"country\").agg(            # still lazy\n    F.sum(\"amount\").alias(\"total\"),\n    F.countDistinct(\"customer_id\").alias(\"customers\"),\n)\n\nby_country.show()                                   # action: NOW it runs\nby_country.write.mode(\"overwrite\").parquet(\"s3://warehouse/report/\")\n```\n\n- **Transformations** (`filter`, `select`, `groupBy`, `join`, `withColumn`) only record intent, building a DAG of steps.\n- **Actions** (`show`, `count`, `collect`, `write`) trigger execution of the whole DAG.\n- Laziness is what lets the **Catalyst optimizer** rewrite your plan: pushing filters down to the scan, dropping unused columns, and reordering joins. You write the readable version; it runs the efficient one.\n\n## The rules that keep you out of trouble\n\n- `collect()` pulls every row to the driver. On a large DataFrame it kills the driver with an out-of-memory error. Use `show()`, `take(n)`, or write to storage.\n- Prefer built-in functions from `pyspark.sql.functions` over Python **UDFs**. Built-ins run in the JVM and are visible to the optimizer; a Python UDF serializes every row out to a Python process and back, and is opaque to Catalyst.\n- **Cache deliberately**: `df.cache()` keeps a DataFrame in executor memory, worth it when you reuse it several times, harmful when you don't (it evicts everything else).\n- Spark recomputes lost partitions from the DAG rather than replicating them, which is why a failed executor costs you a slice of work instead of the whole job.\n\n> [!NOTE]\n> These snippets are not runnable in the browser. To follow along locally, `pip install pyspark` (a JDK is required), or use a managed environment such as Databricks, EMR, or Synapse.",
+      "quiz": {
+        "title": "Spark Execution Model Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What happens when you call df.filter(...) in Spark?",
+            "options": [
+              "Nothing yet: it is a lazy transformation recorded in the plan",
+              "The rows are filtered immediately on the driver",
+              "The DataFrame is written to disk",
+              "Every executor collects its rows to the driver"
+            ],
+            "answer": "Nothing yet: it is a lazy transformation recorded in the plan"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "collect() is a safe way to inspect a very large DataFrame.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Spark's optimizer, which rewrites your lazy plan before execution, is called ____.",
+            "options": [],
+            "answer": "Catalyst"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "dataframes-and-spark-sql",
+      "title": "DataFrames and Spark SQL",
+      "order": 5,
+      "content": "# DataFrames and Spark SQL\n\nThe DataFrame API and SQL are two front ends to the same optimizer. Use whichever is clearer per step, they compile to identical plans.\n\n## Reading with a schema\n\n```\nfrom pyspark.sql import types as T\n\nschema = T.StructType([\n    T.StructField(\"order_id\", T.LongType(), False),\n    T.StructField(\"customer_id\", T.LongType(), False),\n    T.StructField(\"country\", T.StringType(), True),\n    T.StructField(\"amount\", T.DoubleType(), True),\n    T.StructField(\"ts\", T.TimestampType(), True),\n])\n\norders = spark.read.schema(schema).json(\"s3://raw/orders/\")\n```\n\n- Passing an explicit schema skips the inference pass, which otherwise reads a sample of the data just to guess types, and it fails loudly when the source changes shape instead of silently producing strings.\n- Parquet carries its own schema, so this matters most for CSV and JSON.\n\n## Transform, aggregate, join\n\n```\nfrom pyspark.sql import functions as F\n\ndaily = (orders\n    .withColumn(\"day\", F.to_date(\"ts\"))\n    .filter(F.col(\"amount\") > 0)\n    .groupBy(\"day\", \"country\")\n    .agg(F.sum(\"amount\").alias(\"revenue\"),\n         F.count(\"*\").alias(\"orders\"),\n         F.approx_count_distinct(\"customer_id\").alias(\"customers\"))\n    .orderBy(\"day\", F.col(\"revenue\").desc()))\n\nenriched = daily.join(F.broadcast(countries), on=\"country\", how=\"left\")\n```\n\n- `approx_count_distinct` uses HyperLogLog: a tiny fraction of the cost of an exact distinct count, with a couple of percent error. On big data, approximate is usually the right trade.\n- `F.broadcast(small_df)` ships a small table to every executor so the join needs no shuffle at all. This is the single highest-leverage join optimization, and it applies whenever one side fits comfortably in executor memory (tens of megabytes).\n- Joins on the big side always shuffle both inputs by the join key. Filter and drop columns *before* the join, not after.\n\n## The same thing in SQL\n\n```\norders.createOrReplaceTempView(\"orders\")\n\nspark.sql('''\n    SELECT to_date(ts) AS day, country,\n           SUM(amount) AS revenue,\n           COUNT(*)    AS orders\n    FROM orders\n    WHERE amount > 0\n    GROUP BY 1, 2\n    ORDER BY day, revenue DESC\n''').explain(True)\n```\n\n- `createOrReplaceTempView` registers a DataFrame under a name SQL can reference.\n- `.explain(True)` prints the parsed, analyzed, optimized, and physical plans. Reading the physical plan is how you confirm what actually happened: look for `Exchange` (a shuffle), `BroadcastHashJoin` (good), `SortMergeJoin` (a shuffle on both sides), and `PushedFilters` (predicate pushdown working).\n\n> [!TIP]\n> When a job is slow, read the physical plan before changing any code. Almost every real fix is \"remove an Exchange\" or \"make the scan read less\".",
+      "quiz": {
+        "title": "DataFrames and Spark SQL Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does F.broadcast(small_df) accomplish in a join?",
+            "options": [
+              "It copies the small table to every executor so the join avoids a shuffle",
+              "It caches the big table in memory",
+              "It repartitions both sides by the join key",
+              "It converts the join to a union"
+            ],
+            "answer": "It copies the small table to every executor so the join avoids a shuffle"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The DataFrame API and Spark SQL compile to the same optimized plan.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "In a Spark physical plan, the operator named ____ marks a shuffle across the network.",
+            "options": [],
+            "answer": "Exchange"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "shuffles-partitioning-and-skew",
+      "title": "Shuffles, Partitioning, and Skew",
+      "order": 6,
+      "content": "# Shuffles, Partitioning, and Skew\n\nAlmost every slow Spark job is slow for one of three reasons: it moves too much data, it splits the work into the wrong number of pieces, or one piece is far bigger than the rest.\n\n## Too much movement\n\nA **shuffle** happens on `groupBy`, `join`, `distinct`, `orderBy`, and `repartition`. Every executor writes files that every other executor reads. Reduce it by:\n\n- Filtering and dropping columns before the shuffle, not after.\n- Broadcasting the small side of a join.\n- Preferring `reduceByKey`-style aggregations (Spark's DataFrame aggregations already pre-aggregate per partition) over collecting all values per key.\n\n## The wrong number of partitions\n\n- Too few: cores sit idle, and each task's data may not fit in memory, causing spill to disk.\n- Too many: scheduling overhead and tiny output files dominate.\n- Rule of thumb: aim for **100-200 MB per partition** and at least 2-3 partitions per available core.\n\n```\ndf.repartition(400, \"country\")   # full shuffle, sets exact partitioning\ndf.coalesce(20)                  # no shuffle, only merges partitions (use before writing)\nspark.conf.set(\"spark.sql.shuffle.partitions\", 400)   # partitions after every shuffle\n```\n\n`repartition` shuffles and can increase or balance partitions. `coalesce` only merges existing ones without a shuffle, which makes it the right tool immediately before a write, and the wrong tool for fixing imbalance.\n\n## Skew\n\n**Skew** is when one key holds a disproportionate share of the rows: one `NULL` country, one enormous customer. 199 tasks finish in seconds and the 200th runs for an hour, because a task cannot be split.\n\n```python\nfrom collections import Counter\n\nkeys = ['SE'] * 20 + ['NO'] * 15 + ['DK'] * 10 + ['NULL'] * 955\ncounts = Counter(keys)\ntotal = sum(counts.values())\n\nfor key, c in counts.most_common():\n    print('%-5s %5d rows  %5.1f%%' % (key, c, 100 * c / total))\n\nbiggest = counts.most_common(1)[0][1]\nprint('\\nslowest task handles %.0fx the average partition' % (biggest / (total / len(counts))))\n```\n\nFixes, in order of preference:\n\n1. **Filter the junk key out** if it is a data quality artifact (usually the `NULL`).\n2. **Enable adaptive query execution**: `spark.sql.adaptive.enabled` and `spark.sql.adaptive.skewJoin.enabled` let Spark split skewed partitions at runtime. On by default in Spark 3.2+, and the first thing to check.\n3. **Salt the key**: append a random suffix `0..n` to the hot key on the big side, explode the small side into the same `n` copies, join, then aggregate away the salt. It works, and it's the last resort because it complicates the query.\n\n> [!WARNING]\n> Adding executors to a skewed job changes nothing: the bottleneck is one task, and one task runs on one core. Diagnose skew before scaling the cluster.",
+      "quiz": {
+        "title": "Shuffles, Partitioning, and Skew Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A Spark stage has 200 tasks; 199 finish in seconds and one runs for an hour. What is the most likely cause?",
+            "options": [
+              "Data skew: one key holds a disproportionate share of the rows",
+              "Too few executors",
+              "The data is stored as Parquet",
+              "The driver is out of memory"
+            ],
+            "answer": "Data skew: one key holds a disproportionate share of the rows"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "coalesce() merges partitions without a full shuffle, which makes it a good fit right before writing output.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Appending a random suffix to a hot join key to spread it across tasks is called ____ing the key.",
+            "options": [],
+            "answer": "salt"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "streaming-data",
+      "title": "Streaming Data",
+      "order": 7,
+      "content": "# Streaming Data\n\nBatch answers \"what happened yesterday\". Streaming answers \"what is happening now\", and it forces you to deal with data that is incomplete, out of order, and never finished.\n\n## The log, and why it's the backbone\n\n**Apache Kafka** (and Kinesis, Pub/Sub, Event Hubs) stores an append-only, partitioned, replayable **log** of events. Producers append; consumers read at their own pace, tracking an **offset**. Because the log is retained, a consumer can be rewound and replayed, which is what makes streaming pipelines debuggable at all.\n\nOrdering is guaranteed **within a partition**, not across the topic. The partition key is therefore a correctness decision: key by `user_id` and all of one user's events stay ordered.\n\n## Structured Streaming\n\nSpark's streaming API is the batch API with two extra concepts. A stream is treated as a table that keeps growing.\n\n```\nfrom pyspark.sql import functions as F\n\nevents = (spark.readStream\n    .format(\"kafka\")\n    .option(\"kafka.bootstrap.servers\", \"broker:9092\")\n    .option(\"subscribe\", \"orders\")\n    .load()\n    .select(F.from_json(F.col(\"value\").cast(\"string\"), schema).alias(\"e\"))\n    .select(\"e.*\"))\n\nwindowed = (events\n    .withWatermark(\"ts\", \"10 minutes\")\n    .groupBy(F.window(\"ts\", \"5 minutes\"), \"country\")\n    .agg(F.sum(\"amount\").alias(\"revenue\")))\n\nquery = (windowed.writeStream\n    .outputMode(\"append\")\n    .option(\"checkpointLocation\", \"s3://checkpoints/orders-revenue/\")\n    .format(\"delta\")\n    .start(\"s3://warehouse/revenue_5min/\"))\n```\n\n## Event time, windows, watermarks\n\n- **Event time** is when the thing happened; **processing time** is when your job saw it. They differ by seconds normally and by hours when a phone was offline. Always aggregate on event time.\n- A **window** buckets events by event time: `window(\"ts\", \"5 minutes\")` gives tumbling five-minute buckets. Add a slide duration for overlapping windows.\n- A **watermark** is your declared tolerance for lateness: \"I will wait 10 minutes past a window's end, then close it\". Without one, Spark must keep every window open forever and state grows without bound. Events later than the watermark are dropped.\n\nChoosing the watermark is a real trade-off, not a detail: longer means more correct results and more state to hold; shorter means faster finalization and more dropped stragglers.\n\n## Delivery semantics and checkpoints\n\n- **At-most-once**: may lose events. **At-least-once**: may duplicate. **Exactly-once**: neither, and it requires cooperation from the sink.\n- The **checkpoint** directory stores offsets and aggregation state, which is what makes a restart resume instead of reprocessing. Never delete it casually, and never point two queries at the same one.\n- Exactly-once end to end needs an **idempotent or transactional sink** (Delta, Iceberg, or an upsert keyed on an event id). A plain append to CSV cannot give it to you.\n\n> [!TIP]\n> Start batch. Add streaming when the *decision* it feeds is genuinely time-sensitive; a dashboard someone reads each morning is not.",
+      "quiz": {
+        "title": "Streaming Data Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does a watermark do in Structured Streaming?",
+            "options": [
+              "Declares how late an event may arrive before its window is closed, bounding how much state is kept",
+              "Encrypts the event payload",
+              "Guarantees exactly-once delivery",
+              "Sets the number of Kafka partitions"
+            ],
+            "answer": "Declares how late an event may arrive before its window is closed, bounding how much state is kept"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Kafka guarantees ordering across an entire topic, regardless of partitioning.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ location stores offsets and state so a streaming query resumes after a restart instead of starting over.",
+            "options": [],
+            "answer": "checkpoint"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "lakehouse-and-pipeline-orchestration",
+      "title": "Lakehouse and Pipeline Orchestration",
+      "order": 8,
+      "content": "# Lakehouse and Pipeline Orchestration\n\nCompute engines get the attention; the parts that make a platform survive contact with production are the table format and the scheduler.\n\n## Warehouse, lake, lakehouse\n\n- A **data warehouse** (Snowflake, BigQuery, Redshift) gives transactions, schemas, and fast SQL, over data you must load in first.\n- A **data lake** is files in object storage: cheap, open, any format, and with no transactions, so a failed job leaves half-written garbage that readers can see.\n- A **lakehouse** puts a **table format** (Delta Lake, Apache Iceberg, Hudi) on top of those files: a transaction log next to the data that adds ACID commits, schema enforcement and evolution, and time travel, while the data stays open Parquet in your own bucket.\n\nWhat the log buys you concretely:\n\n- A writer's changes appear atomically, so readers never see a partial write.\n- `MERGE INTO` for upserts and deletes, which plain Parquet cannot do, and which GDPR erasure requests require.\n- **Time travel**: query the table as of a version or timestamp, which turns \"the numbers changed and nobody knows why\" into a diff.\n\n```\nspark.read.format(\"delta\").option(\"versionAsOf\", 12).load(\"s3://warehouse/orders/\")\n```\n\n## The medallion layout\n\nA convention worth adopting because it makes reprocessing cheap:\n\n- **Bronze**, raw ingested data, append-only, unmodified. Never delete it, it's what you replay from.\n- **Silver**, cleaned, deduplicated, typed, joined. One row per real-world event.\n- **Gold**, business-level aggregates that reports and dashboards read.\n\nWhen a bug is found in a transformation, you fix the code and rebuild silver and gold from bronze. Without a raw layer, that bug is permanent.\n\n## Orchestration\n\nA pipeline is a **DAG** of tasks with dependencies, run on a schedule by Airflow, Dagster, Prefect, or a managed equivalent. What matters is less which tool than these properties:\n\n- **Idempotent tasks**: rerunning a task for the same date produces the same result. Write with `overwrite` into a partition keyed by the run date, never blind `append`.\n- **Backfills**: the DAG is parameterized by date so you can rerun a historical range after a fix.\n- **Data quality gates**: assert row counts, null rates, and key uniqueness *between* stages, and fail loudly. A pipeline that silently publishes an empty table is worse than one that crashes.\n- **Lineage and freshness monitoring**: know which report depends on which table, and alert when a table stops updating.\n\n> [!WARNING]\n> The most expensive failure in data engineering is not a crashed job, it's a job that quietly produced wrong numbers for three weeks. Quality checks are the whole defence.",
+      "quiz": {
+        "title": "Lakehouse and Orchestration Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does a table format like Delta Lake or Iceberg add on top of Parquet files in object storage?",
+            "options": [
+              "A transaction log giving ACID commits, schema enforcement, upserts, and time travel",
+              "Faster compression",
+              "A SQL engine",
+              "Automatic cluster scaling"
+            ],
+            "answer": "A transaction log giving ACID commits, schema enforcement, upserts, and time travel"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "An idempotent pipeline task produces the same result when rerun for the same date.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "In the medallion architecture, the raw append-only ingestion layer is called ____.",
+            "options": [],
+            "answer": "bronze"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-design-a-batch-pipeline",
+      "title": "Final Project: Design and Build a Batch Pipeline",
+      "order": 9,
+      "content": "# Final Project: Design and Build a Batch Pipeline\n\nDesign an end-to-end pipeline for a plausible workload, and prove the reasoning with a small local implementation.\n\n## The scenario\n\nA retailer sends you two feeds:\n\n- `orders`, roughly 40 million rows/day of JSON dropped hourly into object storage: `order_id`, `customer_id`, `sku`, `country`, `amount`, `ts`, and occasional duplicates from producer retries.\n- `customers`, a 2 GB daily snapshot with `customer_id`, `signup_date`, `segment`, `country`.\n\nThe business wants a daily gold table of revenue by day, country, and segment, available by 06:00, plus the ability to answer \"what did this table say last Tuesday?\".\n\n## Part 1, design document\n\nWrite a design covering, with a justification for each choice:\n\n1. **Storage layout**, format, partitioning columns, and target file size for bronze, silver, and gold. Explain why you did *not* partition on the columns you rejected.\n2. **Deduplication strategy** for retried orders, and where in the pipeline it belongs.\n3. **The join**, orders to customers: which side broadcasts, and at what size would that stop being true?\n4. **Skew**, name the key most likely to be skewed here and how you would handle it.\n5. **Orchestration**, the task DAG, the schedule, what makes each task idempotent, and how a backfill of last month would work.\n6. **Quality gates**, at least three specific assertions with thresholds, and what happens when one fails.\n7. **Cost**, one concrete decision you made to read or move less data, with an estimate of what it saves.\n\n## Part 2, working implementation\n\nImplement the same logic locally, in pandas or PySpark, over a generated sample of 200,000 orders and 5,000 customers:\n\n- Generate the sample with duplicates, some `NULL` countries, and one customer holding 30% of all orders.\n- Build bronze (raw), silver (deduplicated, typed, joined), and gold (the daily aggregate) as three separate steps writing to three directories.\n- Make the silver and gold steps take a `--day` argument and overwrite only that day's partition, then demonstrate idempotency by running one of them twice and showing the row count is unchanged.\n- Implement your three quality gates as assertions that raise on failure, and show one failing on a deliberately corrupted input.\n\n## Submission\n\nSubmit the design document (markdown) plus the runnable code and the console output of: a clean run, a repeated run proving idempotency, and a failing quality gate.\n\n## What good looks like\n\n- Every design choice names the query or failure mode that motivated it.\n- The dedup key is defensible (which timestamp wins on a tie, and why).\n- The skew answer identifies the 30% customer, not a generic \"use salting\".\n- The quality gates have numeric thresholds, not \"check the data looks right\".\n\n> [!TIP]\n> Write the design first and implement second. If the implementation contradicts the design, update the design, that revision is the most valuable page in the submission.",
+      "requiresSubmission": true
+    }
+  ]
+}
