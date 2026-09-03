@@ -3,6 +3,8 @@
 import { isValidElement, useMemo, type ComponentProps, type ReactElement, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import { CodePlayground, normalizeLang } from './CodePlayground';
 import { HtmlPreview } from './HtmlPreview';
@@ -52,7 +54,11 @@ export function LessonMarkdown({ children, sessionKey }: { children: string; ses
   );
 
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm, remarkAlert]} components={components}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm, remarkMath, remarkAlert]}
+      rehypePlugins={[rehypeKatex]}
+      components={components}
+    >
       {children}
     </ReactMarkdown>
   );

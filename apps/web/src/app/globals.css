@@ -88,3 +88,10 @@ body {
 .prose-lesson .markdown-alert-warning .markdown-alert-title { @apply text-amber-400; }
 .prose-lesson .markdown-alert-caution { @apply border-red-500; }
 .prose-lesson .markdown-alert-caution .markdown-alert-title { @apply text-red-400; }
+
+/* KaTeX math from remark-math + rehype-katex. Inline math must not pick up the inline-code
+   pill styling above, and a long display equation scrolls inside itself rather than widening
+   the page. */
+.prose-lesson .katex { @apply text-[1.05em] text-slate-100; }
+.prose-lesson .katex .mord, .prose-lesson .katex .mrel, .prose-lesson .katex .mbin { @apply bg-transparent; }
+.prose-lesson .katex-display { @apply my-5 overflow-x-auto overflow-y-hidden py-1; }

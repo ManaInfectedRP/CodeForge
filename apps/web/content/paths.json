@@ -280,6 +280,76 @@
     "lessonCount": 7
   },
   {
+    "slug": "linear-algebra",
+    "name": "Linear Algebra",
+    "icon": "🧮",
+    "difficulty": 4,
+    "estimatedHours": 40,
+    "projectCount": 8,
+    "description": "Vectors, matrices, linear systems, eigenvalues, and the geometry behind graphics, machine learning, and simulation.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "discrete-math",
+    "name": "Discrete Mathematics",
+    "icon": "🔢",
+    "difficulty": 3,
+    "estimatedHours": 35,
+    "projectCount": 8,
+    "description": "Logic, proofs, sets, combinatorics, graphs, and number theory, the mathematics computer science is built on.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "calculus",
+    "name": "Single-Variable Calculus",
+    "icon": "📈",
+    "difficulty": 4,
+    "estimatedHours": 40,
+    "projectCount": 8,
+    "description": "Limits, derivatives, integrals, and series for functions of one variable, with every computation runnable in the browser.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "multivariable-calculus",
+    "name": "Multivariable Calculus",
+    "icon": "🌐",
+    "difficulty": 5,
+    "estimatedHours": 45,
+    "projectCount": 8,
+    "description": "Partial derivatives, gradients, multiple integrals, and vector fields, calculus in two and three dimensions.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "abstract-algebra",
+    "name": "Abstract Algebra",
+    "icon": "🔷",
+    "difficulty": 5,
+    "estimatedHours": 40,
+    "projectCount": 7,
+    "description": "Groups, rings, and fields from the axioms up, with permutations, modular arithmetic, and finite fields you can compute with.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "topology",
+    "name": "Topology",
+    "icon": "🕸️",
+    "difficulty": 5,
+    "estimatedHours": 35,
+    "projectCount": 7,
+    "description": "Open sets, continuity, compactness, and connectedness, the study of shape without distance.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "computer-science",
+    "name": "Computer Science",
+    "icon": "🖥️",
+    "difficulty": 4,
+    "estimatedHours": 40,
+    "projectCount": 8,
+    "description": "The theory side of computing: asymptotics, data structures, graph algorithms, automata, and computability.",
+    "lessonCount": 7
+  },
+  {
     "slug": "public",
     "name": "Public Paths",
     "icon": "🔓",

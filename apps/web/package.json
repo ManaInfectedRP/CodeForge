@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "katex": "^0.18.5",
     "next": "^16.2.12",
     "picoc-js": "^1.0.12",
     "prismjs": "^1.30.0",
@@ -16,8 +17,10 @@
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
     "react-simple-code-editor": "^0.14.1",
+    "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-github-blockquote-alert": "^2.1.0",
+    "remark-math": "^6.0.0",
     "sucrase": "^3.35.1",
     "wasmoon": "^1.16.0"
   },

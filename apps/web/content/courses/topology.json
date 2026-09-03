@@ -1,0 +1,340 @@
+{
+  "slug": "topology",
+  "title": "Topology",
+  "description": "Metric spaces, open sets, continuity and homeomorphism, connectedness, compactness, and the fundamental group, with finite spaces, point clouds, and invariants you can actually compute.",
+  "pathSlug": "topology",
+  "pathName": "Topology",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "metric-spaces-and-open-sets",
+      "title": "Metric Spaces and Open Sets",
+      "order": 1,
+      "content": "# Metric Spaces and Open Sets\n\nTopology is geometry with distance thrown away. Before we throw it away, though, it helps to see what distance was doing, because open sets are what survives.\n\n## What a metric is\n\nA **metric** on a set $X$ is a function $d(x,y)$ satisfying:\n\n1. $d(x,y) \\ge 0$, and $d(x,y) = 0$ exactly when $x = y$\n2. $d(x,y) = d(y,x)$ (symmetry)\n3. $d(x,z) \\le d(x,y) + d(y,z)$ (the triangle inequality)\n\nThe third one does all the work. Nearly every proof in analysis is the triangle inequality applied cleverly.\n\n```python\nimport numpy as np\nfrom itertools import product\n\nmetrics = {\n    \"euclidean\": lambda a, b: float(np.linalg.norm(a - b)),\n    \"manhattan\": lambda a, b: float(np.abs(a - b).sum()),\n    \"chebyshev\": lambda a, b: float(np.abs(a - b).max()),\n    \"discrete\":  lambda a, b: 0.0 if np.array_equal(a, b) else 1.0,\n    \"squared (not a metric)\": lambda a, b: float(np.sum((a - b)**2)),\n}\n\nrng = np.random.default_rng(0)\npoints = [rng.uniform(-5, 5, 2) for _ in range(30)]\n\nfor name, d in metrics.items():\n    triangle = all(d(a, c) <= d(a, b) + d(b, c) + 1e-12\n                   for a, b, c in product(points[:8], repeat=3))\n    symmetric = all(abs(d(a, b) - d(b, a)) < 1e-12 for a, b in product(points[:8], repeat=2))\n    print(f\"{name:24s} symmetric {symmetric}  triangle inequality {triangle}\")\n```\n\nSquared Euclidean distance fails the triangle inequality, which is why \"squared distance\" is a useful loss function but not a metric, and why $k$-means clustering needs care when people claim it is minimising a distance.\n\n## Open balls and open sets\n\nThe **open ball** of radius $r$ about $x$ is $B(x,r) = \\{y : d(x,y) < r\\}$. A set $U$ is **open** when every point of it has some ball around it still inside $U$: every point has room to breathe.\n\n```python\nimport numpy as np\n\ndef in_open_interval(x, a, b):\n    return a < x < b\n\ndef has_room(x, membership, max_radius=1.0):\n    \"\"\"Find the largest r (up to max_radius) with the whole ball inside.\"\"\"\n    r = max_radius\n    while r > 1e-12:\n        if membership(x - r + 1e-15) and membership(x + r - 1e-15):\n            return r\n        r /= 2\n    return 0.0\n\nopen_set = lambda x: in_open_interval(x, 0, 1)\nclosed_set = lambda x: 0 <= x <= 1\n\nprint(\"the open interval (0,1):\")\nfor x in [0.5, 0.1, 0.001, 1e-9]:\n    print(f\"  at x = {x:<8} room = {has_room(x, open_set):.2e}  (always positive)\")\n\nprint(\"\\nthe closed interval [0,1], at the endpoint:\")\nprint(f\"  at x = 0        room = {has_room(0, closed_set):.2e}  (zero: no room to the left)\")\n```\n\nEvery point of $(0,1)$ has room, however close to the edge it gets. The point $0$ in $[0,1]$ has none. That is the entire difference between open and closed, and it is why $(0,1)$ is open and $[0,1]$ is not.\n\n## Different metrics, same open sets\n\nHere is the observation that launches topology. The Euclidean, Manhattan, and Chebyshev metrics give differently *shaped* balls, a disc, a diamond, a square, but exactly the same **open sets**, because each ball contains a ball of the other kind.\n\n```python\nimport numpy as np\n\ncentre = np.array([0.0, 0.0])\ngrid = [np.array([x, y]) for x in np.linspace(-1.5, 1.5, 7)\n                          for y in np.linspace(-1.5, 1.5, 7)]\n\ndef ball_members(d, r):\n    return {tuple(np.round(p, 4)) for p in grid if d(centre, p) < r}\n\neuclid = lambda a, b: float(np.linalg.norm(a - b))\nmanhattan = lambda a, b: float(np.abs(a - b).sum())\nchebyshev = lambda a, b: float(np.abs(a - b).max())\n\nprint(\"ball sizes at radius 1 on a 7x7 grid:\")\nprint(\"  euclidean:\", len(ball_members(euclid, 1.0)))\nprint(\"  manhattan:\", len(ball_members(manhattan, 1.0)))\nprint(\"  chebyshev:\", len(ball_members(chebyshev, 1.0)))\n\nprint(\"\\nnesting: chebyshev(1) contains euclid(1) contains manhattan(1)\")\nprint(\"  manhattan ball inside euclidean ball?\",\n      ball_members(manhattan, 1.0) <= ball_members(euclid, 1.0))\nprint(\"  euclidean ball inside chebyshev ball?\",\n      ball_members(euclid, 1.0) <= ball_members(chebyshev, 1.0))\n```\n\nSince each ball type nests inside the others after rescaling, \"there is a ball around $x$ inside $U$\" means the same thing in all three metrics. The metrics differ; the **topology** does not.\n\nSo the open sets are the real structure, and the metric was scaffolding.\n\n## Closure, interior, boundary\n\nThree operations on any subset $A$:\n\n- **Interior** $A^{\\circ}$, the points with room to spare, the largest open set inside $A$.\n- **Closure** $\\overline{A}$, $A$ together with its limit points, the smallest closed set containing $A$.\n- **Boundary** $\\partial A = \\overline{A} \\setminus A^{\\circ}$, the points that are close to both $A$ and its complement.\n\n```python\nsets = {\n    \"(0, 1)\":        (lambda x: 0 < x < 1,        \"(0,1)\", \"[0,1]\", \"{0, 1}\"),\n    \"[0, 1]\":        (lambda x: 0 <= x <= 1,      \"(0,1)\", \"[0,1]\", \"{0, 1}\"),\n    \"the rationals\": (None,                        \"empty\", \"all of R\", \"all of R\"),\n    \"the integers\":  (None,                        \"empty\", \"the integers\", \"the integers\"),\n}\nprint(f\"{'set':16s}{'interior':12s}{'closure':16s}{'boundary'}\")\nfor name, (_, interior, closure, boundary) in sets.items():\n    print(f\"{name:16s}{interior:12s}{closure:16s}{boundary}\")\n```\n\nThe rationals are the striking case: interior empty, closure everything, so the boundary is the whole line. A set can be **dense** (closure is everything) and simultaneously have no interior at all.\n\n```python\nfrom fractions import Fraction\nimport math\n\n# every real is a limit of rationals: the closure of Q is R\ntarget = math.pi\nfor denominator in [10, 100, 10**4, 10**7]:\n    approx = Fraction(target).limit_denominator(denominator)\n    print(f\"  {str(approx):>22s} = {float(approx):.12f}  error {abs(float(approx) - target):.2e}\")\nprint(\"  no rational equals pi, yet rationals get arbitrarily close: pi is in the closure\")\n```\n\n> [!NOTE]\n> \"Closed\" is not the opposite of \"open\". $[0,1)$ is neither, and both the empty set and the whole space are both. Closed means the *complement* is open, which is a different statement from \"not open\".",
+      "quiz": {
+        "title": "Metrics and Openness",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which property does squared Euclidean distance fail?",
+            "options": [
+              "Symmetry",
+              "Non-negativity",
+              "The triangle inequality",
+              "It fails none of them"
+            ],
+            "answer": "The triangle inequality"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A set is open when:",
+            "options": [
+              "It contains no boundary points of itself",
+              "Every point has a ball around it inside the set",
+              "It is bounded",
+              "Its complement is bounded"
+            ],
+            "answer": "Every point has a ball around it inside the set"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A set that is not open must be closed.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A set whose closure is the whole space is called ____.",
+            "options": [],
+            "answer": "dense"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "topological-spaces",
+      "title": "Topological Spaces",
+      "order": 2,
+      "content": "# Topological Spaces\n\nDrop the metric entirely and keep only the list of open sets. What remains is a **topology**, and the three axioms it must satisfy are exactly the properties open sets in a metric space happened to have.\n\n## The axioms\n\nA topology $\\tau$ on a set $X$ is a collection of subsets (the **open sets**) such that:\n\n1. $\\emptyset$ and $X$ are open.\n2. Any union of open sets is open, arbitrarily many, including infinitely many.\n3. Any **finite** intersection of open sets is open.\n\nThe asymmetry in 2 and 3 is deliberate and essential. An infinite intersection of open sets need not be open: the intervals $(-1/n, 1/n)$ are all open, and their intersection is the single point $\\{0\\}$, which is not.\n\n```python\ndef is_topology(X, collection):\n    X = frozenset(X)\n    sets = {frozenset(s) for s in collection}\n    problems = []\n    if frozenset() not in sets:\n        problems.append(\"missing the empty set\")\n    if X not in sets:\n        problems.append(\"missing the whole space\")\n    for a in sets:\n        for b in sets:\n            if a | b not in sets:\n                problems.append(f\"union {sorted(a)} u {sorted(b)} is missing\")\n            if a & b not in sets:\n                problems.append(f\"intersection {sorted(a)} n {sorted(b)} is missing\")\n    return (not problems), problems[:3]\n\nX = {1, 2, 3}\ncandidates = {\n    \"indiscrete\":  [set(), {1,2,3}],\n    \"discrete\":    [set(), {1}, {2}, {3}, {1,2}, {1,3}, {2,3}, {1,2,3}],\n    \"Sierpinski\":  [set(), {1}, {1,2,3}],\n    \"valid mixed\": [set(), {1}, {1,2}, {1,2,3}],\n    \"broken\":      [set(), {1}, {2}, {1,2,3}],\n}\nfor name, collection in candidates.items():\n    ok, problems = is_topology(X, collection)\n    print(f\"{name:14s} {'is a topology' if ok else 'NOT a topology: ' + '; '.join(problems)}\")\n```\n\nThe broken one fails because $\\{1\\} \\cup \\{2\\} = \\{1,2\\}$ is not in the list.\n\n## Counting topologies\n\nOn a set with three elements there are exactly 29 topologies. There is no known closed formula for general $n$, and the counts grow ferociously.\n\n```python\nfrom itertools import combinations, chain\n\ndef all_subsets(X):\n    X = list(X)\n    return [frozenset(c) for r in range(len(X) + 1) for c in combinations(X, r)]\n\ndef count_topologies(X):\n    X = frozenset(X)\n    subsets = all_subsets(X)\n    optional = [s for s in subsets if s != frozenset() and s != X]\n    total = 0\n    for r in range(len(optional) + 1):\n        for chosen in combinations(optional, r):\n            sets = {frozenset(), X} | set(chosen)\n            if all(a | b in sets and a & b in sets for a in sets for b in sets):\n                total += 1\n    return total\n\nfor n in [1, 2, 3]:\n    print(f\"topologies on a set of size {n}: {count_topologies(set(range(n)))}\")\nprint(\"(size 4 gives 355, size 5 gives 6942, and no formula is known)\")\n```\n\n## Coarse and fine\n\nTwo extremes bound every topology on a set:\n\n- The **indiscrete** topology $\\{\\emptyset, X\\}$: the fewest possible open sets. Nothing can be distinguished.\n- The **discrete** topology, every subset open: the most. Everything is distinguishable, every function out of it is continuous.\n\nOne topology is **coarser** than another if it has fewer open sets.\n\n```python\nX = {1, 2, 3}\nindiscrete = {frozenset(), frozenset(X)}\nsierpinski = {frozenset(), frozenset({1}), frozenset(X)}\ndiscrete = {frozenset(s) for r in range(4)\n            for s in __import__('itertools').combinations(sorted(X), r)}\n\nfor name, tau in [(\"indiscrete\", indiscrete), (\"Sierpinski\", sierpinski), (\"discrete\", discrete)]:\n    print(f\"{name:12s} {len(tau)} open sets\")\n\nprint(\"\\nindiscrete is coarser than Sierpinski:\", indiscrete <= sierpinski)\nprint(\"Sierpinski is coarser than discrete:  \", sierpinski <= discrete)\n```\n\n## Bases\n\nListing every open set is impractical; a **basis** is a smaller family whose unions generate them all. For the real line the basis is the open intervals, and every open set is a union of intervals.\n\n```python\ndef generate_from_basis(X, basis):\n    X = frozenset(X)\n    sets = {frozenset(), X} | {frozenset(b) for b in basis}\n    changed = True\n    while changed:\n        changed = False\n        for a in list(sets):\n            for b in list(sets):\n                for combined in (a | b, a & b):\n                    if combined not in sets:\n                        sets.add(combined)\n                        changed = True\n    return sets\n\nX = {1, 2, 3, 4}\nbasis = [{1, 2}, {2, 3}, {3, 4}]\ntau = generate_from_basis(X, basis)\nprint(f\"basis of {len(basis)} sets generates {len(tau)} open sets:\")\nfor s in sorted(tau, key=lambda s: (len(s), sorted(s))):\n    print(\"  \", sorted(s))\n```\n\n## Separation axioms\n\nTopologies vary in how well they can tell points apart, and the hierarchy has names.\n\n- **$T_0$**: for any two points, some open set contains one and not the other.\n- **$T_1$**: every singleton is closed.\n- **$T_2$ (Hausdorff)**: any two distinct points sit in *disjoint* open sets.\n\nEvery metric space is Hausdorff (take balls of radius $d(x,y)/2$), and Hausdorff is what makes limits unique. Without it, a sequence can converge to two different points at once.\n\n```python\nfrom itertools import combinations\n\ndef separation(X, tau):\n    tau = [set(s) for s in tau]\n    t0 = all(any((a in U) != (b in U) for U in tau) for a, b in combinations(X, 2))\n    t1 = all(any(a in U and b not in U for U in tau) and\n             any(b in U and a not in U for U in tau)\n             for a, b in combinations(X, 2))\n    t2 = all(any(a in U and b in V and not (U & V)\n                 for U in tau for V in tau)\n             for a, b in combinations(X, 2))\n    return t0, t1, t2\n\nX = [1, 2, 3]\nspaces = {\n    \"indiscrete\": [set(), {1,2,3}],\n    \"Sierpinski\": [set(), {1}, {1,2,3}],\n    \"discrete\":   [set(), {1}, {2}, {3}, {1,2}, {1,3}, {2,3}, {1,2,3}],\n}\nfor name, tau in spaces.items():\n    t0, t1, t2 = separation(X, tau)\n    print(f\"{name:12s} T0 {t0}  T1 {t1}  T2 (Hausdorff) {t2}\")\n```\n\nThe indiscrete topology separates nothing: in it, every sequence converges to every point simultaneously. That is not a pathology invented to be annoying, it is exactly what happens in the Zariski topology of algebraic geometry, which is $T_1$ but not Hausdorff.\n\n## Subspace topology\n\nAny subset $A \\subseteq X$ inherits a topology: its open sets are $U \\cap A$ for $U$ open in $X$.\n\n```python\nX = [1, 2, 3, 4]\ntau = [set(), {1}, {1,2}, {1,2,3}, {1,2,3,4}]\nA = {2, 3}\n\nsubspace = sorted({frozenset(set(U) & A) for U in tau}, key=lambda s: (len(s), sorted(s)))\nprint(f\"subspace topology on {sorted(A)}:\")\nfor s in subspace:\n    print(\"  \", sorted(s))\n```\n\nThis is why $[0,1]$ can be both \"not open in $\\mathbb{R}$\" and \"open in itself\": openness is always relative to the ambient space, never absolute.\n\n> [!IMPORTANT]\n> Finite intersections only. If you ever find yourself intersecting infinitely many open sets and calling the result open, you have proved something false, this is the single most common error in a first topology course.",
+      "quiz": {
+        "title": "The Axioms",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which operation on open sets is only guaranteed for finitely many?",
+            "options": [
+              "Union",
+              "Intersection",
+              "Complement",
+              "Difference"
+            ],
+            "answer": "Intersection"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In the discrete topology:",
+            "options": [
+              "Only the empty set and the whole space are open",
+              "Every subset is open",
+              "No subset is open",
+              "Only finite sets are open"
+            ],
+            "answer": "Every subset is open"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Every metric space is Hausdorff.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "How many distinct topologies are there on a set of three elements? (a number)",
+            "options": [],
+            "answer": "29"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "continuity-and-homeomorphism",
+      "title": "Continuity and Homeomorphism",
+      "order": 3,
+      "content": "# Continuity and Homeomorphism\n\nContinuity in topology has no epsilons in it. The definition is startlingly short, and it turns out to say exactly the same thing as the analysis definition.\n\n## The topological definition\n\n$f: X \\to Y$ is **continuous** when the preimage of every open set is open:\n\n$$\nU \\text{ open in } Y \\implies f^{-1}(U) \\text{ open in } X\n$$\n\nNote the direction. It is about preimages, not images, and a continuous function can absolutely map an open set to a non-open one.\n\n```python\nimport numpy as np\n\n# f(x) = x^2 maps the open interval (-1, 1) to [0, 1), which is not open\nxs = np.linspace(-0.999, 0.999, 9)\nprint(\"f(x) = x^2 on (-1,1) produces values from\", round(float((xs**2).min()), 6),\n      \"up to\", round(float((xs**2).max()), 6))\nprint(\"0 is attained (at x = 0), so the image contains its own boundary point: not open\")\n\n# but the preimage of an open set is open\nprint(\"\\npreimage of the open set (1, 4) under x^2 is (-2,-1) union (1,2), open:\",\n      [x for x in [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5] if 1 < x**2 < 4])\n```\n\n## Why it agrees with epsilon-delta\n\nIn a metric space, \"preimages of open sets are open\" unpacks to: for every $\\varepsilon$ there is a $\\delta$ with $d(x,y) < \\delta \\implies d(f(x), f(y)) < \\varepsilon$. The open ball of radius $\\varepsilon$ is the open set, and $\\delta$ is the room its preimage has.\n\n```python\ndef find_delta(f, a, epsilon, start=1.0):\n    \"\"\"Largest delta (by halving) with |f(x) - f(a)| < epsilon on (a-delta, a+delta).\"\"\"\n    delta = start\n    while delta > 1e-15:\n        samples = [a + delta * t / 20 for t in range(-20, 21)]\n        if all(abs(f(x) - f(a)) < epsilon for x in samples):\n            return delta\n        delta /= 2\n    return 0.0\n\nimport math\n\nfor f, name, a in [(lambda x: x**2, \"x^2\", 2.0),\n                   (lambda x: math.sin(x), \"sin(x)\", 1.0),\n                   (lambda x: 1/x if x else 0.0, \"1/x\", 0.5)]:\n    print(f\"{name} at x = {a}\")\n    for epsilon in [0.1, 0.01, 0.001]:\n        print(f\"   epsilon {epsilon:<7} needs delta about {find_delta(f, a, epsilon):.2e}\")\n```\n\nA delta exists for every epsilon: that is continuity, computed.\n\n## Continuity on finite spaces\n\nOn a finite topological space you can check the definition exhaustively, which makes the abstraction concrete:\n\n```python\nfrom itertools import product\n\ndef is_continuous(f, X, tau_X, tau_Y):\n    tau_X = [set(U) for U in tau_X]\n    for V in tau_Y:\n        preimage = {x for x in X if f(x) in set(V)}\n        if preimage not in tau_X:\n            return False, sorted(V), sorted(preimage)\n    return True, None, None\n\nX = [1, 2, 3]\ntau_X = [set(), {1}, {1, 2}, {1, 2, 3}]\nY = ['a', 'b']\ntau_Y = [set(), {'a'}, {'a', 'b'}]\n\nfunctions = {\n    \"1,2 -> a; 3 -> b\": lambda x: 'a' if x in (1, 2) else 'b',\n    \"1 -> a; 2,3 -> b\": lambda x: 'a' if x == 1 else 'b',\n    \"1 -> b; 2,3 -> a\": lambda x: 'b' if x == 1 else 'a',\n}\nfor name, f in functions.items():\n    ok, bad_open, bad_preimage = is_continuous(f, X, tau_X, tau_Y)\n    if ok:\n        print(f\"{name:20s} continuous\")\n    else:\n        print(f\"{name:20s} NOT continuous: preimage of {bad_open} is {bad_preimage}, not open\")\n```\n\n## Homeomorphism\n\nA **homeomorphism** is a continuous bijection with a continuous inverse. Two spaces related by one are *the same space* as far as topology is concerned, however different they look.\n\nThe slogan: topology cannot tell a coffee cup from a doughnut, because a continuous deformation takes one to the other without cutting or gluing.\n\n```python\nimport numpy as np\n\n# an explicit homeomorphism from the open interval (-1, 1) to the whole real line\nforward = lambda x: x / (1 - x**2)\nbackward = lambda y: (np.sqrt(1 + 4*y**2) - 1) / (2*y) if y != 0 else 0.0\n\nfor x in [-0.99, -0.5, 0.0, 0.5, 0.9, 0.999]:\n    y = forward(x)\n    print(f\"x = {x:+.3f} -> y = {y:+12.4f} -> back to {backward(y):+.6f}\")\n\nprint(\"\\nso a bounded open interval and the entire line are homeomorphic:\")\nprint(\"boundedness is a metric property, not a topological one\")\n```\n\n## Topological invariants\n\nTo prove two spaces are *not* homeomorphic you need a property preserved by homeomorphisms. These are **invariants**:\n\n| Invariant | Distinguishes |\n|---|---|\n| Number of connected components | a circle from two circles |\n| Compactness | $[0,1]$ from $(0,1)$ |\n| Euler characteristic | a sphere from a torus |\n| Fundamental group | a disc from an annulus |\n| Number of holes (genus) | a doughnut from a pretzel |\n\nThe classic argument: an interval and a circle are not homeomorphic, because removing one point disconnects the interval but never disconnects the circle.\n\n```python\nimport numpy as np\n\ndef components_after_removal(points, removed, adjacency):\n    remaining = [p for p in points if p != removed]\n    seen, count = set(), 0\n    for p in remaining:\n        if p in seen:\n            continue\n        count += 1\n        stack = [p]\n        while stack:\n            current = stack.pop()\n            if current in seen:\n                continue\n            seen.add(current)\n            stack.extend(q for q in remaining if q not in seen and adjacency(current, q))\n    return count\n\nn = 12\ninterval = list(range(n))\ncircle = list(range(n))\n\ninterval_adjacent = lambda a, b: abs(a - b) == 1\ncircle_adjacent = lambda a, b: (a - b) % n in (1, n - 1)\n\nprint(\"removing an interior point:\")\nprint(\"  from an interval:\", components_after_removal(interval, 5, interval_adjacent), \"components\")\nprint(\"  from a circle:   \", components_after_removal(circle, 5, circle_adjacent), \"component\")\nprint(\"\\nso they cannot be homeomorphic\")\n```\n\n## The Euler characteristic\n\nFor a polyhedron, $\\chi = V - E + F$ is a topological invariant: every convex polyhedron gives 2, because they are all homeomorphic to a sphere.\n\n```python\npolyhedra = {\n    \"tetrahedron\":  (4, 6, 4),\n    \"cube\":         (8, 12, 6),\n    \"octahedron\":   (6, 12, 8),\n    \"dodecahedron\": (20, 30, 12),\n    \"icosahedron\":  (12, 30, 20),\n    \"torus (grid)\": (16, 32, 16),\n}\nfor name, (V, E, F) in polyhedra.items():\n    chi = V - E + F\n    surface = \"sphere\" if chi == 2 else \"torus\" if chi == 0 else f\"genus {(2 - chi)//2}\"\n    print(f\"{name:16s} V-E+F = {V:2d} - {E:2d} + {F:2d} = {chi:2d}  -> {surface}\")\n```\n\nFive wildly different Platonic solids, one number. The torus gives 0, and that single integer proves a doughnut is not a sphere, no matter how you deform it. In general $\\chi = 2 - 2g$ for a closed orientable surface of genus $g$.\n\n> [!TIP]\n> To show two spaces *are* homeomorphic you must construct the map. To show they are *not*, find an invariant they disagree on. The second is usually far easier, which is why so much of topology is the manufacture of invariants.",
+      "quiz": {
+        "title": "Continuity",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A function is continuous when:",
+            "options": [
+              "The image of every open set is open",
+              "The preimage of every open set is open",
+              "It is bijective",
+              "It preserves distance"
+            ],
+            "answer": "The preimage of every open set is open"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The open interval (-1, 1) is homeomorphic to the whole real line.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Every convex polyhedron has Euler characteristic:",
+            "options": [
+              "0",
+              "1",
+              "2",
+              "It varies"
+            ],
+            "answer": "2"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A continuous bijection with a continuous inverse is called a ____.",
+            "options": [],
+            "answer": "homeomorphism"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "connectedness",
+      "title": "Connectedness",
+      "order": 4,
+      "content": "# Connectedness\n\nA space is **connected** if it does not fall apart into two separate pieces. Formally: $X$ is connected when it cannot be written as a union of two disjoint nonempty open sets.\n\n## The definition, and why it is stated negatively\n\nA **separation** of $X$ is a pair of open sets $U, V$ with $U \\cup V = X$, $U \\cap V = \\emptyset$, and both nonempty. $X$ is connected when no separation exists.\n\n```python\nfrom itertools import combinations\n\ndef separations(X, tau):\n    X = set(X)\n    tau = [set(U) for U in tau]\n    found = []\n    for U in tau:\n        for V in tau:\n            if U and V and not (U & V) and (U | V) == X:\n                found.append((sorted(U), sorted(V)))\n    return found\n\nspaces = {\n    \"indiscrete on {1,2,3}\": ([1,2,3], [set(), {1,2,3}]),\n    \"discrete on {1,2}\":     ([1,2],   [set(), {1}, {2}, {1,2}]),\n    \"Sierpinski on {1,2}\":   ([1,2],   [set(), {1}, {1,2}]),\n    \"two clumps\":            ([1,2,3,4], [set(), {1,2}, {3,4}, {1,2,3,4}]),\n}\nfor name, (X, tau) in spaces.items():\n    found = separations(X, tau)\n    print(f\"{name:24s} {'connected' if not found else 'disconnected by ' + str(found[0])}\")\n```\n\nThe discrete topology on two points is the simplest disconnected space, and the Sierpinski space is connected despite having only two points, because $\\{2\\}$ is not open.\n\n## Connected components\n\nThe **components** of a space are its maximal connected pieces. For a point cloud with a proximity rule, that is exactly what a graph traversal computes.\n\n```python\nimport numpy as np\n\ndef components(points, threshold):\n    n = len(points)\n    parent = list(range(n))\n\n    def find(i):\n        while parent[i] != i:\n            parent[i] = parent[parent[i]]\n            i = parent[i]\n        return i\n\n    def union(i, j):\n        parent[find(i)] = find(j)\n\n    for i in range(n):\n        for j in range(i + 1, n):\n            if np.linalg.norm(points[i] - points[j]) <= threshold:\n                union(i, j)\n\n    groups = {}\n    for i in range(n):\n        groups.setdefault(find(i), []).append(i)\n    return list(groups.values())\n\ncloud = np.array([[0.0, 0.0], [0.2, 0.1], [0.1, 0.3],      # clump A\n                  [5.0, 5.0], [5.1, 5.2], [5.3, 4.9],      # clump B\n                  [10.0, 0.0]])                             # a loner\n\nfor threshold in [0.5, 3.0, 8.0, 15.0]:\n    parts = components(cloud, threshold)\n    print(f\"threshold {threshold:5.1f}: {len(parts)} component(s)  sizes {[len(p) for p in parts]}\")\n```\n\nAs the threshold grows, components merge. Watching *when* features merge as a parameter varies is the core idea of persistent homology, the main tool of topological data analysis.\n\n## Connectedness is a topological invariant\n\nContinuous images of connected spaces are connected. So if $X$ is connected and $Y$ is not, no continuous surjection $X \\to Y$ exists, and certainly no homeomorphism.\n\nThis is what makes the intermediate value theorem true: $[a,b]$ is connected, so its continuous image is a connected subset of $\\mathbb{R}$, that is, an interval, so it contains every value between the endpoints.\n\n```python\nimport math\n\ndef ivt_witness(f, a, b, steps=200000):\n    \"\"\"A connected domain forces the image to be an interval, so a sign change means a root.\"\"\"\n    lo, hi = f(a), f(b)\n    if lo * hi > 0:\n        return None\n    for i in range(steps + 1):\n        x = a + (b - a) * i / steps\n        if abs(f(x)) < 1e-9:\n            return x\n    while hi - lo > 0:\n        break\n    left, right = a, b\n    for _ in range(200):\n        mid = (left + right) / 2\n        if f(left) * f(mid) <= 0:\n            right = mid\n        else:\n            left = mid\n    return (left + right) / 2\n\nroot = ivt_witness(lambda t: t**3 - t - 2, 1, 2)\nprint(f\"root of x^3 - x - 2: {root:.12f}, f(root) = {root**3 - root - 2:.2e}\")\nprint(\"this works only because [1,2] is connected\")\n```\n\n## Intervals are the only connected subsets of the line\n\nA subset of $\\mathbb{R}$ is connected exactly when it is an interval. If a set contains $a$ and $b$ but misses some $c$ between them, then $(-\\infty, c)$ and $(c, \\infty)$ separate it.\n\n```python\ndef is_interval(members, lo, hi, samples=2000):\n    values = [lo + (hi - lo) * i / samples for i in range(samples + 1)]\n    inside = [v for v in values if members(v)]\n    if not inside:\n        return True, None\n    for v in values:\n        if inside[0] < v < inside[-1] and not members(v):\n            return False, v\n    return True, None\n\nsets = {\n    \"(0, 1)\":                 lambda v: 0 < v < 1,\n    \"[0,1] u [2,3]\":          lambda v: 0 <= v <= 1 or 2 <= v <= 3,\n    \"everything but 0\":       lambda v: v != 0,\n    \"the whole line\":         lambda v: True,\n}\nfor name, members in sets.items():\n    ok, gap = is_interval(members, -1, 4)\n    print(f\"{name:22s} {'connected (an interval)' if ok else f'disconnected, gap near {gap:.3f}'}\")\n```\n\n## Path-connectedness\n\n$X$ is **path-connected** when any two points are joined by a continuous path inside it. Path-connected always implies connected. The converse is *almost* always true but not quite, the standard counterexample is the topologist's sine curve, the graph of $\\sin(1/x)$ for $x > 0$ together with the segment it oscillates against on the $y$-axis.\n\n```python\nimport math\n\nprint(\"y = sin(1/x) as x approaches 0:\")\nfor x in [0.1, 0.01, 0.001, 0.0001]:\n    print(f\"  x = {x:<9} sin(1/x) = {math.sin(1/x):+.6f}\")\n\ncrossings = 0\nprevious = math.sin(1/1e-4)\nsteps = 400000\nfor i in range(1, steps):\n    x = 1e-4 + (0.1 - 1e-4) * i / steps\n    current = math.sin(1/x)\n    if previous * current < 0:\n        crossings += 1\n    previous = current\nprint(f\"\\nsign changes on (0.0001, 0.1): {crossings}\")\nprint(\"the curve oscillates without limit, so no path can reach the y-axis in finite time:\")\nprint(\"the space is connected but NOT path-connected\")\n```\n\n## Why this matters computationally\n\nConnectedness is the cheapest topological invariant to compute, and it is often enough.\n\n| Question | Connectedness answers it |\n|---|---|\n| Is this maze solvable? | are start and exit in one component |\n| Is the network partitioned? | count components |\n| How many objects in this image? | components of the foreground pixels |\n| Did my mesh come apart? | components of the vertex graph |\n\n```python\nmaze = [\n    \"S.#.......\",\n    \".#.#.####.\",\n    \".#.#.#....\",\n    \".#...#.###\",\n    \".#####.#..\",\n    \".......#.E\",\n]\nfrom collections import deque\n\ngrid = [list(row) for row in maze]\nrows, cols = len(grid), len(grid[0])\nstart = next((r, c) for r in range(rows) for c in range(cols) if grid[r][c] == 'S')\nend = next((r, c) for r in range(rows) for c in range(cols) if grid[r][c] == 'E')\n\nseen, queue = {start}, deque([start])\nwhile queue:\n    r, c = queue.popleft()\n    for dr, dc in ((1,0), (-1,0), (0,1), (0,-1)):\n        nr, nc = r + dr, c + dc\n        if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] != '#' and (nr, nc) not in seen:\n            seen.add((nr, nc))\n            queue.append((nr, nc))\n\nprint(\"start and exit in the same component?\", end in seen)\nprint(f\"reachable cells: {len(seen)}\")\n```\n\n> [!NOTE]\n> Removing a point can destroy connectedness, and how many pieces you get is itself an invariant. Removing an interior point splits an interval in two and leaves a circle whole, which is the cleanest proof that they are not homeomorphic.",
+      "quiz": {
+        "title": "Connected Spaces",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The connected subsets of the real line are exactly:",
+            "options": [
+              "The finite sets",
+              "The intervals",
+              "The closed sets",
+              "The bounded sets"
+            ],
+            "answer": "The intervals"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which theorem is a direct consequence of the connectedness of an interval?",
+            "options": [
+              "Extreme value theorem",
+              "Intermediate value theorem",
+              "Heine-Borel",
+              "Bolzano-Weierstrass"
+            ],
+            "answer": "Intermediate value theorem"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Every connected space is path-connected.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Removing one interior point from a circle leaves how many components? (a number)",
+            "options": [],
+            "answer": "1"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "compactness",
+      "title": "Compactness",
+      "order": 5,
+      "content": "# Compactness\n\nCompactness is the most important idea in topology and the least intuitive on first meeting. The definition looks strange; the payoff is that it turns infinite problems into finite ones.\n\n## The definition\n\nAn **open cover** of $X$ is a collection of open sets whose union is all of $X$. A **subcover** is a sub-collection that still covers.\n\n$X$ is **compact** when *every* open cover has a **finite** subcover.\n\nThe quantifier order is what makes it hard: every cover, however perverse, must admit a finite subcollection that still does the job.\n\n## Why $(0,1)$ fails and $[0,1]$ succeeds\n\nCover $(0,1)$ with the intervals $(1/n, 1)$ for $n = 2, 3, 4, \\dots$. Every point is covered, since any $x > 0$ eventually beats $1/n$. But no finite subcollection covers: a finite family has a largest $n$, and everything below $1/n$ is missed.\n\n```python\ndef covers(intervals, samples):\n    return all(any(lo < x < hi for lo, hi in intervals) for x in samples)\n\nsamples = [10**-k for k in range(1, 9)] + [0.3, 0.5, 0.9, 0.999]\nfull_cover = [(1/n, 1.0) for n in range(2, 400)]\n\nprint(\"the whole family covers every sample point:\", covers(full_cover, samples))\n\nfor size in [3, 10, 50, 200]:\n    finite = full_cover[:size]\n    smallest = min(lo for lo, _ in finite)\n    print(f\"  first {size:3d} sets: covers? {covers(finite, samples):5}  \"\n          f\"misses everything below {smallest:.2e}\")\n```\n\nNo finite subfamily works, so $(0,1)$ is **not compact**. Add the endpoints and any cover must include a set containing 0, which sweeps up an entire tail at once, and the argument collapses. That is the Heine-Borel theorem.\n\n## Heine-Borel\n\nIn $\\mathbb{R}^n$ (and only in finite-dimensional normed spaces):\n\n$$\n\\text{compact} \\iff \\text{closed and bounded}\n$$\n\n```python\nsets = [\n    (\"[0, 1]\",              True,  True),\n    (\"(0, 1)\",              False, True),\n    (\"[0, oo)\",             True,  False),\n    (\"the whole line\",      True,  False),\n    (\"{1/n} for n >= 1\",    False, True),\n    (\"{0} u {1/n}\",         True,  True),\n]\nprint(f\"{'set':22s}{'closed':8s}{'bounded':9s}compact\")\nfor name, closed, bounded in sets:\n    print(f\"{name:22s}{str(closed):8s}{str(bounded):9s}{closed and bounded}\")\n```\n\nThe last two are the instructive pair. The set $\\{1, 1/2, 1/3, \\dots\\}$ is bounded but not closed, its limit point 0 is missing, so it is not compact. Put 0 back and it becomes compact.\n\n```python\n# a cover of {1/n} with no finite subcover: one tiny interval per point\npoints = [1/n for n in range(1, 60)]\ncover = [(p - 1e-9, p + 1e-9) for p in points]\nprint(\"each set catches exactly one point, so you need all 59:\")\nprint(\"  covered by all:\", all(any(lo < p < hi for lo, hi in cover) for p in points))\nprint(\"  covered by 58: \", all(any(lo < p < hi for lo, hi in cover[:-1]) for p in points))\nprint(\"adding 0 changes everything: any set containing 0 catches infinitely many points at once\")\n```\n\n## Sequential compactness\n\nIn a metric space, compactness is equivalent to: **every sequence has a convergent subsequence with its limit inside the set**. This is usually the more usable form, and it is the Bolzano-Weierstrass theorem.\n\n```python\nimport math\n\ndef wanders_off(sequence_fn, n=200000):\n    values = [sequence_fn(i) for i in range(1, 60)]\n    return values\n\nprint(\"on [0,1], the sequence sin(n) has convergent subsequences (values pile up):\")\nvalues = sorted(math.sin(n) for n in range(1, 2000))\ngaps = [b - a for a, b in zip(values, values[1:])]\nprint(f\"  2000 values in [-1,1], largest gap between neighbours: {max(gaps):.5f}\")\nprint(\"  points cluster, so a convergent subsequence must exist\")\n\nprint(\"\\non [0, oo), the sequence a_n = n has no convergent subsequence:\")\nprint(\"  terms:\", [n for n in range(1, 8)], \"... they escape every bounded window\")\n```\n\n## What compactness buys you\n\nThis is the real reason to care. On a compact space, continuous functions are extremely well behaved:\n\n- **Extreme value theorem.** A continuous real function on a compact set attains its maximum and minimum.\n- **Uniform continuity.** Continuity on a compact set upgrades to uniform continuity automatically.\n- A continuous bijection from a compact space to a Hausdorff space is automatically a homeomorphism.\n\n```python\nimport math\n\ndef scan(f, a, b, steps=200000, open_ends=False):\n    xs = [a + (b - a) * i / steps for i in range(steps + 1)]\n    if open_ends:\n        xs = xs[1:-1]\n    values = [f(x) for x in xs]\n    return min(values), max(values)\n\nf = lambda x: x * (1 - x) + 0.3 * math.sin(20 * x)\n\nlo, hi = scan(f, 0, 1)\nprint(f\"on the compact [0,1]:  min {lo:.6f}  max {hi:.6f}  (both attained)\")\n\ng = lambda x: 1 / x\nlo, hi = scan(g, 0, 1, open_ends=True)\nprint(f\"on the open (0,1), 1/x: min {lo:.6f}  max {hi:.3e}  (max not attained, it is unbounded)\")\nprint(\"compactness is exactly what rules that out\")\n```\n\n## Uniform continuity, measured\n\n$f$ is uniformly continuous when one $\\delta$ works for every point at once. On a compact set that comes free; on a non-compact one it can fail.\n\n```python\nimport math\n\ndef worst_delta(f, points, epsilon):\n    \"\"\"Smallest delta needed anywhere in the sample: if it collapses to 0, uniformity fails.\"\"\"\n    needed = []\n    for x in points:\n        delta = 1.0\n        while delta > 1e-12 and abs(f(x + delta) - f(x)) >= epsilon:\n            delta /= 2\n        needed.append(delta)\n    return min(needed)\n\nsquare = lambda x: x * x\nreciprocal = lambda x: 1 / x\n\ncompact_points = [i / 50 for i in range(1, 51)]\nshrinking_points = [10**-k for k in range(1, 9)]\n\nprint(\"x^2 on [0,1] (compact):\")\nfor epsilon in [0.1, 0.01]:\n    print(f\"   epsilon {epsilon}: one delta works everywhere, smallest needed {worst_delta(square, compact_points, epsilon):.2e}\")\n\nprint(\"1/x on (0,1] (not compact):\")\nfor epsilon in [0.1, 0.01]:\n    print(f\"   epsilon {epsilon}: needed delta collapses to {worst_delta(reciprocal, shrinking_points, epsilon):.2e}\")\n```\n\nFor $1/x$ the required $\\delta$ shrinks without bound as you approach 0, so no single $\\delta$ serves the whole domain. Uniform continuity fails, exactly because $(0,1]$ is not compact.\n\n## Compactness is preserved by continuous maps\n\nIf $f$ is continuous and $X$ is compact, then $f(X)$ is compact. Combine that with Heine-Borel and the extreme value theorem falls out in one line: $f([a,b])$ is compact, hence closed and bounded, hence contains its supremum.\n\n```python\nimport math\n\nsamples = [i / 100000 for i in range(100001)]        # a fine sample of [0,1]\nfor name, f in [(\"sin\", math.sin), (\"exp\", math.exp), (\"x^3 - x\", lambda t: t**3 - t)]:\n    image = [f(x) for x in samples]\n    print(f\"{name:8s} image spans [{min(image):.6f}, {max(image):.6f}], \"\n          f\"bounded and both ends attained\")\n```\n\n> [!IMPORTANT]\n> \"Closed and bounded implies compact\" is true in $\\mathbb{R}^n$ and **false** in general. In infinite-dimensional spaces the closed unit ball is bounded, closed, and not compact, which is why functional analysis is a separate subject with its own hard theorems.",
+      "quiz": {
+        "title": "Compact Spaces",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A space is compact when every open cover has:",
+            "options": [
+              "A finite subcover",
+              "A countable subcover",
+              "A disjoint subcover",
+              "Exactly one element"
+            ],
+            "answer": "A finite subcover"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "By Heine-Borel, a subset of R^n is compact exactly when it is:",
+            "options": [
+              "Open and bounded",
+              "Closed and bounded",
+              "Connected and closed",
+              "Finite"
+            ],
+            "answer": "Closed and bounded"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The open interval (0,1) is compact.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Continuity on a compact set automatically upgrades to:",
+            "options": [
+              "Differentiability",
+              "Uniform continuity",
+              "Linearity",
+              "Boundedness of the derivative"
+            ],
+            "answer": "Uniform continuity"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "homotopy-and-the-fundamental-group",
+      "title": "Homotopy and the Fundamental Group",
+      "order": 6,
+      "content": "# Homotopy and the Fundamental Group\n\nConnectedness counts pieces. To count **holes** you need a finer tool, and the fundamental group is the first one: it turns loops in a space into an algebraic group, so questions about shape become questions about group theory.\n\n## Homotopy: continuous deformation\n\nTwo paths with the same endpoints are **homotopic** if one can be deformed continuously into the other without leaving the space. Formally, a homotopy is a continuous family $H(s,t)$ interpolating between them.\n\nIn a space with no holes, every loop shrinks to a point. In a space with a hole, a loop around it is stuck.\n\n```python\nimport numpy as np\n\ndef straight_line_homotopy(path_a, path_b, allowed, steps=40):\n    \"\"\"The obvious deformation: slide each point of one path to the other in a straight line.\n    Works whenever the space is convex; fails when the line leaves the space.\"\"\"\n    ss = np.linspace(0, 1, steps)\n    for t in np.linspace(0, 1, steps):\n        for s in ss:\n            point = (1 - t) * np.array(path_a(s)) + t * np.array(path_b(s))\n            if not allowed(point):\n                return False, point, t\n    return True, None, None\n\nloop = lambda s: (np.cos(2*np.pi*s), np.sin(2*np.pi*s))\nconstant = lambda s: (1.0, 0.0)\n\nin_disc = lambda p: np.linalg.norm(p) <= 1.0 + 1e-9\nin_annulus = lambda p: 0.5 - 1e-9 <= np.linalg.norm(p) <= 1.0 + 1e-9\n\nok, bad, t = straight_line_homotopy(loop, constant, in_disc)\nprint(\"shrink the unit circle to a point inside the disc:\", ok)\n\nok, bad, t = straight_line_homotopy(loop, constant, in_annulus)\nprint(\"same deformation inside the annulus:\", ok,\n      f\"-> leaves the space at t={t:.2f}, point {np.round(bad, 3)} (radius {np.linalg.norm(bad):.3f})\")\nprint(\"the path is forced through the missing centre: the hole blocks it\")\n```\n\n## Winding number\n\nFor loops in the punctured plane, the invariant that detects the hole is the **winding number**: how many times the loop goes around the puncture, counted with sign. It is computed by accumulating the change in angle.\n\n```python\nimport numpy as np\n\ndef winding_number(path, steps=20000, centre=(0.0, 0.0)):\n    total = 0.0\n    previous = None\n    for i in range(steps + 1):\n        x, y = path(i / steps)\n        angle = np.arctan2(y - centre[1], x - centre[0])\n        if previous is not None:\n            delta = angle - previous\n            # unwrap the jump across the branch cut at pi\n            delta = (delta + np.pi) % (2*np.pi) - np.pi\n            total += delta\n        previous = angle\n    return total / (2*np.pi)\n\npaths = {\n    \"once around\":        lambda s: (np.cos(2*np.pi*s), np.sin(2*np.pi*s)),\n    \"twice around\":       lambda s: (np.cos(4*np.pi*s), np.sin(4*np.pi*s)),\n    \"backwards\":          lambda s: (np.cos(-2*np.pi*s), np.sin(-2*np.pi*s)),\n    \"small loop off-axis\": lambda s: (3 + 0.5*np.cos(2*np.pi*s), 0.5*np.sin(2*np.pi*s)),\n    \"out and back\":       lambda s: (1 + 2*abs(0.5 - s), 0.0),\n}\nfor name, path in paths.items():\n    print(f\"{name:22s} winding number = {winding_number(path):+.6f}\")\n```\n\nThe numbers come out as integers: $+1$, $+2$, $-1$, $0$, $0$. An integer-valued quantity that varies continuously under deformation cannot change at all, which is precisely why it is an invariant.\n\n## The fundamental group\n\nFix a basepoint. Loops based there, considered up to homotopy, form a group $\\pi_1(X)$:\n\n- the operation is concatenation, walk one loop then the other,\n- the identity is the constant loop,\n- the inverse is the same loop traversed backwards.\n\n| Space | $\\pi_1$ | Meaning |\n|---|---|---|\n| Disc, plane, any convex set | trivial | every loop shrinks |\n| Circle, annulus, punctured plane | $\\mathbb{Z}$ | winding number |\n| Torus | $\\mathbb{Z} \\times \\mathbb{Z}$ | two independent directions |\n| Figure eight | free group on 2 generators | non-abelian |\n| Sphere $S^2$ | trivial | loops slide off |\n\nA space with trivial fundamental group is called **simply connected**.\n\n```python\nimport numpy as np\n\ndef winding_number(path, steps=8000):\n    total, previous = 0.0, None\n    for i in range(steps + 1):\n        x, y = path(i / steps)\n        angle = np.arctan2(y, x)\n        if previous is not None:\n            total += (angle - previous + np.pi) % (2*np.pi) - np.pi\n        previous = angle\n    return total / (2*np.pi)\n\n# concatenating loops adds winding numbers: pi_1 of the punctured plane is the integers\ndef concatenate(p, q):\n    return lambda s: p(2*s) if s <= 0.5 else q(2*s - 1)\n\nonce = lambda s: (np.cos(2*np.pi*s), np.sin(2*np.pi*s))\nback = lambda s: (np.cos(-2*np.pi*s), np.sin(-2*np.pi*s))\n\nprint(\"winding(once)              =\", round(winding_number(once)))\nprint(\"winding(once then once)    =\", round(winding_number(concatenate(once, once))))\nprint(\"winding(once then back)    =\", round(winding_number(concatenate(once, back))))\nprint(\"\\nconcatenation adds, inverse cancels: this is exactly the group Z\")\n```\n\nThe map \"loop maps to its winding number\" is a group isomorphism $\\pi_1(\\mathbb{R}^2 \\setminus \\{0\\}) \\cong \\mathbb{Z}$. Topology has become arithmetic.\n\n## Consequences\n\nTwo famous theorems fall out of the fact that $\\pi_1$ of the disc is trivial while $\\pi_1$ of the circle is $\\mathbb{Z}$:\n\n- **Brouwer fixed point theorem.** Every continuous map from a disc to itself has a fixed point. Stir your coffee however you like, some point ends where it started.\n- **Borsuk-Ulam.** At any moment there are two antipodal points on Earth with identical temperature and pressure.\n\n```python\nimport numpy as np\n\ndef find_fixed_point(f, steps=400):\n    \"\"\"Brouwer guarantees one exists; iterate to find it.\"\"\"\n    point = np.array([0.3, -0.7])\n    for _ in range(steps):\n        point = f(point)\n    return point\n\ndef squash_and_rotate(p):\n    angle = 0.7\n    rotation = np.array([[np.cos(angle), -np.sin(angle)],\n                         [np.sin(angle),  np.cos(angle)]])\n    return 0.6 * (rotation @ p) + np.array([0.2, 0.1])\n\nfixed = find_fixed_point(squash_and_rotate)\nprint(\"fixed point:\", np.round(fixed, 10))\nprint(\"f(fixed) = \", np.round(squash_and_rotate(fixed), 10))\nprint(\"inside the unit disc?\", np.linalg.norm(fixed) <= 1)\n```\n\n## Euler characteristic and the classification of surfaces\n\nEvery closed orientable surface is a sphere with $g$ handles, and $\\chi = 2 - 2g$ determines it completely. That is a full classification, and it is computed by counting.\n\n```python\nsurfaces = {\n    \"sphere\":        (0,),\n    \"torus\":         (1,),\n    \"double torus\":  (2,),\n    \"triple torus\":  (3,),\n}\nprint(f\"{'surface':16s}{'genus':7s}{'chi':6s}{'pi_1 rank'}\")\nfor name, (g,) in surfaces.items():\n    print(f\"{name:16s}{g:<7d}{2 - 2*g:<6d}{2*g}\")\n\n# Euler characteristic from a triangulation, independent of how you triangulate\ntriangulations = {\n    \"tetrahedron (sphere)\":  (4, 6, 4),\n    \"octahedron (sphere)\":   (6, 12, 8),\n    \"icosahedron (sphere)\":  (12, 30, 20),\n    \"torus, 3x3 grid\":       (9, 27, 18),\n    \"torus, 4x4 grid\":       (16, 48, 32),\n}\nprint()\nfor name, (V, E, F) in triangulations.items():\n    print(f\"{name:24s} V-E+F = {V - E + F:+d}\")\n```\n\nDifferent triangulations of the same surface give the same number, which is what makes it an invariant rather than an artefact of how you chopped the surface up. The sphere gives 2 and the torus gives 0, no matter how finely you subdivide.\n\n> [!TIP]\n> The fundamental group only sees one-dimensional holes. A sphere has a cavity but no loops that catch on it, so $\\pi_1(S^2)$ is trivial. Detecting higher-dimensional holes needs homology, which is the natural next course after this one.",
+      "quiz": {
+        "title": "Loops and Holes",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The fundamental group of the punctured plane is:",
+            "options": [
+              "Trivial",
+              "The integers",
+              "The integers times the integers",
+              "A free group on two generators"
+            ],
+            "answer": "The integers"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A space where every loop shrinks to a point is called:",
+            "options": [
+              "Compact",
+              "Connected",
+              "Simply connected",
+              "Hausdorff"
+            ],
+            "answer": "Simply connected"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The fundamental group of the sphere is trivial, even though the sphere encloses a cavity.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "For a closed orientable surface of genus g, the Euler characteristic is 2 - 2 times ____.",
+            "options": [],
+            "answer": "g"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-a-computational-topology-toolkit",
+      "title": "Final Project: A Computational Topology Toolkit",
+      "order": 7,
+      "content": "# Final Project: A Computational Topology Toolkit\n\nTopology has a reputation for being unimplementable. It is not: finite spaces, point clouds, and simplicial complexes are all concrete data structures. Build `topology_toolkit.py` and make the abstractions run.\n\n## What to build\n\n**Finite topological spaces**\n1. `is_topology(X, collection)`, checking the three axioms and naming which fails.\n2. `generate_topology(X, basis)`, close a basis under unions and finite intersections.\n3. `separation_axioms(X, tau)`, report $T_0$, $T_1$, $T_2$.\n4. `is_connected(X, tau)`, by searching for a separation.\n5. `continuous_maps(X, tau_X, Y, tau_Y)`, enumerate every continuous function between two small spaces.\n\n**Point clouds**\n6. `components(points, threshold)` with union-find.\n7. `persistence(points)`, sweep the threshold and record when components merge.\n\n**Simplicial complexes**\n8. `euler_characteristic(complex)`, count simplices with alternating signs.\n9. `betti_0(complex)`, the number of connected components of the 1-skeleton.\n\n## Persistence: the payoff exercise\n\nSweep the connection threshold from 0 upward and record the value at which each component dies by merging into another. Long-lived components are real structure; short-lived ones are noise. This is a genuine tool used on real data.\n\n```python\nimport numpy as np\n\ndef persistence(points):\n    \"\"\"Return (birth, death) for each component as the threshold grows.\n    Components are born at 0 and die when merged into an older one.\"\"\"\n    n = len(points)\n    parent, size = list(range(n)), [1]*n\n    death = [None]*n\n\n    def find(i):\n        while parent[i] != i:\n            parent[i] = parent[parent[i]]\n            i = parent[i]\n        return i\n\n    edges = sorted(((float(np.linalg.norm(points[i] - points[j])), i, j)\n                    for i in range(n) for j in range(i+1, n)))\n\n    for distance, i, j in edges:\n        a, b = find(i), find(j)\n        if a == b:\n            continue\n        younger, older = (a, b) if size[a] < size[b] else (b, a)\n        death[younger] = distance          # the younger component dies here\n        parent[younger] = older\n        size[older] += size[younger]\n\n    return [(0.0, d) for d in death if d is not None] + \\\n           [(0.0, float('inf')) for d in death if d is None]\n\nrng = np.random.default_rng(3)\ncloud = np.vstack([\n    rng.normal([0, 0], 0.15, size=(12, 2)),\n    rng.normal([4, 0], 0.15, size=(12, 2)),\n    rng.normal([2, 4], 0.15, size=(12, 2)),\n])\n\nbars = sorted(persistence(cloud), key=lambda b: -(b[1] - b[0]))\nprint(\"longest-lived components (birth, death, lifetime):\")\nfor birth, deathval in bars[:6]:\n    lifetime = deathval - birth\n    print(f\"  born {birth:.3f}  died {deathval if deathval != float('inf') else 'never':>8}\"\n          f\"  lifetime {lifetime if lifetime != float('inf') else 'infinite'}\")\nprint(f\"\\ntotal components tracked: {len(bars)}\")\nprint(\"three long bars plus one infinite bar = three genuine clusters\")\n```\n\nThe three planted clusters show up as long bars; the within-cluster merges are short bars, that is, noise. You never told the algorithm there were three clusters.\n\n## Enumerate continuous maps\n\nOn small finite spaces you can list every continuous function, which makes the definition concrete in a way no amount of prose does.\n\n```python\nfrom itertools import product\n\ndef continuous_maps(X, tau_X, Y, tau_Y):\n    tau_X = [frozenset(U) for U in tau_X]\n    found = []\n    for images in product(Y, repeat=len(X)):\n        f = dict(zip(X, images))\n        if all(frozenset(x for x in X if f[x] in set(V)) in tau_X for V in tau_Y):\n            found.append(dict(f))\n    return found\n\nX = [1, 2]\ntau_X = [set(), {1}, {1, 2}]                 # Sierpinski\nY = ['a', 'b']\ntau_Y = [set(), {'a'}, {'a', 'b'}]           # Sierpinski again\n\nmaps = continuous_maps(X, tau_X, Y, tau_Y)\nprint(f\"{len(maps)} continuous maps out of {len(Y)**len(X)} total functions:\")\nfor f in maps:\n    print(\"  \", f)\n\ndiscrete = [set(), {1}, {2}, {1, 2}]\nprint(f\"\\nfrom the discrete topology instead: \"\n      f\"{len(continuous_maps(X, discrete, Y, tau_Y))} of 4 (every function is continuous)\")\n```\n\nThe discrete topology makes every function continuous; a coarser domain makes fewer maps continuous. Finer domain, more continuous maps out, is worth internalising.\n\n## Verify Euler characteristic is an invariant\n\nTriangulate the same surface two different ways and confirm you get the same number.\n\n```python\ndef chi(V, E, F):\n    return V - E + F\n\ntriangulations = {\n    \"sphere as a tetrahedron\":   (4, 6, 4),\n    \"sphere as an octahedron\":   (6, 12, 8),\n    \"sphere as an icosahedron\":  (12, 30, 20),\n    \"sphere, subdivided cube\":   (26, 72, 48),\n    \"torus, 3x3 grid\":           (9, 27, 18),\n    \"torus, 5x5 grid\":           (25, 75, 50),\n}\nfor name, (V, E, F) in triangulations.items():\n    print(f\"{name:28s} chi = {chi(V, E, F):+d}\")\n\nprint(\"\\nevery sphere triangulation gives +2, every torus gives 0,\")\nprint(\"regardless of how finely you subdivide: that is what 'invariant' means\")\n```\n\n## Stretch goals\n\n- **Vietoris-Rips complex.** Build it from a point cloud at a given threshold and compute $\\chi$ as the threshold varies.\n- **Betti numbers via linear algebra.** Compute $b_0$ and $b_1$ as ranks of boundary matrices over $GF(2)$, reusing the rank code from the linear algebra course.\n- **Barcode plot.** Render the persistence diagram with matplotlib and identify the noise threshold by eye.\n- **Count topologies.** Extend the enumerator to $n = 4$ and confirm the known answer of 355. Naive enumeration will not get there, you will need to prune.\n- **Homeomorphism checker.** For finite spaces, decide homeomorphism by comparing invariants first and only then searching for a bijection.\n\n## Definition of done\n\n- `is_topology` names the failing axiom, with a concrete witness (which union or intersection is missing).\n- `persistence` recovers the correct cluster count on synthetic data with three, five, and one planted clusters.\n- `continuous_maps` agrees with a hand-worked example on a three-point space.\n- `euler_characteristic` gives 2 for every sphere triangulation you feed it and 0 for every torus.\n- A README explaining, in your own words, why the definition of compactness quantifies over *all* open covers, and what breaks if you weaken it.",
+      "requiresSubmission": true
+    }
+  ]
+}

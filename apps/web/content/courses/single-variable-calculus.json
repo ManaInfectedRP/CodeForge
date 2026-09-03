@@ -1,0 +1,335 @@
+{
+  "slug": "single-variable-calculus",
+  "title": "Single-Variable Calculus",
+  "description": "Limits, derivatives, integrals, techniques of integration, and Taylor series for functions of one variable, with every derivative, integral, and error estimate computed live in your browser.",
+  "pathSlug": "calculus",
+  "pathName": "Single-Variable Calculus",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "limits-and-continuity",
+      "title": "Limits and Continuity",
+      "order": 1,
+      "content": "# Limits and Continuity\n\nCalculus is built on one idea: what happens as you get arbitrarily close to something without necessarily arriving. That idea is the **limit**, and everything else, derivatives, integrals, series, is a limit in disguise.\n\n## What a limit says\n\n$$\n\\lim_{x \\to a} f(x) = L\n$$\n\nmeans you can force $f(x)$ as close to $L$ as you like by taking $x$ close enough to $a$. Note what it does *not* say: nothing about $f(a)$ itself. The function need not even be defined there.\n\nThe standard example:\n\n$$\n\\lim_{x \\to 1} \\frac{x^2 - 1}{x - 1}\n$$\n\nAt $x = 1$ this is $0/0$, undefined. But everywhere else it equals $x + 1$, so the limit is 2.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nf = (x**2 - 1) / (x - 1)\n\nprint(\"f simplified:\", sp.simplify(f))\nprint(\"limit as x -> 1:\", sp.limit(f, x, 1))\nprint(\"f(1) itself:\", \"undefined (0/0)\")\n\nfor h in [0.1, 0.01, 0.001, 0.0001]:\n    value = ((1 + h)**2 - 1) / h\n    print(f\"  x = {1 + h:<8} f(x) = {value}\")\n```\n\nThe numbers march toward 2 without the function ever being evaluated at 1. That is the limit, made concrete.\n\n## One-sided limits\n\nApproaching from the left and the right can give different answers. The two-sided limit exists only when they agree.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nstep = sp.sign(x)\n\nprint(\"from the left: \", sp.limit(step, x, 0, '-'))\nprint(\"from the right:\", sp.limit(step, x, 0, '+'))\nprint(\"two-sided limit does not exist, the sides disagree\")\n\nprint(\"1/x from the right:\", sp.limit(1/x, x, 0, '+'))\nprint(\"1/x from the left: \", sp.limit(1/x, x, 0, '-'))\n```\n\n## Limits at infinity\n\nFor rational functions, only the highest powers matter:\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\ncases = [\n    (3*x**2 + 5*x) / (2*x**2 - 7),     # equal degree -> ratio of leading coefficients\n    (x + 1) / (x**2 + 3),              # bottom wins -> 0\n    (x**3 - 2) / (4*x + 1),            # top wins -> infinite\n]\nfor f in cases:\n    print(f\"{str(f):32s} -> {sp.limit(f, x, sp.oo)}\")\n```\n\n## The famous ones\n\nTwo limits show up constantly and are worth knowing on sight:\n\n$$\n\\lim_{x \\to 0}\\frac{\\sin x}{x} = 1, \\qquad \\lim_{n \\to \\infty}\\left(1 + \\frac{1}{n}\\right)^{n} = e\n$$\n\n```python\nimport sympy as sp\nimport math\n\nx, n = sp.symbols('x n')\nprint(\"sin(x)/x as x -> 0:\", sp.limit(sp.sin(x)/x, x, 0))\nprint(\"(1 + 1/n)^n as n -> oo:\", sp.limit((1 + 1/n)**n, n, sp.oo))\n\nfor k in [1, 10, 1000, 10**6]:\n    print(f\"  n = {k:<9} gives {(1 + 1/k)**k:.10f}   e = {math.e:.10f}\")\n```\n\nThe convergence to $e$ is slow, a million terms buys you six digits. That slowness is itself worth noticing: \"converges\" and \"converges usefully fast\" are different claims.\n\n## Continuity\n\n$f$ is **continuous at $a$** when three things all hold:\n\n1. $f(a)$ is defined,\n2. the limit as $x \\to a$ exists,\n3. they are equal: $\\lim_{x \\to a} f(x) = f(a)$.\n\nInformally, you can draw it without lifting the pen. Failures come in flavours: removable holes, jumps, and infinite blowups.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nfunctions = {\n    \"removable hole (x^2-1)/(x-1) at 1\": ((x**2 - 1)/(x - 1), 1),\n    \"jump sign(x) at 0\":                 (sp.sign(x), 0),\n    \"infinite 1/x at 0\":                 (1/x, 0),\n    \"continuous sin(x) at 0\":            (sp.sin(x), 0),\n}\nfor name, (f, point) in functions.items():\n    left = sp.limit(f, x, point, '-')\n    right = sp.limit(f, x, point, '+')\n    print(f\"{name:38s} left={str(left):8s} right={str(right):8s} \"\n          f\"matches? {left == right}\")\n```\n\n## Why continuity buys you things\n\nContinuous functions on a closed interval come with guarantees you get for free:\n\n- **Intermediate value theorem.** If $f$ is continuous on $[a,b]$ and $y$ sits between $f(a)$ and $f(b)$, some $c$ in the interval has $f(c) = y$. That is what makes bisection root-finding work.\n- **Extreme value theorem.** A continuous function on a closed bounded interval attains a maximum and a minimum.\n\n```python\ndef bisect(f, lo, hi, tolerance=1e-12):\n    assert f(lo) * f(hi) < 0, \"signs must differ, IVT needs a sign change\"\n    steps = 0\n    while hi - lo > tolerance:\n        mid = (lo + hi) / 2\n        if f(lo) * f(mid) <= 0:\n            hi = mid\n        else:\n            lo = mid\n        steps += 1\n    return (lo + hi) / 2, steps\n\nimport math\nroot, steps = bisect(lambda t: t**3 - t - 2, 1, 2)\nprint(f\"root of x^3 - x - 2: {root:.12f} in {steps} steps\")\nprint(\"check f(root) =\", root**3 - root - 2)\nprint(\"cos(x) = x at:\", bisect(lambda t: math.cos(t) - t, 0, 1)[0])\n```\n\nBisection is nothing but the intermediate value theorem applied over and over. It is slow but it cannot fail, which is more than most root-finders can say.\n\n> [!NOTE]\n> `sp.oo` is sympy's infinity. `sp.limit(f, x, sp.oo)` asks about behaviour at infinity, and `sp.limit(f, x, 0, '+')` restricts the approach to one side.",
+      "quiz": {
+        "title": "Limits",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "TRUE_FALSE",
+            "prompt": "A function must be defined at a point for the limit at that point to exist.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A two-sided limit exists exactly when:",
+            "options": [
+              "The function is defined there",
+              "The one-sided limits agree",
+              "The function is increasing",
+              "The derivative exists"
+            ],
+            "answer": "The one-sided limits agree"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which theorem guarantees that bisection root-finding works?",
+            "options": [
+              "Mean value theorem",
+              "Intermediate value theorem",
+              "Extreme value theorem",
+              "Fundamental theorem of calculus"
+            ],
+            "answer": "Intermediate value theorem"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The limit of sin(x)/x as x approaches 0 equals ____.",
+            "options": [],
+            "answer": "1"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "the-derivative",
+      "title": "The Derivative",
+      "order": 2,
+      "content": "# The Derivative\n\nThe derivative measures instantaneous rate of change. It is defined as a limit of average rates over shrinking intervals:\n\n$$\nf'(a) = \\lim_{h \\to 0} \\frac{f(a+h) - f(a)}{h}\n$$\n\nGeometrically it is the slope of the tangent line, the limit of secant slopes as the second point slides in.\n\n## From the definition\n\nWatch the difference quotient converge for $f(x) = x^2$ at $x = 3$, where the answer should be $2 \\cdot 3 = 6$:\n\n```python\nf = lambda x: x**2\na = 3.0\n\nfor h in [1, 0.1, 0.01, 0.001, 1e-6, 1e-9]:\n    forward = (f(a + h) - f(a)) / h\n    central = (f(a + h) - f(a - h)) / (2 * h)\n    print(f\"h = {h:<8} forward = {forward:.10f}   central = {central:.10f}\")\n```\n\nTwo things to notice. The **central difference** is dramatically more accurate for the same $h$, its error shrinks like $h^2$ instead of $h$. And at $h = 10^{-9}$ the forward version starts *losing* accuracy: subtracting two nearly equal floats destroys precision. Smaller is not always better in floating point.\n\nsympy takes the limit symbolically, with no rounding at all:\n\n```python\nimport sympy as sp\n\nx, h = sp.symbols('x h')\nf = x**2\n\nquotient = (f.subs(x, x + h) - f) / h\nprint(\"difference quotient:\", sp.simplify(quotient))\nprint(\"limit as h -> 0:    \", sp.limit(quotient, h, 0))\nprint(\"sympy diff:         \", sp.diff(f, x))\n```\n\n## The rules\n\nEvery derivative you will ever compute comes from these:\n\n| Rule | Statement |\n|---|---|\n| Power | $\\frac{d}{dx}x^{n} = nx^{n-1}$ |\n| Sum | $(f+g)' = f' + g'$ |\n| Product | $(fg)' = f'g + fg'$ |\n| Quotient | $\\left(\\frac{f}{g}\\right)' = \\frac{f'g - fg'}{g^{2}}$ |\n| Chain | $(f \\circ g)'(x) = f'(g(x))\\,g'(x)$ |\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nf, g = sp.sin(x), x**3\n\nprint(\"product rule:\", sp.simplify(sp.diff(f * g, x) - (sp.diff(f, x)*g + f*sp.diff(g, x))) == 0)\nprint(\"quotient rule:\", sp.simplify(\n    sp.diff(f / g, x) - (sp.diff(f, x)*g - f*sp.diff(g, x)) / g**2) == 0)\n\ncomposite = sp.sin(x**2 + 1)\nprint(\"chain rule on sin(x^2+1):\", sp.diff(composite, x))\n```\n\nThe chain rule is the one that matters most in practice: it is exactly what backpropagation in a neural network is doing, applied a few million times.\n\n## A gallery of derivatives\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nfor f in [x**5, sp.sin(x), sp.cos(x), sp.exp(x), sp.log(x),\n          sp.tan(x), sp.sqrt(x), sp.atan(x), x**x]:\n    print(f\"d/dx {str(f):12s} = {sp.simplify(sp.diff(f, x))}\")\n```\n\nTwo worth staring at: $e^x$ is its own derivative, the only function (up to a constant factor) with that property, and $x^x$ needs logarithmic differentiation, which is why its derivative looks so strange.\n\n## Higher derivatives\n\nDifferentiate repeatedly to get acceleration, curvature, and the coefficients of Taylor series:\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nposition = x**4 - 3*x**3 + 2*x\n\nfor order in range(1, 5):\n    print(f\"derivative {order}: {sp.diff(position, x, order)}\")\n\nprint(\"\\nsin cycles with period 4:\")\nfor order in range(1, 6):\n    print(f\"  d^{order}/dx^{order} sin(x) =\", sp.diff(sp.sin(x), x, order))\n```\n\n## Differentiability implies continuity, not the reverse\n\nA function must be continuous to be differentiable, but continuity is not enough. $|x|$ is continuous everywhere and has no derivative at 0, the left slope is $-1$ and the right slope is $+1$.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nf = sp.Abs(x)\n\nprint(\"continuous at 0:\", sp.limit(f, x, 0, '-') == sp.limit(f, x, 0, '+') == 0)\nprint(\"derivative at 0:\", sp.diff(f, x).subs(x, 0), \"(sympy reports the subgradient)\")\n\nfor h in [0.1, 0.01, 0.001]:\n    print(f\"  h = {h:<8} right slope = {(abs(0+h) - 0)/h:+.1f}   \"\n          f\"left slope = {(abs(0-h) - 0)/(-h):+.1f}\")\n```\n\nThe two sides never agree, no matter how small $h$ gets, so the limit defining $f'(0)$ does not exist. This is exactly why ReLU networks need a special case at zero.\n\n## Newton's method\n\nThe derivative gives you the best linear approximation near a point, and following that line to its root gives a root-finder that converges *quadratically*, roughly doubling the correct digits each step:\n\n$$\nx_{n+1} = x_n - \\frac{f(x_n)}{f'(x_n)}\n$$\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nf = x**3 - x - 2\nfprime = sp.diff(f, x)\n\nguess = 1.5\nfor step in range(6):\n    value = float(f.subs(x, guess))\n    guess = guess - value / float(fprime.subs(x, guess))\n    print(f\"step {step}: x = {guess:.15f}   f(x) = {float(f.subs(x, guess)):+.2e}\")\n\nprint(\"sympy's exact root:\", sp.nsolve(f, x, 1.5))\n```\n\nCompare that against the bisection run from lesson 1: bisection needed about forty steps for the same accuracy, Newton needs four. The price is that Newton can diverge if the starting guess is poor or the derivative is near zero.\n\n> [!TIP]\n> `sp.diff(f, x, n)` takes the $n$-th derivative directly. And `sp.lambdify(x, f)` turns a sympy expression into a fast plain-Python function when you need to evaluate it thousands of times.",
+      "quiz": {
+        "title": "Derivatives",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which rule underlies backpropagation in neural networks?",
+            "options": [
+              "Product rule",
+              "Quotient rule",
+              "Chain rule",
+              "Power rule"
+            ],
+            "answer": "Chain rule"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Every continuous function is differentiable.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Making h smaller and smaller in a difference quotient eventually:",
+            "options": [
+              "Always improves accuracy",
+              "Loses accuracy to floating-point cancellation",
+              "Has no effect",
+              "Causes the limit to diverge"
+            ],
+            "answer": "Loses accuracy to floating-point cancellation"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Which function is its own derivative? Write it as e^x.",
+            "options": [],
+            "answer": "e^x"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "applications-of-the-derivative",
+      "title": "Applications of the Derivative",
+      "order": 3,
+      "content": "# Applications of the Derivative\n\nA derivative is a rate of change, so anything that changes is fair game. This lesson is the practical payoff: finding maxima and minima, sketching curves, relating rates, and approximating.\n\n## Critical points and extrema\n\nAt an interior maximum or minimum the tangent is flat, so $f'(x) = 0$ (or $f'$ fails to exist). Those are **critical points**, and the second derivative tells you which kind:\n\n- $f''(x) > 0$, the curve is concave up, so a local **minimum**.\n- $f''(x) < 0$, concave down, a local **maximum**.\n- $f''(x) = 0$, inconclusive, look closer.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nf = x**3 - 6*x**2 + 9*x + 1\n\nfirst, second = sp.diff(f, x), sp.diff(f, x, 2)\ncriticals = sp.solve(first, x)\nprint(\"f'  =\", first)\nprint(\"f'' =\", second)\n\nfor c in criticals:\n    curvature = second.subs(x, c)\n    kind = \"minimum\" if curvature > 0 else \"maximum\" if curvature < 0 else \"inconclusive\"\n    print(f\"  x = {c}: f = {f.subs(x, c)}, f'' = {curvature}  -> local {kind}\")\n\nprint(\"inflection point at x =\", sp.solve(second, x))\n```\n\n## A real optimisation problem\n\nThe classic: from a sheet of card $20 \\times 20$, cut squares of side $c$ from the corners and fold up a box. Maximise the volume.\n\n$$\nV(c) = c\\,(20 - 2c)^2, \\qquad 0 < c < 10\n$$\n\n```python\nimport sympy as sp\n\nc = sp.symbols('c', positive=True)\nvolume = c * (20 - 2*c)**2\n\ncandidates = sp.solve(sp.diff(volume, c), c)\nfeasible = [v for v in candidates if 0 < v < 10]\nbest = max(feasible, key=lambda v: volume.subs(c, v))\n\nprint(\"V(c)      =\", sp.expand(volume))\nprint(\"candidates:\", candidates, \" feasible:\", feasible)\nprint(f\"best cut  = {best} giving volume {volume.subs(c, best)}\")\nprint(\"second derivative there:\", sp.diff(volume, c, 2).subs(c, best), \"(negative, so a max)\")\n```\n\nThe answer is $c = 10/3$ with volume $16000/27 \\approx 592.6$. Note the discarded candidate $c = 10$: mathematically a critical point, physically a box with no base. **Always check the domain.**\n\n## Related rates\n\nWhen two quantities are linked, their rates are linked too, differentiate the relationship with respect to time.\n\nA ladder 10 m long leans on a wall. Its base slides out at 1 m/s. How fast does the top drop when the base is 6 m out?\n\n$$\nx^2 + y^2 = 100 \\implies 2x\\frac{dx}{dt} + 2y\\frac{dy}{dt} = 0\n$$\n\n```python\nimport sympy as sp\n\nt = sp.symbols('t')\nx = sp.Function('x')(t)\ny = sp.Function('y')(t)\n\nrelation = sp.Eq(x**2 + y**2, 100)\ndifferentiated = sp.Eq(sp.diff(relation.lhs, t), 0)\nprint(\"differentiated:\", differentiated)\n\ndy_dt = sp.solve(differentiated, sp.diff(y, t))[0]\nprint(\"dy/dt =\", dy_dt)\n\n# base 6 m out, so height is 8 m, and dx/dt = 1\nvalue = dy_dt.subs({x: 6, y: 8, sp.diff(x, t): 1})\nprint(\"dy/dt at x=6:\", value, \"m/s (negative: the top is falling)\")\n```\n\n## Linear approximation and differentials\n\nNear a point, a differentiable function looks like its tangent line:\n\n$$\nf(x) \\approx f(a) + f'(a)(x - a)\n$$\n\n```python\nimport sympy as sp\nimport math\n\nx = sp.symbols('x')\nf = sp.sqrt(x)\na = 100\n\ntangent = f.subs(x, a) + sp.diff(f, x).subs(x, a) * (x - a)\nprint(\"tangent at 100:\", sp.simplify(tangent))\n\nfor target in [101, 105, 110, 144]:\n    approx = float(tangent.subs(x, target))\n    exact = math.sqrt(target)\n    print(f\"sqrt({target:3d}): approx {approx:.6f}  exact {exact:.6f}  \"\n          f\"error {abs(approx - exact):.6f}\")\n```\n\nExcellent at 101, poor at 144. Linear approximation is a *local* tool, and the error grows like the square of the distance.\n\n## L'Hopital's rule\n\nFor a limit of the indeterminate form $0/0$ or $\\infty/\\infty$, differentiate top and bottom separately:\n\n$$\n\\lim \\frac{f}{g} = \\lim \\frac{f'}{g'}\n$$\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\ncases = [\n    (sp.sin(x), x, 0),\n    (sp.exp(x) - 1, x, 0),\n    (sp.log(x), x - 1, 1),\n    (x**2, sp.exp(x), sp.oo),\n]\nfor num, den, point in cases:\n    direct = sp.limit(num/den, x, point)\n    hopital = sp.limit(sp.diff(num, x) / sp.diff(den, x), x, point)\n    print(f\"{str(num/den):22s} at {str(point):4s}: {direct}   \"\n          f\"via L'Hopital: {hopital}   agree? {direct == hopital}\")\n```\n\nThe last case shows exponentials beating polynomials: $x^2/e^x \\to 0$. Apply the rule twice and the numerator dies while the denominator does not.\n\n## The mean value theorem\n\nIf $f$ is continuous on $[a,b]$ and differentiable inside, then some $c$ in between has\n\n$$\nf'(c) = \\frac{f(b) - f(a)}{b - a}\n$$\n\nAt some instant your speed equalled your average speed. It sounds obvious and it underwrites most of the error estimates in numerical analysis.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nf = x**3 - x\na, b = 0, 2\n\naverage = (f.subs(x, b) - f.subs(x, a)) / (b - a)\nsolutions = sp.solve(sp.Eq(sp.diff(f, x), average), x)\ninside = [s for s in solutions if s.is_real and a < s < b]\n\nprint(\"average rate of change:\", average)\nprint(\"points where the instantaneous rate matches:\", inside)\nprint(\"check:\", [sp.diff(f, x).subs(x, s) for s in inside])\n```\n\n> [!IMPORTANT]\n> For a maximum on a closed interval, check the endpoints as well as the critical points. `sp.solve(sp.diff(f, x), x)` finds only the interior flat spots, and the true extreme is often at an edge.",
+      "quiz": {
+        "title": "Optimisation and Approximation",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "At a critical point where the second derivative is positive, the point is a local:",
+            "options": [
+              "Maximum",
+              "Minimum",
+              "Inflection point",
+              "Discontinuity"
+            ],
+            "answer": "Minimum"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Solving f'(x) = 0 finds every maximum of f on a closed interval.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "L'Hopital's rule applies to limits of which form?",
+            "options": [
+              "Any limit at all",
+              "0/0 or infinity over infinity",
+              "Only limits at infinity",
+              "Only one-sided limits"
+            ],
+            "answer": "0/0 or infinity over infinity"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ value theorem says some instantaneous rate equals the average rate.",
+            "options": [],
+            "answer": "mean"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "integrals-and-the-fundamental-theorem",
+      "title": "Integrals and the Fundamental Theorem",
+      "order": 4,
+      "content": "# Integrals and the Fundamental Theorem\n\nAn integral is a limit of sums. Where the derivative chops a curve into slopes, the integral adds up slices of area, and the Fundamental Theorem says these two operations undo each other.\n\n## The Riemann sum\n\nSplit $[a,b]$ into $n$ strips, approximate the area of each with a rectangle, and add:\n\n$$\n\\int_a^b f(x)\\,dx = \\lim_{n \\to \\infty} \\sum_{i=1}^{n} f(x_i)\\,\\Delta x\n$$\n\n```python\nimport numpy as np\n\ndef riemann(f, a, b, n, rule=\"midpoint\"):\n    edges = np.linspace(a, b, n + 1)\n    width = (b - a) / n\n    if rule == \"left\":\n        points = edges[:-1]\n    elif rule == \"right\":\n        points = edges[1:]\n    else:\n        points = (edges[:-1] + edges[1:]) / 2\n    return float(np.sum(f(points)) * width)\n\nf = lambda x: x**2                 # exact integral over [0, 3] is 9\nfor n in [4, 16, 64, 1024]:\n    left = riemann(f, 0, 3, n, \"left\")\n    mid = riemann(f, 0, 3, n, \"midpoint\")\n    right = riemann(f, 0, 3, n, \"right\")\n    print(f\"n = {n:5d}  left {left:9.6f}  midpoint {mid:9.6f}  right {right:9.6f}\")\nprint(\"exact:\", 9)\n```\n\nThe left sum underestimates and the right overestimates (the function is increasing), while the **midpoint** rule is accurate to six digits with only 64 strips. Where you sample matters more than how many samples you take.\n\n## The Fundamental Theorem of Calculus\n\nTwo halves, and together they are the reason calculus is one subject rather than two.\n\n**Part 1.** If $F(x) = \\int_a^x f(t)\\,dt$, then $F'(x) = f(x)$. Integration then differentiation returns the original.\n\n**Part 2.** If $F$ is any antiderivative of $f$, then\n\n$$\n\\int_a^b f(x)\\,dx = F(b) - F(a)\n$$\n\nThat is what turns area from an infinite limiting process into arithmetic.\n\n```python\nimport sympy as sp\n\nx, t = sp.symbols('x t')\nf = sp.sin(t) * t**2\n\n# Part 1: differentiate an accumulation function\nF = sp.integrate(f, (t, 0, x))\nprint(\"F(x)  =\", sp.simplify(F))\nprint(\"F'(x) =\", sp.simplify(sp.diff(F, x)))\nprint(\"equals f(x)?\", sp.simplify(sp.diff(F, x) - f.subs(t, x)) == 0)\n\n# Part 2: evaluate a definite integral through an antiderivative\ng = x**3\nantiderivative = sp.integrate(g, x)\nprint(\"\\nantiderivative of x^3:\", antiderivative)\nprint(\"definite 1 to 4, by hand:\",\n      antiderivative.subs(x, 4) - antiderivative.subs(x, 1))\nprint(\"definite 1 to 4, direct:\", sp.integrate(g, (x, 1, 4)))\n```\n\n## Basic antiderivatives\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nfor f in [x**4, 1/x, sp.exp(x), sp.sin(x), sp.cos(x),\n          1/(1 + x**2), 1/sp.sqrt(1 - x**2), sp.log(x)]:\n    print(f\"integral of {str(f):18s} = {sp.integrate(f, x)}\")\n```\n\nNote $\\int 1/x\\,dx = \\log|x|$, the one exception to the power rule, since $n = -1$ would divide by zero.\n\n> [!NOTE]\n> sympy omits the constant of integration. Every indefinite integral above is really \"plus $C$\", which matters the moment you solve a differential equation.\n\n## Definite integrals and area\n\nA definite integral is **signed** area: parts below the axis count negative. If you want geometric area, integrate the absolute value.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nf = sp.sin(x)\n\nprint(\"integral of sin over 0..2pi:\", sp.integrate(f, (x, 0, 2*sp.pi)))\nprint(\"integral of |sin| over 0..2pi:\", sp.integrate(sp.Abs(f), (x, 0, 2*sp.pi)))\nprint(\"first hump only:\", sp.integrate(f, (x, 0, sp.pi)))\n```\n\nZero, then 4, then 2. The full period integrates to zero because the second hump cancels the first exactly.\n\n## Numerical integration\n\nWhen there is no closed form, integrate numerically. The trapezoid rule is $O(h^2)$; Simpson's rule, which fits parabolas instead of lines, is $O(h^4)$.\n\n```python\nimport numpy as np\n\ndef trapezoid(f, a, b, n):\n    x = np.linspace(a, b, n + 1)\n    y = f(x)\n    return float((b - a) / n * (y[0]/2 + y[1:-1].sum() + y[-1]/2))\n\ndef simpson(f, a, b, n):\n    assert n % 2 == 0, \"Simpson needs an even number of intervals\"\n    x = np.linspace(a, b, n + 1)\n    y = f(x)\n    h = (b - a) / n\n    return float(h / 3 * (y[0] + 4*y[1:-1:2].sum() + 2*y[2:-1:2].sum() + y[-1]))\n\n# integral of exp(-x^2) over 0..1 has no elementary closed form\nf = lambda x: np.exp(-x**2)\nreference = 0.7468241328124271\n\nfor n in [4, 8, 32, 128]:\n    t, s = trapezoid(f, 0, 1, n), simpson(f, 0, 1, n)\n    print(f\"n = {n:4d}  trapezoid err {abs(t - reference):.2e}   \"\n          f\"Simpson err {abs(s - reference):.2e}\")\n```\n\nSimpson reaches machine precision with 32 intervals while the trapezoid rule is still four digits behind. Doubling $n$ cuts trapezoid error by 4 and Simpson error by 16.\n\n## Improper integrals\n\nInfinite limits or infinite integrands may still converge:\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x', positive=True)\ncases = [\n    (1/x**2, 1, sp.oo),        # converges\n    (1/x, 1, sp.oo),           # diverges\n    (1/sp.sqrt(x), 0, 1),      # integrand blows up, still converges\n    (sp.exp(-x), 0, sp.oo),    # converges\n]\nfor f, lo, hi in cases:\n    print(f\"integral of {str(f):12s} from {lo} to {hi}: {sp.integrate(f, (x, lo, hi))}\")\n```\n\n$1/x^2$ converges to 1 while $1/x$ diverges, even though both shrink to zero. The boundary is exactly $1/x^p$ with $p = 1$, and that same threshold reappears in the next lesson as the harmonic series.",
+      "quiz": {
+        "title": "Integration Basics",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which Riemann rule is most accurate for a given number of strips?",
+            "options": [
+              "Left endpoint",
+              "Right endpoint",
+              "Midpoint",
+              "They are identical"
+            ],
+            "answer": "Midpoint"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The integral of sin(x) from 0 to 2 pi equals:",
+            "options": [
+              "0",
+              "2",
+              "4",
+              "2 pi"
+            ],
+            "answer": "0"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Simpson's rule converges faster than the trapezoid rule.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The integral of 1/x^p from 1 to infinity converges when p is greater than ____.",
+            "options": [],
+            "answer": "1"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "techniques-of-integration",
+      "title": "Techniques of Integration",
+      "order": 5,
+      "content": "# Techniques of Integration\n\nDifferentiation is mechanical: apply the rules and you are done. Integration is not, it is closer to pattern recognition, and some elementary functions have no elementary antiderivative at all. This lesson is the pattern library.\n\n## Substitution\n\nThe chain rule, read backwards. If part of the integrand is the derivative of another part, substitute:\n\n$$\n\\int f(g(x))\\,g'(x)\\,dx = \\int f(u)\\,du\n$$\n\n```python\nimport sympy as sp\n\nx, u = sp.symbols('x u')\n\n# integral of 2x * cos(x^2): let u = x^2, du = 2x dx\noriginal = 2*x*sp.cos(x**2)\nprint(\"direct:      \", sp.integrate(original, x))\n\nsubstituted = sp.integrate(sp.cos(u), u)\nprint(\"after u = x^2:\", substituted, \"->\", substituted.subs(u, x**2))\n\nfor f in [x / (x**2 + 1), sp.exp(3*x), sp.sin(x)*sp.cos(x)]:\n    print(f\"integral of {str(f):18s} = {sp.integrate(f, x)}\")\n```\n\nSpotting the substitution is the skill: look for an inner function whose derivative is loitering nearby as a factor.\n\n## Integration by parts\n\nThe product rule, read backwards:\n\n$$\n\\int u\\,dv = uv - \\int v\\,du\n$$\n\nUse it when the integrand is a product where differentiating one factor simplifies things. The mnemonic **LIATE** (logarithmic, inverse trig, algebraic, trigonometric, exponential) ranks which factor to call $u$.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\n\n# integral of x*e^x: u = x, dv = e^x dx\nu, dv = x, sp.exp(x)\nv = sp.integrate(dv, x)\nby_parts = u*v - sp.integrate(v*sp.diff(u, x), x)\n\nprint(\"by parts:\", sp.simplify(by_parts))\nprint(\"sympy:   \", sp.integrate(x*sp.exp(x), x))\n\nfor f in [x*sp.sin(x), sp.log(x), x**2*sp.exp(x), sp.atan(x)]:\n    print(f\"integral of {str(f):16s} = {sp.simplify(sp.integrate(f, x))}\")\n```\n\n$\\int \\log x\\,dx = x\\log x - x$ is the surprising one: parts works even though there is no visible product, take $u = \\log x$ and $dv = dx$.\n\n## Partial fractions\n\nAny rational function can be split into simpler pieces, each of which you already know how to integrate:\n\n$$\n\\frac{1}{x^2 - 1} = \\frac{1}{2}\\left(\\frac{1}{x-1} - \\frac{1}{x+1}\\right)\n$$\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nf = (3*x + 5) / (x**2 - 1)\n\nprint(\"original:  \", f)\nprint(\"decomposed:\", sp.apart(f))\nprint(\"integrated:\", sp.integrate(f, x))\n\nharder = (x**2 + 1) / (x**3 - x**2 - 2*x)\nprint(\"\\nfactored denominator:\", sp.factor(x**3 - x**2 - 2*x))\nprint(\"decomposed:\", sp.apart(harder))\nprint(\"integrated:\", sp.simplify(sp.integrate(harder, x)))\n```\n\n`sp.apart` is doing the algebra you would otherwise do by hand with a system of equations for the numerators.\n\n## Trigonometric integrals and substitutions\n\nProducts of sines and cosines yield to identities; expressions with $\\sqrt{a^2 - x^2}$ or $\\sqrt{a^2 + x^2}$ yield to a trig substitution.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\na = 2\n\nfor f in [sp.sin(x)**2, sp.cos(x)**3, sp.sin(x)**2*sp.cos(x)**2, sp.tan(x)]:\n    print(f\"integral of {str(f):22s} = {sp.simplify(sp.integrate(f, x))}\")\n\nprint(\"\\ntrig substitution cases:\")\nprint(\"sqrt(4 - x^2):\", sp.integrate(sp.sqrt(a**2 - x**2), x))\nprint(\"1/sqrt(4 + x^2):\", sp.integrate(1/sp.sqrt(a**2 + x**2), x))\nprint(\"area of a semicircle radius 2:\", sp.integrate(sp.sqrt(a**2 - x**2), (x, -a, a)))\n```\n\nThat last line returns $2\\pi$, which is $\\frac{1}{2}\\pi r^2$ for $r = 2$. Calculus rediscovering the area of a circle is a good sanity check.\n\n## When there is no elementary antiderivative\n\nSome perfectly ordinary functions have no antiderivative expressible in elementary terms. This is a theorem (Liouville), not a failure of imagination.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nstubborn = [sp.exp(-x**2), sp.sin(x)/x, 1/sp.log(x), sp.sqrt(1 + x**4)]\n\nfor f in stubborn:\n    result = sp.integrate(f, x)\n    print(f\"integral of {str(f):16s} = {result}\")\n```\n\nsympy answers with special functions, `erf`, `Si`, `li`, which are *defined* as these integrals. You can still evaluate them to any precision:\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\ndefinite = sp.integrate(sp.exp(-x**2), (x, 0, 1))\nprint(\"exact form:\", definite)\nprint(\"numeric:   \", sp.N(definite, 20))\n\nprint(\"\\nthe full Gaussian integral over the whole line:\")\nprint(sp.integrate(sp.exp(-x**2), (x, -sp.oo, sp.oo)))\n```\n\nThe Gaussian over the whole line is exactly $\\sqrt{\\pi}$, a beautiful result you cannot get by finding an antiderivative, it needs a polar-coordinate trick you will meet in multivariable calculus.\n\n## Choosing a technique\n\n| Integrand looks like | Try |\n|---|---|\n| Inner function times its derivative | Substitution |\n| A product, one factor simplifying when differentiated | By parts |\n| Polynomial over polynomial | Partial fractions |\n| Powers of sin and cos | Trig identities |\n| $\\sqrt{a^2 \\pm x^2}$ | Trig substitution |\n| None of the above | Numerical integration |\n\n```python\nimport numpy as np\n\n# Simpson's rule on a function with no elementary antiderivative\ndef simpson(f, a, b, n):\n    x = np.linspace(a, b, n + 1)\n    y = f(x)\n    h = (b - a) / n\n    return float(h / 3 * (y[0] + 4*y[1:-1:2].sum() + 2*y[2:-1:2].sum() + y[-1]))\n\nprint(\"integral of sqrt(1 + x^4) over 0..2:\",\n      simpson(lambda x: np.sqrt(1 + x**4), 0, 2, 200))\nprint(\"integral of exp(-x^2) over 0..1:   \",\n      simpson(lambda x: np.exp(-x**2), 0, 1, 200))\n```\n\n> [!TIP]\n> Always differentiate your answer to check it. `sp.simplify(sp.diff(result, x) - f)` should be zero, and it takes one line to be certain instead of hopeful.",
+      "quiz": {
+        "title": "Integration Techniques",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Integration by parts is the reverse of which differentiation rule?",
+            "options": [
+              "Chain rule",
+              "Product rule",
+              "Quotient rule",
+              "Power rule"
+            ],
+            "answer": "Product rule"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A polynomial divided by a polynomial is best attacked with:",
+            "options": [
+              "Partial fractions",
+              "Trig substitution",
+              "Integration by parts",
+              "The power rule"
+            ],
+            "answer": "Partial fractions"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "exp(-x^2) has no elementary antiderivative.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The integral of exp(-x^2) over the whole real line equals the square root of ____.",
+            "options": [],
+            "answer": "pi"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "sequences-series-and-taylor-expansions",
+      "title": "Sequences, Series, and Taylor Expansions",
+      "order": 6,
+      "content": "# Sequences, Series, and Taylor Expansions\n\nAn infinite sum can be a finite number. That fact makes it possible to replace complicated functions with polynomials, which is how your computer evaluates `sin` and `exp`.\n\n## Sequences and convergence\n\nA sequence converges to $L$ if its terms eventually stay arbitrarily close to $L$.\n\n```python\nimport sympy as sp\n\nn = sp.symbols('n', positive=True, integer=True)\nsequences = [\n    1/n,\n    (n + 1)/n,\n    (1 + 1/n)**n,\n    (-1)**n,\n    sp.sin(n)/n,\n]\nfor a in sequences:\n    print(f\"{str(a):16s} -> {sp.limit(a, n, sp.oo)}\")\n```\n\n$(-1)^n$ has no limit: it oscillates forever without settling. sympy reports the accumulation bounds rather than a single value.\n\n## Series: sums of infinitely many terms\n\n$$\n\\sum_{k=1}^{\\infty} a_k = \\lim_{n \\to \\infty} \\sum_{k=1}^{n} a_k\n$$\n\nThe series converges exactly when the sequence of **partial sums** converges.\n\nThe **geometric series** is the one you must know:\n\n$$\n\\sum_{k=0}^{\\infty} r^{k} = \\frac{1}{1-r} \\quad \\text{for } |r| < 1\n$$\n\n```python\nimport sympy as sp\n\nk = sp.symbols('k', nonnegative=True, integer=True)\nr = sp.Rational(1, 2)\n\nprint(\"sum of (1/2)^k:\", sp.Sum(r**k, (k, 0, sp.oo)).doit())\nprint(\"sum of (1/3)^k:\", sp.Sum(sp.Rational(1,3)**k, (k, 0, sp.oo)).doit())\nprint(\"sum of 2^k:    \", sp.Sum(2**k, (k, 0, sp.oo)).doit())\n\nrunning = 0.0\nfor exponent in range(1, 21):\n    running += 0.5**exponent\n    if exponent in (1, 5, 10, 20):\n        print(f\"  {exponent:2d} terms: {running:.10f}\")\n```\n\n## The p-series and the harmonic surprise\n\n$$\n\\sum_{k=1}^{\\infty} \\frac{1}{k^{p}} \\quad \\text{converges exactly when } p > 1\n$$\n\nAt $p = 1$ this is the **harmonic series**, and it diverges, very slowly.\n\n```python\nimport sympy as sp\n\nk = sp.symbols('k', positive=True, integer=True)\nfor p in [sp.Rational(1,2), 1, sp.Rational(3,2), 2, 3]:\n    print(f\"p = {str(p):5s} -> {sp.Sum(1/k**p, (k, 1, sp.oo)).doit()}\")\n\npartial = 0.0\nfor i in range(1, 1_000_001):\n    partial += 1/i\n    if i in (10, 1000, 100_000, 1_000_000):\n        print(f\"  harmonic sum to {i:>9,}: {partial:.6f}\")\n```\n\nA million terms and the harmonic sum has only reached about 14.4. It grows like $\\ln n$, so reaching 100 would need roughly $e^{100}$ terms. Diverging arbitrarily slowly is still diverging.\n\nMeanwhile $p = 2$ sums exactly to $\\pi^2/6$, the Basel problem Euler solved in 1734.\n\n## Convergence tests\n\n| Test | Use when |\n|---|---|\n| Term test | If terms do not go to 0, it diverges. Always check first. |\n| Geometric | Terms have a constant ratio |\n| p-series | Terms look like $1/k^p$ |\n| Ratio test | Factorials or exponentials present |\n| Comparison | Terms resemble a series you already know |\n| Alternating | Signs alternate and magnitudes decrease to 0 |\n\n```python\nimport sympy as sp\n\nk = sp.symbols('k', positive=True, integer=True)\n\ndef ratio_test(term):\n    ratio = sp.simplify(sp.Abs(term.subs(k, k + 1) / term))\n    limit = sp.limit(ratio, k, sp.oo)\n    verdict = (\"converges\" if limit < 1 else\n               \"diverges\" if limit > 1 else \"inconclusive\")\n    return limit, verdict\n\nfor term in [1/sp.factorial(k), 2**k/sp.factorial(k), k/2**k, 1/k, k**2]:\n    limit, verdict = ratio_test(term)\n    print(f\"{str(term):22s} ratio limit = {str(limit):8s} -> {verdict}\")\n```\n\nThe ratio test is inconclusive at exactly 1, which is why it says nothing about any p-series, and why you need that separate test.\n\n## Alternating series\n\n```python\nimport sympy as sp\n\nk = sp.symbols('k', positive=True, integer=True)\nalternating_harmonic = sp.Sum((-1)**(k+1)/k, (k, 1, sp.oo)).doit()\nprint(\"alternating harmonic sum:\", alternating_harmonic, \"=\", sp.N(alternating_harmonic))\n\npartial = 0.0\nfor i in range(1, 11):\n    partial += (-1)**(i+1)/i\n    print(f\"  {i:2d} terms: {partial:.6f}\")\n```\n\nThe plain harmonic series diverges but the alternating one converges to $\\ln 2$. The partial sums bracket the answer from above and below, which is what \"conditionally convergent\" looks like in practice.\n\n## Taylor series\n\nNear $x = a$, a smooth function equals its own polynomial expansion:\n\n$$\nf(x) = \\sum_{n=0}^{\\infty} \\frac{f^{(n)}(a)}{n!}(x-a)^{n}\n$$\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nfor f in [sp.exp(x), sp.sin(x), sp.cos(x), sp.log(1 + x), 1/(1 - x)]:\n    print(f\"{str(f):12s} = {sp.series(f, x, 0, 6)}\")\n```\n\nThree of these are worth memorising:\n\n$$\ne^{x} = 1 + x + \\frac{x^2}{2!} + \\frac{x^3}{3!} + \\cdots\n$$\n\n$$\n\\sin x = x - \\frac{x^3}{3!} + \\frac{x^5}{5!} - \\cdots\n$$\n\n$$\n\\cos x = 1 - \\frac{x^2}{2!} + \\frac{x^4}{4!} - \\cdots\n$$\n\n## How good is a truncated series?\n\nThis is the practical question, so measure it:\n\n```python\nimport sympy as sp\nimport math\n\nx = sp.symbols('x')\n\ndef taylor_poly(f, order):\n    return sum(sp.diff(f, x, n).subs(x, 0) / math.factorial(n) * x**n\n               for n in range(order + 1))\n\nfor order in [1, 3, 5, 7, 9]:\n    poly = taylor_poly(sp.sin(x), order)\n    errors = {point: abs(float(poly.subs(x, point)) - math.sin(point))\n              for point in [0.1, 1.0, 3.0]}\n    print(f\"order {order}: err at 0.1 = {errors[0.1]:.2e}  \"\n          f\"at 1.0 = {errors[1.0]:.2e}  at 3.0 = {errors[3.0]:.2e}\")\n```\n\nTwo lessons in one table. More terms always help, and accuracy degrades fast as you move away from the expansion point. That is why library implementations of `sin` reduce the argument into a small range around zero before applying a series.\n\n## Radius of convergence\n\nA power series converges only within some radius of its centre.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nprint(\"1/(1-x) expanded at 0:\", sp.series(1/(1 - x), x, 0, 6))\nprint(\"converges only for |x| < 1, the pole at x = 1 sets the radius\")\n\nfor value in [0.5, 0.9, 1.1]:\n    partial = sum(value**n for n in range(50))\n    exact = 1/(1 - value) if value != 1 else float('inf')\n    print(f\"  x = {value}: 50 terms give {partial:>14.4f}   exact {exact:>10.4f}\")\n```\n\nAt $x = 1.1$ the partial sums explode while the true value is $-10$. Outside the radius the series is not merely inaccurate, it is meaningless.\n\n> [!WARNING]\n> `sp.series` returns an expansion with an `O(...)` term attached. Use `.removeO()` before substituting numbers into it, or the arithmetic will carry the symbolic error term along.",
+      "quiz": {
+        "title": "Series and Taylor",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The harmonic series:",
+            "options": [
+              "Converges to ln 2",
+              "Converges to pi^2/6",
+              "Diverges, but very slowly",
+              "Oscillates forever"
+            ],
+            "answer": "Diverges, but very slowly"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A geometric series with ratio r converges exactly when:",
+            "options": [
+              "r is greater than 1",
+              "the absolute value of r is less than 1",
+              "r is positive",
+              "always"
+            ],
+            "answer": "the absolute value of r is less than 1"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A Taylor series is equally accurate at any distance from its expansion point.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The sum of 1/k^2 from k=1 to infinity equals pi squared over ____.",
+            "options": [],
+            "answer": "6"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-a-numerical-calculus-library",
+      "title": "Final Project: A Numerical Calculus Library",
+      "order": 7,
+      "content": "# Final Project: A Numerical Calculus Library\n\nBuild `numcalc.py`: differentiation, integration, root-finding, and series approximation, all implemented from scratch and all validated against sympy. The theme is **error**, every routine should report not just an answer but how wrong it might be.\n\n## What to build\n\n**Differentiation**\n1. `derivative(f, x, h)`, central difference. Document why it beats the forward difference.\n2. `second_derivative(f, x, h)`, the standard three-point stencil.\n3. `best_h(f, x)`, sweep $h$ across many orders of magnitude and find where total error is smallest.\n\n**Integration**\n4. `trapezoid(f, a, b, n)` and `simpson(f, a, b, n)`.\n5. `adaptive_simpson(f, a, b, tolerance)`, subdivide only where the function is difficult.\n\n**Root finding**\n6. `bisect(f, a, b)`, guaranteed but slow.\n7. `newton(f, fprime, x0)`, fast but fragile. Handle non-convergence explicitly.\n\n**Series**\n8. `taylor(f_derivatives, a, order)`, build the polynomial from a list of derivative values.\n\n## The error sweet spot\n\nNumerical differentiation has two competing errors: truncation shrinks with $h$, round-off grows as $h$ shrinks. Their sum has a minimum, and finding it is the exercise:\n\n```python\nimport math\n\ndef derivative(f, x, h):\n    return (f(x + h) - f(x - h)) / (2 * h)\n\nx = 1.0\nexact = math.cos(x)\nprint(f\"{'h':>10} {'estimate':>20} {'error':>12}\")\n\nh, best = 1.0, (None, float('inf'))\nwhile h > 1e-15:\n    estimate = derivative(math.sin, x, h)\n    error = abs(estimate - exact)\n    if error < best[1]:\n        best = (h, error)\n    if h in (1.0, 1e-3, 1e-6, 1e-8, 1e-11, 1e-14):\n        print(f\"{h:>10.0e} {estimate:>20.15f} {error:>12.2e}\")\n    h /= 10\n\nprint(f\"best h was {best[0]:.0e} with error {best[1]:.2e}\")\nprint(\"theory predicts the cube root of machine epsilon:\", f\"{(2.2e-16)**(1/3):.2e}\")\n```\n\nThe minimum sits near $10^{-6}$, matching the theoretical cube root of machine epsilon for a central difference. Going smaller makes things *worse*.\n\n## Adaptive integration\n\nFixed-step rules waste effort on flat regions and under-sample sharp ones. Adaptive Simpson splits an interval only when the error estimate demands it:\n\n```python\nimport math\n\ndef simpson_once(f, a, b):\n    mid = (a + b) / 2\n    return (b - a) / 6 * (f(a) + 4*f(mid) + f(b))\n\ndef adaptive_simpson(f, a, b, tolerance=1e-10, depth=0):\n    mid = (a + b) / 2\n    whole = simpson_once(f, a, b)\n    halves = simpson_once(f, a, mid) + simpson_once(f, mid, b)\n    if depth > 40 or abs(halves - whole) < 15 * tolerance:\n        return halves, 1\n    left, n_left = adaptive_simpson(f, a, mid, tolerance/2, depth+1)\n    right, n_right = adaptive_simpson(f, mid, b, tolerance/2, depth+1)\n    return left + right, n_left + n_right\n\nsmooth = lambda x: x**2\nspiky = lambda x: 1 / (1 + 100 * (x - 0.5)**2)\nspiky_exact = 2 * math.atan(5) / 10\n\nfor name, f, exact in [(\"x^2 over 0..1\", smooth, 1/3),\n                       (\"spiky over 0..1\", spiky, spiky_exact)]:\n    value, panels = adaptive_simpson(f, 0, 1)\n    print(f\"{name:18s} value {value:.12f}  panels {panels:4d}  \"\n          f\"error {abs(value - exact):.2e}\")\n```\n\nThe smooth function needs a handful of panels, the spiky one needs many more, and you did not have to choose $n$ for either.\n\n## Validate against sympy\n\nEvery routine gets checked symbolically. This is the habit the project exists to build:\n\n```python\nimport sympy as sp\nimport math\n\nx = sp.symbols('x')\n\ndef derivative(f, point, h=1e-6):\n    return (f(point + h) - f(point - h)) / (2 * h)\n\ndef simpson(f, a, b, n=200):\n    h = (b - a) / n\n    total = f(a) + f(b)\n    for i in range(1, n):\n        total += (4 if i % 2 else 2) * f(a + i * h)\n    return h / 3 * total\n\ntests = [(sp.sin(x), math.sin), (sp.exp(x), math.exp), (x**3, lambda t: t**3)]\n\nfor expression, plain in tests:\n    exact_derivative = float(sp.diff(expression, x).subs(x, 1.0))\n    exact_integral = float(sp.integrate(expression, (x, 0, 1)))\n    print(f\"{str(expression):10s} \"\n          f\"derivative err {abs(derivative(plain, 1.0) - exact_derivative):.2e}   \"\n          f\"integral err {abs(simpson(plain, 0, 1) - exact_integral):.2e}\")\n```\n\n## Stretch goals\n\n- **Richardson extrapolation.** Combine derivative estimates at $h$ and $h/2$ to cancel the leading error term, and watch the accuracy jump for free.\n- **Gauss-Legendre quadrature.** Two well-chosen points beat Simpson's three equally spaced ones. Implement the 2- and 3-point rules and compare.\n- **Secant method.** Newton without a derivative. Compare its convergence against both bisection and Newton on the same root.\n- **Convergence order measurement.** Estimate the order empirically from consecutive errors, and confirm 2 for trapezoid and 4 for Simpson.\n\n## Definition of done\n\n- Every routine implemented without `scipy`.\n- Every routine validated against sympy on at least three functions.\n- `best_h` produces the theoretical cube-root-of-epsilon answer, and your README explains why.\n- Newton's method reports non-convergence rather than looping or returning garbage.\n- A short table in the README listing each method's convergence order, measured rather than quoted.",
+      "requiresSubmission": true
+    }
+  ]
+}

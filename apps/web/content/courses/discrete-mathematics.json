@@ -1,0 +1,337 @@
+{
+  "slug": "discrete-mathematics",
+  "title": "Discrete Mathematics",
+  "description": "Logic, proof techniques, sets and relations, combinatorics, number theory, and graphs, the mathematics behind algorithms and cryptography, with every example runnable in the browser.",
+  "pathSlug": "discrete-math",
+  "pathName": "Discrete Mathematics",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "logic-and-truth-tables",
+      "title": "Logic and Truth Tables",
+      "order": 1,
+      "content": "# Logic and Truth Tables\n\nDiscrete mathematics is the mathematics of things you can count and separate, as opposed to the smooth continuum of calculus. It starts with logic, because every proof, every `if` statement, and every database query is logic wearing different clothes.\n\n## Propositions and connectives\n\nA **proposition** is a statement that is definitely true or definitely false. Combine them with five connectives:\n\n| Connective | Symbol | Reads as | True when |\n|---|---|---|---|\n| Negation | $\\neg p$ | not $p$ | $p$ is false |\n| Conjunction | $p \\wedge q$ | $p$ and $q$ | both are true |\n| Disjunction | $p \\vee q$ | $p$ or $q$ | at least one is true |\n| Implication | $p \\rightarrow q$ | if $p$ then $q$ | $p$ is false, or $q$ is true |\n| Biconditional | $p \\leftrightarrow q$ | $p$ if and only if $q$ | they agree |\n\nImplication is the one that trips everyone up. $p \\rightarrow q$ is **true** whenever $p$ is false, regardless of $q$. \"If the moon is cheese then I am a fish\" is a true statement, because the premise never fires.\n\n## Build a truth table\n\n```python\nfrom itertools import product\n\ndef truth_table(names, expression):\n    print(\" \".join(f\"{n:^5}\" for n in names) + \" | result\")\n    for values in product([True, False], repeat=len(names)):\n        env = dict(zip(names, values))\n        row = \" \".join(f\"{str(v):^5}\" for v in values)\n        print(f\"{row} | {expression(**env)}\")\n\nprint(\"implication p -> q\")\ntruth_table([\"p\", \"q\"], lambda p, q: (not p) or q)\n```\n\nRead the output carefully: only the row `True False` gives `False`. That single row *is* the definition of implication.\n\n## Equivalence, tautology, contradiction\n\nTwo formulas are **logically equivalent** when their truth tables match on every row. A formula true on every row is a **tautology**; false on every row, a **contradiction**.\n\n```python\nfrom itertools import product\n\ndef equivalent(names, left, right):\n    return all(\n        left(**dict(zip(names, v))) == right(**dict(zip(names, v)))\n        for v in product([True, False], repeat=len(names))\n    )\n\n# De Morgan's laws\nprint(\"not (p and q) == (not p) or (not q):\",\n      equivalent([\"p\", \"q\"],\n                 lambda p, q: not (p and q),\n                 lambda p, q: (not p) or (not q)))\n\n# implication rewritten as a disjunction\nprint(\"p -> q == (not p) or q:\",\n      equivalent([\"p\", \"q\"],\n                 lambda p, q: (not p) or q,\n                 lambda p, q: (not p) or q))\n\n# the contrapositive is equivalent, the converse is not\nprint(\"p -> q == not q -> not p:\",\n      equivalent([\"p\", \"q\"],\n                 lambda p, q: (not p) or q,\n                 lambda p, q: q or (not p)))\nprint(\"p -> q == q -> p:\",\n      equivalent([\"p\", \"q\"],\n                 lambda p, q: (not p) or q,\n                 lambda p, q: (not q) or p))\n```\n\nThe last line prints `False`, and that is the single most useful fact in this lesson. **The converse of a true statement need not be true.** \"If it is raining, the ground is wet\" does not give you \"if the ground is wet, it is raining\".\n\n## Doing logic symbolically\n\nsympy has a real logic module, so you can simplify and check formulas instead of enumerating by hand:\n\n```python\nimport sympy as sp\nfrom sympy.logic.boolalg import truth_table\nfrom sympy.abc import p, q, r\n\nexpr = sp.Implies(p, q)\nprint(\"as a disjunction:\", sp.simplify_logic(expr))\nprint(\"is a tautology?\", sp.satisfiable(sp.Not(expr)) is False)\n\ndistributive = sp.Equivalent(p & (q | r), (p & q) | (p & r))\nprint(\"distributive law holds?\", sp.satisfiable(sp.Not(distributive)) is False)\n\nprint(\"satisfying assignment for (p or q) and not p:\",\n      sp.satisfiable((p | q) & ~p))\n```\n\n`satisfiable` is a small SAT solver. Asking whether the *negation* of a formula is unsatisfiable is exactly asking whether the formula is a tautology, which is how real proof checkers work.\n\n## Quantifiers\n\nPredicates take arguments, and quantifiers say how many things satisfy them:\n\n- $\\forall x\\, P(x)$, \"for all $x$\", $P$ holds for every element.\n- $\\exists x\\, P(x)$, \"there exists $x$\", $P$ holds for at least one.\n\nNegation swaps them and flips the inside:\n\n$$\n\\neg \\forall x\\, P(x) \\equiv \\exists x\\, \\neg P(x)\n$$\n\nOver a finite domain you can check that directly:\n\n```python\ndomain = range(1, 11)\nis_even = lambda n: n % 2 == 0\n\nprint(\"all even?          \", all(is_even(n) for n in domain))\nprint(\"exists a non-even? \", any(not is_even(n) for n in domain))\nprint(\"negation rule holds?\",\n      (not all(is_even(n) for n in domain)) == any(not is_even(n) for n in domain))\n```\n\n> [!TIP]\n> Order matters with mixed quantifiers. \"Every person has a mother\" and \"there is someone who is everyone's mother\" use the same two quantifiers in the opposite order, and only one of them is true.",
+      "quiz": {
+        "title": "Propositional Logic",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "When is the implication p -> q false?",
+            "options": [
+              "When p is false and q is true",
+              "When p is true and q is false",
+              "Only when both are false",
+              "Whenever p and q differ"
+            ],
+            "answer": "When p is true and q is false"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "An implication is logically equivalent to its converse.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "De Morgan's law rewrites NOT (p AND q) as:",
+            "options": [
+              "(not p) and (not q)",
+              "(not p) or (not q)",
+              "p or q",
+              "not (p or q)"
+            ],
+            "answer": "(not p) or (not q)"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A formula true under every assignment is called a ____.",
+            "options": [],
+            "answer": "tautology"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "proof-techniques",
+      "title": "Proof Techniques",
+      "order": 2,
+      "content": "# Proof Techniques\n\nA proof is an argument that leaves no room for doubt. There are only a handful of shapes it can take, and knowing which one to reach for is most of the skill.\n\n## Direct proof\n\nAssume the hypothesis, derive the conclusion. To show \"if $n$ is odd then $n^2$ is odd\": write $n = 2k+1$, then\n\n$$\nn^2 = 4k^2 + 4k + 1 = 2(2k^2 + 2k) + 1\n$$\n\nwhich is odd. Done.\n\nA proof is not a test, but testing first tells you whether the claim is even worth proving:\n\n```python\nfor n in range(1, 20, 2):\n    print(f\"n = {n:2d}  n^2 = {n*n:3d}  odd? {(n*n) % 2 == 1}\")\n```\n\nAll `True`. That is evidence, not proof, the algebra above is the proof.\n\n## Proof by contrapositive\n\n$p \\rightarrow q$ is equivalent to $\\neg q \\rightarrow \\neg p$. Sometimes the flipped version is far easier.\n\nClaim: if $n^2$ is even then $n$ is even. Direct is awkward. The contrapositive, \"if $n$ is odd then $n^2$ is odd\", is the direct proof you just did.\n\n## Proof by contradiction\n\nAssume the opposite and derive nonsense. The classic: $\\sqrt{2}$ is irrational. Suppose $\\sqrt{2} = a/b$ in lowest terms. Then $a^2 = 2b^2$, so $a$ is even, $a = 2c$, so $4c^2 = 2b^2$, so $b^2 = 2c^2$ and $b$ is even too. But then $a/b$ was not in lowest terms. Contradiction.\n\nWatch the approximations refuse to settle:\n\n```python\nfrom fractions import Fraction\nimport math\n\ntarget = math.sqrt(2)\nfor denominator in [10, 100, 1000, 10**6]:\n    approx = Fraction(target).limit_denominator(denominator)\n    print(f\"{str(approx):>18s}  squared = {float(approx**2):.12f}\")\n```\n\nEvery rational approximation squares to something *near* 2 and never exactly 2, which is what the proof guarantees.\n\n## Proof by induction\n\nTo prove $P(n)$ for all $n \\ge n_0$:\n\n1. **Base case**, show $P(n_0)$.\n2. **Inductive step**, show $P(k) \\rightarrow P(k+1)$.\n\nThe domino argument: the first one falls, and each one knocks over the next.\n\nClassic example:\n\n$$\n\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}\n$$\n\nBase case $n=1$: both sides are 1. Step: assume the sum to $k$ is $k(k+1)/2$, then adding $k+1$ gives $(k+1)(k+2)/2$, which is the formula at $k+1$.\n\n```python\ndef check_identity(n_max):\n    running = 0\n    for n in range(1, n_max + 1):\n        running += n\n        closed = n * (n + 1) // 2\n        if running != closed:\n            return f\"failed at n = {n}\"\n    return f\"holds for all n up to {n_max}\"\n\nprint(check_identity(10_000))\n```\n\nsympy can prove the closed form rather than merely check it:\n\n```python\nimport sympy as sp\n\ni, n = sp.symbols('i n', positive=True, integer=True)\nprint(\"sum of i:      \", sp.simplify(sp.Sum(i, (i, 1, n)).doit()))\nprint(\"sum of squares:\", sp.factor(sp.Sum(i**2, (i, 1, n)).doit()))\nprint(\"sum of cubes:  \", sp.factor(sp.Sum(i**3, (i, 1, n)).doit()))\n```\n\nThe sum of cubes factors as $n^2(n+1)^2/4$, the square of the first sum. That is not a coincidence worth memorising, but it is a nice one.\n\n## Strong induction\n\nOrdinary induction assumes $P(k)$. **Strong** induction assumes $P(m)$ for *all* $m \\le k$. You need it whenever the step reaches back more than one place, recurrences and recursive algorithms especially.\n\nEvery integer above 1 has a prime factorisation, proved by strong induction: $n$ is either prime (done) or $n = ab$ with both factors smaller, and by hypothesis both already factor.\n\n```python\ndef factorise(n):\n    factors, d = [], 2\n    while d * d <= n:\n        while n % d == 0:\n            factors.append(d)\n            n //= d\n        d += 1\n    if n > 1:\n        factors.append(n)\n    return factors\n\nimport math\nfor n in [2, 60, 97, 1001, 2**10 * 3**3]:\n    f = factorise(n)\n    print(f\"{n:6d} = {' * '.join(map(str, f)):22s} product ok? {math.prod(f) == n}\")\n```\n\n## Counterexamples\n\nTo *disprove* a universal claim you need exactly one counterexample. \"Every $n^2 + n + 41$ is prime\" looks great for a long time:\n\n```python\nimport sympy as sp\n\nfirst_failure = next(n for n in range(200) if not sp.isprime(n*n + n + 41))\nprint(\"first n where n^2 + n + 41 is composite:\", first_failure)\nprint(\"value:\", first_failure**2 + first_failure + 41,\n      \"=\", sp.factorint(first_failure**2 + first_failure + 41))\n```\n\nIt fails first at $n = 40$, where the value is $41^2$. Forty consecutive successes prove nothing.\n\n> [!IMPORTANT]\n> Testing a million cases is not a proof, and one counterexample is a complete disproof. That asymmetry is the whole reason proofs exist.",
+      "quiz": {
+        "title": "How Proofs Work",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Proving 'if n^2 is even then n is even' by instead proving 'if n is odd then n^2 is odd' is proof by:",
+            "options": [
+              "Contradiction",
+              "Contrapositive",
+              "Induction",
+              "Exhaustion"
+            ],
+            "answer": "Contrapositive"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How many counterexamples are needed to disprove a universal claim?",
+            "options": [
+              "One",
+              "Two",
+              "Half of all cases",
+              "It cannot be disproved"
+            ],
+            "answer": "One"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Verifying a claim for the first million integers proves it for all integers.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "An induction proof needs a base case and an ____ step.",
+            "options": [],
+            "answer": "inductive"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "sets-relations-and-functions",
+      "title": "Sets, Relations, and Functions",
+      "order": 3,
+      "content": "# Sets, Relations, and Functions\n\nSets are the vocabulary the rest of mathematics is written in. Relations and functions are just particular kinds of sets, which is a surprisingly useful way to see them.\n\n## Set operations\n\nFor sets $A$ and $B$:\n\n- Union $A \\cup B$, everything in either.\n- Intersection $A \\cap B$, everything in both.\n- Difference $A \\setminus B$, in $A$ but not $B$.\n- Symmetric difference $A \\triangle B$, in exactly one.\n- Complement, everything in the universe that is not in $A$.\n\nPython's `set` maps onto these one for one:\n\n```python\nA = {1, 2, 3, 4, 5}\nB = {4, 5, 6, 7}\nuniverse = set(range(1, 11))\n\nprint(\"union:        \", sorted(A | B))\nprint(\"intersection: \", sorted(A & B))\nprint(\"difference:   \", sorted(A - B))\nprint(\"symmetric:    \", sorted(A ^ B))\nprint(\"complement A: \", sorted(universe - A))\nprint(\"subset?       \", {1, 2} <= A, \"  disjoint?\", A.isdisjoint({8, 9}))\n```\n\n## Cardinality and inclusion-exclusion\n\n$|A|$ is the number of elements. For two sets:\n\n$$\n|A \\cup B| = |A| + |B| - |A \\cap B|\n$$\n\nYou subtract the overlap because otherwise it is counted twice. For three sets the pattern alternates:\n\n$$\n|A \\cup B \\cup C| = |A| + |B| + |C| - |A \\cap B| - |A \\cap C| - |B \\cap C| + |A \\cap B \\cap C|\n$$\n\n```python\nA = set(range(1, 101, 2))      # odd numbers\nB = set(range(1, 101, 3))      # multiples of 3\nC = set(range(1, 101, 5))      # multiples of 5\n\ndirect = len(A | B | C)\nformula = (len(A) + len(B) + len(C)\n           - len(A & B) - len(A & C) - len(B & C)\n           + len(A & B & C))\nprint(\"direct count:\", direct, \" inclusion-exclusion:\", formula,\n      \" agree?\", direct == formula)\n```\n\n## Power sets and products\n\nThe **power set** of $A$ is the set of all its subsets, and it has $2^{|A|}$ elements. The **Cartesian product** $A \\times B$ is all ordered pairs, with $|A||B|$ elements.\n\n```python\nfrom itertools import chain, combinations, product\n\ndef power_set(s):\n    s = list(s)\n    return [set(c) for r in range(len(s) + 1) for c in combinations(s, r)]\n\nA = {1, 2, 3}\nsubsets = power_set(A)\nprint(\"power set size:\", len(subsets), \"= 2^3 =\", 2**len(A))\nprint(sorted(map(sorted, subsets), key=lambda x: (len(x), x)))\n\nprint(\"A x {'a','b'}:\", sorted(product(A, ['a', 'b'])))\n```\n\n## Relations\n\nA **relation** on $A$ is any subset of $A \\times A$: a set of ordered pairs saying which elements are related. Three properties matter constantly:\n\n- **Reflexive**, every $(a, a)$ is present.\n- **Symmetric**, $(a,b)$ present implies $(b,a)$ present.\n- **Transitive**, $(a,b)$ and $(b,c)$ present implies $(a,c)$ present.\n\nAll three together make an **equivalence relation**, which carves the set into disjoint classes. \"Same remainder mod 3\" is the canonical example.\n\n```python\nfrom itertools import product\n\ndef properties(elements, pairs):\n    reflexive = all((a, a) in pairs for a in elements)\n    symmetric = all((b, a) in pairs for (a, b) in pairs)\n    transitive = all((a, c) in pairs\n                     for (a, b) in pairs for (c2, c) in pairs if b == c2)\n    return reflexive, symmetric, transitive\n\nelements = list(range(6))\nmod3 = {(a, b) for a, b in product(elements, repeat=2) if a % 3 == b % 3}\nless = {(a, b) for a, b in product(elements, repeat=2) if a < b}\n\nprint(\"same remainder mod 3:\", properties(elements, mod3))\nprint(\"strictly less than:  \", properties(elements, less))\n```\n\nThe first is `(True, True, True)`, an equivalence relation. The second is `(False, False, True)`: transitive but neither reflexive nor symmetric, which makes it a strict order instead.\n\nThe equivalence classes are what you get by grouping:\n\n```python\nfrom collections import defaultdict\n\nclasses = defaultdict(list)\nfor n in range(12):\n    classes[n % 3].append(n)\nfor remainder, members in sorted(classes.items()):\n    print(f\"class [{remainder}]: {members}\")\n```\n\nEvery element lands in exactly one class, and the classes cover everything, that is what \"partition\" means.\n\n## Functions: injective, surjective, bijective\n\nA function assigns exactly one output to each input. Three shapes matter:\n\n- **Injective** (one-to-one), different inputs give different outputs.\n- **Surjective** (onto), every element of the codomain is hit.\n- **Bijective**, both, so an inverse exists.\n\n```python\ndomain = list(range(6))\n\ndef classify(f, domain, codomain):\n    images = [f(x) for x in domain]\n    injective = len(set(images)) == len(images)\n    surjective = set(images) == set(codomain)\n    return (\"bijective\" if injective and surjective else\n            \"injective only\" if injective else\n            \"surjective only\" if surjective else\n            \"neither\")\n\nprint(\"x -> x + 1 into 1..6: \", classify(lambda x: x + 1, domain, range(1, 7)))\nprint(\"x -> x % 3 into 0..2: \", classify(lambda x: x % 3, domain, range(3)))\nprint(\"x -> x * x into 0..25:\", classify(lambda x: x * x, domain, range(26)))\n```\n\nOnly a bijection can be inverted, which is exactly why hash functions (many-to-one on purpose) cannot be reversed.\n\n> [!NOTE]\n> Sets are unordered and hold no duplicates. `{1, 2, 2, 3}` and `{3, 2, 1}` are the same set, a fact that quietly kills a lot of buggy reasoning about \"the first element\" of a set.",
+      "quiz": {
+        "title": "Sets and Relations",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How many subsets does a set with 6 elements have?",
+            "options": [
+              "12",
+              "36",
+              "64",
+              "720"
+            ],
+            "answer": "64"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which three properties define an equivalence relation?",
+            "options": [
+              "Reflexive, symmetric, transitive",
+              "Reflexive, antisymmetric, transitive",
+              "Symmetric, transitive, total",
+              "Injective, surjective, bijective"
+            ],
+            "answer": "Reflexive, symmetric, transitive"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The relation 'strictly less than' on the integers is reflexive.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A function that is both injective and surjective is called ____.",
+            "options": [],
+            "answer": "bijective"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "combinatorics-and-counting",
+      "title": "Combinatorics and Counting",
+      "order": 4,
+      "content": "# Combinatorics and Counting\n\nCounting sounds trivial until the objects get structured. Combinatorics is a small toolkit of rules that handles almost everything, provided you first answer two questions: **does order matter**, and **is repetition allowed**?\n\n## The four basic cases\n\nChoosing $k$ things from $n$:\n\n| | Order matters | Order does not |\n|---|---|---|\n| **No repetition** | $P(n,k) = \\dfrac{n!}{(n-k)!}$ | $\\dbinom{n}{k} = \\dfrac{n!}{k!(n-k)!}$ |\n| **Repetition allowed** | $n^k$ | $\\dbinom{n+k-1}{k}$ |\n\n```python\nimport math\nfrom itertools import permutations, combinations, product, combinations_with_replacement\n\nn, k = 5, 3\nitems = list(range(n))\n\nprint(\"permutations   P(5,3) =\", math.perm(n, k), \"==\", len(list(permutations(items, k))))\nprint(\"combinations   C(5,3) =\", math.comb(n, k), \"==\", len(list(combinations(items, k))))\nprint(\"with repetition  5^3  =\", n**k, \"==\", len(list(product(items, repeat=k))))\nprint(\"multisets C(7,3)      =\", math.comb(n + k - 1, k), \"==\",\n      len(list(combinations_with_replacement(items, k))))\n```\n\nEvery formula agrees with brute-force enumeration. Do this whenever you are unsure which case you are in, it takes ten seconds and settles the argument.\n\n## Binomial coefficients\n\n$\\binom{n}{k}$ counts subsets of size $k$, and it satisfies Pascal's rule:\n\n$$\n\\binom{n}{k} = \\binom{n-1}{k-1} + \\binom{n-1}{k}\n$$\n\nEither the last element is in the subset, or it is not.\n\n```python\nimport math\n\ndef pascal_row(n):\n    return [math.comb(n, k) for k in range(n + 1)]\n\nfor n in range(7):\n    row = pascal_row(n)\n    print(f\"n={n}: {str(row):32s} sum = {sum(row)} = 2^{n}\")\n\nprint(\"Pascal's rule at (7,3):\",\n      math.comb(7, 3) == math.comb(6, 2) + math.comb(6, 3))\n```\n\nEach row sums to $2^n$, because the subsets of any size together make up the whole power set.\n\nThe **binomial theorem** ties this to algebra:\n\n$$\n(x + y)^n = \\sum_{k=0}^{n} \\binom{n}{k} x^{k} y^{n-k}\n$$\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\nexpansion = sp.expand((x + y)**5)\nprint(expansion)\nprint(\"coefficient of x^2 y^3:\", expansion.coeff(x, 2).coeff(y, 3),\n      \" C(5,2) =\", sp.binomial(5, 2))\n```\n\n## The pigeonhole principle\n\nIf $n$ items go into $m$ boxes and $n > m$, some box holds at least two items. Trivial to state, surprisingly strong.\n\nStronger form: some box holds at least $\\lceil n/m \\rceil$ items.\n\n```python\nimport math\nfrom collections import Counter\n\ndef pigeonhole_demo(items, key, box_count):\n    boxes = Counter(key(x) for x in items)\n    guaranteed = math.ceil(len(items) / box_count)\n    fullest = max(boxes.values())\n    print(f\"{len(items)} items in {box_count} boxes\")\n    print(f\"  guaranteed minimum for the fullest box: {guaranteed}\")\n    print(f\"  actual fullest box: {fullest}  (>= guaranteed? {fullest >= guaranteed})\")\n\npigeonhole_demo(range(100), lambda n: n % 7, 7)\npigeonhole_demo(range(30), lambda n: n % 4, 4)\n```\n\nA classic consequence: among any 13 people, two share a birth month. Twelve boxes, thirteen pigeons.\n\n## Derangements and the birthday problem\n\nTwo counting results worth seeing computed.\n\nA **derangement** is a permutation leaving nothing in its original place. The count $D_n$ approaches $n!/e$ fast:\n\n```python\nimport math\nfrom itertools import permutations\n\ndef derangements_bruteforce(n):\n    return sum(1 for p in permutations(range(n))\n               if all(p[i] != i for i in range(n)))\n\nfor n in range(1, 8):\n    exact = derangements_bruteforce(n)\n    approx = math.factorial(n) / math.e\n    print(f\"n={n}  D_n={exact:5d}  n!/e={approx:9.3f}  ratio={exact / max(approx, 1e-9):.5f}\")\n```\n\nThe **birthday problem**: with 23 people the chance two share a birthday passes one half. Count the complement, everyone distinct.\n\n```python\ndef shared_birthday(people, days=365):\n    distinct = 1.0\n    for i in range(people):\n        distinct *= (days - i) / days\n    return 1 - distinct\n\nfor people in [10, 20, 23, 30, 50, 70]:\n    print(f\"{people:3d} people: P(shared) = {shared_birthday(people):.4f}\")\n```\n\nAt 23 it crosses $0.507$. The reason it feels wrong is that there are $\\binom{23}{2} = 253$ *pairs*, not 23 people, and pairs are what matter.\n\n## Recurrences\n\nMany counting problems are naturally recursive. Fibonacci counts the ways to tile a $2 \\times n$ strip with dominoes:\n\n$$\nF_n = F_{n-1} + F_{n-2}, \\qquad F_1 = F_2 = 1\n$$\n\n```python\nimport sympy as sp\n\nn = sp.symbols('n', integer=True, positive=True)\nf = sp.Function('f')\nsolution = sp.rsolve(f(n) - f(n-1) - f(n-2), f(n), {f(1): 1, f(2): 1})\nprint(\"closed form:\", sp.simplify(solution))\n\nprint(\"first ten:\", [int(sp.fibonacci(k)) for k in range(1, 11)])\nprint(\"golden ratio limit:\", float(sp.fibonacci(30) / sp.fibonacci(29)))\n```\n\nThe closed form is Binet's formula, and the ratio of consecutive terms converges to $(1+\\sqrt5)/2$, the golden ratio.\n\n> [!TIP]\n> When a counting argument feels slippery, enumerate the small cases with `itertools` and compare against your formula. If they disagree at $n = 4$, your formula is wrong, not the computer.",
+      "quiz": {
+        "title": "Counting Carefully",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "You pick 3 of 5 items where order does not matter and nothing repeats. How many ways?",
+            "options": [
+              "10",
+              "15",
+              "60",
+              "125"
+            ],
+            "answer": "10"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The rows of Pascal's triangle sum to:",
+            "options": [
+              "n",
+              "n squared",
+              "2 to the n",
+              "n factorial"
+            ],
+            "answer": "2 to the n"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "With 13 people, the pigeonhole principle guarantees two share a birth month.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Roughly how many people are needed before a shared birthday is more likely than not? (a number)",
+            "options": [],
+            "answer": "23"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "number-theory-and-modular-arithmetic",
+      "title": "Number Theory and Modular Arithmetic",
+      "order": 5,
+      "content": "# Number Theory and Modular Arithmetic\n\nNumber theory is the study of the integers, and it is the direct mathematical basis of every public-key cryptosystem in use today.\n\n## Divisibility and the gcd\n\n$a$ divides $b$ when $b = ak$ for some integer $k$. The **greatest common divisor** is the largest number dividing both, and the Euclidean algorithm finds it fast by repeatedly replacing the pair with a smaller one:\n\n$$\n\\gcd(a, b) = \\gcd(b, a \\bmod b), \\qquad \\gcd(a, 0) = a\n$$\n\n```python\nimport math\n\ndef gcd_traced(a, b):\n    while b:\n        print(f\"  gcd({a}, {b})  ->  gcd({b}, {a % b})\")\n        a, b = b, a % b\n    return a\n\nprint(\"result:\", gcd_traced(1071, 462))\nprint(\"math.gcd agrees:\", math.gcd(1071, 462))\nprint(\"lcm(12, 18) =\", math.lcm(12, 18), \" and gcd * lcm = product?\",\n      math.gcd(12, 18) * math.lcm(12, 18) == 12 * 18)\n```\n\nFive steps for numbers in the thousands. The Euclidean algorithm is $O(\\log \\min(a,b))$, which is why it is still the fastest thing we have after 2300 years.\n\n## Bezout and the extended algorithm\n\nFor any $a, b$ there are integers $x, y$ with\n\n$$\nax + by = \\gcd(a, b)\n$$\n\nThe extended Euclidean algorithm produces them, and those coefficients are how you invert numbers modulo $n$.\n\n```python\ndef extended_gcd(a, b):\n    if b == 0:\n        return a, 1, 0\n    g, x, y = extended_gcd(b, a % b)\n    return g, y, x - (a // b) * y\n\nfor a, b in [(1071, 462), (240, 46), (17, 3120)]:\n    g, x, y = extended_gcd(a, b)\n    print(f\"gcd({a}, {b}) = {g} = {a}*({x}) + {b}*({y})   check: {a*x + b*y == g}\")\n```\n\n## Modular arithmetic\n\nWork with remainders and the integers become a finite ring. Addition, subtraction, and multiplication all behave; division is the interesting one.\n\n```python\nn = 7\nprint(\"addition table mod 7\")\nprint(\"    \" + \" \".join(f\"{j:3d}\" for j in range(n)))\nfor i in range(n):\n    print(f\"{i:3d} \" + \" \".join(f\"{(i + j) % n:3d}\" for j in range(n)))\n```\n\n$a$ has a **multiplicative inverse** mod $n$ exactly when $\\gcd(a, n) = 1$. When $n$ is prime, every nonzero element has one.\n\n```python\ndef inverse_mod(a, n):\n    g = __import__('math').gcd(a, n)\n    return None if g != 1 else pow(a, -1, n)\n\nfor a in range(1, 10):\n    print(f\"{a}^-1 mod 10 = {inverse_mod(a, 10)}   \"\n          f\"{a}^-1 mod 11 = {inverse_mod(a, 11)}\")\n```\n\nMod 10 only $1, 3, 7, 9$ are invertible, the ones coprime to 10. Mod 11, everything nonzero is, because 11 is prime.\n\n## Fermat, Euler, and fast exponentiation\n\n**Fermat's little theorem**: if $p$ is prime and $p$ does not divide $a$, then\n\n$$\na^{p-1} \\equiv 1 \\pmod p\n$$\n\nEuler generalises it with the totient $\\varphi(n)$, the count of integers below $n$ coprime to it:\n\n$$\na^{\\varphi(n)} \\equiv 1 \\pmod n \\quad \\text{when } \\gcd(a,n)=1\n$$\n\n```python\nimport sympy as sp\n\np = 13\nprint(\"Fermat mod 13:\", {a: pow(a, p - 1, p) for a in range(1, 7)})\n\nn = 20\nprint(\"phi(20) =\", sp.totient(n))\nprint(\"Euler mod 20:\", {a: pow(a, int(sp.totient(n)), n)\n                        for a in range(1, 20) if sp.gcd(a, n) == 1})\n```\n\nEvery value is 1, exactly as promised. Python's three-argument `pow` does modular exponentiation by repeated squaring, so it stays fast on enormous exponents:\n\n```python\nprint(len(str(pow(7, 10**6, 10**9 + 7))), \"digits, computed instantly\")\nprint(\"7^1000000 mod (10^9+7) =\", pow(7, 10**6, 10**9 + 7))\n```\n\n## Chinese remainder theorem\n\nA system of congruences with pairwise coprime moduli has a unique solution modulo their product:\n\n$$\nx \\equiv 2 \\pmod 3, \\quad x \\equiv 3 \\pmod 5, \\quad x \\equiv 2 \\pmod 7\n$$\n\n```python\nfrom sympy.ntheory.modular import crt\n\nmoduli = [3, 5, 7]\nremainders = [2, 3, 2]\nx, modulus = crt(moduli, remainders)\nprint(f\"x = {x} (mod {modulus})\")\nprint(\"check:\", [int(x) % m for m in moduli], \"should equal\", remainders)\n```\n\nThe answer is 23 mod 105, the oldest recorded example of the theorem, from a Chinese manuscript of the third century.\n\n## Primes and why RSA works\n\n```python\nimport sympy as sp\n\nprint(\"primes below 50:\", list(sp.primerange(2, 50)))\nprint(\"is 561 prime?\", sp.isprime(561), \" factors:\", sp.factorint(561))\nprint(\"next prime after 10^6:\", sp.nextprime(10**6))\n\np, q = sp.nextprime(10**6), sp.nextprime(10**6 + 500)\nn = p * q\nprint(f\"multiplying is easy:  {p} * {q} = {n}\")\nprint(\"factoring back:\", sp.factorint(n))\n```\n\nMultiplying two large primes is instant; recovering them from the product is not, for primes of a few hundred digits. RSA is built entirely on that asymmetry plus Euler's theorem: encrypt with $c = m^e \\bmod n$, decrypt with $m = c^d \\bmod n$ where $ed \\equiv 1 \\pmod{\\varphi(n)}$.\n\n```python\nimport sympy as sp\n\np, q = 61, 53\nn, phi = p * q, (p - 1) * (q - 1)\ne = 17\nd = pow(e, -1, phi)\n\nmessage = 65\ncipher = pow(message, e, n)\nrecovered = pow(cipher, d, n)\nprint(f\"n={n} phi={phi} e={e} d={d}\")\nprint(f\"{message} -> encrypted {cipher} -> decrypted {recovered}\")\n```\n\nThat is textbook RSA, in nine lines, with numbers small enough to read. Real implementations use 2048-bit primes and padding, but the mathematics is exactly this.\n\n> [!WARNING]\n> Never use this as real cryptography. Textbook RSA without padding is deterministic and breakable, the point here is the number theory, not the security.",
+      "quiz": {
+        "title": "Modular Arithmetic",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "a has a multiplicative inverse mod n exactly when:",
+            "options": [
+              "a is prime",
+              "n is prime",
+              "gcd(a, n) = 1",
+              "a < n"
+            ],
+            "answer": "gcd(a, n) = 1"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Fermat's little theorem says that for prime p and a not divisible by p, a^(p-1) mod p equals:",
+            "options": [
+              "0",
+              "1",
+              "a",
+              "p - 1"
+            ],
+            "answer": "1"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "RSA is secure because multiplying two large primes is hard.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The algorithm that computes gcd by repeated remainders is named after ____.",
+            "options": [],
+            "answer": "Euclid"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "graphs-and-trees",
+      "title": "Graphs and Trees",
+      "order": 6,
+      "content": "# Graphs and Trees\n\nA graph is a set of vertices and a set of edges joining them. That is the entire definition, and it models road networks, social ties, dependency chains, state machines, and the web.\n\n## Representing a graph\n\nTwo standard representations, each better at different questions:\n\n- **Adjacency list**, a dict from vertex to neighbours. Compact for sparse graphs, fast to iterate.\n- **Adjacency matrix**, an $n \\times n$ array with a 1 where an edge exists. Fast lookup, and it lets you use linear algebra.\n\n```python\nimport numpy as np\n\ngraph = {\n    'A': ['B', 'C'],\n    'B': ['A', 'D'],\n    'C': ['A', 'D'],\n    'D': ['B', 'C', 'E'],\n    'E': ['D'],\n}\nlabels = sorted(graph)\nindex = {v: i for i, v in enumerate(labels)}\n\nM = np.zeros((len(labels), len(labels)), dtype=int)\nfor v, neighbours in graph.items():\n    for w in neighbours:\n        M[index[v]][index[w]] = 1\n\nprint(\"   \" + \" \".join(labels))\nfor v in labels:\n    print(v + \"  \" + \" \".join(str(x) for x in M[index[v]]))\nprint(\"degrees:\", {v: len(graph[v]) for v in labels})\n```\n\n## The handshake lemma\n\nEvery edge contributes 2 to the total degree, so\n\n$$\n\\sum_{v \\in V} \\deg(v) = 2|E|\n$$\n\nAn immediate consequence: the number of odd-degree vertices is always even.\n\n```python\ngraph = {'A': ['B', 'C'], 'B': ['A', 'D'], 'C': ['A', 'D'],\n         'D': ['B', 'C', 'E'], 'E': ['D']}\n\ndegree_sum = sum(len(n) for n in graph.values())\nedge_count = degree_sum // 2\nodd = [v for v, n in graph.items() if len(n) % 2 == 1]\n\nprint(\"sum of degrees:\", degree_sum, \" edges:\", edge_count)\nprint(\"odd-degree vertices:\", odd, \" count is even?\", len(odd) % 2 == 0)\n```\n\n## Paths and powers of the adjacency matrix\n\nHere is the payoff for the matrix representation: the $(i,j)$ entry of $M^k$ counts walks of length exactly $k$ from $i$ to $j$.\n\n```python\nimport numpy as np\n\nlabels = ['A', 'B', 'C', 'D', 'E']\nM = np.array([[0, 1, 1, 0, 0],\n              [1, 0, 0, 1, 0],\n              [1, 0, 0, 1, 0],\n              [0, 1, 1, 0, 1],\n              [0, 0, 0, 1, 0]])\n\nfor k in [1, 2, 3]:\n    print(f\"walks of length {k} from A to E:\", np.linalg.matrix_power(M, k)[0][4])\nprint(\"M^3 =\\n\", np.linalg.matrix_power(M, 3))\n```\n\nThere is no walk of length 1 or 2 from A to E, but there are walks of length 3, going A to B or C, then D, then E.\n\n## Traversal: BFS and DFS\n\nBreadth-first explores by distance and therefore finds shortest paths in unweighted graphs. Depth-first plunges as deep as it can and is the basis of cycle detection and topological sort.\n\n```python\nfrom collections import deque\n\ngraph = {'A': ['B', 'C'], 'B': ['A', 'D'], 'C': ['A', 'D'],\n         'D': ['B', 'C', 'E'], 'E': ['D']}\n\ndef bfs_distances(graph, start):\n    distance = {start: 0}\n    queue = deque([start])\n    while queue:\n        v = queue.popleft()\n        for w in graph[v]:\n            if w not in distance:\n                distance[w] = distance[v] + 1\n                queue.append(w)\n    return distance\n\ndef dfs_order(graph, start, seen=None):\n    seen = seen if seen is not None else []\n    if start in seen:\n        return seen\n    seen.append(start)\n    for w in graph[start]:\n        dfs_order(graph, w, seen)\n    return seen\n\nprint(\"BFS distances from A:\", bfs_distances(graph, 'A'))\nprint(\"DFS visit order:     \", dfs_order(graph, 'A'))\n```\n\n## Connectivity, cycles, and trees\n\nA graph is **connected** when every vertex is reachable from every other. A **tree** is a connected graph with no cycles, and it satisfies a rigid identity:\n\n$$\n|E| = |V| - 1\n$$\n\nAny two of \"connected\", \"acyclic\", and \"$|E| = |V|-1$\" force the third.\n\n```python\nfrom collections import deque\n\ndef analyse(graph):\n    vertices = list(graph)\n    edges = sum(len(n) for n in graph.values()) // 2\n    seen, queue = {vertices[0]}, deque([vertices[0]])\n    while queue:\n        v = queue.popleft()\n        for w in graph[v]:\n            if w not in seen:\n                seen.add(w)\n                queue.append(w)\n    connected = len(seen) == len(vertices)\n    return {\"vertices\": len(vertices), \"edges\": edges,\n            \"connected\": connected,\n            \"tree\": connected and edges == len(vertices) - 1}\n\ncyclic = {'A': ['B', 'C'], 'B': ['A', 'D'], 'C': ['A', 'D'],\n          'D': ['B', 'C', 'E'], 'E': ['D']}\ntree = {'A': ['B', 'C'], 'B': ['A'], 'C': ['A', 'D'], 'D': ['C']}\n\nprint(\"cyclic graph:\", analyse(cyclic))\nprint(\"tree:        \", analyse(tree))\n```\n\n## Euler and Hamilton\n\nTwo famously different problems:\n\n- An **Euler circuit** uses every *edge* exactly once. It exists in a connected graph precisely when every vertex has even degree, an easy check.\n- A **Hamiltonian circuit** visits every *vertex* exactly once. Deciding whether one exists is NP-complete, with no known efficient test.\n\n```python\nfrom itertools import permutations\n\ndef has_euler_circuit(graph):\n    return all(len(n) % 2 == 0 for n in graph.values())\n\ndef has_hamiltonian_circuit(graph):\n    vertices = list(graph)\n    start, rest = vertices[0], vertices[1:]\n    for order in permutations(rest):\n        tour = (start,) + order\n        if all(tour[i + 1] in graph[tour[i]] for i in range(len(tour) - 1)) \\\n           and tour[0] in graph[tour[-1]]:\n            return True\n    return False\n\nsquare = {'A': ['B', 'D'], 'B': ['A', 'C'], 'C': ['B', 'D'], 'D': ['C', 'A']}\nkonigsberg = {'A': ['B', 'B', 'C', 'C', 'D'], 'B': ['A', 'A', 'D'],\n              'C': ['A', 'A', 'D'], 'D': ['A', 'B', 'C']}\n\nprint(\"square: euler?\", has_euler_circuit(square),\n      \" hamiltonian?\", has_hamiltonian_circuit(square))\nprint(\"Konigsberg bridges: euler?\", has_euler_circuit(konigsberg))\n```\n\nThe Konigsberg bridge graph has odd degrees everywhere, so no Euler circuit exists. Euler proved that in 1736 and invented graph theory doing it.\n\n> [!NOTE]\n> The gap between those two problems is enormous: even degrees is a linear-time check, while the Hamiltonian brute force above is $O(n!)$ and becomes hopeless around twelve vertices.",
+      "quiz": {
+        "title": "Graph Theory",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The sum of all vertex degrees in a graph equals:",
+            "options": [
+              "The number of vertices",
+              "The number of edges",
+              "Twice the number of edges",
+              "Vertices plus edges"
+            ],
+            "answer": "Twice the number of edges"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A tree with 12 vertices has how many edges?",
+            "options": [
+              "11",
+              "12",
+              "13",
+              "24"
+            ],
+            "answer": "11"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A connected graph has an Euler circuit exactly when:",
+            "options": [
+              "Every vertex has even degree",
+              "Every vertex has odd degree",
+              "It has no cycles",
+              "It is bipartite"
+            ],
+            "answer": "Every vertex has even degree"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "In an unweighted graph, which traversal finds shortest paths: BFS or DFS?",
+            "options": [],
+            "answer": "BFS"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-a-discrete-mathematics-toolkit",
+      "title": "Final Project: A Discrete Mathematics Toolkit",
+      "order": 7,
+      "content": "# Final Project: A Discrete Mathematics Toolkit\n\nBuild `discrete_toolkit.py`, a single module gathering the algorithms from this course, with a test for every one. Everything here is small enough to write from scratch, and writing it from scratch is the point.\n\n## What to build\n\n**Logic**\n1. `truth_table(variables, formula)`, returns every assignment and its result.\n2. `is_tautology(variables, formula)` and `equivalent(variables, f, g)`.\n3. `to_cnf(formula)` as a stretch: convert a formula to conjunctive normal form.\n\n**Number theory**\n4. `extended_gcd(a, b)`, returns `(g, x, y)` with `a*x + b*y == g`.\n5. `inverse_mod(a, n)`, using your `extended_gcd`, `None` when it does not exist.\n6. `crt(moduli, remainders)`, the Chinese remainder theorem for pairwise coprime moduli.\n7. `sieve(limit)`, all primes below the limit by the sieve of Eratosthenes.\n\n**Combinatorics**\n8. `binomial(n, k)` via Pascal's triangle, no factorials, so it stays exact and cheap.\n\n**Graphs**\n9. `bfs(graph, start)`, returns distances and a parent map you can walk back into a path.\n10. `is_tree(graph)`, connected and acyclic.\n\n## Starting point\n\nThe sieve and Pascal's triangle are the two easiest to get subtly wrong, so start there:\n\n```python\ndef sieve(limit):\n    \"\"\"All primes strictly below limit.\"\"\"\n    if limit < 3:\n        return []\n    flags = [True] * limit\n    flags[0] = flags[1] = False\n    p = 2\n    while p * p < limit:\n        if flags[p]:\n            for multiple in range(p * p, limit, p):   # start at p*p, not 2p\n                flags[multiple] = False\n        p += 1\n    return [i for i, is_prime in enumerate(flags) if is_prime]\n\n\ndef binomial(n, k):\n    \"\"\"Pascal's triangle, row by row. Exact for any size, no factorials.\"\"\"\n    if k < 0 or k > n:\n        return 0\n    row = [1]\n    for i in range(1, n + 1):\n        row = [1] + [row[j] + row[j + 1] for j in range(len(row) - 1)] + [1]\n    return row[k]\n\n\nprimes = sieve(100)\nprint(\"primes below 100:\", primes)\nprint(\"count:\", len(primes))\nprint(\"C(20, 10) =\", binomial(20, 10))\nprint(\"C(5, 0), C(5, 5), C(5, 6):\", binomial(5, 0), binomial(5, 5), binomial(5, 6))\n```\n\nThere should be 25 primes below 100, and $\\binom{20}{10} = 184756$.\n\n## Cross-check everything\n\nEach function needs a test against a source of truth: a library function, a brute-force enumeration, or a known value.\n\n```python\nimport math\nimport sympy as sp\n\ndef sieve(limit):\n    if limit < 3:\n        return []\n    flags = [True] * limit\n    flags[0] = flags[1] = False\n    p = 2\n    while p * p < limit:\n        if flags[p]:\n            for multiple in range(p * p, limit, p):\n                flags[multiple] = False\n        p += 1\n    return [i for i, is_prime in enumerate(flags) if is_prime]\n\n# against sympy\nprint(\"sieve matches sympy:\", sieve(500) == list(sp.primerange(2, 500)))\n\n# binomial against math.comb\nprint(\"binomials match:\",\n      all(math.comb(n, k) == math.comb(n, k) for n in range(15) for k in range(n + 1)))\n\n# extended gcd against the Bezout identity itself\ndef extended_gcd(a, b):\n    if b == 0:\n        return a, 1, 0\n    g, x, y = extended_gcd(b, a % b)\n    return g, y, x - (a // b) * y\n\nok = all(\n    (lambda t: t[0] == math.gcd(a, b) and a * t[1] + b * t[2] == t[0])(extended_gcd(a, b))\n    for a in range(1, 60) for b in range(1, 60)\n)\nprint(\"extended_gcd correct on 3481 pairs:\", ok)\n```\n\n## Stretch goals\n\n- **A tiny SAT solver.** DPLL with unit propagation, then check it against `sympy.satisfiable` on random formulas.\n- **Dijkstra.** Extend `bfs` to weighted graphs with a heap, and verify it on a graph where BFS gives the wrong answer.\n- **Topological sort.** Detect cycles in a directed graph and produce a valid ordering when none exist.\n- **Miller-Rabin.** A probabilistic primality test; compare its verdicts against `sympy.isprime` on the Carmichael numbers 561, 1105, 1729.\n\n## Definition of done\n\n- All ten functions implemented from scratch, no library shortcuts inside them.\n- Every function cross-checked against a library or a brute-force version.\n- Edge cases handled explicitly: empty graphs, $k > n$ in `binomial`, non-invertible inputs to `inverse_mod`, `limit < 2` in `sieve`.\n- A README naming, for each function, its asymptotic complexity and the input size where it stops being practical.",
+      "requiresSubmission": true
+    }
+  ]
+}
