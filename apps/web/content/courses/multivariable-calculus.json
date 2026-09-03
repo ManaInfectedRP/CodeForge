@@ -1,0 +1,335 @@
+{
+  "slug": "multivariable-calculus",
+  "title": "Multivariable Calculus",
+  "description": "Partial derivatives, gradients, constrained optimisation, multiple integrals, change of variables, and the divergence and Stokes theorems, with every surface, gradient, and integral computed live in the browser.",
+  "pathSlug": "multivariable-calculus",
+  "pathName": "Multivariable Calculus",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "functions-of-several-variables",
+      "title": "Functions of Several Variables",
+      "order": 1,
+      "content": "# Functions of Several Variables\n\nSingle-variable calculus studies curves. Multivariable calculus studies surfaces, fields, and flows, and almost every real model, physical, economic, or machine-learned, has more than one input.\n\n## Scalar fields\n\nA function $f: \\mathbb{R}^2 \\to \\mathbb{R}$ takes a point and returns a number, so its graph is a surface sitting above the plane.\n\n```python\nimport numpy as np\n\ndef f(x, y):\n    return x**2 + y**2\n\nxs = np.linspace(-2, 2, 5)\nys = np.linspace(-2, 2, 5)\nX, Y = np.meshgrid(xs, ys)\nZ = f(X, Y)\n\nprint(\"z = x^2 + y^2 on a grid (rows are y, columns are x)\")\nprint(\"      \" + \"\".join(f\"{x:8.1f}\" for x in xs))\nfor y, row in zip(ys, Z):\n    print(f\"y={y:4.1f} \" + \"\".join(f\"{value:8.2f}\" for value in row))\n```\n\nThe values dip to 0 at the origin and grow in every direction: a paraboloid, a bowl.\n\n## Level curves\n\nSetting $f(x,y) = c$ traces a **level curve**, the contour lines on a map. For the bowl above they are circles.\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\nf = x**2 + y**2\n\nfor level in [1, 4, 9]:\n    print(f\"level {level}: {sp.Eq(f, level)}  ->  circle of radius {sp.sqrt(level)}\")\n\nsaddle = x**2 - y**2\nprint(\"\\nsaddle x^2 - y^2 at level 0:\", sp.solve(sp.Eq(saddle, 0), y))\nprint(\"at level 1, solve for y:\", sp.solve(sp.Eq(saddle, 1), y))\n```\n\nThe saddle's zero level is a pair of crossing lines, and nearby levels are hyperbolas. Contour spacing tells you steepness: tightly packed contours mean a steep slope.\n\n## Limits in two dimensions are stricter\n\nIn one dimension there are two ways to approach a point. In two dimensions there are infinitely many paths, and the limit exists only if **every** path agrees.\n\n```python\nimport sympy as sp\n\nx, y, t = sp.symbols('x y t')\nf = x*y / (x**2 + y**2)\n\nprint(\"along y = 0:      \", sp.limit(f.subs(y, 0), x, 0))\nprint(\"along x = 0:      \", sp.limit(f.subs(x, 0), y, 0))\nprint(\"along y = x:      \", sp.limit(f.subs(y, x), x, 0))\nprint(\"along y = 2x:     \", sp.limit(f.subs(y, 2*x), x, 0))\nprint(\"-> paths disagree, so the limit at the origin does not exist\")\n```\n\nZero along the axes, $1/2$ along $y = x$, $2/5$ along $y = 2x$. Finding two disagreeing paths is the standard way to prove a two-dimensional limit does not exist.\n\n## Partial derivatives\n\nHold every variable but one fixed and differentiate:\n\n$$\n\\frac{\\partial f}{\\partial x} = \\lim_{h \\to 0}\\frac{f(x+h, y) - f(x, y)}{h}\n$$\n\nIt measures the slope in the $x$ direction only, as if you sliced the surface with a plane and looked at the resulting curve.\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\nf = x**3 * y**2 + sp.sin(x*y) + y\n\nfx = sp.diff(f, x)\nfy = sp.diff(f, y)\nprint(\"f    =\", f)\nprint(\"df/dx =\", fx)\nprint(\"df/dy =\", fy)\nprint(\"\\nat the point (1, 2):\")\nprint(\"  df/dx =\", sp.simplify(fx.subs({x: 1, y: 2})), \"=\", float(fx.subs({x: 1, y: 2})))\nprint(\"  df/dy =\", sp.simplify(fy.subs({x: 1, y: 2})), \"=\", float(fy.subs({x: 1, y: 2})))\n```\n\nNumerically it is the same central difference as before, applied one variable at a time:\n\n```python\nimport numpy as np\n\ndef f(x, y):\n    return x**3 * y**2 + np.sin(x*y) + y\n\ndef partial(f, point, index, h=1e-6):\n    forward, backward = list(point), list(point)\n    forward[index] += h\n    backward[index] -= h\n    return (f(*forward) - f(*backward)) / (2*h)\n\npoint = (1.0, 2.0)\nprint(\"numeric df/dx:\", partial(f, point, 0))\nprint(\"numeric df/dy:\", partial(f, point, 1))\n```\n\n## Second partials and Clairaut's theorem\n\nThere are four second partials, and the two mixed ones are equal whenever they are continuous:\n\n$$\n\\frac{\\partial^2 f}{\\partial x \\partial y} = \\frac{\\partial^2 f}{\\partial y \\partial x}\n$$\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\nf = x**3*y**2 + sp.exp(x*y)\n\nfxx = sp.diff(f, x, 2)\nfyy = sp.diff(f, y, 2)\nfxy = sp.diff(f, x, y)\nfyx = sp.diff(f, y, x)\n\nprint(\"f_xx =\", sp.simplify(fxx))\nprint(\"f_yy =\", sp.simplify(fyy))\nprint(\"f_xy =\", sp.simplify(fxy))\nprint(\"f_yx =\", sp.simplify(fyx))\nprint(\"mixed partials equal?\", sp.simplify(fxy - fyx) == 0)\n```\n\nThe order of differentiation does not matter. That is why the **Hessian** matrix of second derivatives is symmetric, which in turn is why the spectral theorem applies to it, which is why the second-derivative test in lesson 3 works at all.\n\n## The tangent plane\n\nThe linear approximation of a surface at a point:\n\n$$\nf(x, y) \\approx f(a,b) + f_x(a,b)(x-a) + f_y(a,b)(y-b)\n$$\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\nf = x**2 + y**2\na, b = 1, 2\n\nplane = (f.subs({x: a, y: b})\n         + sp.diff(f, x).subs({x: a, y: b}) * (x - a)\n         + sp.diff(f, y).subs({x: a, y: b}) * (y - b))\nprint(\"tangent plane at (1,2):\", sp.expand(plane))\n\nfor point in [(1.0, 2.0), (1.1, 2.1), (1.5, 2.5), (3.0, 4.0)]:\n    approx = float(plane.subs({x: point[0], y: point[1]}))\n    exact = point[0]**2 + point[1]**2\n    print(f\"  at {str(point):12s} plane {approx:8.4f}  exact {exact:8.4f}  \"\n          f\"error {abs(approx - exact):7.4f}\")\n```\n\nPerfect at the point of tangency, excellent nearby, useless far away, the same story as the tangent line, one dimension up.\n\n> [!NOTE]\n> `sp.diff(f, x, y)` differentiates with respect to $x$ then $y$. To take the second derivative in $x$ alone you need `sp.diff(f, x, 2)`, a distinction that is easy to get wrong.",
+      "quiz": {
+        "title": "Partial Derivatives",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "To show a two-variable limit does not exist, it is enough to:",
+            "options": [
+              "Find one path where it is undefined",
+              "Find two paths giving different values",
+              "Show the function is discontinuous",
+              "Show the partials disagree"
+            ],
+            "answer": "Find two paths giving different values"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "For nice functions, the mixed partials f_xy and f_yx are equal.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Setting f(x,y) = c and plotting the result gives a:",
+            "options": [
+              "Tangent plane",
+              "Level curve",
+              "Gradient vector",
+              "Saddle point"
+            ],
+            "answer": "Level curve"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The theorem guaranteeing mixed partials commute is named after ____.",
+            "options": [],
+            "answer": "Clairaut"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "gradients-and-directional-derivatives",
+      "title": "Gradients and Directional Derivatives",
+      "order": 2,
+      "content": "# Gradients and Directional Derivatives\n\nCollect the partial derivatives into a vector and you get the **gradient**, the single most useful object in multivariable calculus and the engine of every optimiser in machine learning.\n\n$$\n\\nabla f = \\left(\\frac{\\partial f}{\\partial x},\\ \\frac{\\partial f}{\\partial y}\\right)\n$$\n\n## Computing gradients\n\n```python\nimport sympy as sp\n\nx, y, z = sp.symbols('x y z')\n\ndef gradient(f, variables):\n    return sp.Matrix([sp.diff(f, v) for v in variables])\n\nf = x**2 * y + sp.sin(y)\ng = x**2 + y**2 + z**2\n\nprint(\"grad of x^2 y + sin(y):\")\nsp.pprint(gradient(f, [x, y]).T)\nprint(\"at (2, 0):\", gradient(f, [x, y]).subs({x: 2, y: 0}).T)\n\nprint(\"\\ngrad of x^2+y^2+z^2 at (1,2,3):\")\nprint(gradient(g, [x, y, z]).subs({x: 1, y: 2, z: 3}).T)\n```\n\n## The two properties that matter\n\n1. **The gradient points in the direction of steepest ascent**, and its magnitude is the steepest slope.\n2. **The gradient is perpendicular to level curves.** Move along a contour and $f$ does not change, so the direction of maximum change must be at right angles to it.\n\nThe **directional derivative** in a unit direction $\\mathbf{u}$ is the projection of the gradient onto it:\n\n$$\nD_{\\mathbf{u}}f = \\nabla f \\cdot \\mathbf{u} = \\|\\nabla f\\|\\cos\\theta\n$$\n\nThat formula proves property 1 immediately: the expression is largest when $\\theta = 0$, that is, when $\\mathbf{u}$ points along the gradient.\n\n```python\nimport numpy as np\n\ndef f(x, y):\n    return x**2 + 3*y**2\n\ndef grad(x, y):\n    return np.array([2*x, 6*y])\n\npoint = np.array([1.0, 1.0])\ng = grad(*point)\nprint(\"gradient at (1,1):\", g, \" magnitude:\", np.linalg.norm(g))\n\ndirections = {\n    \"along the gradient\": g / np.linalg.norm(g),\n    \"opposite\":           -g / np.linalg.norm(g),\n    \"perpendicular\":      np.array([-g[1], g[0]]) / np.linalg.norm(g),\n    \"along x\":            np.array([1.0, 0.0]),\n}\nfor name, u in directions.items():\n    print(f\"  {name:20s} directional derivative = {np.dot(g, u): .6f}\")\n```\n\nSteepest uphill along the gradient, steepest downhill opposite it, and **exactly zero** perpendicular, which is the level-curve claim, verified.\n\n## The multivariable chain rule\n\nIf $x$ and $y$ each depend on $t$, then\n\n$$\n\\frac{df}{dt} = \\frac{\\partial f}{\\partial x}\\frac{dx}{dt} + \\frac{\\partial f}{\\partial y}\\frac{dy}{dt} = \\nabla f \\cdot \\frac{d\\mathbf{r}}{dt}\n$$\n\n```python\nimport sympy as sp\n\nt = sp.symbols('t')\nx = sp.cos(t)\ny = sp.sin(t)\nX, Y = sp.symbols('X Y')\nf = X**2 + 3*Y**2\n\n# via the chain rule\nchain = (sp.diff(f, X).subs({X: x, Y: y}) * sp.diff(x, t)\n         + sp.diff(f, Y).subs({X: x, Y: y}) * sp.diff(y, t))\n\n# by substituting first, then differentiating\ndirect = sp.diff(f.subs({X: x, Y: y}), t)\n\nprint(\"chain rule: \", sp.simplify(chain))\nprint(\"direct:     \", sp.simplify(direct))\nprint(\"agree?\", sp.simplify(chain - direct) == 0)\n```\n\nWalking around the unit circle on the surface $x^2 + 3y^2$, the rate of change is $4\\sin t\\cos t = 2\\sin 2t$: zero at the axes, extreme in between.\n\n## Gradient descent\n\nProperty 1 gives an algorithm. To minimise $f$, repeatedly step *against* the gradient:\n\n$$\n\\mathbf{x}_{k+1} = \\mathbf{x}_k - \\alpha\\,\\nabla f(\\mathbf{x}_k)\n$$\n\n```python\nimport numpy as np\n\ndef f(v):\n    x, y = v\n    return (x - 3)**2 + 5*(y + 1)**2\n\ndef grad(v):\n    x, y = v\n    return np.array([2*(x - 3), 10*(y + 1)])\n\npoint = np.array([0.0, 0.0])\nrate = 0.1\n\nfor step in range(31):\n    if step % 6 == 0:\n        print(f\"step {step:2d}: x = {point[0]: .6f}  y = {point[1]: .6f}  \"\n              f\"f = {f(point): .8f}  |grad| = {np.linalg.norm(grad(point)):.2e}\")\n    point = point - rate * grad(point)\n\nprint(\"minimum should be at (3, -1) with value 0\")\n```\n\nThirty steps and it is essentially exact. The learning rate is the whole game: too small and it crawls, too large and it oscillates or diverges.\n\n```python\nimport numpy as np\n\ndef f(v):\n    x, y = v\n    return (x - 3)**2 + 5*(y + 1)**2\n\ndef grad(v):\n    x, y = v\n    return np.array([2*(x - 3), 10*(y + 1)])\n\nfor rate in [0.01, 0.1, 0.19, 0.21]:\n    point = np.array([0.0, 0.0])\n    for _ in range(50):\n        point = point - rate * grad(point)\n        if not np.isfinite(point).all() or np.abs(point).max() > 1e12:\n            break\n    status = \"diverged\" if not np.isfinite(f(point)) or f(point) > 1e6 else f\"f = {f(point):.2e}\"\n    print(f\"rate {rate:<5}: {status}\")\n```\n\nAt $0.21$ it blows up. The threshold is $2/\\lambda_{\\max}$ where $\\lambda_{\\max}$ is the largest eigenvalue of the Hessian, here $10$, giving exactly $0.2$. Linear algebra predicting the failure of an optimiser is not a coincidence, it is the whole theory.\n\n## Gradients of vector-valued functions: the Jacobian\n\nWhen the output is a vector too, the derivative is a matrix of all partials:\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\nF = sp.Matrix([x**2 * y, sp.sin(x) + y**3])\nJ = F.jacobian([x, y])\n\nprint(\"Jacobian:\")\nsp.pprint(J)\nprint(\"\\nat (1, 2):\")\nsp.pprint(J.subs({x: 1, y: 2}))\nprint(\"determinant:\", sp.simplify(J.det()))\n```\n\nThe Jacobian determinant measures local area distortion, and it is exactly the factor that appears when you change variables in a multiple integral, which is lesson 5.\n\n> [!TIP]\n> The gradient is a vector of partials; the Jacobian is a matrix of them; the Hessian is the Jacobian of the gradient. Three names, one idea applied at three levels.",
+      "quiz": {
+        "title": "The Gradient",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The gradient points in the direction of:",
+            "options": [
+              "Steepest ascent",
+              "Steepest descent",
+              "Zero change",
+              "The nearest critical point"
+            ],
+            "answer": "Steepest ascent"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The directional derivative along a level curve equals:",
+            "options": [
+              "The gradient magnitude",
+              "Zero",
+              "One",
+              "The second derivative"
+            ],
+            "answer": "Zero"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A learning rate that is too large can make gradient descent diverge.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The matrix of all first partials of a vector-valued function is called the ____.",
+            "options": [],
+            "answer": "Jacobian"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "optimisation-in-several-variables",
+      "title": "Optimisation in Several Variables",
+      "order": 3,
+      "content": "# Optimisation in Several Variables\n\nFinding maxima and minima of a surface. The pattern mirrors one dimension, set the derivative to zero, then classify, but \"the derivative\" is now a vector and \"classify\" now needs the eigenvalues of a matrix.\n\n## Critical points\n\nA critical point is where the gradient vanishes:\n\n$$\n\\nabla f = \\mathbf{0}\n$$\n\nBoth partials must be zero at once, so this is a system of equations.\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\nf = x**3 - 3*x + y**2\n\ncriticals = sp.solve([sp.diff(f, x), sp.diff(f, y)], [x, y], dict=True)\nprint(\"gradient:\", [sp.diff(f, x), sp.diff(f, y)])\nfor point in criticals:\n    print(f\"  critical point {point}, f = {f.subs(point)}\")\n```\n\n## The Hessian and the second-derivative test\n\nThe **Hessian** collects all second partials:\n\n$$\nH = \\begin{pmatrix} f_{xx} & f_{xy} \\cr f_{xy} & f_{yy} \\end{pmatrix}\n$$\n\nWith $D = \\det H = f_{xx}f_{yy} - f_{xy}^2$ evaluated at a critical point:\n\n| Condition | Verdict |\n|---|---|\n| $D > 0$ and $f_{xx} > 0$ | local minimum |\n| $D > 0$ and $f_{xx} < 0$ | local maximum |\n| $D < 0$ | saddle point |\n| $D = 0$ | inconclusive |\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\n\ndef classify(f):\n    H = sp.hessian(f, (x, y))\n    criticals = sp.solve([sp.diff(f, x), sp.diff(f, y)], [x, y], dict=True)\n    print(f\"f = {f}\")\n    for point in criticals:\n        Hp = H.subs(point)\n        D = Hp.det()\n        fxx = Hp[0, 0]\n        verdict = (\"saddle point\" if D < 0 else\n                   \"inconclusive\" if D == 0 else\n                   \"local minimum\" if fxx > 0 else \"local maximum\")\n        print(f\"  at {point}: D = {D}, f_xx = {fxx}  ->  {verdict}\")\n    print()\n\nclassify(x**3 - 3*x + y**2)\nclassify(x**2 + y**2)\nclassify(x**2 - y**2)\nclassify(-(x**2) - y**2 + 4)\n```\n\n## Why the test works: eigenvalues\n\nThe determinant rule is really a statement about the Hessian's eigenvalues, which are real because the Hessian is symmetric (Clairaut, from lesson 1):\n\n- Both eigenvalues positive: the surface curves up in every direction, a minimum.\n- Both negative: a maximum.\n- Mixed signs: up one way and down another, a saddle.\n\n```python\nimport numpy as np\n\nhessians = {\n    \"bowl x^2+y^2\":    np.array([[2.0, 0.0], [0.0, 2.0]]),\n    \"dome -x^2-y^2\":   np.array([[-2.0, 0.0], [0.0, -2.0]]),\n    \"saddle x^2-y^2\":  np.array([[2.0, 0.0], [0.0, -2.0]]),\n    \"tilted saddle\":   np.array([[1.0, 2.0], [2.0, 1.0]]),\n}\nfor name, H in hessians.items():\n    eigenvalues = np.linalg.eigvalsh(H)\n    kind = (\"minimum\" if (eigenvalues > 0).all() else\n            \"maximum\" if (eigenvalues < 0).all() else \"saddle\")\n    print(f\"{name:18s} eigenvalues {np.round(eigenvalues, 4)}  det {np.linalg.det(H):6.2f}  -> {kind}\")\n```\n\nThe tilted saddle has an off-diagonal Hessian, so the determinant rule and the eigenvalues agree while the diagonal entries alone would have misled you.\n\n## Lagrange multipliers\n\nNow optimise subject to a constraint $g(x,y) = c$. At the optimum, the level curve of $f$ is **tangent** to the constraint curve, so their gradients are parallel:\n\n$$\n\\nabla f = \\lambda \\nabla g\n$$\n\nSolve that together with the constraint.\n\nClassic problem: maximise $f = xy$ on the circle $x^2 + y^2 = 8$.\n\n```python\nimport sympy as sp\n\nx, y, lam = sp.symbols('x y lambda')\nf = x*y\ng = x**2 + y**2 - 8\n\nequations = [sp.diff(f, x) - lam*sp.diff(g, x),\n             sp.diff(f, y) - lam*sp.diff(g, y),\n             g]\nsolutions = sp.solve(equations, [x, y, lam], dict=True)\n\nfor s in solutions:\n    print(f\"point ({s[x]}, {s[y]}), lambda = {s[lam]}, f = {f.subs(s)}\")\n```\n\nFour solutions: two maxima at $f = 4$ and two minima at $f = -4$. The largest rectangle inscribed in that circle is the square, which is what \"the corners lie on $y = \\pm x$\" means geometrically.\n\nA second one, minimising surface area for a fixed volume:\n\n```python\nimport sympy as sp\n\nr, h, lam = sp.symbols('r h lambda', positive=True)\narea = 2*sp.pi*r**2 + 2*sp.pi*r*h          # closed cylinder\nvolume = sp.pi*r**2*h - 1000               # fixed at 1000\n\nsolutions = sp.solve([sp.diff(area, r) - lam*sp.diff(volume, r),\n                      sp.diff(area, h) - lam*sp.diff(volume, h),\n                      volume], [r, h, lam], dict=True)\n\nfor s in solutions:\n    print(f\"r = {sp.N(s[r], 6)}, h = {sp.N(s[h], 6)}, ratio h/r = {sp.N(s[h]/s[r], 6)}\")\n    print(f\"  surface area = {sp.N(area.subs(s), 8)}\")\n```\n\nThe optimal can has $h = 2r$, height equal to diameter. Real drink cans are taller than that, because the top and bottom cost more per unit area than the sides, a reminder that the model, not the mathematics, is usually what is wrong.\n\n## Numerical optimisation with the Hessian\n\nNewton's method generalises: instead of dividing by $f'$, solve a linear system with the Hessian.\n\n$$\n\\mathbf{x}_{k+1} = \\mathbf{x}_k - H^{-1}\\nabla f\n$$\n\n```python\nimport numpy as np\n\ndef f(v):\n    x, y = v\n    return (x - 1)**4 + (y - 2)**2 + x*y\n\ndef grad(v):\n    x, y = v\n    return np.array([4*(x - 1)**3 + y, 2*(y - 2) + x])\n\ndef hessian(v):\n    x, y = v\n    return np.array([[12*(x - 1)**2, 1.0], [1.0, 2.0]])\n\npoint = np.array([0.0, 0.0])\nfor step in range(8):\n    g = grad(point)\n    point = point - np.linalg.solve(hessian(point), g)\n    print(f\"step {step}: point {np.round(point, 8)}  f = {f(point):.10f}  \"\n          f\"|grad| = {np.linalg.norm(g):.2e}\")\n```\n\nCompare with gradient descent from lesson 2: Newton converges in a handful of steps instead of dozens, because it uses curvature rather than just slope. The price is building and solving with an $n \\times n$ matrix every step, which is why deep learning uses plain gradient descent instead.\n\n> [!IMPORTANT]\n> A critical point is only a *candidate*. On a bounded region you must also check the boundary, and on an unbounded one you must check behaviour at infinity. The gradient tells you nothing about either.",
+      "quiz": {
+        "title": "Critical Points and Constraints",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A critical point where the Hessian has one positive and one negative eigenvalue is a:",
+            "options": [
+              "Local minimum",
+              "Local maximum",
+              "Saddle point",
+              "Inflection point"
+            ],
+            "answer": "Saddle point"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Lagrange multipliers set up which condition at the optimum?",
+            "options": [
+              "The gradients of f and g are parallel",
+              "The gradient of f is zero",
+              "The Hessian is positive definite",
+              "The constraint is inactive"
+            ],
+            "answer": "The gradients of f and g are parallel"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Newton's method needs fewer steps than gradient descent but more work per step.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The matrix of second partial derivatives is called the ____.",
+            "options": [],
+            "answer": "Hessian"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "multiple-integrals",
+      "title": "Multiple Integrals",
+      "order": 4,
+      "content": "# Multiple Integrals\n\nA single integral adds up slices of area under a curve. A double integral adds up columns of volume under a surface, and a triple integral adds up mass, charge, or probability throughout a solid.\n\n## Double integrals over rectangles\n\nOver a rectangle you integrate one variable at a time, and by **Fubini's theorem** the order does not matter:\n\n$$\n\\iint_R f\\,dA = \\int_a^b\\!\\!\\int_c^d f(x,y)\\,dy\\,dx = \\int_c^d\\!\\!\\int_a^b f(x,y)\\,dx\\,dy\n$$\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\nf = x**2 * y\n\ninner_first = sp.integrate(sp.integrate(f, (y, 0, 2)), (x, 0, 3))\nother_order = sp.integrate(sp.integrate(f, (x, 0, 3)), (y, 0, 2))\n\nprint(\"dy then dx:\", inner_first)\nprint(\"dx then dy:\", other_order)\nprint(\"Fubini holds?\", inner_first == other_order)\nprint(\"direct:\", sp.integrate(f, (x, 0, 3), (y, 0, 2)))\n```\n\n## Non-rectangular regions\n\nWhen the region is bounded by curves, the **inner** limits depend on the outer variable. Getting these limits right is the entire difficulty of the subject.\n\nIntegrate $f = x + y$ over the triangle with vertices $(0,0)$, $(1,0)$, $(1,1)$. For each $x$ in $[0,1]$, $y$ runs from 0 to $x$:\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\nf = x + y\n\nby_x_first = sp.integrate(sp.integrate(f, (y, 0, x)), (x, 0, 1))\nprint(\"integrating y from 0 to x, then x from 0 to 1:\", by_x_first)\n\n# same region described the other way: y from 0 to 1, x from y to 1\nby_y_first = sp.integrate(sp.integrate(f, (x, y, 1)), (y, 0, 1))\nprint(\"integrating x from y to 1, then y from 0 to 1:\", by_y_first)\nprint(\"same region, same answer?\", by_x_first == by_y_first)\n```\n\nBoth give $1/2$. Swapping the order means redescribing the region, not just swapping the limits.\n\nSometimes swapping is the only way to make an integral doable:\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\n\n# integral of exp(y^2) over 0 <= x <= y <= 1: impossible dy first, easy dx first\nhard = sp.integrate(sp.exp(y**2), (y, x, 1))\nprint(\"inner integral dy first:\", hard)\n\neasy = sp.integrate(sp.integrate(sp.exp(y**2), (x, 0, y)), (y, 0, 1))\nprint(\"swapped, dx first:\", sp.simplify(easy), \"=\", sp.N(easy, 10))\n```\n\nThere is no elementary antiderivative for $e^{y^2}$, but after swapping, the inner integral just contributes a factor of $y$, and $ye^{y^2}$ integrates by substitution.\n\n## Area and volume\n\nIntegrating the constant 1 gives area; integrating a height gives volume.\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\n\narea = sp.integrate(sp.integrate(1, (y, x**2, sp.sqrt(x))), (x, 0, 1))\nprint(\"area between y = x^2 and y = sqrt(x):\", area)\n\nvolume = sp.integrate(sp.integrate(4 - x**2 - y**2, (y, -sp.sqrt(4 - x**2), sp.sqrt(4 - x**2))),\n                      (x, -2, 2))\nprint(\"volume under the paraboloid 4 - x^2 - y^2 above z = 0:\", sp.simplify(volume))\n```\n\nThe volume comes out $8\\pi$, which the polar coordinates of the next lesson will produce in one line instead of three.\n\n## Triple integrals\n\nSame idea, one dimension further:\n\n```python\nimport sympy as sp\n\nx, y, z = sp.symbols('x y z')\n\nbox = sp.integrate(x*y*z, (x, 0, 1), (y, 0, 2), (z, 0, 3))\nprint(\"integral of xyz over the box:\", box)\n\ntetra = sp.integrate(1, (z, 0, 1 - x - y), (y, 0, 1 - x), (x, 0, 1))\nprint(\"volume of the unit tetrahedron:\", tetra, \"= 1/6\")\n\nwedge = sp.integrate(1, (z, 0, x*y), (y, 0, 2), (x, 0, 1))\nprint(\"volume under z = xy over the rectangle:\", wedge)\n```\n\nFlat boundaries make these easy. A **sphere** is a different story: its Cartesian limits nest three square roots,\n\n```\nz from 0 to sqrt(1 - x^2 - y^2),  y from 0 to sqrt(1 - x^2),  x from 0 to 1\n```\n\nand sympy will grind on that for minutes before producing $\\pi/6$. Do not run it. The same volume takes a single fast line in spherical coordinates, which is exactly what the next lesson is for: **choosing the right coordinates is not a convenience, it is the difference between an integral you can evaluate and one you cannot.**\n\n## Average value, mass, and centre of mass\n\nA double integral divided by the area is an average. Weight it by a density and you get mass and centre of mass:\n\n$$\n\\bar{x} = \\frac{1}{M}\\iint x\\,\\rho(x,y)\\,dA\n$$\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\ndensity = x + y              # heavier toward the far corner\nregion = ((x, 0, 1), (y, 0, 1))\n\nmass = sp.integrate(density, *region)\ncx = sp.integrate(x*density, *region) / mass\ncy = sp.integrate(y*density, *region) / mass\n\nprint(\"mass:\", mass)\nprint(\"centre of mass:\", (cx, cy), \"=\", (sp.N(cx, 6), sp.N(cy, 6)))\nprint(\"uniform plate would have centre (1/2, 1/2)\")\n```\n\nThe centre sits at $(7/12, 7/12)$, pulled away from the middle toward the heavy corner, exactly as intuition demands.\n\n## Numerical double integration\n\nWhen symbolic integration fails, tile the region and add:\n\n```python\nimport numpy as np\n\ndef double_midpoint(f, x_range, y_range, n=200):\n    (a, b), (c, d) = x_range, y_range\n    hx, hy = (b - a) / n, (d - c) / n\n    xs = a + hx * (np.arange(n) + 0.5)\n    ys = c + hy * (np.arange(n) + 0.5)\n    X, Y = np.meshgrid(xs, ys)\n    return float(np.sum(f(X, Y)) * hx * hy)\n\nprint(\"integral of x^2 y over [0,3]x[0,2]:\",\n      double_midpoint(lambda x, y: x**2 * y, (0, 3), (0, 2)), \" exact 18\")\nprint(\"integral of exp(-(x^2+y^2)) over [-3,3]^2:\",\n      double_midpoint(lambda x, y: np.exp(-(x**2 + y**2)), (-3, 3), (-3, 3)),\n      \" (approaches pi over the whole plane =\", np.pi, \")\")\n```\n\nThe Gaussian over the whole plane integrates to exactly $\\pi$, and the next lesson shows why in two lines of polar coordinates.\n\n> [!WARNING]\n> Reversing the order of integration is not just swapping `(y, 0, x)` and `(x, 0, 1)`. You must re-derive the limits from the shape of the region, sketch it first, every time.",
+      "quiz": {
+        "title": "Double and Triple Integrals",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Fubini's theorem says that over a rectangle:",
+            "options": [
+              "The order of integration does not matter",
+              "Double integrals always converge",
+              "Limits can be swapped without redescribing the region",
+              "Every integral has a closed form"
+            ],
+            "answer": "The order of integration does not matter"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Over a non-rectangular region you can swap the limits without re-deriving them.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Integrating the constant 1 over a solid region gives its:",
+            "options": [
+              "Surface area",
+              "Volume",
+              "Mass",
+              "Centre of mass"
+            ],
+            "answer": "Volume"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The volume of the unit tetrahedron is 1 over ____.",
+            "options": [],
+            "answer": "6"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "change-of-variables",
+      "title": "Change of Variables",
+      "order": 5,
+      "content": "# Change of Variables\n\nA hard integral in one coordinate system is often an easy one in another. The rule for switching is the same in every case, and the correction factor is a Jacobian determinant.\n\n## The change-of-variables formula\n\nIf $(x,y) = T(u,v)$ maps a region $S$ onto $R$, then\n\n$$\n\\iint_R f(x,y)\\,dA = \\iint_S f(T(u,v))\\,\\left|\\det J\\right|\\,du\\,dv\n$$\n\nwhere $J$ is the Jacobian matrix of $T$. The determinant is the local area-scaling factor, without it you would be adding up the wrong-sized pieces.\n\n## Polar coordinates\n\nWith $x = r\\cos\\theta$ and $y = r\\sin\\theta$:\n\n```python\nimport sympy as sp\n\nr, theta = sp.symbols('r theta', positive=True)\nx = r*sp.cos(theta)\ny = r*sp.sin(theta)\n\nJ = sp.Matrix([x, y]).jacobian([r, theta])\nprint(\"Jacobian matrix:\")\nsp.pprint(J)\nprint(\"determinant:\", sp.trigsimp(J.det()))\n```\n\nThe determinant is $r$, so $dA = r\\,dr\\,d\\theta$. That extra $r$ is not a fudge factor: a polar \"rectangle\" far from the origin covers more area than one near it, and $r$ is exactly how much more.\n\nNow the paraboloid volume from lesson 4, in one line:\n\n```python\nimport sympy as sp\n\nr, theta = sp.symbols('r theta', positive=True)\nintegrand = (4 - r**2) * r          # height times the Jacobian\n\nvolume = sp.integrate(integrand, (r, 0, 2), (theta, 0, 2*sp.pi))\nprint(\"volume under 4 - x^2 - y^2:\", volume)\nprint(\"area of a disc radius 3:\", sp.integrate(r, (r, 0, 3), (theta, 0, 2*sp.pi)))\n```\n\n## The Gaussian integral\n\nHere is the classic payoff. $\\int e^{-x^2}dx$ has no elementary antiderivative, but the two-dimensional version is easy in polar coordinates, and its square root gives the one-dimensional answer.\n\n```python\nimport sympy as sp\n\nr, theta = sp.symbols('r theta', positive=True)\nx = sp.symbols('x')\n\nsquared = sp.integrate(sp.exp(-r**2) * r, (r, 0, sp.oo), (theta, 0, 2*sp.pi))\nprint(\"the double integral of exp(-(x^2+y^2)) over the plane:\", squared)\nprint(\"so the single integral is its square root:\", sp.sqrt(squared))\nprint(\"sympy agrees:\", sp.integrate(sp.exp(-x**2), (x, -sp.oo, sp.oo)))\n```\n\nIn Cartesian coordinates the inner integral is impossible; in polar the substitution $u = r^2$ finishes it instantly. That is the whole reason to change variables.\n\n## Cylindrical and spherical coordinates\n\nFor three dimensions:\n\n- **Cylindrical**: $(r, \\theta, z)$, with $dV = r\\,dr\\,d\\theta\\,dz$. Good for anything with an axis.\n- **Spherical**: $(\\rho, \\phi, \\theta)$ with $x = \\rho\\sin\\phi\\cos\\theta$, $y = \\rho\\sin\\phi\\sin\\theta$, $z = \\rho\\cos\\phi$, and $dV = \\rho^2\\sin\\phi\\,d\\rho\\,d\\phi\\,d\\theta$. Good for anything round.\n\n```python\nimport sympy as sp\n\nrho, phi, theta = sp.symbols('rho phi theta', positive=True)\nx = rho*sp.sin(phi)*sp.cos(theta)\ny = rho*sp.sin(phi)*sp.sin(theta)\nz = rho*sp.cos(phi)\n\nJ = sp.Matrix([x, y, z]).jacobian([rho, phi, theta])\nprint(\"spherical Jacobian determinant:\", sp.trigsimp(J.det()))\n```\n\n$\\rho^2\\sin\\phi$, as promised. Now volumes become trivial:\n\n```python\nimport sympy as sp\n\nrho, phi, theta = sp.symbols('rho phi theta', positive=True)\nelement = rho**2 * sp.sin(phi)\n\nball = sp.integrate(element, (rho, 0, 2), (phi, 0, sp.pi), (theta, 0, 2*sp.pi))\nprint(\"volume of a ball of radius 2:\", ball, \"= 4/3 pi r^3?\",\n      sp.simplify(ball - sp.Rational(4,3)*sp.pi*2**3) == 0)\n\nhemisphere = sp.integrate(element, (rho, 0, 1), (phi, 0, sp.pi/2), (theta, 0, 2*sp.pi))\nprint(\"upper unit hemisphere:\", hemisphere)\n\ncone = sp.integrate(element, (rho, 0, 1), (phi, 0, sp.pi/4), (theta, 0, 2*sp.pi))\nprint(\"ice-cream cone, phi up to pi/4:\", sp.simplify(cone), \"=\", sp.N(cone, 8))\n```\n\nCompare that with the triple Cartesian integral for a sphere in lesson 4, three nested square roots versus one line.\n\n## A general linear change of variables\n\nThe formula is not limited to the named coordinate systems. Any invertible map works, and for a linear one the Jacobian determinant is constant.\n\n```python\nimport sympy as sp\n\nu, v = sp.symbols('u v')\n\n# map the unit square to a parallelogram\nx = 2*u + v\ny = u + 3*v\n\nJ = sp.Matrix([x, y]).jacobian([u, v])\nprint(\"Jacobian:\"); sp.pprint(J)\nprint(\"determinant:\", J.det(), \"-> areas are scaled by this factor\")\n\narea = sp.integrate(sp.Abs(J.det()), (u, 0, 1), (v, 0, 1))\nprint(\"area of the parallelogram:\", area)\n```\n\nThe determinant is 5, exactly the area of the parallelogram spanned by the columns $(2,1)$ and $(1,3)$, which is the geometric meaning of the determinant from linear algebra, reappearing as an integration factor.\n\n## Choosing coordinates\n\n| Region | Use |\n|---|---|\n| Discs, annuli, anything circular | Polar |\n| Cylinders, pipes, anything with an axis | Cylindrical |\n| Balls, cones, anything centred on a point | Spherical |\n| Parallelograms, sheared boxes | A linear substitution |\n| Bounded by $u = xy$, $v = x/y$ curves | Whatever makes the boundary constant |\n\n```python\nimport numpy as np\n\n# numerical check: polar sampling of the unit disc, with and without the r factor\nn = 2000\nrng = np.random.default_rng(0)\nr = rng.uniform(0, 1, n)\ntheta = rng.uniform(0, 2*np.pi, n)\n\nnaive = np.mean(np.ones(n)) * (1 * 2*np.pi)         # forgetting the Jacobian\ncorrect = np.mean(r) * (1 * 2*np.pi)                 # including it\n\nprint(f\"area of the unit disc, forgetting r: {naive:.4f}\")\nprint(f\"area including the r factor:         {correct:.4f}\")\nprint(f\"true value pi:                       {np.pi:.4f}\")\n```\n\nForget the Jacobian and you get $2\\pi$ instead of $\\pi$, off by a factor of two. It is the single most common mistake in this topic.\n\n> [!TIP]\n> Always take the absolute value of the Jacobian determinant. A map that reverses orientation has a negative determinant, and areas are never negative.",
+      "quiz": {
+        "title": "Coordinates and Jacobians",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In polar coordinates the area element dA equals:",
+            "options": [
+              "dr dtheta",
+              "r dr dtheta",
+              "r^2 dr dtheta",
+              "2 pi r dr"
+            ],
+            "answer": "r dr dtheta"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The spherical volume element is:",
+            "options": [
+              "rho drho dphi dtheta",
+              "rho^2 drho dphi dtheta",
+              "rho^2 sin(phi) drho dphi dtheta",
+              "sin(phi) drho dphi dtheta"
+            ],
+            "answer": "rho^2 sin(phi) drho dphi dtheta"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "You should take the absolute value of the Jacobian determinant.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The Gaussian integral of exp(-x^2) over the real line is solved by switching to ____ coordinates.",
+            "options": [],
+            "answer": "polar"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "vector-fields-and-the-big-theorems",
+      "title": "Vector Fields and the Big Theorems",
+      "order": 6,
+      "content": "# Vector Fields and the Big Theorems\n\nA vector field assigns a vector to every point: wind velocity, electric force, fluid flow. The three great theorems of the subject all say the same thing in different dimensions, that an integral over a region equals a simpler integral over its boundary.\n\n## Vector fields, divergence, and curl\n\n```python\nimport sympy as sp\n\nx, y, z = sp.symbols('x y z')\n\ndef divergence(F, variables):\n    return sum(sp.diff(component, v) for component, v in zip(F, variables))\n\ndef curl_2d(F):\n    return sp.diff(F[1], x) - sp.diff(F[0], y)\n\nfields = {\n    \"outward flow (x, y)\":  [x, y],\n    \"rotation (-y, x)\":     [-y, x],\n    \"shear (y, 0)\":         [y, 0],\n}\nfor name, F in fields.items():\n    print(f\"{name:24s} div = {divergence(F, [x, y])}, curl = {curl_2d(F)}\")\n```\n\nDivergence measures how much the field spreads out at a point (a source or a sink); curl measures how much it spins. The outward field has divergence 2 and no rotation; the rotation field has no divergence and curl 2.\n\nIn three dimensions curl is a vector:\n\n```python\nimport sympy as sp\n\nx, y, z = sp.symbols('x y z')\n\ndef curl(F):\n    return sp.Matrix([sp.diff(F[2], y) - sp.diff(F[1], z),\n                      sp.diff(F[0], z) - sp.diff(F[2], x),\n                      sp.diff(F[1], x) - sp.diff(F[0], y)])\n\nprint(\"curl of (-y, x, 0):\", curl([-y, x, 0]).T)\nprint(\"curl of a gradient field is always zero:\",\n      curl([sp.diff(x**2*y*z, v) for v in (x, y, z)]).T)\n```\n\nThat last identity, $\\nabla \\times \\nabla f = \\mathbf{0}$, is Clairaut's theorem in disguise: mixed partials commute, so the components cancel.\n\n## Line integrals\n\nIntegrate a field along a curve. For work done by a force:\n\n$$\n\\int_C \\mathbf{F}\\cdot d\\mathbf{r} = \\int_a^b \\mathbf{F}(\\mathbf{r}(t))\\cdot\\mathbf{r}'(t)\\,dt\n$$\n\n```python\nimport sympy as sp\n\nt = sp.symbols('t')\nx, y = sp.symbols('x y')\n\ndef line_integral(F, path, t_range):\n    substitution = {x: path[0], y: path[1]}\n    tangent = [sp.diff(component, t) for component in path]\n    integrand = sum(f.subs(substitution) * d for f, d in zip(F, tangent))\n    return sp.simplify(sp.integrate(integrand, (t, *t_range)))\n\nF = [y, x]                             # a conservative field\ncircle = [sp.cos(t), sp.sin(t)]\nline = [t, t]\n\nprint(\"F = (y, x) around the unit circle:\", line_integral(F, circle, (0, 2*sp.pi)))\nprint(\"F = (y, x) along y = x from 0 to 1:\", line_integral(F, line, (0, 1)))\n\nG = [-y, x]                            # not conservative\nprint(\"G = (-y, x) around the unit circle:\", line_integral(G, circle, (0, 2*sp.pi)))\n```\n\n## Conservative fields and path independence\n\nA field is **conservative** when it is the gradient of some potential $f$. Three equivalent statements:\n\n1. $\\mathbf{F} = \\nabla f$ for some $f$.\n2. Line integrals depend only on the endpoints, not the path.\n3. Every closed-loop integral is zero (and in a simply connected region, curl is zero).\n\n```python\nimport sympy as sp\n\nx, y = sp.symbols('x y')\n\ndef is_conservative(F):\n    return sp.simplify(sp.diff(F[1], x) - sp.diff(F[0], y)) == 0\n\ndef potential(F):\n    f = sp.integrate(F[0], x)\n    correction = sp.simplify(F[1] - sp.diff(f, y))\n    return f + sp.integrate(correction, y)\n\nfor F in [[y, x], [2*x*y, x**2], [-y, x], [sp.exp(x)*sp.cos(y), -sp.exp(x)*sp.sin(y)]]:\n    conservative = is_conservative(F)\n    print(f\"F = {F}  conservative? {conservative}\", end=\"\")\n    if conservative:\n        f = potential(F)\n        print(f\"   potential f = {sp.simplify(f)}\")\n    else:\n        print()\n```\n\nFor a conservative field the whole line integral collapses to $f(\\text{end}) - f(\\text{start})$, the Fundamental Theorem of Calculus for curves. This is exactly why gravitational and electrostatic potential energy are well-defined, and why a magnetic field, whose curl is not zero, has no scalar potential.\n\n## Green's theorem\n\nA closed loop integral in the plane equals a double integral of the curl over the enclosed region:\n\n$$\n\\oint_C (P\\,dx + Q\\,dy) = \\iint_D \\left(\\frac{\\partial Q}{\\partial x} - \\frac{\\partial P}{\\partial y}\\right)dA\n$$\n\n```python\nimport sympy as sp\n\nx, y, t, r, theta = sp.symbols('x y t r theta', real=True)\n\nP, Q = -y, x\n\n# left side: around the unit circle directly\npath = {x: sp.cos(t), y: sp.sin(t)}\nintegrand = (P.subs(path) * sp.diff(sp.cos(t), t)\n             + Q.subs(path) * sp.diff(sp.sin(t), t))\nloop = sp.simplify(sp.integrate(integrand, (t, 0, 2*sp.pi)))\n\n# right side: the double integral of the curl, in polar coordinates\ncurl = sp.diff(Q, x) - sp.diff(P, y)\narea_integral = sp.integrate(curl * r, (r, 0, 1), (theta, 0, 2*sp.pi))\n\nprint(\"line integral around the boundary:\", loop)\nprint(\"double integral of the curl:      \", area_integral)\nprint(\"Green's theorem holds?\", sp.simplify(loop - area_integral) == 0)\n```\n\nA useful corollary: with $P = -y/2$ and $Q = x/2$ the curl is 1, so the loop integral computes **area**. That is how a planimeter works, and how GIS software computes the area of a polygon from its boundary alone:\n\n```python\ndef shoelace(points):\n    \"\"\"Green's theorem for a polygon: area from the boundary vertices.\"\"\"\n    total = 0.0\n    for i in range(len(points)):\n        x1, y1 = points[i]\n        x2, y2 = points[(i + 1) % len(points)]\n        total += x1*y2 - x2*y1\n    return abs(total) / 2\n\nprint(\"unit square:\", shoelace([(0,0), (1,0), (1,1), (0,1)]))\nprint(\"triangle:   \", shoelace([(0,0), (4,0), (0,3)]))\nprint(\"pentagon:   \", shoelace([(0,0), (4,0), (5,3), (2,5), (-1,3)]))\n```\n\n## Divergence and Stokes\n\nThe same pattern, one dimension up:\n\n- **Divergence theorem**: flux out through a closed surface equals the triple integral of divergence inside.\n- **Stokes' theorem**: circulation around a boundary curve equals the surface integral of curl.\n\n```python\nimport sympy as sp\n\nx, y, z, rho, phi, theta = sp.symbols('x y z rho phi theta', positive=True)\n\nF = [x, y, z]\ndivergence = sum(sp.diff(component, v) for component, v in zip(F, (x, y, z)))\nprint(\"divergence of (x, y, z):\", divergence)\n\n# volume integral over the unit ball\nvolume_side = sp.integrate(divergence * rho**2 * sp.sin(phi),\n                           (rho, 0, 1), (phi, 0, sp.pi), (theta, 0, 2*sp.pi))\nprint(\"triple integral of div F:\", volume_side)\n\n# flux side: on the unit sphere F dot n = 1, so the flux is just the surface area\nprint(\"flux out of the unit sphere: F . n = 1 everywhere, so flux = area = 4 pi =\",\n      sp.N(4*sp.pi, 8))\nprint(\"they agree:\", sp.simplify(volume_side - 4*sp.pi) == 0)\n```\n\n## One theorem, four faces\n\n| Theorem | Boundary integral | Interior integral |\n|---|---|---|\n| Fundamental theorem of calculus | $f(b) - f(a)$ | $\\int f'$ |\n| Fundamental theorem for line integrals | $f$ at the endpoints | $\\int \\nabla f \\cdot d\\mathbf{r}$ |\n| Green / Stokes | circulation around the edge | curl over the surface |\n| Divergence | flux through the surface | divergence in the volume |\n\nEvery row says: **the total of a derivative over a region equals the values on its boundary.** In the language of differential forms they are literally one theorem, $\\int_{\\partial \\Omega}\\omega = \\int_{\\Omega}d\\omega$.\n\n> [!NOTE]\n> Orientation matters. Green's theorem needs the boundary traversed counterclockwise, and the divergence theorem needs the outward normal. Reverse either and you get the right magnitude with the wrong sign.",
+      "quiz": {
+        "title": "Vector Calculus",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A conservative vector field has:",
+            "options": [
+              "Zero divergence everywhere",
+              "Path-independent line integrals",
+              "Constant magnitude",
+              "No potential function"
+            ],
+            "answer": "Path-independent line integrals"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Green's theorem relates a closed loop integral to:",
+            "options": [
+              "A double integral of the curl over the enclosed region",
+              "A triple integral of the divergence",
+              "The value at the endpoints",
+              "The surface area"
+            ],
+            "answer": "A double integral of the curl over the enclosed region"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The curl of any gradient field is zero.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The ____ theorem equates flux through a closed surface to the divergence integrated inside.",
+            "options": [],
+            "answer": "divergence"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-an-optimiser-and-integrator-in-n-dimensions",
+      "title": "Final Project: An Optimiser and Integrator in N Dimensions",
+      "order": 7,
+      "content": "# Final Project: An Optimiser and Integrator in N Dimensions\n\nBuild `multicalc.py`, a small library for gradients, optimisation, and multidimensional integration. The recurring theme is that everything you wrote in one dimension generalises, and the places where it does *not* are the interesting ones.\n\n## What to build\n\n**Derivatives**\n1. `gradient(f, point, h)`, central differences in every coordinate.\n2. `hessian(f, point, h)`, the full matrix of second partials. Verify it comes out symmetric.\n3. `jacobian(F, point, h)` for vector-valued `F`.\n\n**Optimisation**\n4. `gradient_descent(f, grad, start, rate, tolerance)`, returning the path taken, not just the answer.\n5. `newton(f, grad, hess, start)`, solving with the Hessian each step.\n6. `classify(hess_at_point)`, minimum, maximum, or saddle, from the eigenvalues.\n\n**Integration**\n7. `double_midpoint(f, x_range, y_range, n)`.\n8. `monte_carlo(f, bounds, samples)`, which is the only method that survives into high dimensions.\n\n## Compare optimisers on a hard function\n\nThe Rosenbrock function has a narrow curved valley, and it is the standard stress test:\n\n$$\nf(x,y) = (1-x)^2 + 100(y - x^2)^2\n$$\n\nwith its minimum at $(1,1)$.\n\n```python\nimport numpy as np\n\ndef rosenbrock(v):\n    x, y = v\n    return (1 - x)**2 + 100*(y - x**2)**2\n\ndef rosenbrock_grad(v):\n    x, y = v\n    return np.array([-2*(1 - x) - 400*x*(y - x**2), 200*(y - x**2)])\n\ndef rosenbrock_hess(v):\n    x, y = v\n    return np.array([[2 - 400*(y - 3*x**2), -400*x],\n                     [-400*x, 200.0]])\n\nstart = np.array([-1.2, 1.0])\n\npoint = start.copy()\nfor step in range(5000):\n    point = point - 0.001 * rosenbrock_grad(point)\nprint(f\"gradient descent, 5000 steps: {np.round(point, 6)}  f = {rosenbrock(point):.3e}\")\n\npoint = start.copy()\nfor step in range(12):\n    point = point - np.linalg.solve(rosenbrock_hess(point), rosenbrock_grad(point))\nprint(f\"Newton, 12 steps:             {np.round(point, 6)}  f = {rosenbrock(point):.3e}\")\n```\n\nNewton reaches the minimum in about a dozen steps; gradient descent is still crawling along the valley floor after five thousand. Curvature information is worth a great deal when you can afford it.\n\n## Where the curse of dimensionality bites\n\nGrid integration costs $n^d$ evaluations for $n$ points per axis in $d$ dimensions. Monte Carlo costs the same regardless of $d$, and its error shrinks like $1/\\sqrt{N}$ either way. Measure the crossover yourself:\n\n```python\nimport numpy as np\n\ndef monte_carlo(f, bounds, samples, seed=0):\n    rng = np.random.default_rng(seed)\n    lows = np.array([b[0] for b in bounds])\n    highs = np.array([b[1] for b in bounds])\n    points = rng.uniform(lows, highs, size=(samples, len(bounds)))\n    volume = np.prod(highs - lows)\n    return float(np.mean(f(points)) * volume)\n\n# volume of the unit d-ball, by sampling the enclosing cube\nimport math\n\ndef ball_indicator(points):\n    return (np.sum(points**2, axis=1) <= 1.0).astype(float)\n\nfor d in [2, 3, 5, 8]:\n    bounds = [(-1.0, 1.0)] * d\n    estimate = monte_carlo(ball_indicator, bounds, 200_000)\n    exact = math.pi**(d/2) / math.gamma(d/2 + 1)\n    grid_cost = 100**d\n    print(f\"d={d}: monte carlo {estimate:.5f}  exact {exact:.5f}  \"\n          f\"error {abs(estimate-exact):.4f}   a 100-point grid would need {grid_cost:.1e} evaluations\")\n```\n\nAt $d = 8$ a modest grid needs $10^{16}$ evaluations while Monte Carlo needs a few hundred thousand. Notice too that the ball's volume *shrinks* past $d = 5$: almost all of a high-dimensional cube is in its corners, which is why nearest-neighbour methods struggle on high-dimensional data.\n\n## Verify your gradients\n\nEvery optimisation bug is a gradient bug until proven otherwise. Write the check once and run it always:\n\n```python\nimport numpy as np\n\ndef numeric_gradient(f, point, h=1e-6):\n    point = np.asarray(point, dtype=float)\n    out = np.zeros_like(point)\n    for i in range(len(point)):\n        forward, backward = point.copy(), point.copy()\n        forward[i] += h\n        backward[i] -= h\n        out[i] = (f(forward) - f(backward)) / (2*h)\n    return out\n\ndef f(v):\n    x, y, z = v\n    return x**2 * y + np.sin(y*z) + z**3\n\ndef analytic_grad(v):\n    x, y, z = v\n    return np.array([2*x*y,\n                     x**2 + z*np.cos(y*z),\n                     y*np.cos(y*z) + 3*z**2])\n\nrng = np.random.default_rng(1)\nworst = max(np.max(np.abs(numeric_gradient(f, p) - analytic_grad(p)))\n            for p in rng.uniform(-2, 2, size=(20, 3)))\nprint(f\"largest gradient discrepancy over 20 random points: {worst:.2e}\")\nprint(\"anything above ~1e-6 means the analytic gradient is wrong\")\n```\n\n## Stretch goals\n\n- **Momentum and Adam.** Add both to `gradient_descent` and compare step counts on Rosenbrock.\n- **Constrained optimisation.** Implement Lagrange multipliers numerically by solving the augmented system with your Newton routine.\n- **Importance sampling.** Beat plain Monte Carlo on a sharply peaked integrand by sampling from a matched distribution.\n- **Line search.** Replace the fixed learning rate with backtracking that satisfies the Armijo condition, and watch the divergence threshold problem disappear.\n\n## Definition of done\n\n- Every derivative routine validated against an analytic gradient on random points.\n- `hessian` returns a symmetric matrix (within tolerance), and your README explains which theorem guarantees that.\n- Both optimisers run on Rosenbrock, with a table of steps needed for each.\n- The Monte Carlo error is shown empirically to shrink like $1/\\sqrt{N}$.\n- A short note on when to prefer each integration method, backed by your own timings.",
+      "requiresSubmission": true
+    }
+  ]
+}

@@ -8,6 +8,52 @@ import { PathCard } from './PathCard';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const DEVOPS_SLUGS = ['docker', 'azure', 'kubernetes', 'aws', 'cicd', 'observability', 'grc'];
+const MATH_SLUGS = [
+  'linear-algebra',
+  'discrete-math',
+  'calculus',
+  'multivariable-calculus',
+  'abstract-algebra',
+  'topology',
+  'computer-science',
+];
+
+/** The three top-level buckets on the catalog root. `programming` is the default bucket, it
+ * holds every path that isn't explicitly claimed by DevOps or Math. */
+type Category = 'programming' | 'devops' | 'math';
+
+const CATEGORIES: Record<Category, { icon: string; title: string; blurb: string; cta: string; lead: string }> = {
+  programming: {
+    icon: '💻',
+    title: 'Programming Path',
+    blurb:
+      'Learn programming languages and frameworks with courses on Python, JavaScript, TypeScript, C++, C#, SQL, React, and more.',
+    cta: 'Explore the Programming roadmap →',
+    lead: 'Choose a language or technology to see its course roadmap.',
+  },
+  devops: {
+    icon: '🚀',
+    title: 'DevOps Path',
+    blurb:
+      'Master DevOps engineering by following our courses on Docker, Kubernetes, AWS, Azure, CI/CD pipelines, and observability.',
+    cta: 'Explore the DevOps roadmap →',
+    lead: 'Choose a technology to see its course roadmap.',
+  },
+  math: {
+    icon: '📐',
+    title: 'Math Path',
+    blurb:
+      'University mathematics you can actually run: linear algebra, discrete math, calculus, abstract algebra, topology, and computer science theory.',
+    cta: 'Explore the Math roadmap →',
+    lead: 'Choose a subject to see its course roadmap. Every calculation runs in your browser.',
+  },
+};
+
+function categoryOf(pathSlug: string): Category {
+  if (DEVOPS_SLUGS.includes(pathSlug)) return 'devops';
+  if (MATH_SLUGS.includes(pathSlug)) return 'math';
+  return 'programming';
+}
 
 function CourseListItem({ c }: { c: CourseSummary }) {
   return (
@@ -131,78 +177,46 @@ export function CoursesBrowser({ paths, courses }: Props) {
             )}
           </div>
         ) : (
-          <div className="mt-10 grid gap-6 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setFilter({ category: 'programming' })}
-              className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-left transition-all hover:border-forge-600"
-            >
-              <span className="text-3xl">💻</span>
-              <h2 className="mt-3 text-xl font-bold">Programming Path</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                Learn programming languages and frameworks with courses on Python, JavaScript, TypeScript, C++, C#,
-                SQL, React, and more.
-              </p>
-              <span className="mt-4 inline-block text-sm font-medium text-forge-500">
-                Explore the Programming roadmap →
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter({ category: 'devops' })}
-              className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-left transition-all hover:border-forge-600"
-            >
-              <span className="text-3xl">🚀</span>
-              <h2 className="mt-3 text-xl font-bold">DevOps Path</h2>
-              <p className="mt-2 text-sm text-slate-400">
-                Master DevOps engineering by following our courses on Docker, Kubernetes, AWS, Azure, CI/CD
-                pipelines, and observability.
-              </p>
-              <span className="mt-4 inline-block text-sm font-medium text-forge-500">
-                Explore the DevOps roadmap →
-              </span>
-            </button>
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {(Object.keys(CATEGORIES) as Category[]).map((key) => {
+              const c = CATEGORIES[key];
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setFilter({ category: key })}
+                  className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-left transition-all hover:border-forge-600"
+                >
+                  <span className="text-3xl">{c.icon}</span>
+                  <h2 className="mt-3 text-xl font-bold">{c.title}</h2>
+                  <p className="mt-2 text-sm text-slate-400">{c.blurb}</p>
+                  <span className="mt-4 inline-block text-sm font-medium text-forge-500">{c.cta}</span>
+                </button>
+              );
+            })}
           </div>
         )}
       </main>
     );
   }
 
-  // Category view: the language grid, everything except DevOps
-  if (!activePath && category === 'programming') {
-    const programmingPaths = paths.filter((p) => !DEVOPS_SLUGS.includes(p.slug));
+  // Category view: the grid of paths in one bucket
+  if (!activePath && category in CATEGORIES) {
+    const meta = CATEGORIES[category as Category];
+    const categoryPaths = paths.filter((p) => categoryOf(p.slug) === category);
     return (
       <main className="mx-auto max-w-6xl px-4 py-10">
         <button type="button" onClick={() => setFilter({})} className="text-sm text-slate-400 hover:text-white">
           ← All courses
         </button>
 
-        <h1 className="mt-4 text-3xl font-bold">💻 Programming Path</h1>
-        <p className="mt-2 text-slate-400">Choose a language or technology to see its course roadmap.</p>
+        <h1 className="mt-4 text-3xl font-bold">
+          {meta.icon} {meta.title}
+        </h1>
+        <p className="mt-2 text-slate-400">{meta.lead}</p>
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {programmingPaths.map((p) => (
-            <PathCard key={p.slug} path={p} onClick={() => setFilter({ path: p.slug })} />
-          ))}
-        </div>
-      </main>
-    );
-  }
-
-  // Category view: the DevOps technology grid
-  if (!activePath && category === 'devops') {
-    const devopsPaths = paths.filter((p) => DEVOPS_SLUGS.includes(p.slug));
-    return (
-      <main className="mx-auto max-w-6xl px-4 py-10">
-        <button type="button" onClick={() => setFilter({})} className="text-sm text-slate-400 hover:text-white">
-          ← All courses
-        </button>
-
-        <h1 className="mt-4 text-3xl font-bold">🚀 DevOps Path</h1>
-        <p className="mt-2 text-slate-400">Choose a technology to see its course roadmap.</p>
-
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {devopsPaths.map((p) => (
+          {categoryPaths.map((p) => (
             <PathCard key={p.slug} path={p} onClick={() => setFilter({ path: p.slug })} />
           ))}
         </div>
@@ -212,17 +226,17 @@ export function CoursesBrowser({ paths, courses }: Props) {
 
   // Path view: a specific path's course list, one card per course
   const currentPath = paths.find((p) => p.slug === activePath);
-  const isDevopsSubPath = DEVOPS_SLUGS.includes(activePath);
+  const parentCategory = categoryOf(activePath);
   const pathCourses = courses.filter((c) => c.pathSlug === activePath);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       <button
         type="button"
-        onClick={() => setFilter({ category: isDevopsSubPath ? 'devops' : 'programming' })}
+        onClick={() => setFilter({ category: parentCategory })}
         className="text-sm text-slate-400 hover:text-white"
       >
-        ← {isDevopsSubPath ? 'DevOps Path' : 'Programming Path'}
+        ← {CATEGORIES[parentCategory].title}
       </button>
 
       <h1 className="mt-4 text-3xl font-bold">

@@ -1,0 +1,344 @@
+{
+  "slug": "computer-science",
+  "title": "Computer Science",
+  "description": "The theory behind the code: asymptotic analysis, data structures, sorting, graph algorithms, automata and formal languages, and the limits of computation, every claim measured with runnable code.",
+  "pathSlug": "computer-science",
+  "pathName": "Computer Science",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "asymptotics-and-algorithm-analysis",
+      "title": "Asymptotics and Algorithm Analysis",
+      "order": 1,
+      "content": "# Asymptotics and Algorithm Analysis\n\nComputer science is the study of computation itself: what can be computed, how fast, and at what cost. It starts with measuring cost in a way that does not depend on your laptop.\n\n## Why not just time it?\n\nWall-clock time depends on hardware, language, and what else is running. What we want is how the cost **grows** with the input size, and that is machine-independent.\n\n$$\nT(n) = O(f(n)) \\iff T(n) \\le c \\cdot f(n) \\text{ for some } c \\text{ and all large } n\n$$\n\nConstants and lower-order terms are discarded, because for large $n$ they stop mattering.\n\n```python\nimport time\n\ndef linear_sum(n):\n    total = 0\n    for i in range(n):\n        total += i\n    return total\n\ndef quadratic_pairs(n):\n    count = 0\n    for i in range(n):\n        for j in range(n):\n            count += 1\n    return count\n\nprint(f\"{'n':>7}{'linear (ms)':>14}{'quadratic (ms)':>17}{'ratio':>9}\")\nfor n in [200, 400, 800, 1600]:\n    start = time.perf_counter(); linear_sum(n); t1 = (time.perf_counter()-start)*1000\n    start = time.perf_counter(); quadratic_pairs(n); t2 = (time.perf_counter()-start)*1000\n    print(f\"{n:>7}{t1:>14.3f}{t2:>17.3f}{t2/max(t1, 1e-9):>9.1f}\")\n```\n\nDouble $n$ and the linear routine doubles while the quadratic one quadruples. That ratio, not the absolute milliseconds, is the thing that transfers to any machine.\n\n## The growth hierarchy\n\n| Notation | Name | Doubling $n$ does what |\n|---|---|---|\n| $O(1)$ | constant | nothing |\n| $O(\\log n)$ | logarithmic | adds one step |\n| $O(n)$ | linear | doubles |\n| $O(n\\log n)$ | linearithmic | slightly more than doubles |\n| $O(n^2)$ | quadratic | quadruples |\n| $O(2^n)$ | exponential | squares the cost |\n| $O(n!)$ | factorial | hopeless past ~12 |\n\n```python\nimport math\n\nprint(f\"{'n':>6}{'log n':>9}{'n':>10}{'n log n':>12}{'n^2':>14}{'2^n':>22}\")\nfor n in [10, 100, 1000, 10**4, 10**6]:\n    exponential = f\"{2**n:.2e}\" if n <= 100 else \"astronomically large\"\n    print(f\"{n:>6}{math.log2(n):>9.1f}{n:>10}{n*math.log2(n):>12.0f}{n**2:>14}{exponential:>22}\")\n```\n\nAt a billion operations per second, an $O(2^n)$ algorithm on $n = 100$ outlives the universe. This is not a hardware problem, and no faster computer fixes it.\n\n## Counting operations instead of timing\n\nMore reliable than a stopwatch: count the fundamental operations.\n\n```python\ndef count_operations(algorithm, n):\n    counter = {\"steps\": 0}\n    algorithm(n, counter)\n    return counter[\"steps\"]\n\ndef constant(n, c):\n    c[\"steps\"] += 1\n\ndef logarithmic(n, c):\n    while n > 1:\n        n //= 2\n        c[\"steps\"] += 1\n\ndef linear(n, c):\n    for _ in range(n):\n        c[\"steps\"] += 1\n\ndef quadratic(n, c):\n    for _ in range(n):\n        for _ in range(n):\n            c[\"steps\"] += 1\n\nprint(f\"{'n':>7}{'O(1)':>7}{'O(log n)':>10}{'O(n)':>9}{'O(n^2)':>11}\")\nfor n in [8, 64, 512, 2048]:\n    print(f\"{n:>7}{count_operations(constant, n):>7}\"\n          f\"{count_operations(logarithmic, n):>10}\"\n          f\"{count_operations(linear, n):>9}\"\n          f\"{count_operations(quadratic, n):>11}\")\n```\n\n## Empirically measuring the exponent\n\nIf $T(n) \\approx c\\,n^{p}$, then doubling $n$ multiplies the time by $2^{p}$, so $p = \\log_2(T(2n)/T(n))$. You can recover the exponent from timings, which is a good way to check that an implementation matches its claimed complexity.\n\n```python\nimport time, math\n\ndef measure(fn, n, repeats=3):\n    best = float('inf')\n    for _ in range(repeats):\n        start = time.perf_counter()\n        fn(n)\n        best = min(best, time.perf_counter() - start)\n    return best\n\ndef linear_work(n):\n    total = 0\n    for i in range(n):\n        total += i\n    return total\n\ndef quadratic_work(n):\n    total = 0\n    for i in range(n):\n        for j in range(n):\n            total += 1\n    return total\n\nfor name, fn, sizes in [(\"linear\", linear_work, [25_000, 50_000, 100_000]),\n                        (\"quadratic\", quadratic_work, [200, 400, 800])]:\n    times = [measure(fn, n) for n in sizes]\n    exponents = [math.log2(times[i+1]/times[i]) for i in range(len(times)-1)]\n    print(f\"{name:10s} measured exponent p = {[round(e, 2) for e in exponents]}\")\n```\n\nThe linear routine lands near 1 and the quadratic near 2, recovered from nothing but a clock.\n\n## Best, worst, and average case\n\nComplexity is not one number. Linear search finds the target immediately if it is first, and scans everything if it is absent.\n\n```python\ndef linear_search(haystack, needle):\n    for index, value in enumerate(haystack):\n        if value == needle:\n            return index, index + 1        # position, comparisons used\n    return -1, len(haystack)\n\ndata = list(range(1000))\nprint(\"best case (first element):  \", linear_search(data, 0)[1], \"comparisons\")\nprint(\"average case (middle):      \", linear_search(data, 500)[1], \"comparisons\")\nprint(\"worst case (absent):        \", linear_search(data, -1)[1], \"comparisons\")\n\ntotal = sum(linear_search(data, target)[1] for target in data)\nprint(f\"true average over all present targets: {total/len(data):.1f} = about n/2\")\n```\n\n## Amortised analysis\n\nSome operations are usually cheap and occasionally expensive. Appending to a dynamic array is $O(1)$ almost always, and $O(n)$ when it has to grow, but the expensive steps are rare enough that the **average over a sequence** is still $O(1)$.\n\n```python\nclass DynamicArray:\n    def __init__(self):\n        self.capacity, self.length, self.copies = 1, 0, 0\n        self.store = [None]\n\n    def append(self, value):\n        if self.length == self.capacity:\n            self.capacity *= 2\n            new = [None] * self.capacity\n            for i in range(self.length):\n                new[i] = self.store[i]\n                self.copies += 1\n            self.store = new\n        self.store[self.length] = value\n        self.length += 1\n\narray = DynamicArray()\ncheckpoints = {100, 1000, 10000, 50000}\nfor i in range(50000):\n    array.append(i)\n    if i + 1 in checkpoints:\n        print(f\"after {i+1:>6} appends: {array.copies:>6} copies, \"\n              f\"{array.copies/(i+1):.2f} copies per append\")\n```\n\nThe copies-per-append stays below 2 no matter how far you go. Doubling is what makes that true: growing by a constant amount instead would make it $O(n)$ per append on average.\n\n> [!NOTE]\n> Big-O is an upper bound, $\\Omega$ a lower bound, and $\\Theta$ both at once. Saying an algorithm is $O(n^2)$ when it is really $\\Theta(n\\log n)$ is technically true and practically misleading, prefer $\\Theta$ when you know it.",
+      "quiz": {
+        "title": "Big-O",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Doubling n multiplies the running time of an O(n^2) algorithm by:",
+            "options": [
+              "2",
+              "4",
+              "8",
+              "It stays the same"
+            ],
+            "answer": "4"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Appending to a dynamic array that doubles its capacity is, amortised:",
+            "options": [
+              "O(1)",
+              "O(log n)",
+              "O(n)",
+              "O(n log n)"
+            ],
+            "answer": "O(1)"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Big-O notation keeps constant factors and lower-order terms.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Which notation gives both an upper and a lower bound at once? Write the Greek letter name.",
+            "options": [],
+            "answer": "theta"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "data-structures",
+      "title": "Data Structures",
+      "order": 2,
+      "content": "# Data Structures\n\nA data structure is a bargain: you pay in one operation to make another cheap. Knowing which bargain each structure offers is most of practical algorithm design.\n\n## The cost table\n\n| Structure | Access | Search | Insert | Delete | Notes |\n|---|---|---|---|---|---|\n| Array | $O(1)$ | $O(n)$ | $O(n)$ | $O(n)$ | contiguous, cache-friendly |\n| Sorted array | $O(1)$ | $O(\\log n)$ | $O(n)$ | $O(n)$ | binary search |\n| Linked list | $O(n)$ | $O(n)$ | $O(1)$ | $O(1)$ | insertion at a known node |\n| Hash table | n/a | $O(1)$ avg | $O(1)$ avg | $O(1)$ avg | $O(n)$ worst case |\n| Balanced BST | $O(\\log n)$ | $O(\\log n)$ | $O(\\log n)$ | $O(\\log n)$ | keeps order |\n| Binary heap | $O(1)$ min | $O(n)$ | $O(\\log n)$ | $O(\\log n)$ | priority only |\n\n```python\nimport time, random\n\nn = 60_000\ndata = list(range(n))\nlookup = set(data)\ntable = {value: True for value in data}\ntargets = random.sample(range(n), 200)\n\nstart = time.perf_counter()\nfor t in targets:\n    _ = t in data                 # list membership: O(n) each\nlist_time = time.perf_counter() - start\n\nstart = time.perf_counter()\nfor t in targets:\n    _ = t in lookup               # set membership: O(1) each\nset_time = time.perf_counter() - start\n\nprint(f\"200 lookups in a list of {n:,}: {list_time*1000:8.1f} ms\")\nprint(f\"200 lookups in a set  of {n:,}: {set_time*1000:8.1f} ms\")\nprint(f\"the set is about {list_time/max(set_time,1e-9):,.0f}x faster\")\n```\n\nSame data, same question, different structure, and the gap grows with $n$. This is the single most valuable habit in practical programming: if you are searching repeatedly, build an index first.\n\n## Stacks and queues\n\nBoth restrict where you may add and remove, and that restriction is what makes them useful.\n\n- **Stack**, last in first out. Function calls, undo, backtracking, expression parsing.\n- **Queue**, first in first out. Scheduling, BFS, buffering.\n\n```python\nfrom collections import deque\n\ndef balanced(text):\n    pairs = {')': '(', ']': '[', '}': '{'}\n    stack = []\n    for character in text:\n        if character in '([{':\n            stack.append(character)\n        elif character in pairs:\n            if not stack or stack.pop() != pairs[character]:\n                return False\n    return not stack\n\nfor text in [\"(a[b]{c})\", \"([)]\", \"((()))\", \"(()\", \"\"]:\n    print(f\"{text!r:12s} balanced? {balanced(text)}\")\n\nqueue = deque()\nfor job in [\"compile\", \"test\", \"package\", \"deploy\"]:\n    queue.append(job)\nprint(\"\\nprocessing order:\", [queue.popleft() for _ in range(len(queue))])\n```\n\nUse `collections.deque` for queues, never `list.pop(0)`, which is $O(n)$ and turns a linear loop into a quadratic one.\n\n```python\nimport time\nfrom collections import deque\n\nn = 15_000\nas_list = list(range(n))\nstart = time.perf_counter()\nwhile as_list:\n    as_list.pop(0)\nlist_time = time.perf_counter() - start\n\nas_deque = deque(range(n))\nstart = time.perf_counter()\nwhile as_deque:\n    as_deque.popleft()\ndeque_time = time.perf_counter() - start\n\nprint(f\"list.pop(0)     {list_time*1000:8.1f} ms\")\nprint(f\"deque.popleft() {deque_time*1000:8.1f} ms\")\n```\n\n## Hash tables\n\nA hash function maps a key to a bucket. Collisions are inevitable (pigeonhole principle), so the structure must handle them, here by chaining.\n\n```python\nclass HashTable:\n    def __init__(self, buckets=16):\n        self.buckets = [[] for _ in range(buckets)]\n        self.count = 0\n\n    def _index(self, key):\n        return hash(key) % len(self.buckets)\n\n    def put(self, key, value):\n        chain = self.buckets[self._index(key)]\n        for i, (existing, _) in enumerate(chain):\n            if existing == key:\n                chain[i] = (key, value)\n                return\n        chain.append((key, value))\n        self.count += 1\n\n    def get(self, key, default=None):\n        for existing, value in self.buckets[self._index(key)]:\n            if existing == key:\n                return value\n        return default\n\n    def stats(self):\n        lengths = [len(b) for b in self.buckets]\n        return {\"items\": self.count, \"buckets\": len(self.buckets),\n                \"longest chain\": max(lengths), \"empty buckets\": lengths.count(0)}\n\ntable = HashTable(buckets=16)\nfor i in range(50):\n    table.put(f\"key{i}\", i * i)\n\nprint(\"get('key7'):\", table.get(\"key7\"), \" get('missing'):\", table.get(\"missing\", \"not found\"))\nprint(\"stats:\", table.stats())\nprint(\"\\nload factor\", table.count / 16, \"-> average chain length, which is why real\")\nprint(\"implementations resize once the load factor passes about 0.75\")\n```\n\n## Binary search trees\n\nA BST keeps keys ordered: everything left of a node is smaller, everything right is larger. That gives $O(\\log n)$ operations **when balanced**, and $O(n)$ when not.\n\n```python\nclass Node:\n    def __init__(self, key):\n        self.key, self.left, self.right = key, None, None\n\ndef insert(root, key):\n    if root is None:\n        return Node(key)\n    if key < root.key:\n        root.left = insert(root.left, key)\n    elif key > root.key:\n        root.right = insert(root.right, key)\n    return root\n\ndef height(node):\n    return 0 if node is None else 1 + max(height(node.left), height(node.right))\n\ndef in_order(node, out=None):\n    out = [] if out is None else out\n    if node:\n        in_order(node.left, out)\n        out.append(node.key)\n        in_order(node.right, out)\n    return out\n\nimport math, random\n\nbalanced_root = None\nfor key in [50, 25, 75, 12, 37, 62, 87]:\n    balanced_root = insert(balanced_root, key)\n\ndegenerate_root = None\nfor key in range(1, 8):\n    degenerate_root = insert(degenerate_root, key)\n\nprint(\"balanced tree:  height\", height(balanced_root), \" in-order\", in_order(balanced_root))\nprint(\"sorted input:   height\", height(degenerate_root), \" in-order\", in_order(degenerate_root))\nprint(f\"\\nideal height for 7 nodes: {math.floor(math.log2(7)) + 1}\")\nprint(\"inserting sorted data degrades a BST into a linked list, which is exactly\")\nprint(\"why AVL and red-black trees rebalance on insert\")\n```\n\nAn in-order traversal of a BST always emits sorted keys. That is the structure's defining property, and a useful correctness check.\n\n## Heaps and priority queues\n\nA heap keeps only the minimum (or maximum) instantly available, which is cheaper than full ordering and enough for scheduling and shortest-path algorithms.\n\n```python\nimport heapq\n\ntasks = [(3, \"write docs\"), (1, \"fix outage\"), (4, \"refactor\"),\n         (1, \"restore backup\"), (2, \"review PR\")]\n\nheap = []\nfor priority, name in tasks:\n    heapq.heappush(heap, (priority, name))\n\nprint(\"popped in priority order:\")\nwhile heap:\n    priority, name = heapq.heappop(heap)\n    print(f\"  {priority}  {name}\")\n\nimport random\nvalues = [random.randint(1, 1000) for _ in range(20)]\nprint(\"\\nthree smallest:\", heapq.nsmallest(3, values))\nprint(\"three largest: \", heapq.nlargest(3, values))\n```\n\nBuilding a heap from $n$ items is $O(n)$, not $O(n\\log n)$, a pleasant surprise that comes from the fact that most nodes are near the bottom and sift down only a little.\n\n> [!TIP]\n> Before optimising an algorithm, check whether a different data structure makes the question trivial. Replacing a list with a set or a dict is the highest-value single change in most slow Python code.",
+      "quiz": {
+        "title": "Structures and Trade-offs",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Average-case lookup in a hash table is:",
+            "options": [
+              "O(1)",
+              "O(log n)",
+              "O(n)",
+              "O(n log n)"
+            ],
+            "answer": "O(1)"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Inserting already-sorted data into a plain binary search tree gives a height of:",
+            "options": [
+              "log n",
+              "n",
+              "n log n",
+              "constant"
+            ],
+            "answer": "n"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which Python type should you use for a queue?",
+            "options": [
+              "list with pop(0)",
+              "collections.deque",
+              "set",
+              "tuple"
+            ],
+            "answer": "collections.deque"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "An in-order traversal of a binary search tree emits the keys in ____ order.",
+            "options": [],
+            "answer": "sorted"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "sorting-and-searching",
+      "title": "Sorting and Searching",
+      "order": 3,
+      "content": "# Sorting and Searching\n\nSorting is the most studied problem in computing, and it is where the interplay between an algorithm's idea and its cost is clearest.\n\n## Binary search needs sorted input\n\nOn sorted data, halving the search space gives $O(\\log n)$: a million elements in twenty comparisons.\n\n```python\ndef binary_search(data, target):\n    lo, hi, steps = 0, len(data) - 1, 0\n    while lo <= hi:\n        steps += 1\n        mid = (lo + hi) // 2\n        if data[mid] == target:\n            return mid, steps\n        if data[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1, steps\n\nimport math\nfor size in [100, 10_000, 1_000_000]:\n    data = list(range(size))\n    _, steps = binary_search(data, size - 1)\n    print(f\"n = {size:>9,}  steps {steps:>3}  log2(n) = {math.log2(size):5.1f}\")\n```\n\n## The quadratic sorts\n\nInsertion, selection, and bubble sort are $O(n^2)$. They are worth knowing because insertion sort is genuinely the fastest option on tiny or nearly sorted inputs, which is why real library sorts fall back to it.\n\n```python\ndef insertion_sort(values):\n    values = values[:]\n    comparisons = 0\n    for i in range(1, len(values)):\n        current, j = values[i], i - 1\n        while j >= 0:\n            comparisons += 1\n            if values[j] <= current:\n                break\n            values[j + 1] = values[j]\n            j -= 1\n        values[j + 1] = current\n    return values, comparisons\n\nimport random\nrandom.seed(1)\nshuffled = random.sample(range(100), 100)\nnearly = list(range(100))\nnearly[40], nearly[41] = nearly[41], nearly[40]\n\nfor name, data in [(\"random\", shuffled), (\"nearly sorted\", nearly), (\"reversed\", list(range(100, 0, -1)))]:\n    result, comparisons = insertion_sort(data)\n    print(f\"{name:15s} comparisons {comparisons:>5}  sorted correctly: {result == sorted(data)}\")\n```\n\nNearly sorted input costs about $n$ comparisons; reversed input costs about $n^2/2$. Insertion sort is **adaptive**, its cost depends on how disordered the input already is.\n\n## Merge sort: divide and conquer\n\nSplit, sort each half, merge. The recursion is $\\log n$ deep and each level does $O(n)$ work, giving $\\Theta(n\\log n)$ in every case.\n\n```python\ndef merge_sort(values, depth=0, trace=None):\n    trace = [] if trace is None else trace\n    if len(values) <= 1:\n        return values, trace\n    mid = len(values) // 2\n    left, _ = merge_sort(values[:mid], depth + 1, trace)\n    right, _ = merge_sort(values[mid:], depth + 1, trace)\n\n    merged, i, j = [], 0, 0\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            merged.append(left[i]); i += 1\n        else:\n            merged.append(right[j]); j += 1\n    merged.extend(left[i:]); merged.extend(right[j:])\n    trace.append((depth, len(merged)))\n    return merged, trace\n\ndata = [38, 27, 43, 3, 9, 82, 10]\nresult, trace = merge_sort(data)\nprint(\"sorted:\", result)\nprint(\"merges by depth (deepest first):\")\nfor depth, size in trace:\n    print(f\"   depth {depth}: merged {size} elements\")\n```\n\nMerge sort is **stable** (equal elements keep their relative order) but needs $O(n)$ extra space. That trade-off is why it is the default for sorting objects by a key while preserving a previous ordering.\n\n## Quicksort: fast in practice, fragile in theory\n\nPartition around a pivot, recurse on both sides. Average $O(n\\log n)$, worst case $O(n^2)$ when the pivot is consistently terrible.\n\n```python\ndef quicksort(values, comparisons=None):\n    comparisons = {\"n\": 0} if comparisons is None else comparisons\n    if len(values) <= 1:\n        return values, comparisons\n    pivot = values[len(values) // 2]\n    smaller, equal, larger = [], [], []\n    for v in values:\n        comparisons[\"n\"] += 1\n        if v < pivot:\n            smaller.append(v)\n        elif v > pivot:\n            larger.append(v)\n        else:\n            equal.append(v)\n    left, _ = quicksort(smaller, comparisons)\n    right, _ = quicksort(larger, comparisons)\n    return left + equal + right, comparisons\n\nimport random\nrandom.seed(2)\ncases = {\n    \"random\":        random.sample(range(500), 500),\n    \"already sorted\": list(range(500)),\n    \"all identical\":  [7] * 500,\n}\nfor name, data in cases.items():\n    result, comparisons = quicksort(data)\n    print(f\"{name:16s} comparisons {comparisons['n']:>7,}  correct: {result == sorted(data)}\")\n```\n\nThe three-way partition above handles the all-identical case in linear time; a naive two-way partition would degrade to $O(n^2)$ there. Small implementation choices change the asymptotics.\n\n## The comparison lower bound\n\nNo comparison-based sort can beat $\\Omega(n\\log n)$. The argument is counting: there are $n!$ possible orderings, each comparison splits the possibilities in two, so you need at least $\\log_2(n!)$ comparisons, and $\\log_2(n!) \\approx n\\log_2 n - 1.44n$ by Stirling.\n\n```python\nimport math\n\nprint(f\"{'n':>6}{'log2(n!)':>14}{'n log2 n':>14}{'ratio':>9}\")\nfor n in [10, 100, 1000, 10000]:\n    lower_bound = math.log2(math.factorial(n))\n    naive = n * math.log2(n)\n    print(f\"{n:>6}{lower_bound:>14,.0f}{naive:>14,.0f}{lower_bound/naive:>9.3f}\")\n```\n\nSo merge sort is asymptotically optimal among comparison sorts. To go faster you must stop comparing.\n\n## Beating the bound by not comparing\n\nCounting sort and radix sort exploit structure in the keys and run in $O(n + k)$ or $O(dn)$.\n\n```python\ndef counting_sort(values, maximum):\n    counts = [0] * (maximum + 1)\n    for v in values:\n        counts[v] += 1\n    out = []\n    for value, count in enumerate(counts):\n        out.extend([value] * count)\n    return out\n\nimport random, time\nrandom.seed(3)\ndata = [random.randint(0, 999) for _ in range(60_000)]\n\nstart = time.perf_counter(); counting = counting_sort(data, 999); t1 = time.perf_counter() - start\nstart = time.perf_counter(); builtin = sorted(data); t2 = time.perf_counter() - start\n\nprint(f\"counting sort: {t1*1000:7.1f} ms\")\nprint(f\"sorted():      {t2*1000:7.1f} ms\")\nprint(\"identical result:\", counting == builtin)\nprint(\"\\ncounting sort is O(n + k), but k = the key range, so it is useless for\")\nprint(\"floats or large integers: no free lunch, just a different trade\")\n```\n\n## What real languages use\n\nPython's `sorted` uses **Timsort**: merge sort that first detects already-sorted runs and uses insertion sort on small ones. It is stable and $O(n)$ on nearly sorted data.\n\n```python\nimport time, random\nrandom.seed(4)\n\nn = 150_000\nrandom_data = [random.random() for _ in range(n)]\nsorted_data = sorted(random_data)\nnearly_sorted = sorted_data[:]\nnearly_sorted[n//2], nearly_sorted[n//2 + 1] = nearly_sorted[n//2 + 1], nearly_sorted[n//2]\n\nfor name, data in [(\"random\", random_data), (\"already sorted\", sorted_data),\n                   (\"nearly sorted\", nearly_sorted)]:\n    start = time.perf_counter()\n    sorted(data)\n    print(f\"{name:16s} {(time.perf_counter()-start)*1000:7.1f} ms\")\n```\n\nSorting already-ordered data is dramatically faster, because Timsort notices the existing run and does almost no work. Textbook merge sort would take the same time on all three.\n\n> [!IMPORTANT]\n> Stability matters more than people expect. Sorting by surname and then by first name gives a correctly ordered list only if the second sort is stable. Python's `sorted` is; C's `qsort` is not.",
+      "quiz": {
+        "title": "Sorting",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "No comparison-based sort can beat:",
+            "options": [
+              "O(n)",
+              "O(n log n)",
+              "O(n^2)",
+              "O(log n)"
+            ],
+            "answer": "O(n log n)"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Quicksort's worst case is:",
+            "options": [
+              "O(n)",
+              "O(n log n)",
+              "O(n^2)",
+              "O(2^n)"
+            ],
+            "answer": "O(n^2)"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A stable sort preserves the relative order of equal elements.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Which sorting algorithm does Python's sorted() use? (one word)",
+            "options": [],
+            "answer": "timsort"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "graph-algorithms",
+      "title": "Graph Algorithms",
+      "order": 4,
+      "content": "# Graph Algorithms\n\nGraphs model relationships, and a surprising number of problems become easy the moment you notice they are graph problems.\n\n## Representation and traversal\n\n```python\nfrom collections import deque\n\ngraph = {\n    'A': ['B', 'C'],\n    'B': ['A', 'D', 'E'],\n    'C': ['A', 'F'],\n    'D': ['B'],\n    'E': ['B', 'F'],\n    'F': ['C', 'E'],\n}\n\ndef bfs(graph, start):\n    distance, parent = {start: 0}, {start: None}\n    queue = deque([start])\n    order = []\n    while queue:\n        node = queue.popleft()\n        order.append(node)\n        for neighbour in graph[node]:\n            if neighbour not in distance:\n                distance[neighbour] = distance[node] + 1\n                parent[neighbour] = node\n                queue.append(neighbour)\n    return order, distance, parent\n\ndef dfs(graph, node, seen=None, order=None):\n    seen = set() if seen is None else seen\n    order = [] if order is None else order\n    seen.add(node)\n    order.append(node)\n    for neighbour in graph[node]:\n        if neighbour not in seen:\n            dfs(graph, neighbour, seen, order)\n    return order\n\norder, distance, parent = bfs(graph, 'A')\nprint(\"BFS order:    \", order)\nprint(\"BFS distances:\", distance)\nprint(\"DFS order:    \", dfs(graph, 'A'))\n\ndef path_to(parent, target):\n    path = []\n    while target is not None:\n        path.append(target)\n        target = parent[target]\n    return path[::-1]\n\nprint(\"shortest path A to F:\", path_to(parent, 'F'))\n```\n\nBFS gives shortest paths in **unweighted** graphs because it expands strictly in order of distance. DFS does not, and using it for shortest paths is a classic bug.\n\n## Dijkstra: shortest paths with weights\n\nBFS breaks once edges have different costs. Dijkstra fixes it by always expanding the closest unfinished node, using a heap.\n\n```python\nimport heapq\n\nweighted = {\n    'A': [('B', 4), ('C', 2)],\n    'B': [('A', 4), ('C', 1), ('D', 5)],\n    'C': [('A', 2), ('B', 1), ('D', 8), ('E', 10)],\n    'D': [('B', 5), ('C', 8), ('E', 2), ('F', 6)],\n    'E': [('C', 10), ('D', 2), ('F', 3)],\n    'F': [('D', 6), ('E', 3)],\n}\n\ndef dijkstra(graph, start):\n    distance = {node: float('inf') for node in graph}\n    distance[start] = 0\n    parent = {start: None}\n    heap = [(0, start)]\n    settled = set()\n\n    while heap:\n        cost, node = heapq.heappop(heap)\n        if node in settled:\n            continue\n        settled.add(node)\n        for neighbour, weight in graph[node]:\n            candidate = cost + weight\n            if candidate < distance[neighbour]:\n                distance[neighbour] = candidate\n                parent[neighbour] = node\n                heapq.heappush(heap, (candidate, neighbour))\n    return distance, parent\n\ndistance, parent = dijkstra(weighted, 'A')\nfor node in sorted(distance):\n    print(f\"  A -> {node}: cost {distance[node]}\")\n\npath, node = [], 'F'\nwhile node is not None:\n    path.append(node)\n    node = parent[node]\nprint(\"cheapest route to F:\", ' -> '.join(reversed(path)))\n```\n\nFewest hops and cheapest route are different questions, and BFS answers only the first.\n\n> [!WARNING]\n> Dijkstra requires non-negative weights. With a negative edge it can settle a node too early and return a wrong answer. Use Bellman-Ford there, which also detects negative cycles.\n\n## Topological sort\n\nFor a directed acyclic graph, produce an order respecting every dependency. This is what build systems, package managers, and task schedulers do.\n\n```python\nfrom collections import deque\n\ndependencies = {\n    'parse':     [],\n    'typecheck': ['parse'],\n    'optimise':  ['typecheck'],\n    'codegen':   ['optimise'],\n    'lint':      ['parse'],\n    'test':      ['codegen'],\n    'package':   ['codegen', 'lint'],\n}\n\ndef topological_sort(dependencies):\n    indegree = {node: 0 for node in dependencies}\n    dependents = {node: [] for node in dependencies}\n    for node, needs in dependencies.items():\n        for need in needs:\n            indegree[node] += 1\n            dependents[need].append(node)\n\n    ready = deque(sorted(n for n, d in indegree.items() if d == 0))\n    order = []\n    while ready:\n        node = ready.popleft()\n        order.append(node)\n        for dependent in dependents[node]:\n            indegree[dependent] -= 1\n            if indegree[dependent] == 0:\n                ready.append(dependent)\n\n    if len(order) != len(dependencies):\n        raise ValueError(\"cycle detected: no valid ordering exists\")\n    return order\n\nprint(\"build order:\", topological_sort(dependencies))\n\ncyclic = {'a': ['b'], 'b': ['c'], 'c': ['a']}\ntry:\n    topological_sort(cyclic)\nexcept ValueError as error:\n    print(\"cyclic graph ->\", error)\n```\n\nThe algorithm doubles as a cycle detector: if it cannot place every node, a cycle exists. That is exactly how a package manager reports a circular dependency.\n\n## Minimum spanning tree\n\nConnect every vertex at the least total cost. Kruskal's algorithm sorts the edges and greedily adds any that does not create a cycle, using union-find to check.\n\n```python\nedges = [(4, 'A', 'B'), (2, 'A', 'C'), (1, 'B', 'C'), (5, 'B', 'D'),\n         (8, 'C', 'D'), (10, 'C', 'E'), (2, 'D', 'E'), (6, 'D', 'F'), (3, 'E', 'F')]\n\ndef kruskal(nodes, edges):\n    parent = {n: n for n in nodes}\n\n    def find(x):\n        while parent[x] != x:\n            parent[x] = parent[parent[x]]\n            x = parent[x]\n        return x\n\n    tree, total = [], 0\n    for weight, a, b in sorted(edges):\n        ra, rb = find(a), find(b)\n        if ra != rb:\n            parent[ra] = rb\n            tree.append((a, b, weight))\n            total += weight\n    return tree, total\n\nnodes = sorted({n for _, a, b in edges for n in (a, b)})\ntree, total = kruskal(nodes, edges)\nprint(\"minimum spanning tree:\")\nfor a, b, weight in tree:\n    print(f\"  {a} - {b}  (weight {weight})\")\nprint(f\"total weight {total}, edges used {len(tree)} = |V| - 1 = {len(nodes) - 1}\")\n```\n\nA spanning tree of $n$ vertices always has exactly $n-1$ edges, which is the tree identity from discrete mathematics doing quality control on your implementation.\n\n## Bipartiteness by two-colouring\n\n```python\ndef is_bipartite(graph):\n    colour = {}\n    for start in graph:\n        if start in colour:\n            continue\n        colour[start] = 0\n        stack = [start]\n        while stack:\n            node = stack.pop()\n            for neighbour in graph[node]:\n                if neighbour not in colour:\n                    colour[neighbour] = 1 - colour[node]\n                    stack.append(neighbour)\n                elif colour[neighbour] == colour[node]:\n                    return False, None\n    return True, colour\n\nsquare = {'A': ['B', 'D'], 'B': ['A', 'C'], 'C': ['B', 'D'], 'D': ['C', 'A']}\ntriangle = {'A': ['B', 'C'], 'B': ['A', 'C'], 'C': ['A', 'B']}\n\nfor name, g in [(\"4-cycle\", square), (\"triangle\", triangle)]:\n    ok, colour = is_bipartite(g)\n    print(f\"{name:10s} bipartite? {ok}\" + (f\"  colouring {colour}\" if ok else \"\"))\n```\n\nA graph is bipartite exactly when it has no odd cycle. Two-colouring is the easy case of graph colouring, whose general form is NP-complete, which is lesson 6.\n\n## Complexity summary\n\n| Algorithm | Complexity | Answers |\n|---|---|---|\n| BFS / DFS | $O(V + E)$ | reachability, components, fewest hops |\n| Dijkstra (heap) | $O((V+E)\\log V)$ | cheapest path, non-negative weights |\n| Bellman-Ford | $O(VE)$ | cheapest path, negative edges allowed |\n| Topological sort | $O(V + E)$ | dependency order, cycle detection |\n| Kruskal | $O(E \\log E)$ | minimum spanning tree |\n| Travelling salesman (exact) | $O(n!)$ by brute force | shortest tour, and it is NP-hard |\n\n```python\nimport itertools, time, random\n\ndef brute_force_tsp(distances):\n    cities = list(distances)\n    start = cities[0]\n    best, best_tour = float('inf'), None\n    for order in itertools.permutations(cities[1:]):\n        tour = (start,) + order + (start,)\n        cost = sum(distances[tour[i]][tour[i+1]] for i in range(len(tour)-1))\n        if cost < best:\n            best, best_tour = cost, tour\n    return best, best_tour\n\nrandom.seed(5)\nfor n in [6, 8, 9]:\n    cities = [chr(65+i) for i in range(n)]\n    distances = {a: {b: 0 for b in cities} for a in cities}\n    for i, a in enumerate(cities):\n        for b in cities[i+1:]:\n            weight = random.randint(1, 99)\n            distances[a][b] = distances[b][a] = weight\n    started = time.perf_counter()\n    cost, tour = brute_force_tsp(distances)\n    tours = 1\n    for k in range(1, n):\n        tours *= k\n    print(f\"n = {n}: best cost {cost:3d} in {(time.perf_counter()-started)*1000:7.1f} ms \"\n          f\"({tours:,} tours checked)\")\n```\n\nEach extra city multiplies the work by roughly $n$. At 15 cities this is already impractical, and the gap between the polynomial algorithms above and this one is the subject of lesson 6.",
+      "quiz": {
+        "title": "Graphs in Practice",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which traversal finds shortest paths in an unweighted graph?",
+            "options": [
+              "DFS",
+              "BFS",
+              "Either one",
+              "Neither"
+            ],
+            "answer": "BFS"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Dijkstra's algorithm fails when the graph has:",
+            "options": [
+              "Cycles",
+              "Negative edge weights",
+              "More than 1000 nodes",
+              "Disconnected components"
+            ],
+            "answer": "Negative edge weights"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A topological sort fails to place every node exactly when the graph has:",
+            "options": [
+              "A cycle",
+              "Negative weights",
+              "More edges than vertices",
+              "An isolated vertex"
+            ],
+            "answer": "A cycle"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A minimum spanning tree of a graph with 20 vertices has how many edges? (a number)",
+            "options": [],
+            "answer": "19"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "automata-and-formal-languages",
+      "title": "Automata and Formal Languages",
+      "order": 5,
+      "content": "# Automata and Formal Languages\n\nBefore asking what a computer can do, it helps to ask what *simpler* machines can do. The answer is a hierarchy: each model recognises strictly more languages than the last, and each has a matching kind of grammar.\n\n## Finite automata\n\nA **deterministic finite automaton** has finitely many states, reads input one symbol at a time, and has no memory beyond its current state. It accepts a string if it ends in an accepting state.\n\n```python\nclass DFA:\n    def __init__(self, transition, start, accepting):\n        self.transition, self.start, self.accepting = transition, start, accepting\n\n    def accepts(self, text):\n        state = self.start\n        for symbol in text:\n            if (state, symbol) not in self.transition:\n                return False\n            state = self.transition[(state, symbol)]\n        return state in self.accepting\n\n# accepts binary strings with an even number of 1s\neven_ones = DFA(\n    transition={('even', '0'): 'even', ('even', '1'): 'odd',\n                ('odd', '0'): 'odd',  ('odd', '1'): 'even'},\n    start='even',\n    accepting={'even'},\n)\n\nfor text in ['', '0', '11', '101', '1111', '10101']:\n    print(f\"{text!r:>9} has {text.count('1')} ones -> accepted: {even_ones.accepts(text)}\")\n```\n\nThe machine tracks a single bit of information, the parity, and that is exactly enough. Finite automata are precisely the machines whose memory does not grow with the input.\n\n## Regular languages\n\nThe languages recognised by finite automata are the **regular** languages, and they are exactly what regular expressions describe. Three equivalent formalisms: DFAs, NFAs, and regular expressions.\n\n```python\nimport re\n\npatterns = {\n    \"even number of 1s\":     r'^(0*10*1)*0*$',\n    \"starts a, ends z\":      r'^a.*z$',\n    \"only digits\":           r'^[0-9]+$',\n}\ntests = ['', '11', '101', '1111', 'abcz', 'a1z', '12345', 'x']\n\nfor name, pattern in patterns.items():\n    matches = [t for t in tests if re.match(pattern, t)]\n    print(f\"{name:20s} matches {matches}\")\n```\n\n## What finite automata cannot do\n\nThey cannot count without bound. The language of balanced parentheses, or a-then-b strings with equal counts, requires remembering how many you have seen, and a finite machine has nowhere to put that number.\n\nThe **pumping lemma** makes this rigorous: for any regular language there is a length beyond which every accepted string contains a middle section you can repeat and stay in the language.\n\n```python\ndef equal_a_then_b(text):\n    n = len(text) // 2\n    return len(text) % 2 == 0 and text == 'a'*n + 'b'*n\n\nprint(\"strings in the language:\")\nfor text in ['ab', 'aabb', 'aaabbb', 'aab', 'abab', '']:\n    print(f\"  {text!r:>9} {equal_a_then_b(text)}\")\n\nprint(\"\\npumping the middle of 'aaabbb':\")\nfor repeats in range(1, 4):\n    pumped = 'aaa' + 'ab'*repeats + 'bbb'\n    print(f\"  {pumped!r:>16} still in the language? {equal_a_then_b(pumped)}\")\nprint(\"every pumped string leaves the language, so it cannot be regular\")\n```\n\n## Pushdown automata and context-free grammars\n\nAdd a **stack** and you get a pushdown automaton, which recognises the **context-free** languages. That extra memory is exactly what balanced parentheses need, and it is why programming language syntax is context-free.\n\n```python\ndef pushdown_accepts(text):\n    \"\"\"Push on 'a', pop on 'b'. Accept when the stack ends empty.\"\"\"\n    stack, seen_b = [], False\n    for symbol in text:\n        if symbol == 'a':\n            if seen_b:\n                return False\n            stack.append('a')\n        elif symbol == 'b':\n            seen_b = True\n            if not stack:\n                return False\n            stack.pop()\n        else:\n            return False\n    return not stack\n\nfor text in ['', 'ab', 'aabb', 'aaabbb', 'aab', 'abab', 'ba']:\n    print(f\"  {text!r:>9} accepted: {pushdown_accepts(text)}\")\n```\n\nThe matching grammar has one rule: S expands to `a S b`, or to the empty string.\n\n```python\ndef generate(depth):\n    if depth == 0:\n        return ['']\n    return [''] + ['a' + inner + 'b' for inner in generate(depth - 1)]\n\nfor text in sorted(set(generate(5)), key=len):\n    print(f\"  {text!r}\")\n```\n\n## A recursive descent parser\n\nContext-free grammars are what parsers implement. Here is arithmetic with precedence, written directly from the grammar: an expression is terms joined by plus or minus, a term is factors joined by times or divide, and a factor is a number or a bracketed expression.\n\n```python\nimport re\n\ndef tokenize(text):\n    return re.findall(r'\\d+\\.?\\d*|[-+*/()]', text)\n\nclass Parser:\n    def __init__(self, tokens):\n        self.tokens, self.position = tokens, 0\n\n    def peek(self):\n        return self.tokens[self.position] if self.position < len(self.tokens) else None\n\n    def take(self):\n        token = self.peek()\n        self.position += 1\n        return token\n\n    def expression(self):\n        value = self.term()\n        while self.peek() in ('+', '-'):\n            operator = self.take()\n            value = value + self.term() if operator == '+' else value - self.term()\n        return value\n\n    def term(self):\n        value = self.factor()\n        while self.peek() in ('*', '/'):\n            operator = self.take()\n            value = value * self.factor() if operator == '*' else value / self.factor()\n        return value\n\n    def factor(self):\n        token = self.take()\n        if token == '(':\n            value = self.expression()\n            self.take()\n            return value\n        return float(token)\n\nfor text in [\"2 + 3 * 4\", \"(2 + 3) * 4\", \"10 / 4 + 1\", \"2 * (3 + (4 - 1))\"]:\n    print(f\"{text:24s} = {Parser(tokenize(text)).expression()}\")\n```\n\nPrecedence is not a special rule bolted on, it falls out of the grammar's shape: `term` binds tighter than `expression` because it sits lower in the recursion.\n\n## The Chomsky hierarchy\n\n| Level | Grammar | Machine | Example language |\n|---|---|---|---|\n| 3 | Regular | finite automaton | even number of 1s |\n| 2 | Context-free | pushdown automaton | balanced parentheses |\n| 1 | Context-sensitive | linear bounded automaton | equal runs of a, b, and c |\n| 0 | Unrestricted | Turing machine | anything computable |\n\n```python\ndef equal_abc(text):\n    n = len(text) // 3\n    return len(text) % 3 == 0 and text == 'a'*n + 'b'*n + 'c'*n\n\nprint(\"three equal runs needs context sensitivity, one stack is not enough:\")\nfor text in ['abc', 'aabbcc', 'aabbc', 'abcabc']:\n    print(f\"  {text!r:>9} {equal_abc(text)}\")\nprint(\"a stack can match the a's against the b's, but it is empty by the time the c's arrive\")\n```\n\nEach level is strictly more powerful, and level 0, the Turing machines, is where the hierarchy stops. That is the next lesson.\n\n> [!TIP]\n> This is why you cannot parse HTML with a regular expression. Nested tags are context-free and regular expressions are level 3. The tooling is not being difficult; the language is genuinely out of reach.",
+      "quiz": {
+        "title": "The Chomsky Hierarchy",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Regular expressions describe exactly the languages recognised by:",
+            "options": [
+              "Finite automata",
+              "Pushdown automata",
+              "Turing machines",
+              "Linear bounded automata"
+            ],
+            "answer": "Finite automata"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What extra memory does a pushdown automaton have?",
+            "options": [
+              "A stack",
+              "A queue",
+              "An infinite tape",
+              "A hash table"
+            ],
+            "answer": "A stack"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Nested HTML tags can be matched correctly by a regular expression.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Programming language syntax sits at which level of the hierarchy: it is ____-free.",
+            "options": [],
+            "answer": "context"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "computability-and-complexity",
+      "title": "Computability and Complexity",
+      "order": 6,
+      "content": "# Computability and Complexity\n\nTwo different limits. **Computability** asks what can be computed at all; **complexity** asks what can be computed efficiently. The first has a definitive answer, the second contains the biggest open problem in the field.\n\n## Turing machines\n\nA Turing machine is a finite automaton with an infinite tape it can read, write, and move along. That single addition makes it as powerful as any computer ever built.\n\n```python\ndef run_turing(rules, tape, start='q0', halt='halt', max_steps=500):\n    \"\"\"rules: (state, symbol) -> (write, move, next_state). Blank cells are '_'.\"\"\"\n    tape = list(tape)\n    position, state, steps = 0, start, 0\n    while state != halt and steps < max_steps:\n        while position >= len(tape):\n            tape.append('_')\n        if position < 0:\n            tape.insert(0, '_')\n            position = 0\n        symbol = tape[position]\n        if (state, symbol) not in rules:\n            break\n        write, move, state = rules[(state, symbol)]\n        tape[position] = write\n        position += 1 if move == 'R' else -1\n        steps += 1\n    return ''.join(tape).strip('_'), steps, state\n\n# a binary incrementer: scan right to the end, then add 1 with carry\nincrement = {\n    ('q0', '0'): ('0', 'R', 'q0'),\n    ('q0', '1'): ('1', 'R', 'q0'),\n    ('q0', '_'): ('_', 'L', 'q1'),\n    ('q1', '0'): ('1', 'L', 'halt'),\n    ('q1', '1'): ('0', 'L', 'q1'),\n    ('q1', '_'): ('1', 'L', 'halt'),\n}\nfor binary in ['0', '1', '10', '111', '1011']:\n    result, steps, state = run_turing(increment, binary)\n    print(f\"{binary:>6} + 1 = {result:>6}   decimal {int(binary, 2)} + 1, {steps} steps\")\n```\n\nThat is a complete model of computation: a tape, a head, and a finite rule table. The **Church-Turing thesis** says anything effectively computable is computable by such a machine, and nothing proposed since has beaten it.\n\n## The halting problem\n\nSome problems have no algorithm at all. The classic: decide, for an arbitrary program and input, whether it halts.\n\nThe proof is a diagonal argument. Suppose a decider `halts(program, input)` existed. Build a program `trouble` that runs `halts` on itself, then loops forever if the answer is \"halts\" and halts immediately if the answer is \"loops\". Now ask what `trouble` does on itself: if it halts, its own definition made it loop, and if it loops, its definition made it halt. Contradiction, so `halts` cannot exist.\n\n```python\ndef halts_heuristic(source):\n    \"\"\"A partial halting checker. It works only on patterns it recognises,\n    which is exactly the compromise real static analysers make.\"\"\"\n    if 'while True' in source and 'break' not in source and 'return' not in source:\n        return False, \"certain: unconditional infinite loop\"\n    if 'while' not in source and 'for' not in source:\n        return True, \"certain: no loops at all\"\n    return None, \"unknown: the undecidable general case\"\n\nprograms = {\n    \"print(1)\":         \"print(1)\",\n    \"while True: pass\": \"while True: pass\",\n    \"bounded for loop\": \"for i in range(10): print(i)\",\n    \"collatz loop\":     \"while n != 1: n = n//2 if n%2==0 else 3*n+1\",\n}\nfor name, source in programs.items():\n    verdict, reason = halts_heuristic(source)\n    print(f\"{name:20s} halts? {str(verdict):5s}  {reason}\")\n```\n\nThe Collatz case is the honest one. Nobody knows whether that loop terminates for every starting value, and the question has been open since 1937.\n\n```python\ndef collatz_steps(n, limit=10000):\n    steps = 0\n    while n != 1 and steps < limit:\n        n = n // 2 if n % 2 == 0 else 3 * n + 1\n        steps += 1\n    return steps if n == 1 else None\n\nprint(\"Collatz stopping times:\")\nfor n in [6, 7, 27, 97, 871]:\n    print(f\"  n = {n:4d} reaches 1 in {collatz_steps(n)} steps\")\nprint(\"every number ever tested reaches 1, and nobody can prove they all do\")\n```\n\n**Rice's theorem** generalises the bad news: every non-trivial semantic property of programs is undecidable. Not just halting, but \"does this ever crash\", \"is this equivalent to that\", \"does this always return a positive number\". That is why perfect static analysis is impossible, and why analysers are deliberately conservative.\n\n## P, NP, and NP-completeness\n\nNow the efficiency question.\n\n- **P**, solvable in polynomial time.\n- **NP**, a proposed solution can be *verified* in polynomial time.\n- **NP-complete**, in NP and at least as hard as everything else in NP.\n\nEvery problem in P is in NP. Whether P equals NP is the open question, and almost everyone expects the answer is no.\n\n```python\nimport itertools, time\n\ndef subset_sum_search(numbers, target):\n    for size in range(len(numbers) + 1):\n        for subset in itertools.combinations(numbers, size):\n            if sum(subset) == target:\n                return subset\n    return None\n\nnumbers = [3, 34, 4, 12, 5, 2, 17, 23, 8, 41, 19, 6]\ntarget = 100\n\nstarted = time.perf_counter()\nanswer = subset_sum_search(numbers, target)\nsearch_time = time.perf_counter() - started\n\nstarted = time.perf_counter()\nok = sum(answer) == target\nverify_time = max(time.perf_counter() - started, 1e-9)\n\nprint(f\"found subset {answer} summing to {target}, verified: {ok}\")\nprint(f\"  searching: {search_time*1e6:9.1f} microseconds \"\n      f\"({2**len(numbers):,} subsets possible)\")\nprint(f\"  verifying: {verify_time*1e6:9.1f} microseconds\")\nprint(f\"  searching took roughly {search_time/verify_time:,.0f}x longer than checking\")\n```\n\nThat asymmetry is the whole point of NP: finding is hard, checking is easy. It is also exactly why cryptography works.\n\n## The exponential wall\n\n```python\nimport itertools, time, random\n\ndef satisfiable(clauses, variables):\n    \"\"\"3-SAT by trying every assignment: 2^n of them.\"\"\"\n    for assignment in itertools.product([False, True], repeat=variables):\n        if all(any(assignment[abs(literal)-1] == (literal > 0) for literal in clause)\n               for clause in clauses):\n            return assignment\n    return None\n\nrandom.seed(11)\nfor variables in [8, 11, 14, 16]:\n    clauses = [[random.choice([1, -1]) * random.randint(1, variables) for _ in range(3)]\n               for _ in range(variables * 3)]\n    started = time.perf_counter()\n    satisfiable(clauses, variables)\n    print(f\"{variables:3d} variables: {2**variables:>9,} assignments, \"\n          f\"{(time.perf_counter()-started)*1000:8.1f} ms\")\n```\n\nEach extra variable doubles the time. Ten more variables multiplies the cost by a thousand, which is why \"buy a faster computer\" is not a strategy against exponential growth.\n\n## A map of the landscape\n\n| Problem | Class | Notes |\n|---|---|---|\n| Sorting | P | linearithmic |\n| Shortest path | P | Dijkstra |\n| Minimum spanning tree | P | Kruskal |\n| Primality testing | P | proved in 2002 |\n| Integer factoring | NP, not known to be NP-complete | RSA depends on this |\n| Boolean satisfiability | NP-complete | the original, 1971 |\n| Travelling salesman | NP-hard | the optimisation version |\n| Graph colouring | NP-complete | 2 colours easy, 3 hard |\n| Halting problem | undecidable | no algorithm at all |\n\n```python\nimport itertools\n\ndef colourable(graph, colours):\n    nodes = list(graph)\n    for assignment in itertools.product(range(colours), repeat=len(nodes)):\n        colouring = dict(zip(nodes, assignment))\n        if all(colouring[a] != colouring[b] for a in graph for b in graph[a]):\n            return colouring\n    return None\n\ntriangle = {'A': ['B','C'], 'B': ['A','C'], 'C': ['A','B']}\nsquare = {'A': ['B','D'], 'B': ['A','C'], 'C': ['B','D'], 'D': ['C','A']}\n\nfor name, g in [(\"triangle\", triangle), (\"4-cycle\", square)]:\n    for k in [2, 3]:\n        result = colourable(g, k)\n        print(f\"{name:10s} {k}-colourable? {result is not None}\"\n              f\"{'  ' + str(result) if result else ''}\")\n```\n\nTwo-colouring is a linear-time BFS from lesson 4. Three-colouring is NP-complete. One extra colour moves the problem across the most important boundary in the subject.\n\n> [!IMPORTANT]\n> NP-complete does not mean hopeless. It means no known algorithm is fast on *every* input. Real SAT solvers routinely handle millions of variables on industrial instances, because real instances have structure that worst-case analysis ignores.",
+      "quiz": {
+        "title": "Limits of Computation",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The halting problem is:",
+            "options": [
+              "In P",
+              "NP-complete",
+              "Undecidable",
+              "Solvable with enough memory"
+            ],
+            "answer": "Undecidable"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "NP is the class of problems where a solution can be:",
+            "options": [
+              "Found quickly",
+              "Verified quickly",
+              "Compressed quickly",
+              "Sorted quickly"
+            ],
+            "answer": "Verified quickly"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Two-colouring a graph is in P. Three-colouring is:",
+            "options": [
+              "Also in P",
+              "NP-complete",
+              "Undecidable",
+              "Impossible"
+            ],
+            "answer": "NP-complete"
+          },
+          {
+            "id": "q4",
+            "type": "TRUE_FALSE",
+            "prompt": "Rice's theorem says every non-trivial semantic property of programs is undecidable.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-and-measure",
+      "title": "Final Project: Build and Measure",
+      "order": 7,
+      "content": "# Final Project: Build and Measure\n\nOne project, three parts: implement the classic algorithms, measure them honestly, and then hit the wall where efficiency stops being possible.\n\n## Part 1: the library\n\nWrite `algorithms.py` from scratch, no library shortcuts inside the implementations.\n\n**Sorting**\n1. `insertion_sort`, `merge_sort`, `quicksort` (three-way partition), `counting_sort`.\n2. Each returns the sorted list *and* a count of comparisons performed.\n\n**Structures**\n3. `HashTable` with chaining and automatic resizing past a load factor of 0.75.\n4. `BST` with insert, search, delete, and in-order traversal.\n5. `MinHeap` with push, pop, and $O(n)$ heapify.\n\n**Graphs**\n6. `bfs`, `dijkstra`, `topological_sort`, `kruskal`.\n\n## Part 2: measure, do not assume\n\nVerify the claimed complexity of every routine empirically, by measuring the exponent from timings the way lesson 1 did.\n\n```python\nimport time, math, random\n\ndef measure(fn, data, repeats=3):\n    best = float('inf')\n    for _ in range(repeats):\n        payload = data[:]\n        started = time.perf_counter()\n        fn(payload)\n        best = min(best, time.perf_counter() - started)\n    return best\n\ndef insertion_sort(values):\n    for i in range(1, len(values)):\n        current, j = values[i], i - 1\n        while j >= 0 and values[j] > current:\n            values[j + 1] = values[j]\n            j -= 1\n        values[j + 1] = current\n    return values\n\ndef merge_sort(values):\n    if len(values) <= 1:\n        return values\n    mid = len(values) // 2\n    left, right = merge_sort(values[:mid]), merge_sort(values[mid:])\n    out, i, j = [], 0, 0\n    while i < len(left) and j < len(right):\n        if left[i] <= right[j]:\n            out.append(left[i]); i += 1\n        else:\n            out.append(right[j]); j += 1\n    out.extend(left[i:]); out.extend(right[j:])\n    return out\n\nrandom.seed(7)\nprint(f\"{'algorithm':16s}{'n':>7}{'time (ms)':>12}{'measured exponent':>20}\")\nfor name, fn, sizes in [(\"insertion\", insertion_sort, [300, 600, 1200]),\n                        (\"merge\", merge_sort, [3000, 6000, 12000])]:\n    times = []\n    for n in sizes:\n        data = [random.random() for _ in range(n)]\n        elapsed = measure(fn, data)\n        times.append(elapsed)\n        print(f\"{name:16s}{n:>7}{elapsed*1000:>12.2f}\", end=\"\")\n        if len(times) > 1:\n            print(f\"{math.log2(times[-1]/times[-2]):>20.2f}\")\n        else:\n            print(f\"{'-':>20}\")\n```\n\nInsertion sort should land near 2.0 and merge sort just above 1.0 (it is $n\\log n$, so slightly more than linear). If your numbers disagree with your claimed complexity, trust the numbers and go find the bug.\n\n## Part 3: hit the wall\n\nTake one NP-complete problem, subset sum or 3-SAT, and push the input size until brute force gives up. Then implement one improvement and measure how much further it gets you.\n\n```python\nimport itertools, time\n\ndef subset_sum_bruteforce(numbers, target):\n    for size in range(len(numbers) + 1):\n        for subset in itertools.combinations(numbers, size):\n            if sum(subset) == target:\n                return subset\n    return None\n\ndef subset_sum_meet_in_middle(numbers, target):\n    \"\"\"Split in half, enumerate each half, match across: 2^(n/2) instead of 2^n.\"\"\"\n    half = len(numbers) // 2\n    left, right = numbers[:half], numbers[half:]\n\n    sums = {}\n    for size in range(len(left) + 1):\n        for subset in itertools.combinations(left, size):\n            sums.setdefault(sum(subset), subset)\n\n    for size in range(len(right) + 1):\n        for subset in itertools.combinations(right, size):\n            need = target - sum(subset)\n            if need in sums:\n                return sums[need] + subset\n    return None\n\nimport random\nrandom.seed(9)\nfor n in [14, 18, 22]:\n    numbers = [random.randint(1, 200) for _ in range(n)]\n    target = sum(random.sample(numbers, n // 3))\n\n    started = time.perf_counter()\n    a = subset_sum_bruteforce(numbers, target)\n    brute = time.perf_counter() - started\n\n    started = time.perf_counter()\n    b = subset_sum_meet_in_middle(numbers, target)\n    smart = time.perf_counter() - started\n\n    print(f\"n = {n}: brute force {brute*1000:8.1f} ms, meet-in-the-middle {smart*1000:7.1f} ms, \"\n          f\"speedup {brute/max(smart,1e-9):5.1f}x   both correct: \"\n          f\"{sum(a) == target == sum(b)}\")\n```\n\nMeet-in-the-middle turns $2^n$ into $2^{n/2}$. That is still exponential, and it still loses eventually, but it roughly doubles the size you can handle. This is the realistic response to NP-hardness: not a polynomial algorithm, but a better exponent.\n\n## Stretch goals\n\n- **A DPLL SAT solver.** Unit propagation and pure literal elimination, then compare against brute force on random 3-SAT near the satisfiability threshold of about 4.26 clauses per variable.\n- **A* search.** Add a heuristic to Dijkstra and count how many fewer nodes get expanded on a grid map.\n- **Greedy TSP with a bound.** Nearest-neighbour tours, then compare against the exact answer for small $n$ and report the approximation ratio you actually observed.\n- **A red-black or AVL tree.** Insert sorted data and show the height stays logarithmic where a plain BST degenerated to $n$.\n- **A Turing machine simulator with a rule-table format**, then write machines for binary addition and for palindrome recognition.\n\n## Definition of done\n\n- Every sorting routine agrees with `sorted()` on 100 random inputs, including edge cases: empty, one element, all identical, already sorted, reverse sorted.\n- Measured exponents match the claimed complexity for every routine, in a table in your README.\n- `HashTable` reports its load factor and resizes; show the longest chain stays short as it grows.\n- `dijkstra` agrees with `bfs` when every edge has weight 1, and you have a test where they disagree because the weights differ.\n- The NP-complete section includes a plot or table of the size at which each approach became impractical on your machine, with the wall-clock numbers to back it up.",
+      "requiresSubmission": true
+    }
+  ]
+}

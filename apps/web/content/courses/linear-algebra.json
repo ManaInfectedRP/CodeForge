@@ -1,0 +1,335 @@
+{
+  "slug": "linear-algebra",
+  "title": "Linear Algebra",
+  "description": "Vectors, matrices, linear systems, determinants, eigenvalues, and least squares, with every computation runnable in your browser using numpy and sympy.",
+  "pathSlug": "linear-algebra",
+  "pathName": "Linear Algebra",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "vectors-and-vector-spaces",
+      "title": "Vectors and Vector Spaces",
+      "order": 1,
+      "content": "# Vectors and Vector Spaces\n\nLinear algebra is the mathematics of **straight-line structure**: vectors, and the transformations that keep addition and scaling intact. Almost everything in graphics, machine learning, and simulation is linear algebra underneath.\n\n## What a vector is\n\nA vector in $\\mathbb{R}^n$ is an ordered list of $n$ numbers. You can read it two ways, and both matter:\n\n- **Algebraically**, a point in a list: $\\mathbf{v} = (3, 4)$.\n- **Geometrically**, an arrow from the origin to that point, with a direction and a length.\n\nTwo operations are allowed, and only two:\n\n$$\n\\mathbf{u} + \\mathbf{v} \\qquad\\text{and}\\qquad c\\,\\mathbf{v}\n$$\n\nAdding vectors and scaling them by a number. Every other idea in the subject is built from these.\n\n## Run it\n\n```python\nimport numpy as np\n\nu = np.array([3.0, 4.0])\nv = np.array([-1.0, 2.0])\n\nprint(\"u + v      =\", u + v)\nprint(\"3u         =\", 3 * u)\nprint(\"length |u| =\", np.linalg.norm(u))\nprint(\"dot u . v  =\", np.dot(u, v))\n```\n\nThe length comes from the dot product: $\\|\\mathbf{u}\\| = \\sqrt{\\mathbf{u}\\cdot\\mathbf{u}}$. For $(3,4)$ that is $\\sqrt{9+16} = 5$, the Pythagorean theorem wearing a different hat.\n\n## The dot product measures angle\n\n$$\n\\mathbf{u}\\cdot\\mathbf{v} = \\|\\mathbf{u}\\|\\,\\|\\mathbf{v}\\|\\cos\\theta\n$$\n\nSo the sign of the dot product tells you whether two vectors point roughly the same way (positive), roughly opposite (negative), or are **orthogonal** (exactly zero).\n\n```python\nimport numpy as np\n\ndef angle_deg(a, b):\n    cos = np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))\n    return np.degrees(np.arccos(np.clip(cos, -1.0, 1.0)))\n\nprint(angle_deg(np.array([1, 0]), np.array([0, 1])))   # 90, orthogonal\nprint(angle_deg(np.array([1, 0]), np.array([1, 1])))   # 45\nprint(angle_deg(np.array([1, 0]), np.array([-1, 0])))  # 180, opposite\n```\n\n## Vector spaces, span, and independence\n\nA **vector space** is any set closed under those two operations: add two members, you stay inside; scale a member, you stay inside. $\\mathbb{R}^n$ is the obvious example, but so is the set of all polynomials of degree $\\le 3$, and the set of all $2\\times2$ matrices.\n\nGiven vectors $\\mathbf{v}_1,\\dots,\\mathbf{v}_k$:\n\n- Their **span** is every linear combination $c_1\\mathbf{v}_1 + \\dots + c_k\\mathbf{v}_k$, the whole subspace they can reach.\n- They are **linearly independent** if the only combination equal to $\\mathbf{0}$ is the one with all $c_i = 0$. Otherwise one of them is redundant, it already lives in the span of the others.\n- An independent set that spans the whole space is a **basis**, and the number of vectors in it is the **dimension**.\n\nThe practical test for independence is the rank: stack the vectors as columns and count how many are genuinely contributing.\n\n```python\nimport numpy as np\n\nindependent = np.array([[1.0, 0.0],\n                        [0.0, 1.0],\n                        [0.0, 0.0]])          # two columns in R^3\n\ndependent = np.array([[1.0, 2.0],\n                      [2.0, 4.0],\n                      [3.0, 6.0]])            # column 2 = 2 * column 1\n\nprint(\"rank independent:\", np.linalg.matrix_rank(independent))  # 2\nprint(\"rank dependent:  \", np.linalg.matrix_rank(dependent))    # 1\n```\n\nRank 1 for a matrix with 2 columns means the columns span only a line: one of them was redundant.\n\n> [!TIP]\n> When you get lost in the algebra, drop to two dimensions and draw it. Every theorem in this course is a statement about arrows, and the picture in $\\mathbb{R}^2$ is almost always the honest intuition.",
+      "quiz": {
+        "title": "Vectors and Spans",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Two nonzero vectors are orthogonal exactly when their dot product is:",
+            "options": [
+              "1",
+              "0",
+              "equal to the product of their lengths",
+              "negative"
+            ],
+            "answer": "0"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A set of vectors that spans a space is automatically linearly independent.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The columns of a 3x2 matrix have rank 1. What does that tell you?",
+            "options": [
+              "The two columns are independent",
+              "One column is a multiple of the other",
+              "The matrix is invertible",
+              "The columns span all of R^3"
+            ],
+            "answer": "One column is a multiple of the other"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "An independent set that spans the whole space is called a ____.",
+            "options": [],
+            "answer": "basis"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "matrices-and-linear-transformations",
+      "title": "Matrices and Linear Transformations",
+      "order": 2,
+      "content": "# Matrices and Linear Transformations\n\nA matrix is not really a grid of numbers. A matrix is a **function**, one that respects addition and scaling. The grid is just how we write it down.\n\n## Matrix times vector\n\nIf $A$ is $m \\times n$ and $\\mathbf{x} \\in \\mathbb{R}^n$, then $A\\mathbf{x} \\in \\mathbb{R}^m$ is a weighted sum of the **columns** of $A$:\n\n$$\nA\\mathbf{x} = x_1\\,\\mathbf{a}_1 + x_2\\,\\mathbf{a}_2 + \\dots + x_n\\,\\mathbf{a}_n\n$$\n\nThat single sentence explains most of the subject. The set of all reachable $A\\mathbf{x}$ is the span of the columns, called the **column space**.\n\n```python\nimport numpy as np\n\nA = np.array([[2.0, 1.0],\n              [0.0, 3.0]])\nx = np.array([1.0, 2.0])\n\nprint(\"A @ x                 =\", A @ x)\nprint(\"column combination    =\", 1 * A[:, 0] + 2 * A[:, 1])\n```\n\nBoth lines print the same thing, because they *are* the same thing.\n\n## Linearity is the whole definition\n\nA map $T$ is linear exactly when\n\n$$\nT(\\mathbf{u} + \\mathbf{v}) = T(\\mathbf{u}) + T(\\mathbf{v}), \\qquad T(c\\,\\mathbf{v}) = c\\,T(\\mathbf{v})\n$$\n\nCheck it numerically:\n\n```python\nimport numpy as np\n\nA = np.array([[2.0, -1.0],\n              [1.0,  1.0]])\nu = np.array([1.0, 3.0])\nv = np.array([-2.0, 0.5])\nc = 4.0\n\nprint(\"additive:   \", np.allclose(A @ (u + v), A @ u + A @ v))\nprint(\"homogeneous:\", np.allclose(A @ (c * v), c * (A @ v)))\n```\n\nBoth `True`, for every matrix, always. And the converse holds: every linear map on $\\mathbb{R}^n$ *is* a matrix. To find it, feed the map the standard basis vectors, the outputs are the columns.\n\n## The geometry of a 2x2 matrix\n\nRotation by angle $\\theta$, scaling, and shearing are all matrices:\n\n```python\nimport numpy as np\n\ntheta = np.pi / 2\nrotate = np.array([[np.cos(theta), -np.sin(theta)],\n                   [np.sin(theta),  np.cos(theta)]])\nscale = np.array([[2.0, 0.0],\n                  [0.0, 0.5]])\nshear = np.array([[1.0, 1.0],\n                  [0.0, 1.0]])\n\ne1 = np.array([1.0, 0.0])\nprint(\"rotate e1 by 90 deg:\", np.round(rotate @ e1, 12))\nprint(\"scale  e1:          \", scale @ e1)\nprint(\"shear  (0,1):       \", shear @ np.array([0.0, 1.0]))\n```\n\nRotating $(1,0)$ by 90 degrees gives $(0,1)$. The shear leaves the x-axis alone and slides everything above it sideways.\n\n## Composition is multiplication\n\nApplying $B$ then $A$ is the matrix $AB$. Read right to left, like nested function calls.\n\n```python\nimport numpy as np\n\nrotate90 = np.array([[0.0, -1.0],\n                     [1.0,  0.0]])\nflip_x = np.array([[1.0,  0.0],\n                   [0.0, -1.0]])\n\nprint(\"rotate then flip:\\n\", flip_x @ rotate90)\nprint(\"flip then rotate:\\n\", rotate90 @ flip_x)\nprint(\"commutes?\", np.allclose(flip_x @ rotate90, rotate90 @ flip_x))\n```\n\n`False`. Matrix multiplication is **not commutative**, and the geometry tells you why: rotating a flipped shape is not the same as flipping a rotated one.\n\n## Null space and rank\n\nTwo subspaces describe any matrix:\n\n- **Column space** $\\mathrm{col}(A)$: everything the map can output. Its dimension is the **rank**.\n- **Null space** $\\mathrm{null}(A)$: every $\\mathbf{x}$ with $A\\mathbf{x} = \\mathbf{0}$, everything the map crushes to nothing.\n\nThey are tied together by the **rank-nullity theorem**, for an $m \\times n$ matrix:\n\n$$\n\\operatorname{rank}(A) + \\dim \\mathrm{null}(A) = n\n$$\n\n```python\nimport sympy as sp\n\nA = sp.Matrix([[1, 2, 3],\n               [2, 4, 6],\n               [1, 1, 1]])\n\nprint(\"rank        =\", A.rank())\nprint(\"null space  =\", A.nullspace())\nprint(\"rank + null =\", A.rank() + len(A.nullspace()), \"= columns:\", A.cols)\n```\n\nsympy hands you an exact basis for the null space instead of a floating-point approximation, which is what you want when you are checking a theorem rather than crunching data.\n\n> [!NOTE]\n> `@` is Python's matrix-multiplication operator. `A * B` on numpy arrays multiplies element by element, which is a different operation and a very common bug.",
+      "quiz": {
+        "title": "Matrices as Maps",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The product A @ x is best understood as:",
+            "options": [
+              "A weighted sum of the columns of A",
+              "A weighted sum of the rows of A",
+              "The element-wise product of A and x",
+              "The determinant of A scaled by x"
+            ],
+            "answer": "A weighted sum of the columns of A"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Matrix multiplication is commutative: AB always equals BA.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "For an m x n matrix, rank-nullity says rank plus nullity equals:",
+            "options": [
+              "m",
+              "n",
+              "m + n",
+              "m times n"
+            ],
+            "answer": "n"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "In numpy, the operator for true matrix multiplication is ____ (one character).",
+            "options": [],
+            "answer": "@"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "solving-linear-systems",
+      "title": "Solving Linear Systems",
+      "order": 3,
+      "content": "# Solving Linear Systems\n\nA linear system is a set of equations in several unknowns, and every one of them can be written as a single matrix equation:\n\n$$\nA\\mathbf{x} = \\mathbf{b}\n$$\n\nAsking \"does this system have a solution?\" is asking \"is $\\mathbf{b}$ in the column space of $A$?\"\n\n## Gaussian elimination\n\nThe algorithm is mechanical: use row operations to drive the matrix to **row echelon form**, then read the answer back by substitution. The three legal row operations are swapping two rows, scaling a row by a nonzero number, and adding a multiple of one row to another. None of them changes the solution set.\n\nTake this system:\n\n$$\n\\begin{aligned}\n2x + y - z &= 8 \\cr\n-3x - y + 2z &= -11 \\cr\n-2x + y + 2z &= -3\n\\end{aligned}\n$$\n\nsympy will do the elimination and show you the reduced row echelon form:\n\n```python\nimport sympy as sp\n\nA = sp.Matrix([[ 2,  1, -1],\n               [-3, -1,  2],\n               [-2,  1,  2]])\nb = sp.Matrix([8, -11, -3])\n\nrref, pivots = A.row_join(b).rref()\nprint(\"rref of the augmented matrix:\")\nsp.pprint(rref)\nprint(\"pivot columns:\", pivots)\nprint(\"solution:\", A.solve(b).T)\n```\n\nThe rref comes out as the identity next to $(2, 3, -1)$, so $x=2$, $y=3$, $z=-1$.\n\n## The three possible outcomes\n\nEvery linear system lands in exactly one of three cases:\n\n| Case | Condition | Solutions |\n|---|---|---|\n| Unique | rank of $A$ = rank of augmented = number of unknowns | exactly one |\n| Infinitely many | ranks agree but are smaller than the unknown count | a whole subspace |\n| None | augmented rank is larger than rank of $A$ | inconsistent |\n\nThat last row is the useful one: if elimination produces a row reading $0 = 1$, you have derived a contradiction, and $\\mathbf{b}$ was outside the column space.\n\n```python\nimport sympy as sp\n\ndef classify(A, b):\n    A, b = sp.Matrix(A), sp.Matrix(b)\n    rank_A = A.rank()\n    rank_aug = A.row_join(b).rank()\n    if rank_A < rank_aug:\n        return \"no solution (inconsistent)\"\n    if rank_A < A.cols:\n        return f\"infinitely many ({A.cols - rank_A} free parameter(s))\"\n    return \"unique solution\"\n\nprint(classify([[1, 1], [1, -1]], [2, 0]))\nprint(classify([[1, 1], [2, 2]], [2, 4]))\nprint(classify([[1, 1], [2, 2]], [2, 5]))\n```\n\n## General solution = particular + null space\n\nWhen there are infinitely many solutions they are not scattered randomly. The full solution set is one particular solution plus **anything in the null space**:\n\n$$\n\\mathbf{x} = \\mathbf{x}_p + \\mathbf{x}_n, \\qquad A\\mathbf{x}_n = \\mathbf{0}\n$$\n\n```python\nimport sympy as sp\n\nA = sp.Matrix([[1, 2, 3],\n               [2, 4, 6]])\nb = sp.Matrix([6, 12])\n\nx1, x2, x3 = sp.symbols('x1 x2 x3')\nprint(\"general solution:\", sp.linsolve((A, b), [x1, x2, x3]))\nprint(\"null space basis:\", A.nullspace())\n```\n\nThe two free parameters in the answer are exactly the two null-space directions: rank 1 with three columns leaves $3 - 1 = 2$ degrees of freedom, just as rank-nullity promised.\n\n## Solving numerically, and why not to invert\n\nFor actual numbers, use a solver rather than the inverse. `np.linalg.solve` factors the matrix (LU with partial pivoting) and is both faster and more numerically stable than computing the inverse and multiplying.\n\n```python\nimport numpy as np\n\nA = np.array([[ 2.0,  1.0, -1.0],\n              [-3.0, -1.0,  2.0],\n              [-2.0,  1.0,  2.0]])\nb = np.array([8.0, -11.0, -3.0])\n\nx = np.linalg.solve(A, b)\nprint(\"solve:  \", x)\nprint(\"inverse:\", np.linalg.inv(A) @ b)\nprint(\"residual:\", np.linalg.norm(A @ x - b))\n```\n\nBoth give $(2, 3, -1)$ here, but on a poorly conditioned matrix the inverse route loses accuracy fast. The **condition number** predicts how much:\n\n```python\nimport numpy as np\n\nwell = np.array([[1.0, 0.0], [0.0, 1.0]])\nill = np.array([[1.0, 1.0], [1.0, 1.0 + 1e-10]])\n\nprint(\"cond(well) =\", np.linalg.cond(well))\nprint(\"cond(ill)  =\", np.linalg.cond(ill))\n```\n\nA condition number near $10^{10}$ means you can lose roughly ten digits of accuracy. With doubles carrying about sixteen, that is a real problem rather than a theoretical one.\n\n> [!WARNING]\n> Never test a floating-point solution with `==`. Check `np.allclose(A @ x, b)` or look at the residual norm instead.",
+      "quiz": {
+        "title": "Elimination and Solvability",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Elimination produces a row reading 0 = 1. The system has:",
+            "options": [
+              "A unique solution",
+              "Infinitely many solutions",
+              "No solution",
+              "Exactly two solutions"
+            ],
+            "answer": "No solution"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Row operations can change the solution set of a system.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why prefer np.linalg.solve over np.linalg.inv(A) @ b?",
+            "options": [
+              "It is faster and more numerically stable",
+              "It works on singular matrices",
+              "It returns exact rational answers",
+              "It handles non-square matrices"
+            ],
+            "answer": "It is faster and more numerically stable"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The full solution set is one particular solution plus anything in the ____ space.",
+            "options": [],
+            "answer": "null"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "determinants-and-inverses",
+      "title": "Determinants and Inverses",
+      "order": 4,
+      "content": "# Determinants and Inverses\n\nThe determinant of a square matrix is a single number that answers one question: **by how much does this transformation scale volume, and does it flip orientation?**\n\n## Geometry first\n\nIn two dimensions, the absolute value of $\\det A$ is the area of the parallelogram spanned by the columns of $A$. In three dimensions it is the volume of the parallelepiped. A negative determinant means the map reverses orientation (there is a reflection in there somewhere), and $\\det A = 0$ means the transformation squashed space into a lower dimension.\n\n```python\nimport numpy as np\n\nmatrices = {\n    \"identity\":  np.array([[1.0, 0.0], [0.0, 1.0]]),\n    \"double x\":  np.array([[2.0, 0.0], [0.0, 1.0]]),\n    \"reflect y\": np.array([[1.0, 0.0], [0.0, -1.0]]),\n    \"squash\":    np.array([[1.0, 2.0], [2.0, 4.0]]),\n}\n\nfor name, M in matrices.items():\n    print(f\"{name:10s} det = {np.linalg.det(M): .4f}\")\n```\n\nThe last one is $0$: its columns are parallel, the unit square gets flattened onto a line, and area $0$ is the honest answer.\n\n## Computing it exactly\n\nFor a $2\\times2$ matrix the formula is $ad - bc$. For larger matrices, cofactor expansion is correct but grows like $n!$, which is why real code uses elimination instead. sympy gives exact values, which is what you want when the entries are symbolic:\n\n```python\nimport sympy as sp\n\na, b, c, d = sp.symbols('a b c d')\nprint(\"2x2 symbolic:\", sp.Matrix([[a, b], [c, d]]).det())\n\nM = sp.Matrix([[1, 2, 3],\n               [4, 5, 6],\n               [7, 8, 10]])\nprint(\"3x3 exact:\", M.det())\n\nt = sp.symbols('t')\nK = sp.Matrix([[t, 1], [1, t]])\nprint(\"singular when t =\", sp.solve(K.det(), t))\n```\n\n$K$ is singular at $t = 1$ and $t = -1$, exactly where its two rows become dependent.\n\n## Properties worth memorising\n\n- $\\det(AB) = \\det(A)\\det(B)$\n- $\\det(A^{T}) = \\det(A)$\n- $\\det(A^{-1}) = 1/\\det(A)$\n- $\\det(cA) = c^{n}\\det(A)$ for an $n\\times n$ matrix\n- $A$ is invertible exactly when $\\det A \\neq 0$, which is also exactly when it has full rank and a trivial null space\n\n```python\nimport numpy as np\n\nA = np.array([[2.0, 1.0], [1.0, 3.0]])\nB = np.array([[0.0, -1.0], [1.0, 0.0]])\n\nprint(\"det(AB)       =\", round(np.linalg.det(A @ B), 10))\nprint(\"det A * det B =\", round(np.linalg.det(A) * np.linalg.det(B), 10))\nprint(\"det(3A)       =\", round(np.linalg.det(3 * A), 10))\nprint(\"3^2 * det A   =\", round(3**2 * np.linalg.det(A), 10))\n```\n\nThat $c^{n}$ factor catches people out constantly: scaling a $3\\times3$ matrix by 2 multiplies its determinant by 8, not by 2.\n\n## The inverse\n\n$A^{-1}$ is the matrix that undoes $A$, so that $AA^{-1} = A^{-1}A = I$. It exists only when $\\det A \\neq 0$. For $2\\times2$ there is a closed form worth knowing by heart:\n\n$$\n\\begin{pmatrix} a & b \\cr c & d \\end{pmatrix}^{-1} = \\frac{1}{ad - bc}\\begin{pmatrix} d & -b \\cr -c & a \\end{pmatrix}\n$$\n\n```python\nimport sympy as sp\n\na, b, c, d = sp.symbols('a b c d')\nsp.pprint(sp.Matrix([[a, b], [c, d]]).inv())\n```\n\n## Pseudo-inverse: when there is no inverse\n\nNon-square or singular matrices have no inverse, but they do have a **Moore-Penrose pseudo-inverse**, which returns the least-squares best answer instead of an exact one.\n\n```python\nimport numpy as np\n\nA = np.array([[1.0, 1.0],\n              [1.0, 2.0],\n              [1.0, 3.0]])       # 3x2, so no inverse exists\nb = np.array([1.0, 2.0, 2.0])\n\nx = np.linalg.pinv(A) @ b\nprint(\"pseudo-inverse solution:\", x)\nprint(\"residual:\", np.linalg.norm(A @ x - b))\nprint(\"left inverse?\", np.allclose(np.linalg.pinv(A) @ A, np.eye(2)))\n```\n\nThe residual is nonzero because no exact solution exists: three equations, two unknowns. What you get instead is the $\\mathbf{x}$ that minimises $\\|A\\mathbf{x} - \\mathbf{b}\\|$, which is the subject of lesson 6.\n\n> [!NOTE]\n> A determinant of $10^{-17}$ in floating point almost certainly means \"singular\", not \"very slightly invertible\". Use `np.linalg.matrix_rank` or the condition number to decide, they are built to tolerate rounding.",
+      "quiz": {
+        "title": "Determinants",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A 2x2 matrix has determinant 0. Geometrically that means:",
+            "options": [
+              "It rotates the plane",
+              "It flattens the plane onto a line or point",
+              "It doubles areas",
+              "It reflects across the y-axis"
+            ],
+            "answer": "It flattens the plane onto a line or point"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "If A is 3x3 with det(A) = 5, what is det(2A)?",
+            "options": [
+              "10",
+              "20",
+              "40",
+              "5"
+            ],
+            "answer": "40"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "det(A @ B) equals det(A) times det(B).",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A non-square matrix has no inverse, but it does have a Moore-Penrose ____-inverse.",
+            "options": [],
+            "answer": "pseudo"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "eigenvalues-and-eigenvectors",
+      "title": "Eigenvalues and Eigenvectors",
+      "order": 5,
+      "content": "# Eigenvalues and Eigenvectors\n\nMost vectors get rotated when you apply a matrix. A few special ones only get **stretched**, staying on their own line. Those are the eigenvectors, and the stretch factors are the eigenvalues.\n\n$$\nA\\mathbf{v} = \\lambda\\mathbf{v}, \\qquad \\mathbf{v} \\neq \\mathbf{0}\n$$\n\n## Finding them\n\nRearranged, $(A - \\lambda I)\\mathbf{v} = \\mathbf{0}$ needs a nonzero solution, which happens only when $A - \\lambda I$ is singular:\n\n$$\n\\det(A - \\lambda I) = 0\n$$\n\nThat is the **characteristic polynomial**, and its roots are the eigenvalues.\n\n```python\nimport sympy as sp\n\nA = sp.Matrix([[4, 1],\n               [2, 3]])\nlam = sp.symbols('lambda')\n\nchar = sp.expand((A - lam * sp.eye(2)).det())\nprint(\"characteristic polynomial:\", char)\nprint(\"eigenvalues:\", sp.solve(char, lam))\nprint(\"eigenvectors:\", A.eigenvects())\n```\n\nThe polynomial is $\\lambda^2 - 7\\lambda + 10$, which factors as $(\\lambda-2)(\\lambda-5)$, so the eigenvalues are 2 and 5.\n\n## Checking the definition numerically\n\n```python\nimport numpy as np\n\nA = np.array([[4.0, 1.0],\n              [2.0, 3.0]])\nvalues, vectors = np.linalg.eig(A)\n\nfor lam, v in zip(values, vectors.T):\n    print(f\"lambda = {lam:.4f}  v = {np.round(v, 4)}  \"\n          f\"Av equals lambda v ? {np.allclose(A @ v, lam * v)}\")\n```\n\nNote the `vectors.T`: numpy returns eigenvectors as **columns**, so you have to transpose before iterating over them. Getting this wrong is one of the most common numpy mistakes in the wild.\n\n## Trace and determinant shortcuts\n\nTwo identities let you sanity-check any eigenvalue computation instantly:\n\n$$\n\\sum_i \\lambda_i = \\operatorname{tr}(A), \\qquad \\prod_i \\lambda_i = \\det(A)\n$$\n\n```python\nimport numpy as np\n\nA = np.array([[4.0, 1.0],\n              [2.0, 3.0]])\nvalues = np.linalg.eigvals(A)\n\nprint(\"sum of eigenvalues =\", values.sum(), \" trace =\", np.trace(A))\nprint(\"product            =\", values.prod(), \" det   =\", np.linalg.det(A))\n```\n\nHere $2 + 5 = 7$ is the trace and $2 \\cdot 5 = 10$ is the determinant. If those two do not match, there is an arithmetic error somewhere.\n\n## Diagonalisation\n\nIf an $n\\times n$ matrix has $n$ independent eigenvectors, you can write\n\n$$\nA = PDP^{-1}\n$$\n\nwith the eigenvectors as columns of $P$ and the eigenvalues down the diagonal of $D$. This makes powers nearly free, because $A^k = PD^kP^{-1}$ and raising a diagonal matrix to a power just raises each diagonal entry.\n\n```python\nimport sympy as sp\n\nA = sp.Matrix([[4, 1],\n               [2, 3]])\nP, D = A.diagonalize()\n\nprint(\"P =\"); sp.pprint(P)\nprint(\"D =\"); sp.pprint(D)\nprint(\"P D P^-1 rebuilds A?\", sp.simplify(P * D * P.inv() - A) == sp.zeros(2, 2))\nprint(\"A^10 =\");  sp.pprint(P * D**10 * P.inv())\n```\n\n## Symmetric matrices are the nice case\n\nIf $A = A^{T}$, the **spectral theorem** guarantees the eigenvalues are all real and the eigenvectors can be chosen orthonormal. Covariance matrices, graph Laplacians, and Hessians are all symmetric, which is why this case turns up everywhere in practice.\n\n```python\nimport numpy as np\n\nS = np.array([[2.0, 1.0],\n              [1.0, 2.0]])\nvalues, Q = np.linalg.eigh(S)   # eigh: for symmetric / Hermitian input\n\nprint(\"eigenvalues (real, sorted):\", values)\nprint(\"Q orthogonal, Q^T Q =\\n\", np.round(Q.T @ Q, 12))\nprint(\"reconstruction:\\n\", np.round(Q @ np.diag(values) @ Q.T, 12))\n```\n\n`eigh` returns sorted real eigenvalues and an orthogonal $Q$, so $S = QDQ^{T}$ with no inverse needed: the transpose *is* the inverse.\n\n## Not everything diagonalises\n\nA shear has a repeated eigenvalue but only one eigenvector direction, so it is **defective**:\n\n```python\nimport sympy as sp\n\nshear = sp.Matrix([[1, 1],\n                   [0, 1]])\nprint(\"eigenvalues:\", shear.eigenvals())\nprint(\"eigenvectors:\", shear.eigenvects())\nprint(\"diagonalisable?\", shear.is_diagonalizable())\n```\n\nAlgebraic multiplicity 2, geometric multiplicity 1. When those two disagree, diagonalisation fails and you need Jordan form (or, in numerics, the SVD) instead.",
+      "quiz": {
+        "title": "Eigen-everything",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Eigenvalues are the roots of which equation?",
+            "options": [
+              "det(A) = 0",
+              "det(A - lambda I) = 0",
+              "trace(A) = lambda",
+              "A x = b"
+            ],
+            "answer": "det(A - lambda I) = 0"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The sum of a matrix's eigenvalues always equals its:",
+            "options": [
+              "Determinant",
+              "Trace",
+              "Rank",
+              "Condition number"
+            ],
+            "answer": "Trace"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "np.linalg.eig returns eigenvectors as the rows of its second output.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "For symmetric input you should use np.linalg.____ instead of eig.",
+            "options": [],
+            "answer": "eigh"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "orthogonality-projections-and-least-squares",
+      "title": "Orthogonality, Projections, and Least Squares",
+      "order": 6,
+      "content": "# Orthogonality, Projections, and Least Squares\n\nOrthogonality is what makes linear algebra *computable*. Once a basis is orthonormal, coordinates come from dot products instead of solving a system, and the messy inverse disappears.\n\n## Orthonormal bases\n\nA set of vectors is **orthonormal** when each has length 1 and any two distinct ones are orthogonal. Collect them as columns of $Q$ and that condition becomes one clean statement:\n\n$$\nQ^{T}Q = I\n$$\n\n```python\nimport numpy as np\n\ntheta = np.pi / 6\nQ = np.array([[np.cos(theta), -np.sin(theta)],\n              [np.sin(theta),  np.cos(theta)]])\n\nprint(\"Q^T Q =\\n\", np.round(Q.T @ Q, 12))\nprint(\"preserves length?\", np.allclose(np.linalg.norm(Q @ np.array([3.0, 4.0])), 5.0))\n```\n\nOrthogonal matrices are exactly the rigid motions: rotations and reflections. They never stretch anything, so their determinant is $+1$ or $-1$.\n\n## Projection onto a line\n\nThe projection of $\\mathbf{b}$ onto the line through $\\mathbf{a}$ is\n\n$$\n\\operatorname{proj}_{\\mathbf{a}}\\mathbf{b} = \\frac{\\mathbf{a}\\cdot\\mathbf{b}}{\\mathbf{a}\\cdot\\mathbf{a}}\\,\\mathbf{a}\n$$\n\nand what is left over, $\\mathbf{b} - \\operatorname{proj}_{\\mathbf{a}}\\mathbf{b}$, is orthogonal to $\\mathbf{a}$. That splitting is the whole idea.\n\n```python\nimport numpy as np\n\na = np.array([3.0, 1.0])\nb = np.array([2.0, 4.0])\n\nproj = (np.dot(a, b) / np.dot(a, a)) * a\nresidual = b - proj\n\nprint(\"projection:\", proj)\nprint(\"residual:  \", residual)\nprint(\"residual orthogonal to a?\", abs(np.dot(residual, a)) < 1e-12)\nprint(\"b = proj + residual?\", np.allclose(proj + residual, b))\n```\n\n## Gram-Schmidt\n\nGiven any independent set, Gram-Schmidt manufactures an orthonormal one spanning the same subspace: take each vector, subtract its projections onto everything already accepted, normalise what remains.\n\n```python\nimport numpy as np\n\ndef gram_schmidt(vectors):\n    basis = []\n    for v in vectors:\n        w = v.astype(float).copy()\n        for q in basis:\n            w -= np.dot(q, w) * q\n        norm = np.linalg.norm(w)\n        if norm > 1e-12:                 # skip vectors already in the span\n            basis.append(w / norm)\n    return np.array(basis)\n\nraw = [np.array([1.0, 1.0, 0.0]),\n       np.array([1.0, 0.0, 1.0]),\n       np.array([0.0, 1.0, 1.0])]\n\nB = gram_schmidt(raw)\nprint(np.round(B, 4))\nprint(\"orthonormal? B B^T =\\n\", np.round(B @ B.T, 12))\n```\n\n`np.linalg.qr` does the same job with better numerical behaviour, and the $R$ factor records how the original vectors were built from the new basis.\n\n```python\nimport numpy as np\n\nA = np.array([[1.0, 1.0, 0.0],\n              [1.0, 0.0, 1.0],\n              [0.0, 1.0, 1.0]]).T\nQ, R = np.linalg.qr(A)\nprint(\"Q^T Q =\\n\", np.round(Q.T @ Q, 12))\nprint(\"QR rebuilds A?\", np.allclose(Q @ R, A))\n```\n\n## Least squares\n\nWhen $A\\mathbf{x} = \\mathbf{b}$ has no solution, the next best thing is the $\\hat{\\mathbf{x}}$ minimising $\\|A\\mathbf{x} - \\mathbf{b}\\|$. Geometrically you project $\\mathbf{b}$ onto the column space, and the residual must be orthogonal to every column. That gives the **normal equations**:\n\n$$\nA^{T}A\\hat{\\mathbf{x}} = A^{T}\\mathbf{b}\n$$\n\nFitting a straight line to data is exactly this, with a column of ones for the intercept:\n\n```python\nimport numpy as np\n\nx = np.array([0.0, 1.0, 2.0, 3.0, 4.0])\ny = np.array([1.0, 2.9, 5.2, 6.8, 9.1])\n\nA = np.column_stack([np.ones_like(x), x])       # columns: intercept, slope\n\nnormal = np.linalg.solve(A.T @ A, A.T @ y)\nlstsq = np.linalg.lstsq(A, y, rcond=None)[0]\n\nprint(\"normal equations:\", np.round(normal, 6))\nprint(\"np.linalg.lstsq: \", np.round(lstsq, 6))\nprint(\"residual norm:\", np.linalg.norm(A @ lstsq - y))\n```\n\nBoth agree: intercept near $0.94$, slope near $2.01$, so the data was close to $y = 2x + 1$ with noise. Prefer `lstsq` in real code, forming $A^{T}A$ squares the condition number and throws away accuracy.\n\nCheck the geometry claim while you are here:\n\n```python\nimport numpy as np\n\nx = np.array([0.0, 1.0, 2.0, 3.0, 4.0])\ny = np.array([1.0, 2.9, 5.2, 6.8, 9.1])\nA = np.column_stack([np.ones_like(x), x])\n\nbeta = np.linalg.lstsq(A, y, rcond=None)[0]\nresidual = y - A @ beta\nprint(\"residual dotted with each column:\", np.round(A.T @ residual, 12))\n```\n\nBoth numbers are zero: the residual really is orthogonal to the column space, which is what \"best fit\" means.\n\n> [!TIP]\n> Least squares is not just for straight lines. Put $x^2$ in a third column and the same code fits a parabola, the model stays linear *in its coefficients*, which is all the method requires.",
+      "quiz": {
+        "title": "Projections and Best Fits",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A matrix Q has orthonormal columns. Then Q^T Q equals:",
+            "options": [
+              "The zero matrix",
+              "The identity",
+              "Q",
+              "The determinant of Q"
+            ],
+            "answer": "The identity"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The least-squares residual b - A x-hat is orthogonal to:",
+            "options": [
+              "Every column of A",
+              "The null space of A",
+              "The vector b",
+              "Nothing in particular"
+            ],
+            "answer": "Every column of A"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Forming A^T A to solve least squares squares the condition number and loses accuracy.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The process that turns an independent set into an orthonormal one is called ____-Schmidt.",
+            "options": [],
+            "answer": "Gram"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-build-a-linear-algebra-toolkit",
+      "title": "Final Project: Build a Linear Algebra Toolkit",
+      "order": 7,
+      "content": "# Final Project: Build a Linear Algebra Toolkit\n\nTime to write the algorithms yourself instead of calling them. The brief is a small module, `linalg_toolkit.py`, that implements the core of this course from scratch and checks itself against numpy.\n\n## What to build\n\nImplement these five functions using only Python lists or plain numpy arrays for storage, no `np.linalg` calls inside your implementations:\n\n1. `rref(matrix)`, reduced row echelon form via Gauss-Jordan elimination with partial pivoting. Return the reduced matrix and the list of pivot columns.\n2. `solve(A, b)`, solve a square system using your `rref`. Raise a clear error for singular input.\n3. `determinant(A)`, via elimination, tracking a sign flip for every row swap. Do **not** use cofactor expansion.\n4. `gram_schmidt(vectors)`, returns an orthonormal basis for the span, skipping dependent vectors.\n5. `least_squares(A, b)`, solve the normal equations using your own `solve`.\n\n## Skeleton to start from\n\nThe pivoting logic is where most of the bugs live, so here is a working outline you can run and extend:\n\n```python\ndef rref(matrix):\n    \"\"\"Reduced row echelon form. Returns (rows, pivot_columns).\"\"\"\n    rows = [list(map(float, r)) for r in matrix]\n    n_rows, n_cols = len(rows), len(rows[0])\n    pivots, row = [], 0\n\n    for col in range(n_cols):\n        if row >= n_rows:\n            break\n        # partial pivoting: pick the largest magnitude entry in this column\n        best = max(range(row, n_rows), key=lambda r: abs(rows[r][col]))\n        if abs(rows[best][col]) < 1e-12:\n            continue                       # this column has no pivot\n        rows[row], rows[best] = rows[best], rows[row]\n\n        scale = rows[row][col]\n        rows[row] = [v / scale for v in rows[row]]\n\n        for r in range(n_rows):\n            if r != row and abs(rows[r][col]) > 1e-12:\n                factor = rows[r][col]\n                rows[r] = [a - factor * b for a, b in zip(rows[r], rows[row])]\n\n        pivots.append(col)\n        row += 1\n\n    return rows, pivots\n\n\ndemo, pivots = rref([[2, 1, -1, 8],\n                     [-3, -1, 2, -11],\n                     [-2, 1, 2, -3]])\nfor r in demo:\n    print([round(v, 6) for v in r])\nprint(\"pivots:\", pivots)\n```\n\nThat should print the identity followed by the column $(2, 3, -1)$: the solution to the system from lesson 3.\n\n## Verify against numpy\n\nEvery function needs a test that compares your result to the library. This is the habit worth taking away from the whole course, a numerical routine you have not cross-checked is a guess.\n\n```python\nimport numpy as np\n\n# swap in your own implementations here\ndef determinant(A):\n    rows = [list(map(float, r)) for r in A]\n    n, sign = len(rows), 1.0\n    for col in range(n):\n        best = max(range(col, n), key=lambda r: abs(rows[r][col]))\n        if abs(rows[best][col]) < 1e-12:\n            return 0.0\n        if best != col:\n            rows[col], rows[best] = rows[best], rows[col]\n            sign = -sign\n        for r in range(col + 1, n):\n            factor = rows[r][col] / rows[col][col]\n            rows[r] = [a - factor * b for a, b in zip(rows[r], rows[col])]\n    product = sign\n    for i in range(n):\n        product *= rows[i][i]\n    return product\n\nrng = np.random.default_rng(7)\nfor trial in range(5):\n    M = rng.integers(-4, 5, size=(4, 4)).astype(float)\n    mine, theirs = determinant(M), np.linalg.det(M)\n    print(f\"trial {trial}: mine={mine: .4f} numpy={theirs: .4f} \"\n          f\"match={abs(mine - theirs) < 1e-8}\")\n```\n\n## Stretch goals\n\n- **Eigenvalues by power iteration.** Repeatedly multiply a random vector by $A$ and renormalise; it converges to the eigenvector of the largest eigenvalue. Compare against `np.linalg.eig`.\n- **LU decomposition.** Return $P$, $L$, $U$ with $PA = LU$ and verify the product.\n- **Polynomial fitting.** Extend `least_squares` to fit degree-$k$ polynomials, then plot the fitted curve against the data with matplotlib.\n- **Condition number.** Estimate it as the ratio of largest to smallest singular value and show how solution error grows with it.\n\n## Definition of done\n\n- All five functions implemented without `np.linalg`.\n- Each one cross-checked against numpy on at least five random matrices.\n- Singular input raises a clear error instead of returning nonsense.\n- A short README noting where your version loses accuracy compared to the library, and why.",
+      "requiresSubmission": true
+    }
+  ]
+}

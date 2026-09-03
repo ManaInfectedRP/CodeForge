@@ -1,0 +1,342 @@
+{
+  "slug": "abstract-algebra",
+  "title": "Abstract Algebra",
+  "description": "Groups, subgroups and Lagrange's theorem, permutations, homomorphisms and quotients, rings and fields, and the finite fields behind AES and Reed-Solomon, all explored with runnable code.",
+  "pathSlug": "abstract-algebra",
+  "pathName": "Abstract Algebra",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "groups-the-axioms",
+      "title": "Groups: the Axioms",
+      "order": 1,
+      "content": "# Groups: the Axioms\n\nAbstract algebra studies *structure* rather than numbers. A **group** is the minimal structure in which you can undo things, and once you spot one, every theorem about groups applies to it for free.\n\n## The definition\n\nA group is a set $G$ with an operation $*$ satisfying four axioms:\n\n1. **Closure**, $a * b$ is in $G$ for all $a, b$.\n2. **Associativity**, $(a*b)*c = a*(b*c)$.\n3. **Identity**, some $e$ has $e*a = a*e = a$ for all $a$.\n4. **Inverses**, every $a$ has some $a^{-1}$ with $a * a^{-1} = e$.\n\nCommutativity is *not* required. A group that happens to have it is called **abelian**.\n\n## Checking the axioms\n\n```python\nfrom itertools import product\n\ndef check_group(elements, op, name):\n    closed = all(op(a, b) in elements for a, b in product(elements, repeat=2))\n    associative = all(op(op(a, b), c) == op(a, op(b, c))\n                      for a, b, c in product(elements, repeat=3))\n    identities = [e for e in elements if all(op(e, a) == a == op(a, e) for a in elements)]\n    e = identities[0] if identities else None\n    invertible = e is not None and all(\n        any(op(a, b) == e for b in elements) for a in elements)\n    abelian = all(op(a, b) == op(b, a) for a, b in product(elements, repeat=2))\n\n    print(f\"{name}\")\n    print(f\"  closed {closed}  associative {associative}  \"\n          f\"identity {e}  inverses {invertible}  abelian {abelian}\")\n    print(f\"  -> {'a group' if closed and associative and e is not None and invertible else 'NOT a group'}\"\n          f\"{' (abelian)' if abelian else ''}\")\n\ncheck_group(list(range(6)), lambda a, b: (a + b) % 6, \"integers mod 6 under addition\")\ncheck_group(list(range(6)), lambda a, b: (a * b) % 6, \"integers mod 6 under multiplication\")\ncheck_group([1, 2, 3, 4], lambda a, b: (a * b) % 5, \"nonzero integers mod 5 under multiplication\")\n```\n\nMod 6 under multiplication fails: 0 has no inverse, and neither do 2, 3, or 4. Mod 5 with zero removed works, because 5 is prime and every nonzero residue is coprime to it.\n\n## The group table\n\nFor a small group, write out every product. This is a **Cayley table**, and it is the group's complete fingerprint.\n\n```python\ndef cayley_table(elements, op, labels=None):\n    labels = labels or [str(e) for e in elements]\n    width = max(len(l) for l in labels) + 2\n    print(\" \" * width + \"\".join(f\"{l:>{width}}\" for l in labels))\n    for a, la in zip(elements, labels):\n        row = \"\".join(f\"{labels[elements.index(op(a, b))]:>{width}}\" for b in elements)\n        print(f\"{la:>{width}}\" + row)\n\nprint(\"Z_4 under addition\")\ncayley_table(list(range(4)), lambda a, b: (a + b) % 4)\n\nprint(\"\\nunits mod 8 (Klein four-group)\")\ncayley_table([1, 3, 5, 7], lambda a, b: (a * b) % 8)\n```\n\nNotice: every row and every column of a group table is a permutation of the elements, no repeats. That is forced by the existence of inverses, and it is a quick way to spot a table that is not a group.\n\nThe units mod 8 table has every element as its own inverse, and it is *not* cyclic, the Klein four-group, the smallest non-cyclic group.\n\n## Group order and element order\n\nThe **order of a group** is how many elements it has. The **order of an element** $a$ is the smallest $n > 0$ with $a^n = e$.\n\n```python\ndef element_order(a, op, identity, max_order=100):\n    value, n = a, 1\n    while value != identity and n <= max_order:\n        value = op(value, a)\n        n += 1\n    return n if value == identity else None\n\nprint(\"Z_12 under addition, order of each element:\")\nfor a in range(12):\n    print(f\"  order of {a:2d} = {element_order(a, lambda x, y: (x + y) % 12, 0)}\")\n\nprint(\"\\nunits mod 7 under multiplication:\")\nfor a in range(1, 7):\n    print(f\"  order of {a} = {element_order(a, lambda x, y: (x * y) % 7, 1)}\")\n```\n\nEvery order divides the group order, 12 for the first, 6 for the second. That is Lagrange's theorem, and it is the next lesson.\n\n## Groups you already know\n\n| Group | Operation | Order | Abelian? |\n|---|---|---|---|\n| $\\mathbb{Z}$ | addition | infinite | yes |\n| $\\mathbb{Z}_n$ | addition mod $n$ | $n$ | yes |\n| $(\\mathbb{Z}_p)^{\\times}$ | multiplication mod prime $p$ | $p-1$ | yes |\n| $S_n$ | composing permutations | $n!$ | no, for $n \\ge 3$ |\n| $D_n$ | symmetries of a regular $n$-gon | $2n$ | no, for $n \\ge 3$ |\n| $GL_n(\\mathbb{R})$ | invertible matrices | infinite | no |\n\n```python\nfrom sympy.combinatorics import SymmetricGroup, DihedralGroup, CyclicGroup\n\nfor G, name in [(CyclicGroup(6), \"C_6\"), (SymmetricGroup(3), \"S_3\"),\n                (DihedralGroup(4), \"D_4\"), (SymmetricGroup(4), \"S_4\")]:\n    print(f\"{name:5s} order {int(G.order()):3d}  abelian? {G.is_abelian}\")\n```\n\n$S_3$ and $D_3$ both have order 6 and both are non-abelian, and in fact they are the *same* group wearing different clothes: permuting three objects and rotating or flipping a triangle are the same thing. Recognising when two groups are secretly identical is the subject of lesson 4.\n\n## Symmetry made concrete\n\n$D_4$, the symmetries of a square, is the smallest group where non-commutativity is easy to see. Rotate then flip is not flip then rotate:\n\n```python\nfrom sympy.combinatorics import Permutation\n\n# label the square's corners 0,1,2,3 going around\nrotate = Permutation([1, 2, 3, 0])     # 90 degrees\nflip = Permutation([1, 0, 3, 2])       # reflect across a vertical axis\n\nprint(\"rotate      :\", rotate.array_form)\nprint(\"flip        :\", flip.array_form)\nprint(\"rotate*flip :\", (rotate*flip).array_form)\nprint(\"flip*rotate :\", (flip*rotate).array_form)\nprint(\"commute?\", rotate*flip == flip*rotate)\nprint(\"order of rotate:\", rotate.order(), \" order of flip:\", flip.order())\n```\n\n> [!NOTE]\n> The four axioms look weak, but they are enough to force a great deal. Every group table is a Latin square, every element has a unique inverse, and the identity is unique. Try proving those three from the axioms alone, they are short and they are the standard first exercises.",
+      "quiz": {
+        "title": "Group Axioms",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which is NOT one of the four group axioms?",
+            "options": [
+              "Closure",
+              "Associativity",
+              "Commutativity",
+              "Inverses"
+            ],
+            "answer": "Commutativity"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The integers mod 6 under multiplication fail to be a group because:",
+            "options": [
+              "They are not closed",
+              "Multiplication is not associative",
+              "Some elements have no inverse",
+              "There is no identity"
+            ],
+            "answer": "Some elements have no inverse"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Every row of a group's Cayley table is a permutation of the elements.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A group whose operation commutes is called ____.",
+            "options": [],
+            "answer": "abelian"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "subgroups-cosets-and-lagranges-theorem",
+      "title": "Subgroups, Cosets, and Lagrange's Theorem",
+      "order": 2,
+      "content": "# Subgroups, Cosets, and Lagrange's Theorem\n\nInside a group there are smaller groups, and they cannot be any size they like. Lagrange's theorem is the first genuinely surprising result in algebra: structure constrains arithmetic.\n\n## Subgroups\n\nA **subgroup** $H \\le G$ is a subset that is itself a group under the same operation. You do not have to recheck associativity, it is inherited, so the test is short:\n\n- $H$ contains the identity,\n- $H$ is closed under the operation,\n- $H$ is closed under inverses.\n\n```python\nfrom itertools import combinations, product\n\ndef is_subgroup(H, G, op, identity):\n    H = set(H)\n    if identity not in H:\n        return False\n    if not all(op(a, b) in H for a, b in product(H, repeat=2)):\n        return False\n    return all(any(op(a, b) == identity for b in H) for a in H)\n\nG = list(range(12))\nadd12 = lambda a, b: (a + b) % 12\n\ncandidates = [{0}, {0, 6}, {0, 4, 8}, {0, 3, 6, 9}, {0, 2, 4, 6, 8, 10},\n              set(G), {0, 1, 2}, {0, 5}]\nfor H in candidates:\n    verdict = \"subgroup\" if is_subgroup(H, G, add12, 0) else \"not a subgroup\"\n    print(f\"{str(sorted(H)):28s} size {len(H):2d}  {verdict}\")\n```\n\nThe subgroup sizes that appear are 1, 2, 3, 4, 6, 12: exactly the divisors of 12. The sets of size 3 and 2 that failed were not divisors-sized by accident, they simply were not closed.\n\n## Cosets\n\nPick a subgroup $H$ and an element $g$. The **left coset** $gH = \\{gh : h \\in H\\}$ is $H$ shifted by $g$. Cosets are the key to everything that follows, and they have two properties that do all the work:\n\n1. Every coset has exactly $|H|$ elements.\n2. Two cosets are either identical or disjoint.\n\nTogether those mean the cosets **partition** the group into equal-sized blocks.\n\n```python\ndef cosets(G, H, op):\n    seen, blocks = set(), []\n    for g in G:\n        if g in seen:\n            continue\n        block = sorted({op(g, h) for h in H})\n        blocks.append(block)\n        seen.update(block)\n    return blocks\n\nG = list(range(12))\nadd12 = lambda a, b: (a + b) % 12\n\nfor H in [{0, 6}, {0, 4, 8}, {0, 3, 6, 9}]:\n    blocks = cosets(G, H, add12)\n    print(f\"H = {sorted(H)}\")\n    for block in blocks:\n        print(f\"   coset {block}\")\n    print(f\"   {len(blocks)} cosets of size {len(H)}, and \"\n          f\"{len(blocks)} * {len(H)} = {len(blocks)*len(H)} = |G|\\n\")\n```\n\n## Lagrange's theorem\n\n$$\n|G| = [G:H] \\cdot |H|\n$$\n\nThe order of a subgroup **divides** the order of the group, and the number of cosets (the **index** $[G:H]$) is the quotient.\n\nThree consequences follow immediately:\n\n- Every element's order divides $|G|$, take $H$ to be the cyclic subgroup it generates.\n- $a^{|G|} = e$ for every element.\n- A group of prime order has no proper subgroups, so it must be cyclic and generated by any non-identity element.\n\n```python\nfrom sympy.combinatorics import SymmetricGroup, DihedralGroup, CyclicGroup\n\nfor G, name in [(CyclicGroup(12), \"C_12\"), (SymmetricGroup(4), \"S_4\"), (DihedralGroup(6), \"D_6\")]:\n    order = int(G.order())\n    element_orders = sorted({int(g.order()) for g in G.elements})\n    print(f\"{name:5s} |G| = {order:3d}\")\n    print(f\"      element orders present: {element_orders}\")\n    print(f\"      all divide |G|? {all(order % o == 0 for o in element_orders)}\")\n```\n\n## Fermat's little theorem, for free\n\nApply \"$a^{|G|} = e$\" to the multiplicative group mod a prime, which has order $p-1$, and you get\n\n$$\na^{p-1} \\equiv 1 \\pmod p\n$$\n\nYou met this as a number-theory fact. It is really a group-theory fact about a particular group, and the same argument with $|G| = \\varphi(n)$ gives Euler's theorem.\n\n```python\nimport sympy as sp\n\nfor p in [7, 11, 13]:\n    results = {a: pow(a, p - 1, p) for a in range(1, p)}\n    print(f\"p = {p:2d}: group order {p-1}, a^(p-1) mod p = {set(results.values())}\")\n\nn = 15\nunits = [a for a in range(1, n) if sp.gcd(a, n) == 1]\nphi = int(sp.totient(n))\nprint(f\"\\nunits mod {n}: {units}, group order {len(units)} = phi({n}) = {phi}\")\nprint(\"a^phi(n) mod n:\", {a: pow(a, phi, n) for a in units})\n```\n\n## The converse is false\n\nLagrange says a subgroup's order divides $|G|$. It does **not** say that every divisor has a subgroup. The alternating group $A_4$ has order 12 but no subgroup of order 6.\n\n```python\nfrom sympy.combinatorics import AlternatingGroup\nfrom itertools import combinations\n\nA4 = AlternatingGroup(4)\nelements = list(A4.elements)\nprint(\"|A_4| =\", A4.order(), \" divisors of 12: 1, 2, 3, 4, 6, 12\")\n\nidentity = next(g for g in elements if g.is_Identity)\nfound = set()\nfor size in [1, 2, 3, 4, 6, 12]:\n    exists = False\n    for subset in combinations(elements, size):\n        s = set(subset)\n        if identity in s and all(a*b in s for a in s for b in s):\n            exists = True\n            break\n    print(f\"  subgroup of order {size:2d}? {exists}\")\n```\n\nNo subgroup of order 6 exists, and this is the standard counterexample to the naive converse. (The partial converses that *are* true are Cauchy's theorem and the Sylow theorems.)\n\n## Normal subgroups\n\nA subgroup is **normal** when its left and right cosets coincide: $gH = Hg$ for every $g$. Normality is exactly the condition that lets you build a quotient group, which is lesson 4.\n\n```python\nfrom sympy.combinatorics import SymmetricGroup, PermutationGroup, Permutation\n\nS3 = SymmetricGroup(3)\nrotation = PermutationGroup([Permutation([1, 2, 0])])          # the 3-cycles\ntransposition = PermutationGroup([Permutation([1, 0, 2])])      # one swap\n\nfor H, name in [(rotation, \"A_3, the rotations\"), (transposition, \"one transposition\")]:\n    print(f\"{name:24s} order {H.order()}, index {S3.order()//H.order()}, \"\n          f\"normal in S_3? {S3.is_normal(H)}\")\n```\n\nEvery subgroup of index 2 is normal, which is why $A_3$ is and the order-2 subgroup is not. In an abelian group every subgroup is normal, since $gH = Hg$ automatically.\n\n> [!TIP]\n> When you meet a new finite group, list the orders of its elements first. Lagrange immediately rules out most possibilities, and what remains is usually a very short list of candidate structures.",
+      "quiz": {
+        "title": "Lagrange's Theorem",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Lagrange's theorem says the order of a subgroup:",
+            "options": [
+              "Equals the group order",
+              "Divides the group order",
+              "Is always prime",
+              "Is at most half the group order"
+            ],
+            "answer": "Divides the group order"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A group of order 20 could NOT have a subgroup of order:",
+            "options": [
+              "4",
+              "5",
+              "10",
+              "6"
+            ],
+            "answer": "6"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Every divisor of the group order is the order of some subgroup.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A subgroup whose left and right cosets coincide is called ____.",
+            "options": [],
+            "answer": "normal"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "cyclic-groups-and-permutations",
+      "title": "Cyclic Groups and Permutations",
+      "order": 3,
+      "content": "# Cyclic Groups and Permutations\n\nTwo families of groups carry most of the intuition: cyclic groups, the simplest possible, and symmetric groups, which by Cayley's theorem secretly contain everything else.\n\n## Cyclic groups\n\nA group is **cyclic** if a single element generates it: $G = \\langle g \\rangle = \\{g^0, g^1, g^2, \\dots\\}$. Such a $g$ is a **generator**.\n\nEvery cyclic group of order $n$ is structurally $\\mathbb{Z}_n$ under addition, and every infinite one is $\\mathbb{Z}$. That is a complete classification, rare and precious in algebra.\n\n```python\ndef generated_by(g, op, identity):\n    seen, value = [], g\n    while value not in seen:\n        seen.append(value)\n        value = op(value, g)\n    return seen\n\nadd10 = lambda a, b: (a + b) % 10\n\nfor g in range(1, 10):\n    subgroup = sorted(generated_by(g, add10, 0))\n    generator = len(subgroup) == 10\n    print(f\"<{g}> = {str(subgroup):32s} size {len(subgroup):2d}\"\n          f\"{'   <- generator' if generator else ''}\")\n```\n\nThe generators of $\\mathbb{Z}_{10}$ are 1, 3, 7, 9, exactly the numbers coprime to 10. In general $\\mathbb{Z}_n$ has $\\varphi(n)$ generators.\n\n```python\nimport sympy as sp\n\nfor n in [10, 12, 13, 16]:\n    generators = [g for g in range(1, n) if sp.gcd(g, n) == 1]\n    print(f\"Z_{n:2d}: {len(generators)} generators = phi({n}) = {sp.totient(n)}   {generators}\")\n```\n\n## Primitive roots\n\nThe multiplicative group mod a prime is also cyclic, and its generators are called **primitive roots**. This is the fact that makes Diffie-Hellman key exchange possible.\n\n```python\nimport sympy as sp\n\nfor p in [7, 11, 13]:\n    root = sp.primitive_root(p)\n    powers = [pow(root, k, p) for k in range(1, p)]\n    print(f\"p = {p:2d}: primitive root {root}, its powers {powers}\")\n    print(f\"      hits every nonzero residue? {sorted(powers) == list(range(1, p))}\")\n```\n\nBecause the powers cycle through everything, discrete logarithms exist, and because computing them is hard, they are useful.\n\n## Permutations\n\nA **permutation** is a bijection from a finite set to itself. Under composition they form the **symmetric group** $S_n$, of order $n!$.\n\nCycle notation is the compact way to write one: $(0\\ 2\\ 3)$ means 0 goes to 2, 2 goes to 3, 3 goes back to 0.\n\n```python\nfrom sympy.combinatorics import Permutation\n\np = Permutation([2, 0, 3, 1])        # 0->2, 1->0, 2->3, 3->1\nq = Permutation([1, 0, 2, 3])        # swap 0 and 1\n\nprint(\"p in array form:\", p.array_form, \" in cycle form:\", p)\nprint(\"q in cycle form:\", q)\nprint(\"p*q:\", (p*q).array_form, \" q*p:\", (q*p).array_form)\nprint(\"commute?\", p*q == q*p)\nprint(\"p inverse:\", (p**-1).array_form, \" p * p^-1 =\", (p * p**-1).array_form)\nprint(\"order of p:\", p.order())\n```\n\n## Cycle structure decides everything\n\nEvery permutation factors uniquely into disjoint cycles, and that factorisation determines its order and its sign.\n\n- The **order** is the least common multiple of the cycle lengths.\n- The **sign** is $+1$ for an even number of transpositions, $-1$ for odd. Every cycle of length $k$ is $k-1$ transpositions.\n\n```python\nfrom sympy.combinatorics import Permutation\nimport math\n\nexamples = [\n    Permutation([1, 0, 2, 3, 4]),           # one 2-cycle\n    Permutation([1, 2, 0, 4, 3]),           # a 3-cycle and a 2-cycle\n    Permutation([1, 2, 3, 4, 0]),           # a 5-cycle\n    Permutation([1, 0, 3, 2, 4]),           # two 2-cycles\n]\nfor p in examples:\n    lengths = [len(c) for c in p.cyclic_form]\n    print(f\"{str(p):22s} cycles {str(lengths):10s} \"\n          f\"lcm {math.lcm(*lengths) if lengths else 1:2d} \"\n          f\"order {int(p.order()):2d}  parity {'even' if p.is_even else 'odd'}\")\n```\n\nThe order really is the lcm of the cycle lengths, which is much faster than multiplying the permutation by itself until you reach the identity.\n\n## The alternating group\n\nThe even permutations form a subgroup $A_n$ of index 2, so it has order $n!/2$ and is normal. It is the reason a Rubik's cube cannot be solved from certain \"impossible\" scrambles: the legal moves generate only even permutations.\n\n```python\nfrom sympy.combinatorics import SymmetricGroup, AlternatingGroup\n\nfor n in [3, 4, 5]:\n    S, A = SymmetricGroup(n), AlternatingGroup(n)\n    print(f\"n={n}: |S_n| = {int(S.order()):3d}, |A_n| = {int(A.order()):3d}, \"\n          f\"index {int(S.order()) // int(A.order())}, normal? {S.is_normal(A)}\")\n\nprint(\"\\nA_5 is simple (no normal subgroups but itself and the trivial one):\",\n      AlternatingGroup(5).is_simple)\n```\n\nThe simplicity of $A_5$ is why the general quintic has no formula in radicals. Galois proved that in 1832, at twenty, the night before the duel that killed him.\n\n## Cayley's theorem\n\nEvery group of order $n$ is isomorphic to a subgroup of $S_n$. The proof is a one-liner: each element $g$ acts on the group by left multiplication, and that action is a permutation of the elements.\n\n```python\nfrom sympy.combinatorics import Permutation, PermutationGroup\n\n# realise Z_4 as permutations of its own elements\nelements = list(range(4))\n\ndef left_multiply(g):\n    return Permutation([(g + x) % 4 for x in elements])\n\nimages = [left_multiply(g) for g in elements]\nfor g, p in zip(elements, images):\n    print(f\"g = {g} acts as {p.array_form}\")\n\nG = PermutationGroup([p for p in images if not p.is_Identity])\nprint(\"\\ngenerated group order:\", G.order(), \" should be 4\")\nprint(\"abelian?\", G.is_abelian, \" cyclic?\", G.is_cyclic)\n```\n\nSo the symmetric groups are universal. It also means \"understand $S_n$\" is a much harder problem than it first looks, since it contains every finite group of every kind.\n\n> [!IMPORTANT]\n> sympy composes permutations left to right by default, so `p*q` means \"apply p, then q\". Many textbooks compose right to left, like function composition. Check the convention before comparing an answer to a book.",
+      "quiz": {
+        "title": "Cycles and Permutations",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How many generators does the cyclic group Z_12 have?",
+            "options": [
+              "2",
+              "4",
+              "6",
+              "12"
+            ],
+            "answer": "4"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The order of a permutation equals:",
+            "options": [
+              "The number of cycles",
+              "The length of the longest cycle",
+              "The lcm of the cycle lengths",
+              "The number of elements moved"
+            ],
+            "answer": "The lcm of the cycle lengths"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Cayley's theorem says every finite group of order n embeds in:",
+            "options": [
+              "Z_n",
+              "S_n",
+              "A_n",
+              "GL_n"
+            ],
+            "answer": "S_n"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The subgroup of even permutations is called the ____ group.",
+            "options": [],
+            "answer": "alternating"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "homomorphisms-and-quotient-groups",
+      "title": "Homomorphisms and Quotient Groups",
+      "order": 4,
+      "content": "# Homomorphisms and Quotient Groups\n\nTwo groups can look completely different and be the same underneath. A homomorphism is the map that reveals it, and its kernel measures exactly how much information the map throws away.\n\n## Homomorphisms\n\nA **homomorphism** is a function $\\phi: G \\to H$ that respects the operation:\n\n$$\n\\phi(a * b) = \\phi(a) \\cdot \\phi(b)\n$$\n\nIt automatically sends the identity to the identity and inverses to inverses, you get those for free rather than assuming them.\n\n```python\nfrom itertools import product\n\ndef is_homomorphism(phi, G, op_G, op_H):\n    return all(phi(op_G(a, b)) == op_H(phi(a), phi(b))\n               for a, b in product(G, repeat=2))\n\nZ6 = list(range(6))\nadd6 = lambda a, b: (a + b) % 6\nadd3 = lambda a, b: (a + b) % 3\nadd2 = lambda a, b: (a + b) % 2\n\nprint(\"reduce mod 3, Z6 -> Z3:\", is_homomorphism(lambda x: x % 3, Z6, add6, add3))\nprint(\"reduce mod 2, Z6 -> Z2:\", is_homomorphism(lambda x: x % 2, Z6, add6, add2))\nprint(\"square it,    Z6 -> Z6:\", is_homomorphism(lambda x: (x*x) % 6, Z6, add6, add6))\nprint(\"multiply by 2, Z6 -> Z6:\", is_homomorphism(lambda x: (2*x) % 6, Z6, add6, add6))\n```\n\nSquaring fails: $(a+b)^2 \\neq a^2 + b^2$. Multiplying by a constant works, because the group operation here is addition and multiplication distributes over it.\n\n## Kernel and image\n\n$$\n\\ker\\phi = \\{g \\in G : \\phi(g) = e_H\\}, \\qquad \\operatorname{im}\\phi = \\{\\phi(g) : g \\in G\\}\n$$\n\nThe kernel is always a **normal** subgroup of $G$; the image is a subgroup of $H$. And the kernel detects injectivity: $\\phi$ is one-to-one exactly when $\\ker\\phi$ is trivial.\n\n```python\nZ12 = list(range(12))\nadd12 = lambda a, b: (a + b) % 12\n\nfor modulus in [2, 3, 4, 6]:\n    phi = lambda x, m=modulus: x % m\n    kernel = [g for g in Z12 if phi(g) == 0]\n    image = sorted({phi(g) for g in Z12})\n    print(f\"reduce mod {modulus}: kernel {str(kernel):28s} size {len(kernel):2d}  \"\n          f\"image size {len(image):2d}  product {len(kernel)*len(image)}\")\n```\n\nKernel size times image size is always 12. That is not a coincidence, it is the first isomorphism theorem, coming up shortly.\n\n## Isomorphisms\n\nA bijective homomorphism is an **isomorphism**, and two groups related by one are the same group with relabelled elements. Written $G \\cong H$.\n\n```python\nfrom itertools import permutations, product\n\ndef find_isomorphism(G, op_G, H, op_H):\n    if len(G) != len(H):\n        return None\n    for candidate in permutations(H):\n        phi = dict(zip(G, candidate))\n        if all(phi[op_G(a, b)] == op_H(phi[a], phi[b])\n               for a, b in product(G, repeat=2)):\n            return phi\n    return None\n\nZ4 = list(range(4))\nunits8 = [1, 3, 5, 7]                 # the Klein four-group\nunits5 = [1, 2, 3, 4]                 # cyclic of order 4\n\nadd4 = lambda a, b: (a + b) % 4\nmul8 = lambda a, b: (a * b) % 8\nmul5 = lambda a, b: (a * b) % 5\n\nprint(\"Z4 -> units mod 5:\", find_isomorphism(Z4, add4, units5, mul5))\nprint(\"Z4 -> units mod 8:\", find_isomorphism(Z4, add4, units8, mul8))\n```\n\nBoth targets have four elements, but only one is isomorphic to $\\mathbb{Z}_4$. The units mod 8 have every element self-inverse, so no element has order 4, so no isomorphism can exist. **Element orders are an isomorphism invariant**, and comparing them is the fastest way to prove two groups differ.\n\n```python\ndef order_profile(G, op, identity):\n    def order(a):\n        value, n = a, 1\n        while value != identity:\n            value, n = op(value, a), n + 1\n        return n\n    profile = {}\n    for g in G:\n        profile[order(g)] = profile.get(order(g), 0) + 1\n    return profile\n\nprint(\"Z4 order profile:        \", order_profile(list(range(4)), lambda a,b:(a+b)%4, 0))\nprint(\"units mod 8 order profile:\", order_profile([1,3,5,7], lambda a,b:(a*b)%8, 1))\n```\n\n## Quotient groups\n\nIf $N$ is normal in $G$, the cosets of $N$ themselves form a group, written $G/N$, with $(aN)(bN) = (ab)N$. Normality is exactly what makes that well defined.\n\n$\\mathbb{Z}/n\\mathbb{Z}$ is the example you have been using since primary school: the integers modulo $n$ *are* a quotient group.\n\n```python\ndef quotient_table(n, subgroup_generator):\n    G = list(range(n))\n    N = sorted({(subgroup_generator * k) % n for k in range(n)})\n    cosets, seen = [], set()\n    for g in G:\n        if g in seen:\n            continue\n        coset = sorted({(g + x) % n for x in N})\n        cosets.append(coset)\n        seen.update(coset)\n    print(f\"G = Z_{n}, N = {N} (order {len(N)})\")\n    for c in cosets:\n        print(f\"   coset {c}\")\n    print(f\"   G/N has {len(cosets)} elements, and it is Z_{len(cosets)}\")\n\nquotient_table(12, 4)\nquotient_table(12, 3)\n```\n\n$\\mathbb{Z}_{12}/\\{0,4,8\\} \\cong \\mathbb{Z}_4$ and $\\mathbb{Z}_{12}/\\{0,3,6,9\\} \\cong \\mathbb{Z}_3$. Quotienting by a subgroup of order $k$ leaves a group of order $|G|/k$.\n\n## The first isomorphism theorem\n\n$$\nG/\\ker\\phi \\cong \\operatorname{im}\\phi\n$$\n\nEvery homomorphism is, in essence, a quotient map followed by an inclusion. Collapse exactly what the map kills, and what remains is a perfect copy of the image.\n\n```python\nZ12 = list(range(12))\n\nfor modulus in [2, 3, 4, 6]:\n    phi = lambda x, m=modulus: x % m\n    kernel_size = len([g for g in Z12 if phi(g) == 0])\n    image_size = len({phi(g) for g in Z12})\n    print(f\"phi = reduce mod {modulus}: |G|/|ker| = {12}/{kernel_size} = {12//kernel_size}\"\n          f\"  and |image| = {image_size}   equal? {12//kernel_size == image_size}\")\n```\n\nThe counting version, $|G| = |\\ker\\phi| \\cdot |\\operatorname{im}\\phi|$, is the rank-nullity theorem from linear algebra in different notation. Linear maps are homomorphisms of abelian groups, the kernel is the null space, and the image is the column space. Same theorem, twice.\n\n```python\nimport sympy as sp\n\nA = sp.Matrix([[1, 2, 3], [2, 4, 6]])\nprint(\"as a linear map: nullity\", len(A.nullspace()), \"+ rank\", A.rank(),\n      \"=\", len(A.nullspace()) + A.rank(), \"= number of columns\", A.cols)\n```\n\n## Direct products\n\nBuild bigger groups from smaller ones componentwise. And a classification result falls out: $\\mathbb{Z}_m \\times \\mathbb{Z}_n \\cong \\mathbb{Z}_{mn}$ exactly when $m$ and $n$ are coprime.\n\n```python\nimport math\nfrom itertools import product\n\ndef is_cyclic_product(m, n):\n    elements = list(product(range(m), range(n)))\n    def order(g):\n        value, k = g, 1\n        while value != (0, 0):\n            value = ((value[0] + g[0]) % m, (value[1] + g[1]) % n)\n            k += 1\n        return k\n    return max(order(g) for g in elements) == m * n\n\nfor m, n in [(2, 3), (2, 4), (3, 5), (4, 6), (3, 4)]:\n    print(f\"Z_{m} x Z_{n}: gcd = {math.gcd(m, n)}, cyclic? {is_cyclic_product(m, n)}\"\n          f\"  {'so isomorphic to Z_' + str(m*n) if is_cyclic_product(m, n) else ''}\")\n```\n\nCoprime exactly when cyclic. This is the Chinese remainder theorem again, now visible as a statement about group structure rather than about congruences.\n\n> [!TIP]\n> To prove two finite groups are *not* isomorphic, compare invariants: order, abelian or not, the multiset of element orders, the number of subgroups of each size. To prove they *are*, you must exhibit the map.",
+      "quiz": {
+        "title": "Homomorphisms",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The kernel of a homomorphism is always:",
+            "options": [
+              "Trivial",
+              "A normal subgroup of the domain",
+              "Equal to the image",
+              "The whole group"
+            ],
+            "answer": "A normal subgroup of the domain"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The first isomorphism theorem says G modulo the kernel is isomorphic to:",
+            "options": [
+              "The kernel",
+              "The image",
+              "The whole codomain",
+              "The trivial group"
+            ],
+            "answer": "The image"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Z_4 and the Klein four-group are isomorphic.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Z_m x Z_n is cyclic exactly when m and n are ____.",
+            "options": [],
+            "answer": "coprime"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "rings-and-fields",
+      "title": "Rings and Fields",
+      "order": 5,
+      "content": "# Rings and Fields\n\nA group has one operation. A **ring** has two, addition and multiplication, and a **field** is a ring where division works as well. The integers, the rationals, polynomials, and matrices are all rings, and their differences are exactly what this lesson is about.\n\n## Rings\n\nA ring $(R, +, \\times)$ is an abelian group under $+$, associative under $\\times$, and the two are linked by distributivity:\n\n$$\na(b + c) = ab + ac, \\qquad (a + b)c = ac + bc\n$$\n\nMultiplication need not be commutative and need not have inverses. When it is commutative and has a 1, you have a **commutative ring with unity**, which is the normal case.\n\n```python\nfrom itertools import product\n\ndef ring_report(elements, add, mul, name):\n    commutative = all(mul(a, b) == mul(b, a) for a, b in product(elements, repeat=2))\n    distributes = all(mul(a, add(b, c)) == add(mul(a, b), mul(a, c))\n                      for a, b, c in product(elements, repeat=3))\n    ones = [e for e in elements if all(mul(e, a) == a for a in elements)]\n    zero_divisors = sorted({a for a in elements if a != 0\n                            and any(b != 0 and mul(a, b) == 0 for b in elements)})\n    units = sorted({a for a in elements if ones and any(mul(a, b) == ones[0] for b in elements)})\n    print(f\"{name}\")\n    print(f\"  commutative {commutative}  distributive {distributes}  unity {ones}\")\n    print(f\"  zero divisors {zero_divisors}\")\n    print(f\"  units {units}\")\n\nfor n in [6, 7, 8]:\n    ring_report(list(range(n)), lambda a, b: (a+b) % n, lambda a, b: (a*b) % n,\n                f\"integers mod {n}\")\n    print()\n```\n\nMod 6 and mod 8 have **zero divisors**, nonzero elements whose product is zero ($2 \\times 3 = 0$ mod 6). Mod 7 has none, and every nonzero element is a unit. That is the difference between a ring and a field.\n\n## Integral domains and fields\n\n| Structure | Requires |\n|---|---|\n| Ring | two operations, distributive |\n| Commutative ring with unity | multiplication commutes, a 1 exists |\n| Integral domain | no zero divisors |\n| Field | every nonzero element has a multiplicative inverse |\n\nEach row implies the one above. And a key fact: $\\mathbb{Z}_n$ is a field exactly when $n$ is prime.\n\n```python\nimport sympy as sp\n\nfor n in range(2, 14):\n    units = [a for a in range(1, n) if sp.gcd(a, n) == 1]\n    is_field = len(units) == n - 1\n    print(f\"Z_{n:2d}: {len(units):2d} units out of {n-1} nonzero elements  \"\n          f\"field? {str(is_field):5s} prime? {sp.isprime(n)}\")\n```\n\nThe two columns agree on every row, and the reason is one line of number theory: $a$ is invertible mod $n$ exactly when $\\gcd(a,n)=1$, and that holds for every nonzero $a$ exactly when $n$ is prime.\n\n## Why zero divisors are so destructive\n\nIn a field, $ab = 0$ forces $a = 0$ or $b = 0$, so you can cancel and equations behave. With zero divisors you lose both.\n\n```python\nn = 12\nprint(f\"in Z_{n}:\")\nprint(\"  4 * 3 =\", (4*3) % n, \"  two nonzero elements multiplying to zero\")\nprint(\"  solutions of x^2 = 4:\", [x for x in range(n) if (x*x) % n == 4])\nprint(\"  solutions of 4x = 8: \", [x for x in range(n) if (4*x) % n == 8])\n\np = 13\nprint(f\"\\nin the field Z_{p}:\")\nprint(\"  solutions of x^2 = 4:\", [x for x in range(p) if (x*x) % p == 4])\nprint(\"  solutions of 4x = 8: \", [x for x in range(p) if (4*x) % p == 8])\n```\n\nMod 12, the quadratic has four roots and the linear equation has three. Mod 13, a field, the quadratic has two and the linear one has exactly one, as any polynomial over a field must: a degree-$n$ polynomial has at most $n$ roots.\n\n## Polynomial rings\n\n$R[x]$, polynomials with coefficients in $R$, is itself a ring, and when $R$ is a field it behaves remarkably like the integers: division with remainder, gcds, and unique factorisation into irreducibles.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\n\nf = x**4 - 1\ng = x**2 - 1\n\nquotient, remainder = sp.div(f, g, x)\nprint(f\"({f}) / ({g}) = {quotient} remainder {remainder}\")\nprint(\"gcd:\", sp.gcd(f, g))\n\nprint(\"\\nfactorisations over different rings:\")\nprint(\"  over the rationals:\", sp.factor(x**4 - 1))\nprint(\"  over the reals:    \", sp.factor(x**4 - 1, extension=sp.sqrt(2)))\nprint(\"  over the complexes:\", sp.factor(x**4 - 1, gaussian=True))\nprint(\"  x^2 + 1 mod 2:     \", sp.factor(x**2 + 1, modulus=2))\n```\n\n\"Irreducible\" is not absolute, it depends on the ring. $x^2+1$ is irreducible over the rationals, factors as $(x+i)(x-i)$ over the complexes, and as $(x+1)^2$ modulo 2.\n\n## Ideals and quotient rings\n\nAn **ideal** is to a ring what a normal subgroup is to a group: the thing you can quotient by. $I \\subseteq R$ is an ideal when it is closed under addition and *absorbs* multiplication, $rI \\subseteq I$ for every $r \\in R$.\n\nThe even integers form an ideal in $\\mathbb{Z}$; the odd ones do not (they are not even closed under addition).\n\n```python\ndef is_ideal(subset, ring_elements, add, mul):\n    subset = set(subset)\n    closed = all(add(a, b) in subset for a in subset for b in subset)\n    absorbs = all(mul(r, a) in subset for r in ring_elements for a in subset)\n    return closed and absorbs\n\nZ12 = list(range(12))\nadd12 = lambda a, b: (a+b) % 12\nmul12 = lambda a, b: (a*b) % 12\n\nfor generator in [2, 3, 4, 6]:\n    ideal = sorted({(generator*k) % 12 for k in range(12)})\n    print(f\"multiples of {generator}: {str(ideal):26s} ideal? {is_ideal(ideal, Z12, add12, mul12)}\"\n          f\"   quotient ring has {12//len(ideal)} elements\")\n\nprint(\"\\nthe odd numbers:\", is_ideal([1,3,5,7,9,11], Z12, add12, mul12))\n```\n\nQuotienting $\\mathbb{Z}$ by the ideal $n\\mathbb{Z}$ gives $\\mathbb{Z}_n$, which is where modular arithmetic actually comes from. And the quotient is a field exactly when the ideal is **maximal**, which for $n\\mathbb{Z}$ means $n$ prime.\n\n## Characteristic\n\nThe **characteristic** of a ring is the smallest $n > 0$ with $n \\cdot 1 = 0$, or 0 if no such $n$ exists.\n\n```python\ndef characteristic(n):\n    total = 0\n    for k in range(1, n + 1):\n        total = (total + 1) % n\n        if total == 0:\n            return k\n    return 0\n\nfor n in [2, 5, 6, 12]:\n    print(f\"Z_{n:2d} has characteristic {characteristic(n)}\")\nprint(\"Q, R, and C all have characteristic 0\")\n\np = 5\nprint(f\"\\nin characteristic {p}, the freshman's dream is a theorem:\")\nfor a in range(p):\n    for b in range(p):\n        assert (a + b)**p % p == (a**p + b**p) % p\nprint(\"  (a + b)^p = a^p + b^p holds for every pair, verified\")\n```\n\nThat identity is false over the rationals and true in characteristic $p$, because every binomial coefficient in the middle is divisible by $p$. It is called the Frobenius endomorphism, and it is the engine of the finite-field arithmetic in the next lesson.\n\n> [!NOTE]\n> $2 \\times 2$ matrices form a ring that is neither commutative nor free of zero divisors: two nonzero singular matrices can multiply to zero. Rings are much wilder than fields, which is exactly why fields are worth naming.",
+      "quiz": {
+        "title": "Rings, Domains, Fields",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Z_n is a field exactly when n is:",
+            "options": [
+              "Even",
+              "Prime",
+              "A perfect square",
+              "Greater than 2"
+            ],
+            "answer": "Prime"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A zero divisor is a nonzero element a such that:",
+            "options": [
+              "a has no additive inverse",
+              "ab = 0 for some nonzero b",
+              "a squared equals a",
+              "a is not a unit"
+            ],
+            "answer": "ab = 0 for some nonzero b"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Over a field, a polynomial of degree n has at most n roots.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The ring-theory analogue of a normal subgroup, the thing you quotient by, is called an ____.",
+            "options": [],
+            "answer": "ideal"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "finite-fields-and-their-uses",
+      "title": "Finite Fields and Their Uses",
+      "order": 6,
+      "content": "# Finite Fields and Their Uses\n\nFinite fields are where abstract algebra pays rent. Every QR code, every SSD's error correction, and AES encryption all run on arithmetic in a field with $2^8$ elements.\n\n## The classification\n\nFor every prime $p$ and every $n \\ge 1$ there is exactly one field with $p^n$ elements, up to isomorphism, written $GF(p^n)$ or $\\mathbb{F}_{p^n}$. And there are **no other finite fields**. A field of order 6 or 10 cannot exist.\n\n```python\nimport sympy as sp\n\ndef could_be_field_order(n):\n    factors = sp.factorint(n)\n    return len(factors) == 1        # a single prime power\n\nfor n in range(2, 30):\n    print(f\"{n:3d}: {'yes' if could_be_field_order(n) else 'no ':4s} \"\n          f\"{sp.factorint(n)}\")\n```\n\nOrders 6, 10, 12, 14 are impossible. Orders 4, 8, 9, 16, 25, 27 exist and are not the integers modulo anything, since $\\mathbb{Z}_4$ is not a field.\n\n## GF(p): the easy case\n\nFor prime $p$, $GF(p)$ is just arithmetic modulo $p$.\n\n```python\np = 7\nprint(f\"GF({p}) multiplication table\")\nprint(\"    \" + \"\".join(f\"{j:4d}\" for j in range(p)))\nfor i in range(p):\n    print(f\"{i:3d} \" + \"\".join(f\"{(i*j) % p:4d}\" for j in range(p)))\n\nprint(\"\\ninverses:\", {a: pow(a, -1, p) for a in range(1, p)})\n```\n\nEvery nonzero row is a permutation of the nonzero elements, the signature of a field.\n\n## GF(2^n): polynomials modulo an irreducible\n\n$GF(4)$ cannot be $\\mathbb{Z}_4$, so it has to be built differently: take polynomials with coefficients in $GF(2)$ and reduce modulo an irreducible polynomial of degree $n$.\n\nFor $GF(4)$ use $x^2 + x + 1$, which has no roots mod 2 and is therefore irreducible.\n\n```python\nimport sympy as sp\n\nx = sp.symbols('x')\nmodulus = x**2 + x + 1\n\nprint(\"is x^2+x+1 irreducible mod 2?\",\n      sp.factor_list(modulus, modulus=2))\n\nelements = [sp.Poly(0, x), sp.Poly(1, x), sp.Poly(x, x), sp.Poly(x + 1, x)]\nlabels = [\"0\", \"1\", \"x\", \"x+1\"]\n\ndef gf4_mul(a, b):\n    product = (a * b).rem(sp.Poly(modulus, x))\n    return sp.Poly([c % 2 for c in product.all_coeffs()] or [0], x)\n\nprint(\"\\nGF(4) multiplication\")\nprint(\"        \" + \"\".join(f\"{l:>7}\" for l in labels))\nfor a, la in zip(elements, labels):\n    row = []\n    for b in elements:\n        result = gf4_mul(a, b)\n        row.append(labels[[e.as_expr() for e in elements].index(result.as_expr())]\n                   if result.as_expr() in [e.as_expr() for e in elements] else \"?\")\n    print(f\"{la:>7} \" + \"\".join(f\"{r:>7}\" for r in row))\n```\n\nNote $x \\cdot x = x + 1$, because $x^2 = x + 1$ after reduction. That is the whole trick: the irreducible polynomial is a rule for folding high powers back down.\n\n## GF(2^8), the byte field\n\nBytes as field elements, with the AES modulus $x^8 + x^4 + x^3 + x + 1$. Addition is XOR, and multiplication is carry-less multiplication followed by reduction.\n\n```python\nAES_MODULUS = 0x11B          # x^8 + x^4 + x^3 + x + 1\n\ndef gf_add(a, b):\n    return a ^ b             # addition in characteristic 2 is XOR\n\ndef gf_mul(a, b):\n    result = 0\n    while b:\n        if b & 1:\n            result ^= a\n        b >>= 1\n        a <<= 1\n        if a & 0x100:\n            a ^= AES_MODULUS\n    return result\n\ndef gf_inverse(a):\n    if a == 0:\n        raise ZeroDivisionError(\"0 has no inverse\")\n    # a^254 = a^-1 in GF(2^8), since the multiplicative group has order 255\n    result, power = 1, a\n    exponent = 254\n    while exponent:\n        if exponent & 1:\n            result = gf_mul(result, power)\n        power = gf_mul(power, power)\n        exponent >>= 1\n    return result\n\nprint(\"0x57 + 0x83 =\", hex(gf_add(0x57, 0x83)))\nprint(\"0x57 * 0x83 =\", hex(gf_mul(0x57, 0x83)), \"(the classic AES example, 0xc1)\")\nprint(\"inverse of 0x53 =\", hex(gf_inverse(0x53)))\nprint(\"check:\", hex(gf_mul(0x53, gf_inverse(0x53))))\n\neverything_invertible = all(gf_mul(a, gf_inverse(a)) == 1 for a in range(1, 256))\nprint(\"all 255 nonzero bytes invertible?\", everything_invertible)\n```\n\nThat is the arithmetic inside AES's S-box and MixColumns step, in about twenty lines.\n\n## The multiplicative group is cyclic\n\n$GF(q)^{\\times}$ always has a generator, and finding one turns multiplication into addition of exponents, which is how hardware implementations use log tables.\n\n```python\nAES_MODULUS = 0x11B\n\ndef gf_mul(a, b):\n    result = 0\n    while b:\n        if b & 1:\n            result ^= a\n        b >>= 1\n        a <<= 1\n        if a & 0x100:\n            a ^= AES_MODULUS\n    return result\n\ndef is_generator(g):\n    seen, value = set(), 1\n    for _ in range(255):\n        value = gf_mul(value, g)\n        seen.add(value)\n    return len(seen) == 255\n\ngenerators = [g for g in range(2, 256) if is_generator(g)]\nprint(f\"{len(generators)} generators of GF(256)*, the first few: {generators[:8]}\")\nprint(\"3 is the standard choice used in AES:\", is_generator(3))\n\n# build log and antilog tables, then multiply by adding logs\nlog, antilog, value = {}, {}, 1\nfor i in range(255):\n    log[value] = i\n    antilog[i] = value\n    value = gf_mul(value, 3)\n\na, b = 0x57, 0x83\nvia_tables = antilog[(log[a] + log[b]) % 255]\nprint(f\"0x57 * 0x83 via log tables = {hex(via_tables)}  direct = {hex(gf_mul(a, b))}\")\n```\n\n## Reed-Solomon: why any of this matters\n\nEncode data as a polynomial over $GF(q)$ and evaluate it at more points than you have coefficients. Because a degree-$k$ polynomial over a field is determined by any $k+1$ values, you can lose several and still reconstruct. That is the error correction in QR codes, CDs, and RAID-6.\n\n```python\nimport sympy as sp\n\np = 251                       # a prime, so GF(251) is Z_251\nmessage = [42, 17, 99]        # three data symbols, so a degree-2 polynomial\nx = sp.symbols('x')\n\npoly = sum(c * x**i for i, c in enumerate(message))\npoints = [(i, int(poly.subs(x, i)) % p) for i in range(6)]\nprint(\"polynomial:\", poly)\nprint(\"evaluated at 6 points:\", points)\n\n# lose two of them, reconstruct from any three\nsurviving = [points[0], points[3], points[5]]\nprint(\"surviving points:\", surviving)\n\nrecovered = sp.interpolate(surviving, x)\ncoefficients = [int(sp.Poly(recovered, x).all_coeffs()[::-1][i]) % p for i in range(3)]\nprint(\"recovered coefficients:\", coefficients, \" original:\", message,\n      \" match?\", coefficients == message)\n```\n\nThree of six points were enough. Adding $2t$ extra evaluations lets you correct $t$ arbitrary errors, and the whole scheme rests on one field fact: a nonzero polynomial of degree $k$ has at most $k$ roots.\n\n## Where finite fields show up\n\n| Application | Field |\n|---|---|\n| AES block cipher | $GF(2^8)$ |\n| Reed-Solomon (QR, CD, RAID-6) | $GF(2^8)$ or $GF(2^{16})$ |\n| CRC checksums | $GF(2)$ polynomials |\n| Elliptic-curve cryptography | $GF(p)$ for a large prime |\n| Diffie-Hellman | $GF(p)^{\\times}$ |\n\n> [!IMPORTANT]\n> In characteristic 2, addition and subtraction are the same operation, both are XOR. That is why so much of this code is bit twiddling, and why an off-by-one in the modulus produces plausible-looking output that is completely wrong. Always verify that every nonzero element is invertible.",
+      "quiz": {
+        "title": "Finite Fields",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which of these is NOT a possible size for a finite field?",
+            "options": [
+              "8",
+              "9",
+              "12",
+              "25"
+            ],
+            "answer": "12"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Addition in GF(2^n) is implemented as:",
+            "options": [
+              "Integer addition",
+              "XOR",
+              "Addition mod 256",
+              "Multiplication"
+            ],
+            "answer": "XOR"
+          },
+          {
+            "id": "q3",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "AES arithmetic takes place in which field?",
+            "options": [
+              "GF(2)",
+              "GF(256)",
+              "GF(251)",
+              "GF(65537)"
+            ],
+            "answer": "GF(256)"
+          },
+          {
+            "id": "q4",
+            "type": "TRUE_FALSE",
+            "prompt": "GF(4) is the same thing as the integers mod 4.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-a-finite-group-and-field-explorer",
+      "title": "Final Project: A Finite Group and Field Explorer",
+      "order": 7,
+      "content": "# Final Project: A Finite Group and Field Explorer\n\nBuild `algebra_explorer.py`, a module that takes a finite structure and tells you everything about it: whether it is a group, what its subgroups are, which groups it is isomorphic to, and whether it is a field.\n\n## What to build\n\n**Groups**\n1. `is_group(elements, op)`, checking all four axioms and reporting which one fails.\n2. `cayley_table(elements, op)`, printed and verified to be a Latin square.\n3. `element_orders(elements, op)`, and a check that each divides the group order.\n4. `subgroups(elements, op)`, all of them, by closing subsets under the operation.\n5. `is_normal(H, G, op)` and `quotient(G, H, op)`.\n6. `are_isomorphic(G1, op1, G2, op2)`, cheap invariants first, then a search.\n\n**Rings and fields**\n7. `ring_report(elements, add, mul)`, units, zero divisors, characteristic.\n8. `is_field(elements, add, mul)`.\n9. `gf2n(modulus)`, a class implementing arithmetic in $GF(2^n)$.\n\n## Generating subgroups efficiently\n\nBrute-forcing every subset is $2^n$ and dies immediately. Generate instead: take a subset, close it under the operation, and collect what you get.\n\n```python\nfrom itertools import combinations\n\ndef generate(seeds, op, identity):\n    \"\"\"Smallest closed set containing the seeds.\"\"\"\n    closure = {identity} | set(seeds)\n    changed = True\n    while changed:\n        changed = False\n        for a in list(closure):\n            for b in list(closure):\n                if op(a, b) not in closure:\n                    closure.add(op(a, b))\n                    changed = True\n    return frozenset(closure)\n\ndef all_subgroups(elements, op, identity):\n    found = {generate([], op, identity)}\n    for size in (1, 2):\n        for seeds in combinations(elements, size):\n            found.add(generate(seeds, op, identity))\n    return sorted(found, key=lambda s: (len(s), sorted(s)))\n\nZ12 = list(range(12))\nadd12 = lambda a, b: (a + b) % 12\n\nfor H in all_subgroups(Z12, add12, 0):\n    print(f\"order {len(H):2d}: {sorted(H)}   divides 12? {12 % len(H) == 0}\")\n```\n\nEvery subgroup of a *cyclic* group is generated by one element, so one and two seeds suffice here. For non-abelian groups you may need more, and finding the minimum number of generators is itself an interesting sub-problem.\n\n## Classify every group of small order\n\nThere is exactly one group of order 1, 2, 3, and 5; two of order 4 and 6; five of order 8. Verify the small cases by construction:\n\n```python\nfrom itertools import product\n\ndef order_profile(elements, op, identity):\n    def order(a):\n        value, n = a, 1\n        while value != identity:\n            value, n = op(value, a), n + 1\n        return n\n    profile = {}\n    for g in elements:\n        profile[order(g)] = profile.get(order(g), 0) + 1\n    return tuple(sorted(profile.items()))\n\ngroups = {\n    \"Z_4\":            (list(range(4)), lambda a, b: (a+b) % 4, 0),\n    \"Z_2 x Z_2\":      (list(product(range(2), repeat=2)),\n                       lambda a, b: ((a[0]+b[0]) % 2, (a[1]+b[1]) % 2), (0, 0)),\n    \"units mod 5\":    ([1, 2, 3, 4], lambda a, b: (a*b) % 5, 1),\n    \"units mod 8\":    ([1, 3, 5, 7], lambda a, b: (a*b) % 8, 1),\n}\nfor name, (elements, op, identity) in groups.items():\n    print(f\"{name:14s} profile {order_profile(elements, op, identity)}\")\n\nprint(\"\\ntwo distinct profiles, so exactly two groups of order 4:\")\nprint(\"  cyclic C_4 (an element of order 4) and the Klein group V (everything order 2)\")\n```\n\nElement-order profiles separate them without ever constructing an isomorphism, which is the practical way to classify.\n\n## Verify GF(2^n) properly\n\nA finite field claim is easy to make and easy to get wrong. Test it exhaustively:\n\n```python\ndef make_gf2n(modulus, degree):\n    size = 1 << degree\n\n    def mul(a, b):\n        result = 0\n        while b:\n            if b & 1:\n                result ^= a\n            b >>= 1\n            a <<= 1\n            if a & size:\n                a ^= modulus\n        return result\n\n    return size, mul\n\nfor modulus, degree, name in [(0b1011, 3, \"GF(8), x^3+x+1\"),\n                              (0b10011, 4, \"GF(16), x^4+x+1\"),\n                              (0b1001, 3, \"GF(8)?, x^3+1 (reducible!)\")]:\n    size, mul = make_gf2n(modulus, degree)\n    nonzero = range(1, size)\n    invertible = sum(1 for a in nonzero if any(mul(a, b) == 1 for b in nonzero))\n    associative = all(mul(mul(a, b), c) == mul(a, mul(b, c))\n                      for a in nonzero for b in nonzero for c in nonzero)\n    print(f\"{name:28s} invertible {invertible}/{size-1}  associative {associative}  \"\n          f\"field? {invertible == size - 1}\")\n```\n\nThe third modulus is reducible ($x^3+1 = (x+1)(x^2+x+1)$ mod 2), so the result has zero divisors and is only a ring. That single check, \"is every nonzero element invertible\", catches the mistake instantly.\n\n## Stretch goals\n\n- **Conjugacy classes.** Compute them for $S_4$ and confirm the class sizes sum to 24 and each divides it.\n- **The center.** Find the elements commuting with everything, and verify it is always a normal subgroup.\n- **Sylow counting.** For a group of order 12, count the subgroups of order 3 and check it is 1 or 4, as Sylow's third theorem requires.\n- **A working Reed-Solomon codec.** Encode a message over $GF(256)$, corrupt some bytes, and recover them.\n- **Group visualisation.** Render a Cayley graph as an SVG or with matplotlib.\n\n## Definition of done\n\n- `is_group` names the failing axiom rather than just returning `False`.\n- `subgroups` finds all of them for $\\mathbb{Z}_{12}$, $S_3$, and $D_4$, and every order divides the group order.\n- `are_isomorphic` correctly separates $\\mathbb{Z}_4$ from the Klein four-group, and correctly identifies $S_3 \\cong D_3$.\n- `gf2n` is verified exhaustively: every nonzero element invertible, multiplication associative and distributive over XOR.\n- A README table of every group of order at most 8, with its element-order profile.",
+      "requiresSubmission": true
+    }
+  ]
+}

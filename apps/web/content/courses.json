@@ -578,5 +578,75 @@
     "lessonCount": 5,
     "quizCount": 4,
     "isPublic": true
+  },
+  {
+    "slug": "linear-algebra",
+    "title": "Linear Algebra",
+    "description": "Vectors, matrices, linear systems, determinants, eigenvalues, and least squares, with every computation runnable in your browser using numpy and sympy.",
+    "pathSlug": "linear-algebra",
+    "pathName": "Linear Algebra",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "discrete-mathematics",
+    "title": "Discrete Mathematics",
+    "description": "Logic, proof techniques, sets and relations, combinatorics, number theory, and graphs, the mathematics behind algorithms and cryptography, with every example runnable in the browser.",
+    "pathSlug": "discrete-math",
+    "pathName": "Discrete Mathematics",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "single-variable-calculus",
+    "title": "Single-Variable Calculus",
+    "description": "Limits, derivatives, integrals, techniques of integration, and Taylor series for functions of one variable, with every derivative, integral, and error estimate computed live in your browser.",
+    "pathSlug": "calculus",
+    "pathName": "Single-Variable Calculus",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "multivariable-calculus",
+    "title": "Multivariable Calculus",
+    "description": "Partial derivatives, gradients, constrained optimisation, multiple integrals, change of variables, and the divergence and Stokes theorems, with every surface, gradient, and integral computed live in the browser.",
+    "pathSlug": "multivariable-calculus",
+    "pathName": "Multivariable Calculus",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "abstract-algebra",
+    "title": "Abstract Algebra",
+    "description": "Groups, subgroups and Lagrange's theorem, permutations, homomorphisms and quotients, rings and fields, and the finite fields behind AES and Reed-Solomon, all explored with runnable code.",
+    "pathSlug": "abstract-algebra",
+    "pathName": "Abstract Algebra",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "topology",
+    "title": "Topology",
+    "description": "Metric spaces, open sets, continuity and homeomorphism, connectedness, compactness, and the fundamental group, with finite spaces, point clouds, and invariants you can actually compute.",
+    "pathSlug": "topology",
+    "pathName": "Topology",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "computer-science",
+    "title": "Computer Science",
+    "description": "The theory behind the code: asymptotic analysis, data structures, sorting, graph algorithms, automata and formal languages, and the limits of computation, every claim measured with runnable code.",
+    "pathSlug": "computer-science",
+    "pathName": "Computer Science",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
   }
 ]
