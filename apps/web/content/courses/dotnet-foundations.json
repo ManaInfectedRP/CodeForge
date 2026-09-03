@@ -1,0 +1,263 @@
+{
+  "slug": "dotnet-foundations",
+  "title": ".NET Foundations",
+  "description": "The .NET platform from the ground up: the runtime, SDK and CLI, C# types and control flow, object-oriented design with classes, records and interfaces, collections and generics, exceptions, file IO, and NuGet.",
+  "pathSlug": "dotnet",
+  "pathName": ".NET",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "what-is-dotnet",
+      "title": "What .NET Is: Runtime, SDK, and the CLI",
+      "order": 1,
+      "content": "# What .NET Is: Runtime, SDK, and the CLI\n\n**.NET** is not a language. It is a platform: a runtime that executes your code, a large base class library, and a toolchain. C# is the language most people write on top of it, and this course uses C# throughout.\n\n## The three pieces you install\n\n| Piece | What it is | When you need it |\n| --- | --- | --- |\n| **Runtime** | The CLR: JIT compiler, garbage collector, type system | To *run* a .NET app |\n| **SDK** | Runtime + compiler + `dotnet` CLI + templates | To *build* a .NET app |\n| **BCL** | Base Class Library: `System.*`, collections, IO, networking, JSON | Ships with both |\n\nInstalling the SDK gives you everything. Check what you have:\n\n```bash\ndotnet --version        # SDK version, e.g. 9.0.100\ndotnet --list-runtimes  # every runtime installed side by side\n```\n\n## From source to running program\n\nYour C# is compiled to **IL** (Intermediate Language) inside an assembly (`.dll`). The CLR then JIT-compiles that IL into real machine code the first time each method runs. That is why the same `.dll` runs on Windows, Linux, and macOS: the machine-specific step happens at startup, not at build time.\n\n## Your first project\n\n```bash\ndotnet new console -o HelloForge   # scaffold a console app\ncd HelloForge\ndotnet run                         # restore, build, and execute\n```\n\n`dotnet new console` writes two files that matter:\n\n```csharp\n// Program.cs, top-level statements, no class or Main needed\nConsole.WriteLine(\"Hello, .NET!\");\n\nvar name = Console.ReadLine();\nConsole.WriteLine($\"Welcome to the forge, {name}.\");\n```\n\n```xml\n<!-- HelloForge.csproj, the project file: target framework and dependencies -->\n<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <OutputType>Exe</OutputType>\n    <TargetFramework>net9.0</TargetFramework>\n    <Nullable>enable</Nullable>\n    <ImplicitUsings>enable</ImplicitUsings>\n  </PropertyGroup>\n</Project>\n```\n\n`ImplicitUsings` is why `Console` resolves without a `using System;` line, the SDK injects the common namespaces for you.\n\n## The commands you will run daily\n\n```bash\ndotnet build            # compile\ndotnet run              # build and execute\ndotnet test             # run the test projects\ndotnet publish -c Release   # produce a deployable folder\ndotnet new sln && dotnet sln add MyApp   # group projects in a solution\n```\n\n> [!NOTE]\n> \".NET Framework\" (4.8 and older) is the legacy, Windows-only product. \".NET\" with no suffix, versions 5 and up, is the modern cross-platform one, and that is what this course means everywhere. \".NET Core\" was the transitional name for versions 1 through 3.1.\n",
+      "quiz": {
+        "title": ".NET Platform Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the C# compiler produce?",
+            "options": [
+              "Native machine code for the current CPU",
+              "IL (Intermediate Language) inside an assembly",
+              "Bytecode for the JVM",
+              "A shell script"
+            ],
+            "answer": "IL (Intermediate Language) inside an assembly"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "You need the full .NET SDK installed in order to run an already-published .NET application.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The command `dotnet new ____ -o MyApp` scaffolds a new command-line application project.",
+            "options": [],
+            "answer": "console"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "types-variables-control-flow",
+      "title": "Types, Variables, and Control Flow",
+      "order": 2,
+      "content": "# Types, Variables, and Control Flow\n\nC# is **statically typed**: every variable has a type fixed at compile time, and the compiler rejects mismatches before your program runs.\n\n## Value types and reference types\n\n```csharp\nint count = 42;              // value type\ndouble price = 19.99;\nbool isReady = true;\nchar grade = 'A';\nstring name = \"Kodstigen\";   // reference type, the variable holds a reference\n\nvar total = count * price;   // var = \"infer the type\", still strictly double\nconst int MaxRetries = 3;    // compile-time constant\n```\n\n`var` is not `dynamic`. `var total = count * price;` compiles to exactly `double total = ...`, the compiler simply wrote the type for you.\n\n## Strings\n\n```csharp\nstring first = \"Ada\";\nstring last = \"Lovelace\";\n\nstring full = $\"{first} {last}\";     // interpolation\nstring padded = $\"{first,-10}|\";     // \"Ada       |\"\nstring money = $\"{1234.5:C}\";        // culture-aware currency\nstring path = @\"C:\\repos\\CodeForge\"; // verbatim string, backslashes are literal\n```\n\nStrings are **immutable**: every concatenation allocates a new one. Building a string in a loop belongs in a `StringBuilder`.\n\n```csharp\nvar sb = new System.Text.StringBuilder();\nfor (int i = 0; i < 5; i++) sb.Append(i).Append(',');\nConsole.WriteLine(sb.ToString());   // 0,1,2,3,4,\n```\n\n## Control flow\n\n```csharp\nint score = 87;\n\nif (score >= 90) Console.WriteLine(\"A\");\nelse if (score >= 80) Console.WriteLine(\"B\");\nelse Console.WriteLine(\"C or below\");\n\n// switch expression: produces a value, no break statements\nstring label = score switch\n{\n    >= 90 => \"excellent\",\n    >= 80 => \"good\",\n    >= 60 => \"passing\",\n    _     => \"needs work\",\n};\n\nfor (int i = 0; i < 3; i++) Console.WriteLine(i);\n\nforeach (var word in new[] { \"build\", \"test\", \"ship\" })\n    Console.WriteLine(word);\n\nint n = 5;\nwhile (n > 0) { Console.Write(n + \" \"); n--; }\n```\n\nThe `switch` **expression** with `=>` arms and `_` for the default case is the modern form. The old `switch` statement with `case:` and `break;` still exists, but reach for the expression whenever you are producing a value.\n\n## Nullability\n\n```csharp\nstring? maybeName = null;                 // ? means \"this may be null\"\nstring safe = maybeName ?? \"anonymous\";   // null-coalescing\nint? length = maybeName?.Length;          // null-conditional, result is int?\n```\n\nWith `<Nullable>enable</Nullable>` in the csproj, the compiler warns whenever you dereference something that might be null. Treat those warnings as errors: they are the single biggest source of runtime crashes in real .NET code.\n\n> [!WARNING]\n> `int` overflows silently by default: `int.MaxValue + 1` wraps around to `int.MinValue` instead of throwing. Wrap the arithmetic in a `checked { }` block whenever a wrap-around would be a bug rather than a feature.\n",
+      "quiz": {
+        "title": "Types and Control Flow Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What is the type of `total` in `var total = 3 * 1.5;`?",
+            "options": [
+              "dynamic",
+              "object",
+              "double",
+              "int"
+            ],
+            "answer": "double"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "In C#, `string` is a value type copied in full on every assignment.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The `____` operator returns its left operand unless that operand is null, in which case it returns the right one (as in `name ?? \"anonymous\"`).",
+            "options": [],
+            "answer": "??"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "methods-classes-objects",
+      "title": "Methods, Classes, and Objects",
+      "order": 3,
+      "content": "# Methods, Classes, and Objects\n\nA **class** bundles data (fields, properties) with behavior (methods). An **object** is one instance of that class.\n\n## A class with properties and a constructor\n\n```csharp\npublic class BankAccount\n{\n    private decimal _balance;                       // field: internal state\n\n    public string Owner { get; }                    // read-only auto-property\n    public decimal Balance => _balance;             // expression-bodied property\n    public string Currency { get; set; } = \"SEK\";   // with a default value\n\n    public BankAccount(string owner, decimal opening = 0m)\n    {\n        Owner = owner;\n        _balance = opening;\n    }\n\n    public void Deposit(decimal amount)\n    {\n        if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount));\n        _balance += amount;\n    }\n\n    public bool TryWithdraw(decimal amount)\n    {\n        if (amount > _balance) return false;\n        _balance -= amount;\n        return true;\n    }\n\n    public override string ToString() => $\"{Owner}: {_balance:0.00} {Currency}\";\n}\n```\n\n```csharp\nvar account = new BankAccount(\"Ada\", 500m);\naccount.Deposit(250m);\nConsole.WriteLine(account.TryWithdraw(1000m)); // False\nConsole.WriteLine(account);                    // Ada: 750,00 SEK\n```\n\nUse `decimal`, not `double`, for money. `double` is binary floating point and cannot represent `0.1` exactly, which shows up as öre quietly disappearing after a few thousand transactions.\n\n## Method signatures worth knowing\n\n```csharp\npublic static int Add(int a, int b) => a + b;             // static: no instance needed\npublic static int Sum(params int[] numbers) => numbers.Sum();\npublic static bool TryParseAge(string s, out int age)     // out: a second return value\n    => int.TryParse(s, out age);\n\nConsole.WriteLine(Add(b: 3, a: 2));   // named arguments, order-free\nConsole.WriteLine(Sum(1, 2, 3, 4));   // 10\n```\n\n## Records: data types for free\n\n```csharp\npublic record Point(int X, int Y);\n\nvar p1 = new Point(1, 2);\nvar p2 = p1 with { Y = 9 };                // non-destructive copy\nConsole.WriteLine(p1 == new Point(1, 2));  // True, value equality\nConsole.WriteLine(p2);                     // Point { X = 1, Y = 9 }\n```\n\nA `record` gives you a constructor, value-based `Equals` and `GetHashCode`, a readable `ToString`, and `with` expressions from a single line. Use records for data you pass around, classes for things with identity and mutable state.\n\n## Static members and object initializers\n\n```csharp\npublic class Counter\n{\n    public static int Created { get; private set; }\n    public string Label { get; init; } = \"\";\n    public Counter() => Created++;\n}\n\nvar c = new Counter { Label = \"requests\" };   // object initializer\nConsole.WriteLine(Counter.Created);           // 1, lives on the type, not the instance\n```\n\n`init` makes a property settable in the object initializer and read-only afterwards, immutability without writing a constructor for every combination of fields.\n\n> [!NOTE]\n> `class` is a reference type: assigning it copies the reference, so two variables refer to the same object. `struct` (and `record struct`) is a value type: assigning it copies the whole value. Default to `class` or `record` unless you are writing a small, immutable, performance-sensitive value.\n",
+      "quiz": {
+        "title": "Classes and Objects Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which type should you use for currency amounts in C#?",
+            "options": [
+              "float",
+              "double",
+              "decimal",
+              "int"
+            ],
+            "answer": "decimal"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A `record` provides value-based equality without you writing `Equals` yourself.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The `____` keyword on a member means it belongs to the type itself, so you call it without creating an instance.",
+            "options": [],
+            "answer": "static"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "oop-inheritance-interfaces-polymorphism",
+      "title": "OOP in .NET: Inheritance, Interfaces, Polymorphism",
+      "order": 4,
+      "content": "# OOP in .NET: Inheritance, Interfaces, Polymorphism\n\n## Inheritance and virtual members\n\n```csharp\npublic abstract class Employee\n{\n    public required string Name { get; init; }\n    public abstract decimal MonthlyPay();          // no body: subclasses must supply one\n    public virtual string Describe() => $\"{Name} earns {MonthlyPay():0} per month\";\n}\n\npublic class Salaried : Employee\n{\n    public decimal AnnualSalary { get; init; }\n    public override decimal MonthlyPay() => AnnualSalary / 12;\n}\n\npublic class Hourly : Employee\n{\n    public decimal Rate { get; init; }\n    public int Hours { get; init; }\n    public override decimal MonthlyPay() => Rate * Hours;\n    public override string Describe() => base.Describe() + $\" ({Hours} h)\";\n}\n```\n\n- `abstract` members have no implementation and force every subclass to provide one.\n- `virtual` members have a default that a subclass *may* replace with `override`.\n- `base.Describe()` calls up to the parent version.\n- `required` makes the compiler reject `new Salaried()` unless `Name` is set; `init` makes the property settable only during initialization.\n\n## Polymorphism in action\n\n```csharp\nEmployee[] staff =\n{\n    new Salaried { Name = \"Ada\", AnnualSalary = 720_000m },\n    new Hourly   { Name = \"Linus\", Rate = 450m, Hours = 120 },\n};\n\nforeach (var e in staff)\n    Console.WriteLine(e.Describe());   // each object runs its own override\n```\n\nOne loop, one static type (`Employee`), two behaviors selected at runtime. That is polymorphism.\n\n## Interfaces: contracts without inheritance\n\n```csharp\npublic interface IPayable\n{\n    decimal MonthlyPay();\n    string Currency => \"SEK\";     // default implementation, optional to override\n}\n\npublic class Contractor : IPayable\n{\n    public decimal Invoiced { get; init; }\n    public decimal MonthlyPay() => Invoiced;\n}\n```\n\nA class inherits from **one** base class but can implement **many** interfaces. That is why the BCL is built on interfaces: `IEnumerable<T>`, `IComparable<T>`, `IDisposable`, `IEquatable<T>`.\n\n```csharp\npublic class Batch : IDisposable\n{\n    public void Dispose() => Console.WriteLine(\"cleaned up\");\n}\n\nusing (var b = new Batch()) { /* work */ }   // Dispose called on the way out\nusing var b2 = new Batch();                  // same thing, scoped to the enclosing block\n```\n\n## Pattern matching over a hierarchy\n\n```csharp\nstatic string Tag(Employee e) => e switch\n{\n    Salaried { AnnualSalary: > 1_000_000m } => \"senior salaried\",\n    Salaried => \"salaried\",\n    Hourly { Hours: > 160 } h => $\"overworked ({h.Hours} h)\",\n    _ => \"other\",\n};\n```\n\nProperty patterns (`{ Hours: > 160 }`) let you branch on shape and value at once, and the compiler warns when your arms are unreachable or your switch is not exhaustive.\n\n> [!WARNING]\n> Prefer interfaces and composition over deep inheritance chains. Three or four levels of `: BaseThing` is the point where changing a base method starts silently breaking subclasses you had forgotten existed.\n",
+      "quiz": {
+        "title": "OOP Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "How many base classes and interfaces can a single C# class have?",
+            "options": [
+              "One base class, many interfaces",
+              "Many base classes, one interface",
+              "One of each",
+              "Many of each"
+            ],
+            "answer": "One base class, many interfaces"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "An `abstract` method may include a default body that subclasses can reuse.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "A subclass replaces a `virtual` method from its parent using the `____` keyword.",
+            "options": [],
+            "answer": "override"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "collections-generics-linq-intro",
+      "title": "Collections, Generics, and a First Taste of LINQ",
+      "order": 5,
+      "content": "# Collections, Generics, and a First Taste of LINQ\n\n## The collections you will actually use\n\n```csharp\nvar list = new List<string> { \"build\", \"test\" };\nlist.Add(\"ship\");\nlist.Insert(0, \"plan\");\nConsole.WriteLine(list.Count);   // 4\nConsole.WriteLine(list[2]);      // test\n\nvar byId = new Dictionary<int, string> { [1] = \"Ada\", [2] = \"Linus\" };\nbyId[3] = \"Grace\";\nif (byId.TryGetValue(2, out var who)) Console.WriteLine(who);   // Linus\n\nvar unique = new HashSet<int> { 1, 2, 2, 3 };  // Count == 3\nvar queue = new Queue<string>();               // FIFO: Enqueue / Dequeue\nvar stack = new Stack<string>();               // LIFO: Push / Pop\n```\n\n| Need | Type | Lookup cost |\n| --- | --- | --- |\n| Ordered, index access | `List<T>` | O(1) by index, O(n) by value |\n| Key to value | `Dictionary<K,V>` | O(1) average |\n| Membership only | `HashSet<T>` | O(1) average |\n| Fixed size, fastest | `T[]` | O(1) by index |\n\nUse `TryGetValue` instead of `ContainsKey` followed by `[key]`: it hashes once instead of twice.\n\n## Generics: one implementation, many types\n\n```csharp\npublic class Box<T>\n{\n    private readonly List<T> _items = new();\n    public void Add(T item) => _items.Add(item);\n    public T this[int i] => _items[i];\n    public int Count => _items.Count;\n}\n\nvar names = new Box<string>();\nnames.Add(\"Ada\");\n// names.Add(42);   // compile error: T is string here\n\npublic static T Largest<T>(IEnumerable<T> items) where T : IComparable<T>\n{\n    T best = items.First();\n    foreach (var item in items)\n        if (item.CompareTo(best) > 0) best = item;\n    return best;\n}\n```\n\nThe `where T : IComparable<T>` **constraint** is what allows the method body to call `CompareTo` at all. Without a constraint, `T` could be anything, so the compiler only lets you treat it as `object`.\n\n## LINQ, the short version\n\n```csharp\nvar people = new List<(string Name, int Age)>\n{\n    (\"Ada\", 36), (\"Linus\", 54), (\"Grace\", 45), (\"Margaret\", 33),\n};\n\nvar names = people\n    .Where(p => p.Age > 35)\n    .OrderBy(p => p.Name)\n    .Select(p => p.Name)\n    .ToList();                          // [\"Ada\", \"Grace\", \"Linus\"]\n\nConsole.WriteLine(people.Count(p => p.Age < 40));    // 2\nConsole.WriteLine(people.Average(p => p.Age));       // 42\nConsole.WriteLine(people.Any(p => p.Name == \"Ada\")); // True\n```\n\n`Where`, `Select`, `OrderBy`, `Count`, `Sum`, `Any`, `First`: these extension methods work on *any* `IEnumerable<T>`, whether that is an array, a list, the lines of a file, or a database table. The Intermediate course takes this much further.\n\n> [!NOTE]\n> `List<T>.Add` is amortised O(1), but when the internal array fills up it allocates a new one at double the size and copies everything across. If you know roughly how many items you will add, `new List<T>(capacity: 1000)` skips every one of those copies.\n",
+      "quiz": {
+        "title": "Collections and Generics Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which collection gives O(1) average lookup by key?",
+            "options": [
+              "List<T>",
+              "Dictionary<K,V>",
+              "Queue<T>",
+              "T[]"
+            ],
+            "answer": "Dictionary<K,V>"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A generic constraint such as `where T : IComparable<T>` is what allows the method body to call `CompareTo` on a `T`.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "The LINQ method `____` filters a sequence down to the elements matching a predicate.",
+            "options": [],
+            "answer": "Where"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "exceptions-files-nuget",
+      "title": "Exceptions, Files, and NuGet Packages",
+      "order": 6,
+      "content": "# Exceptions, Files, and NuGet Packages\n\n## Exceptions\n\n```csharp\ntry\n{\n    var text = File.ReadAllText(\"config.json\");\n    var port = int.Parse(text);\n}\ncatch (FileNotFoundException ex)\n{\n    Console.WriteLine($\"No config at {ex.FileName}, using defaults.\");\n}\ncatch (FormatException)\n{\n    Console.WriteLine(\"config.json did not contain a number.\");\n    throw;                       // rethrow, preserving the original stack trace\n}\nfinally\n{\n    Console.WriteLine(\"done\");   // runs whether or not it threw\n}\n```\n\nRules that save real debugging time:\n\n- Catch the **specific** exception. A bare `catch (Exception)` that swallows everything turns a crash into a mystery.\n- `throw;` rethrows and keeps the stack trace. `throw ex;` resets it and destroys the evidence.\n- Do not use exceptions for expected outcomes. `int.TryParse` returning `false` beats catching `FormatException` in a loop, because throwing is expensive.\n\n```csharp\npublic class InsufficientFundsException : Exception\n{\n    public InsufficientFundsException(decimal missing)\n        : base($\"Missing {missing:0.00} to complete the transfer\") { }\n}\n```\n\n## Reading and writing files\n\n```csharp\nvar path = Path.Combine(AppContext.BaseDirectory, \"notes.txt\");\n\nFile.WriteAllText(path, \"first line\\n\");\nFile.AppendAllLines(path, new[] { \"second line\" });\n\nforeach (var line in File.ReadLines(path))   // streams, does not load the whole file\n    Console.WriteLine(line);\n\nConsole.WriteLine(File.Exists(path));\nDirectory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, \"out\"));\n```\n\nAlways build paths with `Path.Combine` rather than gluing strings together with `/` or `\\`. That is the difference between code that works on Linux and code that only works on your laptop.\n\n## JSON\n\n```csharp\nusing System.Text.Json;\n\nrecord Settings(string Env, int Port);\n\nvar json = JsonSerializer.Serialize(new Settings(\"dev\", 5000));\n// {\"Env\":\"dev\",\"Port\":5000}\n\nvar back = JsonSerializer.Deserialize<Settings>(json)!;\nConsole.WriteLine(back.Port);   // 5000\n```\n\n`System.Text.Json` ships in the BCL, so there is no package to install.\n\n## NuGet: the package ecosystem\n\n```bash\ndotnet add package Spectre.Console       # newest stable version\ndotnet add package Serilog --version 4.0.0\ndotnet list package                      # what this project references\ndotnet remove package Serilog\n```\n\nThe reference lands in your `.csproj`:\n\n```xml\n<ItemGroup>\n  <PackageReference Include=\"Spectre.Console\" Version=\"0.49.1\" />\n</ItemGroup>\n```\n\nBecause the csproj is the single source of truth, a fresh clone plus `dotnet restore` reproduces your exact dependency set. There is nothing else to commit and no `node_modules`-sized folder to ignore.\n\n> [!WARNING]\n> `File.ReadAllLines` loads the entire file into an array in memory; `File.ReadLines` yields one line at a time. On a multi-gigabyte log file the first one takes your process down and the second one does not notice.\n",
+      "quiz": {
+        "title": "Exceptions and Files Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Inside a catch block, what does `throw ex;` do that `throw;` does not?",
+            "options": [
+              "Nothing, they are identical",
+              "It resets the stack trace, hiding where the error came from",
+              "It suppresses the exception",
+              "It converts the exception into a return value"
+            ],
+            "answer": "It resets the stack trace, hiding where the error came from"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "`File.ReadLines` loads the whole file into memory before you can start iterating it.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Run `dotnet ____ package Serilog` to add a NuGet dependency to the current project.",
+            "options": [],
+            "answer": "add"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-console-expense-tracker",
+      "title": "Final Project: Console Expense Tracker",
+      "order": 7,
+      "content": "# Final Project: Console Expense Tracker\n\nBuild a console application that tracks expenses and persists them to disk. It should exercise every concept from this course: types, classes and records, interfaces, collections, LINQ, exceptions, file IO, and JSON.\n\n## Requirements\n\n1. **Model the domain.** An `Expense` record with `Id` (`Guid`), `Description`, `Amount` (`decimal`), `Category` (an `enum`: Food, Transport, Housing, Fun, Other), and `Date` (`DateOnly`). Keep it immutable and use `with` for edits.\n2. **A store behind an interface.** Define `IExpenseStore` with `Add`, `Remove`, `All`, `Save`, and `Load`. Implement it once as `JsonExpenseStore` writing to `expenses.json` through `System.Text.Json`, building the path with `Path.Combine`.\n3. **A menu loop.** Read commands with `Console.ReadLine` and dispatch them with a `switch` expression: `add`, `list`, `report`, `delete`, `quit`. Invalid input must never crash the application.\n4. **Validation with real exceptions.** Reject a non-positive amount with a custom `InvalidExpenseException`. Parse user input with `decimal.TryParse` and `Enum.TryParse`, not with `try`/`catch` around `Parse`.\n5. **A LINQ report.** `report` prints total spend, average expense, spend grouped by category sorted descending, and the three largest expenses. Use `GroupBy`, `Sum`, `OrderByDescending`, and `Take`.\n6. **Survive a restart.** Data written in one run must load in the next. Handle a missing or corrupt JSON file by starting empty and telling the user, not by throwing.\n\n## Stretch goals\n\n- Add a `budget <category> <amount>` command, and warn in the report when a category goes over budget.\n- Add `export <path>` that writes CSV, and confirm the result opens cleanly in a spreadsheet.\n- Add a monthly filter (`report 2026-09`) using `DateOnly` comparisons.\n- Split the app into two projects, a class library for the domain plus a console front end, and wire them together with `dotnet add reference`.\n\nSubmit a link to your finished repository below. An instructor will review it before you can mark this lesson complete.\n",
+      "requiresSubmission": true
+    }
+  ]
+}

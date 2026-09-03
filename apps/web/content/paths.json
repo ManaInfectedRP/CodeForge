@@ -80,6 +80,16 @@
     "lessonCount": 42
   },
   {
+    "slug": "dotnet",
+    "name": ".NET",
+    "icon": "🟪",
+    "difficulty": 4,
+    "estimatedHours": 55,
+    "projectCount": 15,
+    "description": "The platform behind C#: the runtime and CLI, LINQ and async, ASP.NET Core web APIs, EF Core, and production-grade performance and architecture.",
+    "lessonCount": 21
+  },
+  {
     "slug": "sql",
     "name": "SQL",
     "icon": "🗄️",

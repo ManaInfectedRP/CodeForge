@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label=".NET">
+  <rect width="128" height="128" rx="22" fill="#512BD4"/>
+  <g fill="#fff">
+    <circle cx="24" cy="88" r="9"/>
+    <text x="74" y="88" text-anchor="middle" textLength="80" lengthAdjust="spacingAndGlyphs"
+          font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif"
+          font-size="54" font-weight="700">NET</text>
+  </g>
+</svg>

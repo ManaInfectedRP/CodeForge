@@ -350,6 +350,36 @@
     "isPublic": false
   },
   {
+    "slug": "dotnet-foundations",
+    "title": ".NET Foundations",
+    "description": "The .NET platform from the ground up: the runtime, SDK and CLI, C# types and control flow, object-oriented design with classes, records and interfaces, collections and generics, exceptions, file IO, and NuGet.",
+    "pathSlug": "dotnet",
+    "pathName": ".NET",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "dotnet-intermediate-linq-async-asp-net-core",
+    "title": ".NET Intermediate: LINQ, Async & ASP.NET Core",
+    "description": "Move past the basics: LINQ pipelines and deferred execution, custom iterators, async/await and cancellation, parallelism and async streams, and the ASP.NET Core essentials, middleware, minimal APIs, dependency injection, configuration, and EF Core.",
+    "pathSlug": "dotnet",
+    "pathName": ".NET",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "dotnet-advanced-performance-memory-architecture",
+    "title": ".NET Advanced: Performance, Memory & Architecture",
+    "description": "Deep dives for production .NET: the GC and allocation model, Span<T> and Memory<T> for zero-allocation code, BenchmarkDotNet and the dotnet-* diagnostics tools, layered architecture and CQRS, microservice resilience and messaging, and end-to-end security.",
+    "pathSlug": "dotnet",
+    "pathName": ".NET",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
     "slug": "sql-fundamentals",
     "title": "SQL Fundamentals",
     "description": "Learn to query, filter, join, and aggregate data with SQL, the standard language for relational databases.",
