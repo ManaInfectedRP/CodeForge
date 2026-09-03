@@ -1,0 +1,263 @@
+{
+  "slug": "dotnet-intermediate-linq-async-asp-net-core",
+  "title": ".NET Intermediate: LINQ, Async & ASP.NET Core",
+  "description": "Move past the basics: LINQ pipelines and deferred execution, custom iterators, async/await and cancellation, parallelism and async streams, and the ASP.NET Core essentials, middleware, minimal APIs, dependency injection, configuration, and EF Core.",
+  "pathSlug": "dotnet",
+  "pathName": ".NET",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "linq-deep-dive",
+      "title": "LINQ in Depth: Projection, Grouping, and Joins",
+      "order": 1,
+      "content": "# LINQ in Depth: Projection, Grouping, and Joins\n\nLINQ is a set of extension methods on `IEnumerable<T>` that turn loops into declarative pipelines. Foundations covered `Where` and `Select`; this is the rest of the toolbox.\n\n## The dataset for this lesson\n\n```csharp\nrecord Order(int Id, string Customer, string Category, decimal Total, DateOnly Placed);\n\nvar orders = new List<Order>\n{\n    new(1, \"Ada\",   \"Books\",  349m, new(2026, 1, 12)),\n    new(2, \"Ada\",   \"Tools\",  1299m, new(2026, 2, 3)),\n    new(3, \"Linus\", \"Books\",  199m, new(2026, 2, 14)),\n    new(4, \"Grace\", \"Tools\",  899m, new(2026, 3, 1)),\n    new(5, \"Linus\", \"Coffee\", 89m,  new(2026, 3, 9)),\n};\n```\n\n## Grouping and aggregation\n\n```csharp\nvar byCustomer = orders\n    .GroupBy(o => o.Customer)\n    .Select(g => new\n    {\n        Customer = g.Key,\n        Orders   = g.Count(),\n        Spend    = g.Sum(o => o.Total),\n        Largest  = g.Max(o => o.Total),\n    })\n    .OrderByDescending(x => x.Spend);\n\nforeach (var row in byCustomer)\n    Console.WriteLine($\"{row.Customer,-6} {row.Orders} orders, {row.Spend:0} kr\");\n// Ada    2 orders, 1648 kr\n// Grace  1 orders, 899 kr\n// Linus  2 orders, 288 kr\n```\n\n`GroupBy` returns `IGrouping<TKey, TElement>`, which *is* an `IEnumerable<TElement>` with a `Key` bolted on. That is why you can call `Sum`, `Count`, and `Max` directly on `g`.\n\n## Joins and flattening\n\n```csharp\nrecord Customer(string Name, string City);\nvar customers = new[] { new Customer(\"Ada\", \"Stockholm\"), new Customer(\"Linus\", \"Göteborg\") };\n\nvar joined = customers.Join(\n    orders,\n    c => c.Name,            // outer key\n    o => o.Customer,        // inner key\n    (c, o) => new { c.City, o.Total });\n\nvar flattened = orders\n    .GroupBy(o => o.Category)\n    .SelectMany(g => g.Take(1));      // first order in each category, one flat sequence\n```\n\n`SelectMany` is `Select` followed by \"unwrap one level of nesting\", the way to turn a sequence of sequences into a single flat one.\n\n## The two families of operators\n\n| Deferred (lazy) | Immediate (executes now) |\n| --- | --- |\n| `Where`, `Select`, `OrderBy`, `Take`, `Skip`, `GroupBy`, `Distinct` | `ToList`, `ToArray`, `ToDictionary`, `Count`, `Sum`, `First`, `Any` |\n\n```csharp\nvar query = orders.Where(o => { Console.WriteLine($\"checking {o.Id}\"); return o.Total > 200m; });\nConsole.WriteLine(\"query built\");   // nothing has run yet\nvar list = query.ToList();          // NOW the predicate runs, once per element\n```\n\nDeferred execution means the query is a recipe, not a result. Enumerate the same query twice and the work happens twice.\n\n## Safe terminal operators\n\n```csharp\nvar first = orders.FirstOrDefault(o => o.Total > 5000m);   // null, no exception\nvar single = orders.Single(o => o.Id == 3);                // throws if 0 or 2+ matches\nvar page = orders.OrderBy(o => o.Placed).Skip(2).Take(2);  // paging\n```\n\n> [!WARNING]\n> `First()` throws `InvalidOperationException` on an empty sequence; `FirstOrDefault()` returns `null` (or `default`). Neither is \"safer\", they just fail differently. Use `First` when an empty result is a bug and `FirstOrDefault` when it is a valid outcome you handle.\n",
+      "quiz": {
+        "title": "LINQ Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does `SelectMany` do that `Select` does not?",
+            "options": [
+              "It sorts the result",
+              "It flattens a sequence of sequences into one sequence",
+              "It removes duplicates",
+              "It runs the query immediately"
+            ],
+            "answer": "It flattens a sequence of sequences into one sequence"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "`Where` executes its predicate as soon as the line defining the query runs.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "`GroupBy` returns a sequence of `IGrouping` values, each exposing the grouped-on value through its `____` property.",
+            "options": [],
+            "answer": "Key"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "iterators-and-custom-sequences",
+      "title": "Iterators, yield return, and Custom Sequences",
+      "order": 2,
+      "content": "# Iterators, yield return, and Custom Sequences\n\nDeferred execution is not magic reserved for LINQ. `yield return` gives you the same laziness in your own methods.\n\n## An iterator method\n\n```csharp\nstatic IEnumerable<int> Fibonacci(int count)\n{\n    int a = 0, b = 1;\n    for (int i = 0; i < count; i++)\n    {\n        yield return a;              // hand one value back, then pause here\n        (a, b) = (b, a + b);\n    }\n}\n\nforeach (var n in Fibonacci(8)) Console.Write(n + \" \");   // 0 1 1 2 3 5 8 13\nConsole.WriteLine(Fibonacci(1000).Take(3).Sum());          // 1, only 3 values computed\n```\n\nThe compiler rewrites that method into a state machine class implementing `IEnumerator<int>`. Nothing in the body runs until the first `MoveNext()`, and it stops exactly where the consumer stops asking.\n\n## Why it matters: streaming a large file\n\n```csharp\nstatic IEnumerable<string> ErrorLines(string path)\n{\n    foreach (var line in File.ReadLines(path))\n        if (line.Contains(\"ERROR\"))\n            yield return line;\n}\n\nvar firstTen = ErrorLines(\"app.log\").Take(10).ToList();\n```\n\nMemory used: one line at a time, regardless of whether the log is 2 KB or 20 GB. The equivalent `List<string>` version reads the whole file first.\n\n## Implementing IEnumerable<T> on your own type\n\n```csharp\npublic class Ring<T> : IEnumerable<T>\n{\n    private readonly T[] _items;\n    private readonly int _start;\n\n    public Ring(T[] items, int start) => (_items, _start) = (items, start);\n\n    public IEnumerator<T> GetEnumerator()\n    {\n        for (int i = 0; i < _items.Length; i++)\n            yield return _items[(_start + i) % _items.Length];\n    }\n\n    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()\n        => GetEnumerator();\n}\n\nvar ring = new Ring<string>(new[] { \"a\", \"b\", \"c\", \"d\" }, start: 2);\nConsole.WriteLine(string.Join(\",\", ring));   // c,d,a,b\n```\n\nAny type with a `GetEnumerator()` works in `foreach` and gains every LINQ operator for free.\n\n## Extension methods: adding your own operator\n\n```csharp\npublic static class SeqExtensions\n{\n    public static IEnumerable<(T Item, int Index)> WithIndex<T>(this IEnumerable<T> source)\n    {\n        int i = 0;\n        foreach (var item in source) yield return (item, i++);\n    }\n}\n\nforeach (var (name, i) in new[] { \"a\", \"b\" }.WithIndex())\n    Console.WriteLine($\"{i}: {name}\");\n```\n\nThe `this` on the first parameter is the entire trick. That is exactly how `Where` and `Select` are defined in `System.Linq.Enumerable`.\n\n> [!NOTE]\n> An iterator method cannot use `ref`/`out` parameters, and any argument validation you write inside it is also deferred, so a bad argument surfaces at the first `MoveNext()` rather than at the call. The fix is a small non-iterator wrapper method that validates eagerly and then returns the private iterator.\n",
+      "quiz": {
+        "title": "Iterators Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does the compiler generate for a method containing `yield return`?",
+            "options": [
+              "A background thread",
+              "A state machine implementing IEnumerator<T>",
+              "A cached List<T>",
+              "An async Task"
+            ],
+            "answer": "A state machine implementing IEnumerator<T>"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Argument validation written inside a `yield return` method runs at the moment the method is called.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Marking the first parameter of a static method with the `____` keyword turns it into an extension method.",
+            "options": [],
+            "answer": "this"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "async-await-task-model",
+      "title": "Async, await, and the Task Model",
+      "order": 3,
+      "content": "# Async, await, and the Task Model\n\nAsync in .NET is about **not blocking a thread while waiting**. It is not about doing several things at once, that is parallelism, and it is a different tool.\n\n## The shape of an async method\n\n```csharp\nusing System.Net.Http;\n\nstatic async Task<string> FetchTitleAsync(HttpClient http, string url)\n{\n    string html = await http.GetStringAsync(url);   // thread is released while waiting\n    int start = html.IndexOf(\"<title>\") + 7;\n    int end = html.IndexOf(\"</title>\");\n    return start > 6 && end > start ? html[start..end] : \"(no title)\";\n}\n\nvar http = new HttpClient();\nConsole.WriteLine(await FetchTitleAsync(http, \"https://example.com\"));\n```\n\n- `async` lets you use `await` inside and rewrites the method into a state machine.\n- `await` suspends the method, returns the thread to the pool, and resumes when the awaited operation completes.\n- The return type is `Task<T>` for a value, `Task` for nothing, `ValueTask<T>` for hot paths that usually complete synchronously.\n\n## Sequential vs concurrent\n\n```csharp\n// Sequential: total time = sum of both\nvar a = await FetchTitleAsync(http, \"https://example.com\");\nvar b = await FetchTitleAsync(http, \"https://example.org\");\n\n// Concurrent: total time = the slower of the two\nvar taskA = FetchTitleAsync(http, \"https://example.com\");\nvar taskB = FetchTitleAsync(http, \"https://example.org\");\nvar titles = await Task.WhenAll(taskA, taskB);\n\nvar firstDone = await Task.WhenAny(taskA, taskB);   // whichever finishes first\n```\n\nCalling an async method **starts** it. Awaiting it is when you wait for the result, so start everything you want to overlap first, then await.\n\n## The rules that keep async from hurting\n\n```csharp\n// Bad: blocks a pool thread and can deadlock in some contexts\nvar result = FetchTitleAsync(http, url).Result;\nsomeTask.Wait();\n\n// Good: await all the way up, including Main\nstatic async Task Main() => await RunAsync();\n```\n\n- **Async all the way.** `.Result` and `.Wait()` turn a non-blocking call into a blocking one and can deadlock.\n- **`async void` only for event handlers.** Anywhere else, an exception inside it cannot be caught by the caller and takes down the process.\n- **Do not wrap CPU work in `Task.Run` inside a server.** It does not save threads there, it just moves the work between pool threads.\n\n## Exceptions across await\n\n```csharp\ntry\n{\n    await FetchTitleAsync(http, \"https://does-not-exist.invalid\");\n}\ncatch (HttpRequestException ex)\n{\n    Console.WriteLine($\"network error: {ex.Message}\");\n}\n```\n\n`await` rethrows the original exception, so `try`/`catch` reads exactly like synchronous code. With `Task.WhenAll`, awaiting rethrows only the *first* exception, inspect `task.Exception` (an `AggregateException`) when you need all of them.\n\n> [!WARNING]\n> An unawaited `Task` is a fire-and-forget operation whose exceptions vanish silently. If the compiler warns \"because this call is not awaited, execution of the current method continues\", that warning is almost always a real bug.\n",
+      "quiz": {
+        "title": "Async Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What happens to the calling thread when execution reaches an `await` on an incomplete operation?",
+            "options": [
+              "It blocks until the operation finishes",
+              "It is released back to the thread pool and the method resumes later",
+              "It spins in a busy loop",
+              "It is destroyed"
+            ],
+            "answer": "It is released back to the thread pool and the method resumes later"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Calling `.Result` on a Task is the recommended way to get a value out of an async method.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "`Task.____` awaits several tasks concurrently and completes when all of them have finished.",
+            "options": [],
+            "answer": "WhenAll"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "cancellation-parallelism-async-streams",
+      "title": "Cancellation, Parallelism, and Async Streams",
+      "order": 4,
+      "content": "# Cancellation, Parallelism, and Async Streams\n\n## Cancellation tokens\n\nEvery async API in .NET takes a `CancellationToken` as its last parameter. Pass it down; never swallow it.\n\n```csharp\nusing var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));\n\nstatic async Task<string> LoadAsync(HttpClient http, string url, CancellationToken ct)\n{\n    ct.ThrowIfCancellationRequested();            // cheap early exit\n    return await http.GetStringAsync(url, ct);    // flows into the socket read\n}\n\ntry\n{\n    var body = await LoadAsync(http, \"https://example.com\", cts.Token);\n}\ncatch (OperationCanceledException)\n{\n    Console.WriteLine(\"timed out or cancelled\");\n}\n```\n\n`new CancellationTokenSource(timeout)` gives you a timeout for free, and `cts.Cancel()` lets a user cancel from a button or Ctrl+C. `CancellationTokenSource.CreateLinkedTokenSource(a, b)` combines two triggers into one token.\n\n## Parallelism: CPU work, not IO waiting\n\n```csharp\nvar numbers = Enumerable.Range(1, 10_000_000).ToArray();\n\nvar total = numbers.AsParallel().Where(n => n % 3 == 0).Sum(n => (long)n);\n\nParallel.ForEach(files, file => Process(file));\n\nawait Parallel.ForEachAsync(urls, cts.Token, async (url, ct) =>\n{\n    var body = await http.GetStringAsync(url, ct);\n    Console.WriteLine($\"{url}: {body.Length} bytes\");\n});\n```\n\n- `AsParallel()` (PLINQ) and `Parallel.ForEach` spread **CPU-bound** work across cores.\n- `Parallel.ForEachAsync` is for IO-bound work with a concurrency limit (`MaxDegreeOfParallelism`), the right tool for \"fetch 500 URLs, 10 at a time\".\n- Parallel does not mean faster: below a few thousand items the coordination overhead usually wins.\n\n## Shared state needs protection\n\n```csharp\nint counter = 0;\nParallel.For(0, 100_000, _ => counter++);          // WRONG: lost updates\nConsole.WriteLine(counter);                         // some number < 100000\n\nint safe = 0;\nParallel.For(0, 100_000, _ => Interlocked.Increment(ref safe));   // correct\n\nvar bag = new System.Collections.Concurrent.ConcurrentBag<int>();  // thread-safe collection\n```\n\n`counter++` is read-modify-write, three operations, and two threads can interleave inside it. Use `Interlocked`, a `lock`, or a concurrent collection.\n\n## Async streams\n\n```csharp\nstatic async IAsyncEnumerable<string> ReadLinesAsync(string path,\n    [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)\n{\n    using var reader = new StreamReader(path);\n    while (await reader.ReadLineAsync(ct) is { } line)\n        yield return line;\n}\n\nawait foreach (var line in ReadLinesAsync(\"app.log\", cts.Token))\n    Console.WriteLine(line);\n```\n\n`IAsyncEnumerable<T>` is `yield return` plus `await`: lazily produced values that each require IO. It is how you stream database rows or a chunked HTTP response without buffering the whole thing.\n\n> [!NOTE]\n> `lock` cannot be held across an `await`, the compiler rejects it, because the continuation may resume on a different thread. Use `SemaphoreSlim` with `await semaphore.WaitAsync(ct)` when you need mutual exclusion around asynchronous work.\n",
+      "quiz": {
+        "title": "Cancellation and Parallelism Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which tool fits 'download 500 URLs, at most 10 concurrently'?",
+            "options": [
+              "Parallel.For",
+              "Parallel.ForEachAsync with MaxDegreeOfParallelism",
+              "AsParallel().Sum()",
+              "A single foreach with .Result"
+            ],
+            "answer": "Parallel.ForEachAsync with MaxDegreeOfParallelism"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "You can hold a `lock` across an `await` inside the locked block.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "An async iterator method returns `IAsyncEnumerable<T>` and is consumed with `await ____` in the caller.",
+            "options": [],
+            "answer": "foreach"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "aspnet-core-minimal-apis",
+      "title": "ASP.NET Core: The Pipeline and Minimal APIs",
+      "order": 5,
+      "content": "# ASP.NET Core: The Pipeline and Minimal APIs\n\n```bash\ndotnet new web -o TaskApi    # minimal API template\ncd TaskApi && dotnet run\n```\n\n## The host, the pipeline, and endpoints\n\n```csharp\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.Services.AddEndpointsApiExplorer();      // service registration phase\n\nvar app = builder.Build();\n\napp.UseHttpsRedirection();                       // middleware pipeline, order matters\napp.UseAuthentication();\napp.UseAuthorization();\n\napp.MapGet(\"/health\", () => Results.Ok(new { status = \"ok\" }));\napp.MapGet(\"/tasks/{id:int}\", (int id) => Results.Ok(new { id, title = \"Ship it\" }));\napp.MapPost(\"/tasks\", (TaskDto dto) => Results.Created($\"/tasks/{1}\", dto));\n\napp.Run();\n\nrecord TaskDto(string Title, bool Done);\n```\n\nTwo phases, always in this order:\n\n1. **Configure services** on `builder.Services`, everything the app can resolve later.\n2. **Build the pipeline** with `app.Use*`, then map endpoints, then `Run()`.\n\nMiddleware is a chain: each component can act on the request, call the next one, and then act on the response on the way back out. `UseAuthentication` before `UseAuthorization` is not stylistic, the second one needs the identity the first one established.\n\n```csharp\napp.Use(async (context, next) =>\n{\n    var started = DateTime.UtcNow;\n    await next(context);                                  // downstream runs here\n    var ms = (DateTime.UtcNow - started).TotalMilliseconds;\n    Console.WriteLine($\"{context.Request.Path} -> {context.Response.StatusCode} in {ms:0}ms\");\n});\n```\n\n## Model binding and results\n\n```csharp\napp.MapGet(\"/search\", (string q, int page = 1) => Results.Ok(new { q, page }));\n// GET /search?q=dotnet&page=2  -> parameters bound from the query string\n\napp.MapPut(\"/tasks/{id:int}\", async (int id, TaskDto dto, ITaskStore store, CancellationToken ct) =>\n{\n    var updated = await store.UpdateAsync(id, dto, ct);\n    return updated is null ? Results.NotFound() : Results.Ok(updated);\n});\n```\n\nParameters bind by convention: route values by name, simple types from the query string, complex types from the JSON body, and registered services from DI. `Results.Ok`, `NotFound`, `Created`, `BadRequest`, `NoContent`, and `Problem` produce the right status codes and bodies.\n\n## Grouping and validation\n\n```csharp\nvar tasks = app.MapGroup(\"/tasks\").WithTags(\"Tasks\");\n\ntasks.MapGet(\"/\", (ITaskStore s, CancellationToken ct) => s.AllAsync(ct));\ntasks.MapDelete(\"/{id:int}\", async (int id, ITaskStore s, CancellationToken ct)\n    => await s.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound());\n```\n\n`MapGroup` shares a prefix, plus filters and metadata, across a set of endpoints.\n\n> [!WARNING]\n> Middleware order is the source of a large share of ASP.NET Core bugs. Anything registered *after* `app.MapGet(...)` in the pipeline never sees requests that an endpoint has already handled, and CORS or authentication placed after routing will silently do nothing.\n",
+      "quiz": {
+        "title": "ASP.NET Core Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In a minimal API, where do you register services for dependency injection?",
+            "options": [
+              "On `app` after Build()",
+              "On `builder.Services` before Build()",
+              "In the csproj file",
+              "Inside each endpoint handler"
+            ],
+            "answer": "On `builder.Services` before Build()"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "The order in which middleware is added to the pipeline does not affect behavior.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "`app.Map____(\"/tasks\", handler)` registers an endpoint that responds to HTTP POST requests.",
+            "options": [],
+            "answer": "Post"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "dependency-injection-config-ef-core",
+      "title": "Dependency Injection, Configuration, and EF Core",
+      "order": 6,
+      "content": "# Dependency Injection, Configuration, and EF Core\n\n## Dependency injection is built in\n\n```csharp\npublic interface ITaskStore\n{\n    Task<IReadOnlyList<TaskItem>> AllAsync(CancellationToken ct);\n    Task<TaskItem> AddAsync(TaskItem item, CancellationToken ct);\n}\n\nbuilder.Services.AddScoped<ITaskStore, EfTaskStore>();\nbuilder.Services.AddSingleton<IClock, SystemClock>();\nbuilder.Services.AddHttpClient<WeatherClient>();\n```\n\n| Lifetime | One instance per | Use for |\n| --- | --- | --- |\n| `AddSingleton` | Application | Caches, clocks, stateless helpers |\n| `AddScoped` | HTTP request | DbContext, repositories, unit of work |\n| `AddTransient` | Resolution | Cheap, stateless, short-lived services |\n\nConstructor injection is how a class asks for a dependency:\n\n```csharp\npublic class EfTaskStore(AppDbContext db, ILogger<EfTaskStore> logger) : ITaskStore\n{\n    public async Task<IReadOnlyList<TaskItem>> AllAsync(CancellationToken ct)\n    {\n        logger.LogInformation(\"loading all tasks\");\n        return await db.Tasks.AsNoTracking().ToListAsync(ct);\n    }\n\n    public async Task<TaskItem> AddAsync(TaskItem item, CancellationToken ct)\n    {\n        db.Tasks.Add(item);\n        await db.SaveChangesAsync(ct);\n        return item;\n    }\n}\n```\n\n> [!WARNING]\n> Never inject a scoped service (like `DbContext`) into a singleton. The singleton captures the first request's instance and keeps using it forever, which produces disposed-object errors and cross-request data leaks. The container catches this at startup only when scope validation is enabled, which it is by default in Development.\n\n## Configuration and options\n\n```json\n{\n  \"ConnectionStrings\": { \"Default\": \"Data Source=tasks.db\" },\n  \"Notifications\": { \"Enabled\": true, \"RetryCount\": 3 }\n}\n```\n\n```csharp\nbuilder.Services.Configure<NotificationOptions>(\n    builder.Configuration.GetSection(\"Notifications\"));\n\npublic class Notifier(IOptions<NotificationOptions> options)\n{\n    private readonly NotificationOptions _opts = options.Value;\n}\n```\n\nSources layer in a fixed order, each overriding the last: `appsettings.json`, then `appsettings.{Environment}.json`, then user secrets in Development, then environment variables, then command-line arguments. That is why `ConnectionStrings__Default` as an environment variable overrides the file in production without a rebuild.\n\n```bash\ndotnet user-secrets init\ndotnet user-secrets set \"ConnectionStrings:Default\" \"Data Source=dev.db\"\n```\n\nSecrets belong there or in environment variables, never in `appsettings.json`.\n\n## EF Core in ten lines\n\n```csharp\npublic class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)\n{\n    public DbSet<TaskItem> Tasks => Set<TaskItem>();\n}\n\nbuilder.Services.AddDbContext<AppDbContext>(o =>\n    o.UseSqlite(builder.Configuration.GetConnectionString(\"Default\")));\n```\n\n```bash\ndotnet tool install --global dotnet-ef\ndotnet ef migrations add InitialCreate\ndotnet ef database update\n```\n\nQueries are LINQ, translated to SQL and executed on the server:\n\n```csharp\nvar overdue = await db.Tasks\n    .Where(t => !t.Done && t.Due < DateOnly.FromDateTime(DateTime.UtcNow))\n    .OrderBy(t => t.Due)\n    .Take(20)\n    .AsNoTracking()\n    .ToListAsync(ct);\n```\n\n`AsNoTracking()` skips the change tracker on read-only queries, a meaningful saving on large result sets. And beware the N+1: a `foreach` that touches a navigation property issues one query per row unless you `Include` it up front.\n",
+      "quiz": {
+        "title": "DI and EF Core Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Which lifetime should a `DbContext` normally be registered with?",
+            "options": [
+              "Singleton",
+              "Scoped",
+              "Transient",
+              "Static"
+            ],
+            "answer": "Scoped"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Injecting a scoped service into a singleton is safe because the container creates a new scope for each call.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Adding `____()` to a read-only EF Core query skips the change tracker and reduces overhead.",
+            "options": [],
+            "answer": "AsNoTracking"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-task-api",
+      "title": "Final Project: A Task API with ASP.NET Core and EF Core",
+      "order": 7,
+      "content": "# Final Project: A Task API with ASP.NET Core and EF Core\n\nBuild a working REST API that ties together everything in this course: LINQ, async, DI, configuration, and EF Core.\n\n## Requirements\n\n1. **The project.** `dotnet new web`, targeting the current LTS. Nullable reference types on, warnings treated as errors.\n2. **The model and context.** A `TaskItem` entity (`Id`, `Title`, `Done`, `Due` as `DateOnly`, `CreatedUtc`) and an `AppDbContext` on SQLite. Create the schema with `dotnet ef migrations add` plus `dotnet ef database update`, not with `EnsureCreated`.\n3. **A store behind an interface.** `ITaskStore` with fully async methods, every one taking a `CancellationToken` and passing it through to EF Core. Register it as scoped and inject it into your endpoints.\n4. **CRUD endpoints under a group.** `MapGroup(\"/tasks\")` with `GET /`, `GET /{id:int}`, `POST /`, `PUT /{id:int}`, `DELETE /{id:int}`. Return the correct status codes: 200, 201 with a Location header, 204, 400, and 404.\n5. **Query and paging on the list endpoint.** Support `?done=true`, `?search=text`, `?page=2&pageSize=20`, and `?sort=due`. Build it as a single deferred LINQ query so only the final page is fetched from the database.\n6. **A summary endpoint.** `GET /tasks/summary` returns counts by state and overdue count using `GroupBy` and `CountAsync`, computed in SQL rather than in memory.\n7. **Configuration, not constants.** Read the connection string and a `MaxPageSize` option from configuration, bind the option with `IOptions<T>`, and keep the development connection string in user secrets.\n8. **Real error handling.** Validate the incoming DTO and return `Results.ValidationProblem` on bad input. Add an exception-handling middleware that turns unhandled exceptions into a ProblemDetails response, and log every request with its duration.\n\n## Stretch goals\n\n- Add a `GET /tasks/stream` endpoint returning `IAsyncEnumerable<TaskItem>` and confirm the client receives rows before the query has finished.\n- Add integration tests with `WebApplicationFactory<Program>` and an in-memory or temporary SQLite database.\n- Add a background service (`BackgroundService`) that logs the overdue count every minute, honouring its stopping token.\n- Add OpenAPI metadata (`WithName`, `Produces<T>`) and serve a Swagger UI in Development only.\n\nSubmit a link to your finished repository below. An instructor will review it before you can mark this lesson complete.\n",
+      "requiresSubmission": true
+    }
+  ]
+}

@@ -1,0 +1,263 @@
+{
+  "slug": "dotnet-advanced-performance-memory-architecture",
+  "title": ".NET Advanced: Performance, Memory & Architecture",
+  "description": "Deep dives for production .NET: the GC and allocation model, Span<T> and Memory<T> for zero-allocation code, BenchmarkDotNet and the dotnet-* diagnostics tools, layered architecture and CQRS, microservice resilience and messaging, and end-to-end security.",
+  "pathSlug": "dotnet",
+  "pathName": ".NET",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "memory-model-gc-allocation",
+      "title": "The Memory Model: Stack, Heap, and the GC",
+      "order": 1,
+      "content": "# The Memory Model: Stack, Heap, and the GC\n\nPerformance work in .NET starts with one question: **what is this code allocating?**\n\n## Where values live\n\n```csharp\nint x = 42;                      // stack slot inside the current frame\nvar point = new Point(1, 2);     // struct: inline, no heap allocation\nvar list = new List<int>();      // class: header + fields on the managed heap\n```\n\n- **Value types** (`int`, `struct`, `record struct`, enums) live inline: on the stack when they are locals, inside their owner when they are fields.\n- **Reference types** (`class`, `record`, arrays, `string`, delegates) always live on the heap; the variable holds a reference.\n\nEvery heap object carries roughly 16 bytes of overhead on x64 (object header plus method table pointer) before your own fields.\n\n## Generational garbage collection\n\nThe GC divides the heap into generations based on one observation: most objects die young.\n\n| Generation | Contains | Collected |\n| --- | --- | --- |\n| **Gen 0** | Freshly allocated objects | Very often, very cheap |\n| **Gen 1** | Gen 0 survivors, a buffer | Less often |\n| **Gen 2** | Long-lived objects | Rarely, expensive |\n| **LOH** | Arrays/objects >= 85,000 bytes | With Gen 2, not compacted by default |\n\nAllocation itself is a pointer bump, essentially free. The cost is **collection**, and collection cost scales with how many objects *survive*, not how many you allocated. A million short-lived objects that all die in Gen 0 are cheaper than a thousand that get promoted to Gen 2.\n\n```csharp\nConsole.WriteLine(GC.GetTotalAllocatedBytes(precise: true));\nConsole.WriteLine($\"gen0={GC.CollectionCount(0)} gen1={GC.CollectionCount(1)} gen2={GC.CollectionCount(2)}\");\n```\n\n## The classic allocation traps\n\n```csharp\n// 1. String concatenation in a loop: one new string per iteration\nstring s = \"\";\nforeach (var item in items) s += item + \",\";           // O(n^2) copying\n\nvar sb = new StringBuilder();\nforeach (var item in items) sb.Append(item).Append(',');   // one growing buffer\n\n// 2. Boxing: a value type forced onto the heap\nobject boxed = 42;                                     // allocation\nArrayList old = new(); old.Add(42);                    // allocation per item\nList<int> modern = new(); modern.Add(42);              // none, generics avoid boxing\n\n// 3. Closures: the lambda captures state into a compiler-generated class\nforeach (var id in ids)\n    tasks.Add(Task.Run(() => Process(id)));            // one closure object per iteration\n\n// 4. LINQ in a hot path: each operator allocates an enumerator and delegates\nvar count = items.Where(i => i.Active).Count();        // fine once, costly per frame\n```\n\nNone of these are wrong. They are wrong *in a hot loop*, and the way you find out which loop is hot is measurement, not intuition.\n\n## Structs and where they help\n\n```csharp\npublic readonly record struct Vec2(float X, float Y)\n{\n    public float Length => MathF.Sqrt(X * X + Y * Y);\n}\n\nvar points = new Vec2[1_000_000];   // one array allocation, zero per element\n```\n\nAn array of structs is one contiguous block: no per-element object headers, no pointer chasing, and it plays well with the CPU cache. `readonly record struct` also stops defensive copies on property access.\n\n> [!WARNING]\n> Do not call `GC.Collect()` in production code. It forces a full blocking collection, discards the GC's tuning heuristics, and almost always makes throughput worse. The exception is a benchmark harness measuring a steady state.\n",
+      "quiz": {
+        "title": "Memory and GC Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What dominates the cost of a garbage collection?",
+            "options": [
+              "The number of objects allocated",
+              "The number of objects that survive the collection",
+              "The size of the stack",
+              "The number of threads"
+            ],
+            "answer": "The number of objects that survive the collection"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Assigning an `int` to a variable of type `object` allocates on the heap.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Objects of 85,000 bytes or more are allocated on the ____ Object Heap, which is collected with Gen 2.",
+            "options": [],
+            "answer": "Large"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "span-memory-zero-allocation",
+      "title": "Span<T>, Memory<T>, and Zero-Allocation Code",
+      "order": 2,
+      "content": "# Span&lt;T&gt;, Memory&lt;T&gt;, and Zero-Allocation Code\n\n`Span<T>` is a view over contiguous memory: a pointer and a length. Slicing one allocates nothing, because there is nothing new to allocate.\n\n## Slicing without copying\n\n```csharp\nstring line = \"2026-09-03,checkout,1299.00\";\n\n// Allocating version: Split creates an array plus three strings\nvar parts = line.Split(',');\nvar amount = decimal.Parse(parts[2]);\n\n// Zero-allocation version: spans into the original string\nReadOnlySpan<char> span = line;\nint first = span.IndexOf(',');\nint second = span[(first + 1)..].IndexOf(',') + first + 1;\n\nReadOnlySpan<char> date = span[..first];\nReadOnlySpan<char> kind = span[(first + 1)..second];\ndecimal total = decimal.Parse(span[(second + 1)..]);\n```\n\nEvery modern parse API in .NET has a span overload: `int.Parse`, `decimal.TryParse`, `DateTime.TryParseExact`, `Utf8Parser`. Parsing a million-line CSV this way removes millions of intermediate strings.\n\n## Stack allocation for small buffers\n\n```csharp\nSpan<char> buffer = stackalloc char[64];       // no heap, freed with the stack frame\nif (value.TryFormat(buffer, out int written))\n    Console.WriteLine(buffer[..written].ToString());\n\nSpan<byte> key = stackalloc byte[32];\nSystem.Security.Cryptography.RandomNumberGenerator.Fill(key);\n```\n\nKeep `stackalloc` small and constant, a few hundred bytes at most, and never inside a loop. The stack is roughly 1 MB per thread and overflowing it kills the process outright, with no catchable exception.\n\n## Span rules, and what Memory<T> is for\n\n`Span<T>` is a `ref struct`. The compiler guarantees it never escapes to the heap, which means it **cannot**:\n\n- be a field of a class,\n- be captured by a lambda or an iterator,\n- cross an `await`.\n\nThat last one matters constantly, so async code uses `Memory<T>` instead:\n\n```csharp\nstatic async Task<int> ReadChunkAsync(Stream stream, Memory<byte> buffer, CancellationToken ct)\n{\n    int read = await stream.ReadAsync(buffer, ct);   // Memory survives the await\n    Span<byte> data = buffer.Span[..read];           // convert to Span for the sync work\n    return data.IndexOf((byte)'\\n');\n}\n```\n\n`Memory<T>` is the heap-safe counterpart; call `.Span` to get a `Span<T>` for the synchronous stretch between awaits.\n\n## Pooling large buffers\n\n```csharp\nvar pool = System.Buffers.ArrayPool<byte>.Shared;\nbyte[] buffer = pool.Rent(64 * 1024);\ntry\n{\n    int read = stream.Read(buffer, 0, buffer.Length);\n    Process(buffer.AsSpan(0, read));\n}\nfinally\n{\n    pool.Return(buffer);      // always return, ideally clearArray: true for sensitive data\n}\n```\n\n`ArrayPool<T>` recycles large arrays instead of pushing them through the LOH on every request. The `finally` is mandatory: a rented array that is never returned is a leak that the GC cannot help you with.\n\n> [!NOTE]\n> `string.AsSpan()` is free; `span.ToString()` allocates. The win comes from staying in span-land for the whole pipeline. A \"zero-allocation\" parser that calls `ToString()` at the end of every row has simply moved the allocation, not removed it.\n",
+      "quiz": {
+        "title": "Span and Memory Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why can't `Span<T>` be used across an `await`?",
+            "options": [
+              "It is too large",
+              "It is a ref struct that must stay on the stack",
+              "It is immutable",
+              "It is not generic"
+            ],
+            "answer": "It is a ref struct that must stay on the stack"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Slicing a `ReadOnlySpan<char>` with a range allocates a new string.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "`____<byte>.Shared.Rent(size)` borrows a reusable large array instead of allocating a new one each time.",
+            "options": [],
+            "answer": "ArrayPool"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "benchmarking-and-profiling",
+      "title": "Benchmarking and Profiling: Measure, Then Optimize",
+      "order": 3,
+      "content": "# Benchmarking and Profiling: Measure, Then Optimize\n\nA stopwatch around a loop in a Debug build measures the JIT warming up, not your code. Use the real tools.\n\n## BenchmarkDotNet\n\n```bash\ndotnet new console -o Benchmarks\ncd Benchmarks\ndotnet add package BenchmarkDotNet\n```\n\n```csharp\nusing BenchmarkDotNet.Attributes;\nusing BenchmarkDotNet.Running;\n\n[MemoryDiagnoser]                       // report allocations alongside time\npublic class ParseBenchmarks\n{\n    private readonly string _line = \"2026-09-03,checkout,1299.00\";\n\n    [Benchmark(Baseline = true)]\n    public decimal WithSplit() => decimal.Parse(_line.Split(',')[2]);\n\n    [Benchmark]\n    public decimal WithSpan()\n    {\n        ReadOnlySpan<char> s = _line;\n        int last = s.LastIndexOf(',');\n        return decimal.Parse(s[(last + 1)..]);\n    }\n}\n\nBenchmarkRunner.Run<ParseBenchmarks>();\n```\n\n```bash\ndotnet run -c Release      # Release, always: Debug numbers are meaningless\n```\n\n```\n| Method    | Mean      | Ratio | Allocated |\n|---------- |----------:|------:|----------:|\n| WithSplit | 118.42 ns |  1.00 |     160 B |\n| WithSpan  |  47.10 ns |  0.40 |         - |\n```\n\nBenchmarkDotNet handles the parts everyone gets wrong by hand: warmup iterations, JIT tiering, multiple processes, outlier removal, and statistical significance. `[MemoryDiagnoser]` adds the allocation column, which is often the number that matters most.\n\n## Reading the numbers honestly\n\n- **Ratio beats absolute time.** Nanoseconds vary by machine; a 0.40 ratio does not.\n- **Allocated bytes predict GC pressure**, which is throughput at scale even when per-call time looks fine.\n- **Watch the error/StdDev columns.** A 5% improvement inside a 10% error bar is noise.\n- **Benchmark a realistic input.** Sorting 10 elements says nothing about sorting 10 million.\n\n## Profiling a whole application\n\n```bash\ndotnet tool install --global dotnet-counters\ndotnet tool install --global dotnet-trace\ndotnet tool install --global dotnet-dump\n\ndotnet-counters monitor --process-id 1234 --counters System.Runtime\ndotnet-trace collect --process-id 1234        # open the .nettrace in PerfView or VS\ndotnet-dump collect --process-id 1234         # then: dotnet-dump analyze, dumpheap -stat\n```\n\n`dotnet-counters` is the first stop for a live service: allocation rate, Gen 0/1/2 counts, thread-pool queue length, exception rate, and working set, with no restart and almost no overhead.\n\n## A working order of operations\n\n1. Reproduce the problem with a **measurement**, not a hunch.\n2. Profile to find where the time or allocation actually goes.\n3. Fix the single largest contributor.\n4. Re-measure. Keep the change only if the number moved.\n5. Add a benchmark to the repo so a future refactor cannot silently undo it.\n\n> [!WARNING]\n> The most common false result in .NET benchmarking is a dead-code elimination: if a benchmark method's result is never used, the JIT can delete the work entirely and report an impossible 0.3 ns. Always return the value from the method, which is exactly what BenchmarkDotNet consumes for you.\n",
+      "quiz": {
+        "title": "Benchmarking Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why must benchmarks run in Release configuration?",
+            "options": [
+              "Debug builds disable JIT optimizations and add checks, so the numbers do not reflect production",
+              "Release builds use more threads",
+              "Debug builds cannot reference NuGet packages",
+              "It changes the garbage collector mode"
+            ],
+            "answer": "Debug builds disable JIT optimizations and add checks, so the numbers do not reflect production"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A benchmark method whose result is never used can be optimized away entirely by the JIT.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Adding the `[____]` attribute to a BenchmarkDotNet class reports allocated bytes next to the timings.",
+            "options": [],
+            "answer": "MemoryDiagnoser"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "architecture-patterns",
+      "title": "Architecture: Layering, CQRS, and Domain Boundaries",
+      "order": 4,
+      "content": "# Architecture: Layering, CQRS, and Domain Boundaries\n\n## The dependency rule\n\nLayered (\"clean\", \"onion\", \"hexagonal\") architectures differ in vocabulary and agree on one rule: **dependencies point inward**. The domain knows nothing about the database, HTTP, or the UI.\n\n```\nApi / Web        ->  depends on Application\nApplication      ->  depends on Domain\nInfrastructure   ->  depends on Domain and Application (implements their interfaces)\nDomain           ->  depends on nothing\n```\n\n```bash\ndotnet new classlib -o src/Shop.Domain\ndotnet new classlib -o src/Shop.Application\ndotnet new classlib -o src/Shop.Infrastructure\ndotnet new web      -o src/Shop.Api\ndotnet add src/Shop.Application reference src/Shop.Domain\ndotnet add src/Shop.Infrastructure reference src/Shop.Application\ndotnet add src/Shop.Api reference src/Shop.Infrastructure\n```\n\nThe project references are the enforcement mechanism: `Shop.Domain` cannot accidentally use EF Core, because it has no reference to it and the build fails if someone tries.\n\n## Ports and adapters\n\nThe application layer declares what it needs; infrastructure supplies it.\n\n```csharp\n// Application layer: the port\npublic interface IOrderRepository\n{\n    Task<Order?> GetAsync(Guid id, CancellationToken ct);\n    Task SaveAsync(Order order, CancellationToken ct);\n}\n\n// Infrastructure layer: the adapter\npublic sealed class EfOrderRepository(ShopDbContext db) : IOrderRepository\n{\n    public Task<Order?> GetAsync(Guid id, CancellationToken ct)\n        => db.Orders.Include(o => o.Lines).FirstOrDefaultAsync(o => o.Id == id, ct);\n\n    public async Task SaveAsync(Order order, CancellationToken ct)\n    {\n        db.Orders.Update(order);\n        await db.SaveChangesAsync(ct);\n    }\n}\n```\n\nSwapping SQL Server for Postgres, or the repository for an in-memory fake in tests, is a one-line registration change.\n\n## A domain model with invariants\n\n```csharp\npublic sealed class Order\n{\n    private readonly List<OrderLine> _lines = new();\n    public Guid Id { get; private set; } = Guid.NewGuid();\n    public OrderStatus Status { get; private set; } = OrderStatus.Draft;\n    public IReadOnlyList<OrderLine> Lines => _lines;\n    public decimal Total => _lines.Sum(l => l.Price * l.Quantity);\n\n    public void AddLine(string sku, int quantity, decimal price)\n    {\n        if (Status != OrderStatus.Draft)\n            throw new InvalidOperationException(\"Cannot modify a submitted order\");\n        if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity));\n        _lines.Add(new OrderLine(sku, quantity, price));\n    }\n\n    public void Submit()\n    {\n        if (_lines.Count == 0) throw new InvalidOperationException(\"Empty order\");\n        Status = OrderStatus.Submitted;\n    }\n}\n```\n\nPrivate setters and a private collection mean there is no way to reach an invalid state from outside. An anemic model with public setters pushes those rules into every service that touches it, and they drift apart.\n\n## CQRS: separating reads from writes\n\n```csharp\npublic record SubmitOrder(Guid OrderId) : IRequest;\n\npublic class SubmitOrderHandler(IOrderRepository repo) : IRequestHandler<SubmitOrder>\n{\n    public async Task Handle(SubmitOrder cmd, CancellationToken ct)\n    {\n        var order = await repo.GetAsync(cmd.OrderId, ct)\n            ?? throw new NotFoundException(cmd.OrderId);\n        order.Submit();\n        await repo.SaveAsync(order, ct);\n    }\n}\n```\n\nCommands change state and go through the domain model. Queries only read, and are free to bypass the domain entirely with a projection straight to a DTO:\n\n```csharp\nvar summary = await db.Orders\n    .Where(o => o.CustomerId == customerId)\n    .Select(o => new OrderSummaryDto(o.Id, o.Status, o.Lines.Sum(l => l.Price * l.Quantity)))\n    .AsNoTracking()\n    .ToListAsync(ct);\n```\n\nThat is the practical value of CQRS: reads get to be fast and shaped for the screen, writes get to be correct.\n\n> [!NOTE]\n> Layers are a cost as well as a benefit. Four projects and a mediator for a CRUD app with six endpoints is ceremony, not architecture. Add the boundary when there is a real reason to defend it: multiple teams, a swappable dependency, or business rules complex enough to be worth isolating.\n",
+      "quiz": {
+        "title": "Architecture Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In a clean/onion architecture, which direction do dependencies point?",
+            "options": [
+              "Outward, from domain toward infrastructure",
+              "Inward, toward the domain",
+              "Both directions equally",
+              "Downward, from database to UI"
+            ],
+            "answer": "Inward, toward the domain"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "Under CQRS a read query is allowed to bypass the domain model and project straight into a DTO.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Defining an interface in the application layer and implementing it in infrastructure is the ____ and adapters pattern.",
+            "options": [],
+            "answer": "ports"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "microservices-resilience-messaging",
+      "title": "Microservices: Resilience, Messaging, and Health",
+      "order": 5,
+      "content": "# Microservices: Resilience, Messaging, and Health\n\nSplitting a system into services replaces method calls with network calls. Networks fail, so resilience stops being optional.\n\n## HTTP clients that survive a bad day\n\n```csharp\nbuilder.Services.AddHttpClient<PricingClient>(c =>\n{\n    c.BaseAddress = new Uri(builder.Configuration[\"Services:Pricing\"]!);\n    c.Timeout = TimeSpan.FromSeconds(10);\n})\n.AddStandardResilienceHandler();      // Microsoft.Extensions.Http.Resilience\n```\n\nThe standard handler bundles the four patterns you would otherwise hand-roll:\n\n| Pattern | What it does | Trap it avoids |\n| --- | --- | --- |\n| **Timeout** | Caps each attempt | A hung dependency exhausting your threads |\n| **Retry** with jitter | Retries transient failures | Synchronized retry storms |\n| **Circuit breaker** | Stops calling a failing service for a while | Hammering a service that is already down |\n| **Rate limiter** | Caps concurrent calls | One slow dependency saturating the pool |\n\nRetry only **idempotent** operations. Retrying `POST /payments` without an idempotency key charges the customer twice.\n\n```csharp\n// Idempotency key: the server deduplicates retries of the same logical request\nrequest.Headers.Add(\"Idempotency-Key\", operationId.ToString());\n```\n\nAlways inject `HttpClient` through `IHttpClientFactory` (`AddHttpClient<T>`). A `new HttpClient()` per request exhausts sockets; one static instance never notices DNS changes.\n\n## Messaging: decoupling in time\n\n```csharp\npublic record OrderSubmitted(Guid OrderId, string CustomerId, decimal Total, DateTimeOffset At);\n\nawait publisher.PublishAsync(new OrderSubmitted(order.Id, customerId, order.Total, now), ct);\n```\n\nSynchronous HTTP couples availability: if pricing is down, checkout is down. A queue or broker (RabbitMQ, Azure Service Bus, Kafka) lets the producer continue while consumers catch up.\n\nConsumers must be **idempotent**, because every broker worth using guarantees at-least-once delivery:\n\n```csharp\npublic async Task HandleAsync(OrderSubmitted evt, CancellationToken ct)\n{\n    if (await _processed.ContainsAsync(evt.OrderId, ct)) return;   // seen it already\n    await _email.SendConfirmationAsync(evt.CustomerId, evt.OrderId, ct);\n    await _processed.AddAsync(evt.OrderId, ct);\n}\n```\n\nThe other classic trap is the **dual write**: saving to your database and publishing to the broker are two operations without a shared transaction, so a crash between them loses the event. The outbox pattern fixes it: write the event into an outbox table inside the same database transaction, then have a background worker publish and mark it sent.\n\n## Health checks and graceful shutdown\n\n```csharp\nbuilder.Services.AddHealthChecks()\n    .AddDbContextCheck<ShopDbContext>(\"db\")\n    .AddUrlGroup(new Uri(\"https://pricing/health/ready\"), \"pricing\", tags: [\"ready\"]);\n\napp.MapHealthChecks(\"/health/live\",  new() { Predicate = _ => false });\napp.MapHealthChecks(\"/health/ready\", new() { Predicate = c => c.Tags.Contains(\"ready\") });\n```\n\n**Liveness** answers \"is this process wedged, should the orchestrator restart it?\" and must not check dependencies, or one slow database restarts your entire fleet. **Readiness** answers \"can this instance serve traffic right now?\" and is where dependency checks belong.\n\n```csharp\npublic class Worker(ILogger<Worker> log) : BackgroundService\n{\n    protected override async Task ExecuteAsync(CancellationToken stoppingToken)\n    {\n        while (!stoppingToken.IsCancellationRequested)\n        {\n            await DoWorkAsync(stoppingToken);\n            await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);\n        }\n    }\n}\n```\n\nHonouring `stoppingToken` is what makes a rolling deploy drain cleanly instead of killing in-flight work.\n\n## Tracing across services\n\n```csharp\nbuilder.Services.AddOpenTelemetry()\n    .WithTracing(t => t.AddAspNetCoreInstrumentation().AddHttpClientInstrumentation().AddOtlpExporter())\n    .WithMetrics(m => m.AddAspNetCoreInstrumentation().AddRuntimeInstrumentation().AddOtlpExporter());\n```\n\nWith W3C trace context propagated automatically across `HttpClient` calls, one trace id follows a request through every service, which is the only practical way to answer \"why did this checkout take nine seconds?\"\n\n> [!WARNING]\n> A retry policy at every layer multiplies: three services each retrying three times turns one user request into 27 calls against the failing dependency. Retry at one well-chosen boundary, and let a circuit breaker cut the traffic when the dependency is genuinely down.\n",
+      "quiz": {
+        "title": "Microservices Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "What does a circuit breaker do when a dependency keeps failing?",
+            "options": [
+              "Retries faster",
+              "Stops calling it for a period so it can recover",
+              "Restarts the dependency",
+              "Queues requests forever"
+            ],
+            "answer": "Stops calling it for a period so it can recover"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "A liveness health check should verify that the database is reachable.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Writing an event to a table in the same transaction as the state change, then publishing it from a background worker, is the ____ pattern.",
+            "options": [],
+            "answer": "outbox"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "security-authn-authz-data-protection",
+      "title": "Security: Authentication, Authorization, and Secrets",
+      "order": 6,
+      "content": "# Security: Authentication, Authorization, and Secrets\n\n**Authentication** is who you are. **Authorization** is what you may do. ASP.NET Core keeps them as separate middleware for exactly that reason.\n\n## JWT bearer authentication\n\n```csharp\nbuilder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)\n    .AddJwtBearer(options =>\n    {\n        options.Authority = builder.Configuration[\"Auth:Authority\"];  // the identity provider\n        options.Audience  = builder.Configuration[\"Auth:Audience\"];\n        options.TokenValidationParameters = new()\n        {\n            ValidateIssuer = true,\n            ValidateAudience = true,\n            ValidateLifetime = true,\n            ValidateIssuerSigningKey = true,\n            ClockSkew = TimeSpan.FromSeconds(30),   // default 5 minutes is generous\n        };\n    });\n\napp.UseAuthentication();   // establishes HttpContext.User\napp.UseAuthorization();    // enforces policies, must come after\n```\n\nSetting `Authority` lets the framework fetch and cache the provider's signing keys, so key rotation happens without a deployment. Never disable `ValidateIssuerSigningKey`, and never accept a token whose algorithm header is `none`.\n\n## Authorization policies over scattered role checks\n\n```csharp\nbuilder.Services.AddAuthorization(options =>\n{\n    options.AddPolicy(\"CanRefund\", p => p.RequireClaim(\"permission\", \"orders:refund\"));\n    options.AddPolicy(\"AdultOnly\", p => p.RequireAssertion(ctx =>\n        ctx.User.FindFirst(\"birthdate\") is { } c &&\n        DateTime.TryParse(c.Value, out var d) &&\n        d.AddYears(18) <= DateTime.UtcNow));\n});\n\napp.MapPost(\"/orders/{id:guid}/refund\", RefundAsync).RequireAuthorization(\"CanRefund\");\napp.MapGet(\"/public/health\", () => Results.Ok()).AllowAnonymous();\n```\n\nPolicies keep the rule in one place. `[Authorize(Roles = \"Admin\")]` scattered across 40 endpoints is 40 places to update when the rule changes.\n\nResource-based checks, \"may *this* user refund *this* order\", belong in an `IAuthorizationHandler`, not in an `if` inside the endpoint.\n\n## Protecting data at rest and in transit\n\n```csharp\nbuilder.Services.AddDataProtection()\n    .PersistKeysToFileSystem(new DirectoryInfo(\"/keys\"))   // shared across instances\n    .SetApplicationName(\"Shop\");\n\nvar protector = provider.CreateProtector(\"Shop.ResetTokens\");\nstring token = protector.Protect(userId.ToString());\nstring userIdBack = protector.Unprotect(token);\n```\n\nWithout persisted, shared keys, every instance generates its own and cookies or tokens issued by one pod are rejected by the next, the classic \"logged out on every second request\" bug behind a load balancer.\n\nPasswords are hashed, never encrypted:\n\n```csharp\nvar hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();\nstring hash = hasher.HashPassword(user, plaintext);       // PBKDF2, salted, iterated\nvar result = hasher.VerifyHashedPassword(user, hash, attempt);\n```\n\n## The injection surface\n\n```csharp\n// SQL injection: EF Core parameterizes LINQ automatically\nvar safe = await db.Orders.Where(o => o.Customer == input).ToListAsync(ct);\n\n// Raw SQL: interpolation here is parameterized by FromSqlInterpolated, not concatenated\nvar alsoSafe = await db.Orders\n    .FromSqlInterpolated($\"SELECT * FROM Orders WHERE Customer = {input}\")\n    .ToListAsync(ct);\n\n// Never this:\n// db.Database.ExecuteSqlRaw(\"DELETE FROM Orders WHERE Customer = '\" + input + \"'\");\n```\n\nValidate input at the boundary, encode output at the point of use, and let the framework parameterize.\n\n## Secrets and headers\n\n```bash\ndotnet user-secrets set \"Auth:ClientSecret\" \"dev-only-value\"   # development\n# production: environment variables, Azure Key Vault, AWS Secrets Manager\n```\n\n```csharp\napp.UseHsts();\napp.UseHttpsRedirection();\napp.Use(async (ctx, next) =>\n{\n    ctx.Response.Headers[\"X-Content-Type-Options\"] = \"nosniff\";\n    ctx.Response.Headers[\"Content-Security-Policy\"] = \"default-src 'self'\";\n    ctx.Response.Headers[\"Referrer-Policy\"] = \"no-referrer\";\n    await next(ctx);\n});\n\nbuilder.Services.AddCors(o => o.AddPolicy(\"site\",\n    p => p.WithOrigins(\"https://kodstigen.se\").AllowAnyHeader().AllowAnyMethod()));\n```\n\n`AllowAnyOrigin()` combined with credentials is not a CORS configuration, it is a decision to have no origin policy at all.\n\n> [!WARNING]\n> Do not log tokens, passwords, connection strings, or full request bodies. Logs get shipped to third-party systems, kept for months, and read by people who never had access to the original credential. Redact at the point of logging, not later.\n",
+      "quiz": {
+        "title": "Security Quiz",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why must `UseAuthentication` come before `UseAuthorization` in the pipeline?",
+            "options": [
+              "Alphabetical order",
+              "Authorization needs the identity that authentication established",
+              "Authentication is slower",
+              "It does not matter"
+            ],
+            "answer": "Authorization needs the identity that authentication established"
+          },
+          {
+            "id": "q2",
+            "type": "TRUE_FALSE",
+            "prompt": "User passwords should be stored encrypted so they can be decrypted for verification.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q3",
+            "type": "FILL_BLANK",
+            "prompt": "Persisting data protection keys to shared storage prevents tokens issued by one instance from being ____ by another instance behind a load balancer.",
+            "options": [],
+            "answer": "rejected"
+          }
+        ]
+      }
+    },
+    {
+      "slug": "final-project-optimize-and-harden",
+      "title": "Final Project: Optimize and Harden a .NET Service",
+      "order": 7,
+      "content": "# Final Project: Optimize and Harden a .NET Service\n\nTake a service that works and make it fast, observable, and safe. Start from your Intermediate task API or write a small ingestion service, either is fine, as long as it processes a data file and exposes an HTTP API.\n\n## Requirements\n\n1. **Establish a baseline.** Generate a CSV of at least 500,000 rows. Write a naive parser using `File.ReadAllLines` plus `Split`, and benchmark it with BenchmarkDotNet under `[MemoryDiagnoser]`. Record time and allocated bytes; this is the number you must beat.\n2. **Optimize the hot path.** Rewrite the parser using `File.ReadLines` (or a `StreamReader`), `ReadOnlySpan<char>` slicing, span-based `TryParse` overloads, and `ArrayPool<byte>` or `stackalloc` where a buffer is needed. Target at least a 2x time improvement and a 90% reduction in allocations, and show the before/after benchmark table in your README.\n3. **Prove it in the process, not just the microbenchmark.** Run the service under load and capture `dotnet-counters` output for allocation rate and Gen 0/1/2 collection counts, before and after. Explain any result that contradicts the benchmark.\n4. **Layer the codebase.** Split into `Domain`, `Application`, `Infrastructure`, and `Api` projects with references pointing inward only. The domain project must have no dependency on EF Core, ASP.NET Core, or your parser's IO.\n5. **Make it resilient.** Every outbound HTTP call goes through `IHttpClientFactory` with timeout, retry, and circuit breaker. Add `/health/live` and `/health/ready` with the correct split, and a `BackgroundService` that honours its stopping token.\n6. **Secure it.** JWT bearer authentication with full token validation, at least two named authorization policies (one claim-based, one resource-based), a CORS policy limited to a single origin, security headers, and no secret anywhere in `appsettings.json`.\n7. **Make it observable.** OpenTelemetry tracing and metrics with an OTLP exporter, structured logging with a correlation id per request, and no secrets or PII in any log line.\n\n## Stretch goals\n\n- Add an outbox table so a crash between \"save order\" and \"publish event\" cannot lose the event, and prove it by killing the process mid-flight.\n- Publish with `PublishTrimmed` or Native AOT and compare cold-start time and memory against the framework-dependent build.\n- Add a `Server-Timing` header or a custom `Meter` that reports parse duration per request.\n- Add a load test (k6, Bombardier, or NBomber) to CI and fail the build when p99 latency regresses beyond a threshold.\n\nSubmit a link to your finished repository, including the benchmark results and a short write-up of what you changed and why. An instructor will review it before you can mark this lesson complete.\n",
+      "requiresSubmission": true
+    }
+  ]
+}
