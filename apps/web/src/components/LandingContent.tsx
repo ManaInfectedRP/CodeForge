@@ -197,7 +197,7 @@ export function LandingContent({ paths, reviews }: Props) {
                 <Link
                   key={`${p.slug}-${i}`}
                   href={`/courses?path=${p.slug}`}
-                  className="flex w-20 shrink-0 flex-col items-center gap-2.5"
+                  className="flex min-w-20 shrink-0 flex-col items-center gap-2.5"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
