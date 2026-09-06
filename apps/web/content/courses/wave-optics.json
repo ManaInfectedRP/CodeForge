@@ -1,0 +1,335 @@
+{
+  "slug": "wave-optics",
+  "title": "Wave Optics",
+  "description": "Phasors and superposition, two-slit and thin-film interference, diffraction and resolution limits, polarisation and Jones calculus, coherence and interferometry, and Fourier optics with beam propagation you simulate in the browser.",
+  "pathSlug": "wave-optics",
+  "pathName": "Wave Optics",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "waves-phasors-and-superposition",
+      "title": "Waves, Phasors, and Superposition",
+      "content": "# Waves, Phasors, and Superposition\n\nWave optics is what happens when you stop treating light as rays and start adding amplitudes. One representation, the complex phasor, makes every calculation in this course a sum of arrows.\n\n## The travelling wave\n\n$$E(x,t) = E_0\\cos(kx - \\omega t + \\phi), \\qquad k = \\frac{2\\pi}{\\lambda}, \\quad \\omega = 2\\pi f$$\n\nKeeping track of $\\cos$ terms by hand is painful. Writing $E = \\mathrm{Re}\\{E_0e^{i(kx-\\omega t)}\\}$ turns addition into vector addition and differentiation into multiplication.\n\n```python\nimport numpy as np\n\nc = 299792458.0\nprint(f\"{'colour':10s}{'lambda (nm)':>13s}{'f (THz)':>11s}{'k (1/um)':>12s}{'photon eV':>12s}\")\nfor name, nm in [(\"violet\", 400), (\"blue\", 470), (\"green\", 530), (\"yellow\", 580), (\"red\", 650)]:\n    lam = nm * 1e-9\n    f = c / lam\n    print(f\"{name:10s}{nm:>13d}{f / 1e12:>11.1f}{2 * np.pi / (nm * 1e-3):>12.4f}{1239.84 / nm:>12.3f}\")\nprint(\"\\nVisible light spans less than one octave in frequency, unlike hearing's ten.\")\n```\n\n## Adding waves as arrows\n\nTwo waves of the same frequency add by adding their phasors. The result depends only on the phase difference, and it swings between $|E_1+E_2|$ and $|E_1-E_2|$.\n\n```python\nimport numpy as np\n\nE1, E2 = 1.0, 0.6\nprint(f\"{'phase diff':>12s}{'amplitude':>12s}{'intensity':>12s}{'vs incoherent':>16s}\")\nincoherent = E1**2 + E2**2\nfor deg in [0, 45, 90, 120, 180]:\n    phi = np.deg2rad(deg)\n    amp = abs(E1 + E2 * np.exp(1j * phi))\n    print(f\"{deg:>12d}{amp:>12.4f}{amp**2:>12.4f}{amp**2 / incoherent:>16.4f}\")\nprint(f\"\\nincoherent sum of intensities = {incoherent:.4f}, always between the extremes\")\nprint(f\"visibility = (Imax - Imin)/(Imax + Imin) = \"\n      f\"{((E1+E2)**2 - (E1-E2)**2) / ((E1+E2)**2 + (E1-E2)**2):.4f}\")\n```\n\nInterference redistributes energy; it never creates or destroys it. Averaged over a screen, the bright and dark fringes add back up to the incoherent total.\n\n## Beats and group velocity\n\nTwo nearby frequencies produce an envelope moving at the group velocity $d\\omega/dk$, which is what actually carries information.\n\n```python\nimport numpy as np\n\ndef dispersion(k, kind):\n    if kind == \"vacuum\":\n        return 299792458.0 * k\n    if kind == \"waveguide\":                  # omega^2 = omega_c^2 + c^2 k^2\n        return np.sqrt((2 * np.pi * 5e9) ** 2 + (299792458.0 * k) ** 2)\n    if kind == \"deep water\":                 # omega = sqrt(g k)\n        return np.sqrt(9.81 * k)\n    raise ValueError(kind)\n\nfor kind in [\"vacuum\", \"waveguide\", \"deep water\"]:\n    k = 1.0 if kind == \"deep water\" else 200.0\n    dk = k * 1e-6\n    w = dispersion(k, kind)\n    vp = w / k\n    vg = (dispersion(k + dk, kind) - dispersion(k - dk, kind)) / (2 * dk)\n    print(f\"{kind:12s} phase v = {vp:>14.4e}   group v = {vg:>14.4e}   ratio {vg / vp:6.3f}\")\nprint(\"\\nIn a waveguide the phase velocity exceeds c while the group velocity does not:\")\nprint(\"no information travels faster than light, only the pattern of crests.\")\n```\n\n## Intensity is what detectors see\n\nEvery optical detector averages $|E|^2$ over many cycles, because no electronics follows $10^{14}$ Hz. That average is the intensity.\n\n```python\nimport numpy as np\n\neps0 = 8.8541878128e-12\nc = 299792458.0\n\ndef intensity(E0, n=1.0):\n    return 0.5 * n * eps0 * c * E0**2\n\nsources = [(\"laser pointer, 1 mm beam\", 1e-3 / (np.pi * (0.5e-3) ** 2)),\n           (\"sunlight at Earth\", 1361.0),\n           (\"full moon\", 3e-3),\n           (\"candle at 1 m\", 0.05)]\nfor name, I in sources:\n    E0 = np.sqrt(2 * I / (eps0 * c))\n    print(f\"{name:28s} I = {I:11.4e} W/m^2   E0 = {E0:9.2f} V/m\")\nprint(\"\\nA factor of 1e6 in intensity is only a factor of 1000 in field amplitude,\")\nprint(\"which is why photodiodes are quadratic detectors and dynamic range is hard.\")\n```\n\n## Standing waves\n\nTwo counter-propagating waves make nodes fixed in space. This is a laser cavity, an antenna, and the reason a mirror's surface sits at a node of the electric field.\n\n```python\nimport numpy as np\n\nlam = 500e-9\nL = 1e-3\nx = np.linspace(0, lam, 9)\nk = 2 * np.pi / lam\n\nfield = 2 * np.cos(k * x)\nprint(f\"{'x/lambda':>10s}{'standing amplitude':>22s}\")\nfor xi, f in zip(x / lam, field):\n    print(f\"{xi:>10.3f}{f:>22.4f}\")\n\nmodes = int(2 * L / lam)\nprint(f\"\\ncavity of length {L * 1e3:.1f} mm supports {modes} half-wavelengths\")\nprint(f\"mode spacing = c/2L = {299792458.0 / (2 * L) / 1e9:.3f} GHz\")\nprint(\"A helium-neon laser's gain bandwidth of ~1.5 GHz therefore holds about\")\nprint(f\"{1.5e9 / (299792458.0 / (2 * 0.3)):.0f} modes in a typical 30 cm tube.\")\n```\n\n> [!NOTE]\n> Everything after this lesson is superposition with a different bookkeeping: two paths gives interference, many paths gives diffraction, a continuum of paths gives Fourier optics. The physics never changes; only the number of arrows you add.",
+      "quiz": {
+        "title": "Waves and Phasors",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "When two coherent beams interfere, the total energy on the screen is:",
+            "options": [
+              "Greater than the incoherent sum",
+              "Less than the incoherent sum",
+              "Equal to the incoherent sum, just redistributed",
+              "Zero"
+            ],
+            "answer": "Equal to the incoherent sum, just redistributed"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A phase velocity greater than c is allowed because:",
+            "options": [
+              "Relativity fails in media",
+              "No information travels at the phase velocity",
+              "The frequency is imaginary",
+              "Energy flows backwards"
+            ],
+            "answer": "No information travels at the phase velocity"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Optical detectors respond to the instantaneous electric field rather than its square.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The envelope of a wave packet travels at the ____ velocity.",
+            "options": [],
+            "answer": "group"
+          }
+        ]
+      },
+      "order": 1
+    },
+    {
+      "slug": "interference-two-slits-and-thin-films",
+      "title": "Interference: Two Slits and Thin Films",
+      "content": "# Interference: Two Slits and Thin Films\n\nTwo paths, one phase difference. Every interferometer, coating, and colour-shifting surface in the world is this calculation with a different geometry.\n\n## Young's double slit\n\n$$\\Delta = d\\sin\\theta, \\qquad I = 4I_0\\cos^2\\!\\left(\\frac{\\pi d\\sin\\theta}{\\lambda}\\right)$$\n\n```python\nimport numpy as np\n\nlam, d, L = 550e-9, 0.2e-3, 2.0\ny = np.linspace(-0.02, 0.02, 11)\n\ndelta = d * y / L\nphase = 2 * np.pi * delta / lam\nI = np.cos(phase / 2) ** 2\n\nprint(f\"{'y (mm)':>9s}{'path diff (nm)':>17s}{'order':>9s}{'I/Imax':>10s}\")\nfor yi, dl, ii in zip(y, delta, I):\n    print(f\"{yi * 1000:>9.2f}{dl * 1e9:>17.1f}{dl / lam:>9.2f}{ii:>10.4f}\")\n\nfringe = lam * L / d\nprint(f\"\\nfringe spacing = lambda L / d = {fringe * 1000:.3f} mm\")\nprint(f\"with a 0.5 mm slit separation it would be {lam * L / 0.5e-3 * 1000:.3f} mm:\")\nprint(\"closer slits mean wider fringes, which is the reciprocal relationship\")\nprint(\"that runs through all of diffraction.\")\n```\n\n## Measuring wavelength from fringes\n\nTurn the formula round and the double slit becomes a measuring instrument accurate to a few nanometres.\n\n```python\nimport numpy as np\n\nd, L = 0.25e-3, 1.5\nmeasurements_mm = [3.90, 3.85, 3.92, 3.88, 3.91]     # fringe spacings, mm\n\nspacings = np.array(measurements_mm) * 1e-3\nlams = spacings * d / L\nprint(f\"mean wavelength = {lams.mean() * 1e9:.1f} nm\")\nprint(f\"standard error  = {lams.std(ddof=1) / np.sqrt(len(lams)) * 1e9:.1f} nm\")\nprint(f\"that is {'green' if 500 < lams.mean() * 1e9 < 570 else 'another colour'} light\")\n```\n\n## Thin films\n\nReflections from the top and bottom surfaces interfere. A hard reflection (going into a denser medium) flips the phase by $\\pi$, and forgetting that term is the single most common mistake in the topic.\n\n```python\nimport numpy as np\n\ndef film_reflection(t, n_film, lam, n_above=1.0, n_below=1.0):\n    \"\"\"Relative reflected intensity from a film of thickness t.\"\"\"\n    extra = 2 * n_film * t                                  # optical path in the film\n    flips = (1 if n_film > n_above else 0) + (1 if n_below > n_film else 0)\n    phase = 2 * np.pi * extra / lam + np.pi * (flips % 2)\n    return np.cos(phase / 2) ** 2\n\nlam = 550e-9\nprint(\"soap film in air (n = 1.33), reflected green light:\")\nfor t_nm in [0, 50, 103, 150, 207, 300]:\n    r = film_reflection(t_nm * 1e-9, 1.33, lam)\n    print(f\"  t = {t_nm:4d} nm   R/Rmax = {r:.4f}\")\nprint(\"\\nA very thin film is dark: the two reflections cancel, which is why a soap\")\nprint(\"bubble goes black just before it bursts.\")\n\nprint(\"\\nanti-reflection coating for a lens (n_glass = 1.52):\")\nn_ar = np.sqrt(1.52)\nt_ar = lam / (4 * n_ar)\nprint(f\"  ideal index = sqrt(1.52) = {n_ar:.4f} (magnesium fluoride is 1.38, close enough)\")\nprint(f\"  quarter-wave thickness = {t_ar * 1e9:.1f} nm\")\n```\n\n## Newton's rings and wedge fringes\n\nA curved or wedged gap turns thickness into a coordinate, and the fringes map the shape. Optical shops still test surfaces this way.\n\n```python\nimport numpy as np\n\nlam, R = 589e-9, 2.0     # sodium light, 2 m radius of curvature\n\nprint(f\"{'ring m':>8s}{'radius (mm)':>14s}{'gap (nm)':>12s}\")\nfor m in range(1, 7):\n    r = np.sqrt(m * lam * R)\n    print(f\"{m:>8d}{r * 1000:>14.4f}{m * lam / 2 * 1e9:>12.1f}\")\n\nprint(\"\\nwedge between two flats, angle 1 arcsecond:\")\nangle = np.deg2rad(1 / 3600)\nspacing = lam / (2 * angle)\nprint(f\"  fringe spacing = lambda / 2 theta = {spacing * 1000:.2f} mm\")\nprint(f\"  a surface error of {lam / 2 * 1e9:.0f} nm shows up as one whole fringe shift,\")\nprint(\"  which is why interferometry can measure to a fraction of a wavelength.\")\n```\n\n## Multiple beams: the Fabry-Perot\n\nWith reflective surfaces, light bounces many times and the fringes sharpen dramatically. That sharpness is what makes lasers monochromatic and optical filters narrow.\n\n```python\nimport numpy as np\n\ndef airy(phase, R):\n    F = 4 * R / (1 - R) ** 2\n    return 1 / (1 + F * np.sin(phase / 2) ** 2)\n\nphases = np.linspace(0, 2 * np.pi, 9)\nprint(f\"{'phase/pi':>10s}\" + \"\".join(f\"{f'R={R}':>12s}\" for R in [0.04, 0.5, 0.9, 0.99]))\nfor p in phases:\n    row = f\"{p / np.pi:>10.3f}\"\n    for R in [0.04, 0.5, 0.9, 0.99]:\n        row += f\"{airy(p, R):>12.5f}\"\n    print(row)\n\nfor R in [0.04, 0.5, 0.9, 0.99]:\n    finesse = np.pi * np.sqrt(R) / (1 - R)\n    print(f\"R = {R:4.2f}: finesse = {finesse:7.2f}  (resolving power ~ finesse x order)\")\nprint(\"\\nA 99% mirror pair gives fringes over 300 times narrower than the free spectral range.\")\n```\n\n> [!TIP]\n> For any interference problem, write down the optical path difference, add $\\lambda/2$ for each hard reflection, and only then convert to phase. Doing it in that order removes almost every sign error.",
+      "quiz": {
+        "title": "Interference",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Halving the slit separation d in a double-slit experiment:",
+            "options": [
+              "Halves the fringe spacing",
+              "Doubles the fringe spacing",
+              "Leaves it unchanged",
+              "Removes the fringes"
+            ],
+            "answer": "Doubles the fringe spacing"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A soap film much thinner than the wavelength appears dark in reflection because:",
+            "options": [
+              "It absorbs all the light",
+              "The two reflections are out of phase due to the pi shift at the front surface",
+              "The light is polarised",
+              "It transmits everything by total internal reflection"
+            ],
+            "answer": "The two reflections are out of phase due to the pi shift at the front surface"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Increasing mirror reflectivity in a Fabry-Perot narrows the transmission peaks.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "An anti-reflection coating should have optical thickness of one ____ of a wavelength.",
+            "options": [],
+            "answer": "quarter"
+          }
+        ]
+      },
+      "order": 2
+    },
+    {
+      "slug": "diffraction-slits-gratings-and-resolution",
+      "title": "Diffraction: Slits, Gratings, and the Limits of Resolution",
+      "content": "# Diffraction: Slits, Gratings, and the Limits of Resolution\n\nDiffraction is interference from a continuum of sources. It sets the ultimate limit on every optical instrument ever built, including your eye.\n\n## The single slit\n\n$$I(\\theta) = I_0\\left[\\frac{\\sin(\\pi a\\sin\\theta/\\lambda)}{\\pi a \\sin\\theta/\\lambda}\\right]^2$$\n\n```python\nimport numpy as np\n\ndef single_slit(theta, a, lam):\n    beta = np.pi * a * np.sin(theta) / lam\n    return np.where(np.abs(beta) < 1e-12, 1.0, (np.sin(beta) / np.where(beta == 0, 1, beta)) ** 2)\n\nlam = 633e-9\nprint(f\"{'slit width':>12s}{'first null':>14s}{'central width on a 2 m screen':>32s}\")\nfor a_um in [10, 50, 100, 500]:\n    a = a_um * 1e-6\n    theta1 = np.arcsin(min(lam / a, 1.0))\n    print(f\"{a_um:>10d}um{np.rad2deg(theta1):>13.3f}deg{2 * 2.0 * np.tan(theta1) * 1000:>29.2f} mm\")\n\ntheta = np.deg2rad(np.linspace(0, 6, 7))\nprint(f\"\\nintensity profile for a 20 um slit:\")\nfor t, i in zip(theta, single_slit(theta, 20e-6, lam)):\n    print(f\"  {np.rad2deg(t):5.1f} deg   I/I0 = {i:.5f}\")\nprint(\"\\nNarrower slits spread light more. Squeezing a beam in space widens it in angle,\")\nprint(\"which is the classical face of the uncertainty principle.\")\n```\n\n## Two slits of finite width\n\nReal double slits show interference fringes inside a diffraction envelope, and some orders go missing when a fringe lands on an envelope null.\n\n```python\nimport numpy as np\n\nlam, a, d = 550e-9, 20e-6, 100e-6\ntheta = np.arcsin(np.linspace(0, 0.05, 11))\n\nbeta = np.pi * a * np.sin(theta) / lam\ngamma = np.pi * d * np.sin(theta) / lam\nenvelope = np.where(beta == 0, 1.0, (np.sin(beta) / np.where(beta == 0, 1, beta)) ** 2)\nfringes = np.cos(gamma) ** 2\n\nprint(f\"{'angle (deg)':>12s}{'envelope':>11s}{'fringes':>10s}{'total':>10s}\")\nfor t, e, f in zip(theta, envelope, fringes):\n    print(f\"{np.rad2deg(t):>12.3f}{e:>11.5f}{f:>10.5f}{e * f:>10.5f}\")\n\nprint(f\"\\nd/a = {d / a:.0f}, so every {int(d / a)}th interference order falls on a\")\nprint(\"diffraction null and disappears. Those are the 'missing orders'.\")\n```\n\n## Gratings\n\n$N$ slits sharpen the maxima as $1/N$ while keeping them in the same places. That is what turns a grating into a spectrometer.\n\n```python\nimport numpy as np\n\ndef grating(theta, d, lam, N):\n    g = np.pi * d * np.sin(theta) / lam\n    num = np.sin(N * g)\n    den = np.sin(g)\n    return np.where(np.abs(den) < 1e-12, N**2, (num / np.where(den == 0, 1, den)) ** 2) / N**2\n\nlam, d = 550e-9, 1 / 600e3     # 600 lines per mm\ntheta1 = np.arcsin(lam / d)\nprint(f\"600 lines/mm, first order at {np.rad2deg(theta1):.2f} degrees\")\n\nprint(f\"\\n{'N slits':>9s}{'peak half-width (deg)':>24s}{'resolving power':>18s}\")\nfor N in [2, 10, 100, 10000]:\n    half_width = np.rad2deg(lam / (N * d * np.cos(theta1)))\n    print(f\"{N:>9d}{half_width:>24.5f}{N * 1:>18d}\")\n\nprint(\"\\nsodium doublet, 589.0 and 589.6 nm:\")\nneeded = 589.0 / 0.6\nprint(f\"  resolving power needed = lambda/dlambda = {needed:.0f}\")\nprint(f\"  so first order needs at least {needed:.0f} illuminated lines,\")\nprint(f\"  about {needed / 600:.1f} mm of a 600 lines/mm grating.\")\n```\n\n## The Rayleigh criterion\n\nA circular aperture spreads a point into an Airy disc of angular radius $1.22\\lambda/D$. Two points closer than that are one blob.\n\n```python\nimport numpy as np\n\ndef rayleigh(D, lam=550e-9):\n    return 1.22 * lam / D\n\ninstruments = [\n    (\"human pupil, 3 mm\", 3e-3, None),\n    (\"camera lens f/2.8, 25 mm\", 25e-3, None),\n    (\"amateur telescope, 200 mm\", 0.2, None),\n    (\"Hubble, 2.4 m\", 2.4, None),\n    (\"VLT, 8.2 m\", 8.2, None),\n]\nprint(f\"{'instrument':28s}{'resolution (arcsec)':>21s}{'at 100 m':>12s}\")\nfor name, D, _ in instruments:\n    th = rayleigh(D)\n    print(f\"{name:28s}{np.rad2deg(th) * 3600:>21.4f}{th * 100 * 1000:>10.3f}mm\")\n\nprint(f\"\\nthe eye's diffraction limit is about {np.rad2deg(rayleigh(3e-3)) * 3600:.0f} arcsec,\")\nprint(\"and typical visual acuity is 60 arcsec, so the eye is close to diffraction-limited.\")\nprint(\"Ground-based telescopes are limited by atmospheric seeing (~1 arcsec) instead,\")\nprint(\"which is the entire argument for putting Hubble in orbit.\")\n```\n\n## Fresnel versus Fraunhofer\n\nWhich regime you are in depends on the Fresnel number $F = a^2/\\lambda L$: much less than 1 gives the far-field pattern, much greater than 1 gives a near-field shadow.\n\n```python\nimport numpy as np\n\nlam = 550e-9\nprint(f\"{'aperture':>10s}{'distance':>11s}{'Fresnel number':>17s}   regime\")\nfor a_mm, L in [(0.02, 1.0), (0.1, 1.0), (1.0, 1.0), (1.0, 0.01), (10.0, 1.0)]:\n    a = a_mm * 1e-3\n    F = a**2 / (lam * L)\n    regime = \"Fraunhofer (far field)\" if F < 0.3 else \\\n             \"Fresnel (near field)\" if F > 3 else \"transition\"\n    print(f\"{a_mm:>8.2f}mm{L:>10.2f}m{F:>17.3f}   {regime}\")\n\na = 1e-3\nprint(f\"\\nfar field for a 1 mm aperture starts around L = a^2/lambda = {a**2 / lam:.2f} m\")\nprint(\"which is why a lens is used to bring the far field into the focal plane.\")\n```\n\n> [!NOTE]\n> Poisson's bright spot, a bright point in the centre of a circular obstruction's shadow, was proposed as a reductio against wave theory in 1818 and then observed. It remains the cleanest demonstration that light really does add as amplitudes.",
+      "quiz": {
+        "title": "Diffraction and Resolution",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Making a slit narrower makes the diffraction pattern:",
+            "options": [
+              "Narrower",
+              "Wider",
+              "Brighter but unchanged in width",
+              "Disappear"
+            ],
+            "answer": "Wider"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Adding more illuminated lines to a grating mainly:",
+            "options": [
+              "Moves the maxima to new angles",
+              "Narrows the maxima and raises resolving power",
+              "Reduces the diffraction envelope",
+              "Changes the wavelength"
+            ],
+            "answer": "Narrows the maxima and raises resolving power"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A larger telescope aperture gives a smaller diffraction-limited angular resolution.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The far-field diffraction regime is also called the ____ regime.",
+            "options": [],
+            "answer": "Fraunhofer"
+          }
+        ]
+      },
+      "order": 3
+    },
+    {
+      "slug": "polarisation-and-the-jones-calculus",
+      "title": "Polarisation and the Jones Calculus",
+      "content": "# Polarisation and the Jones Calculus\n\nLight is a transverse vector wave, so it has a direction of vibration. Tracking that direction turns into two-by-two matrix algebra, and the algebra predicts some genuinely surprising experiments.\n\n## Jones vectors\n\n```python\nimport numpy as np\n\nstates = {\n    \"horizontal\":      np.array([1, 0], dtype=complex),\n    \"vertical\":        np.array([0, 1], dtype=complex),\n    \"45 degrees\":      np.array([1, 1], dtype=complex) / np.sqrt(2),\n    \"right circular\":  np.array([1, -1j], dtype=complex) / np.sqrt(2),\n    \"left circular\":   np.array([1, 1j], dtype=complex) / np.sqrt(2),\n}\nprint(f\"{'state':18s}{'Jones vector':>28s}{'|Ex|^2':>9s}{'|Ey|^2':>9s}\")\nfor name, v in states.items():\n    print(f\"{name:18s}{str(np.round(v, 3)):>28s}{abs(v[0])**2:>9.3f}{abs(v[1])**2:>9.3f}\")\n\nprint(\"\\ncircular light has equal components; the phase between them is what makes it circular\")\nprint(\"overlap of right and left circular:\", abs(np.vdot(states[\"right circular\"], states[\"left circular\"])))\n```\n\n## Malus's law\n\nA polariser projects onto its axis, so the transmitted intensity is $I_0\\cos^2\\theta$.\n\n```python\nimport numpy as np\n\ndef polariser(angle_deg):\n    t = np.deg2rad(angle_deg)\n    c, s = np.cos(t), np.sin(t)\n    return np.array([[c * c, c * s], [c * s, s * s]], dtype=complex)\n\nlight = np.array([1, 0], dtype=complex)\nprint(f\"{'angle':>8s}{'transmitted I':>16s}{'cos^2':>9s}\")\nfor deg in [0, 30, 45, 60, 90]:\n    out = polariser(deg) @ light\n    I = float(np.vdot(out, out).real)\n    print(f\"{deg:>8d}{I:>16.5f}{np.cos(np.deg2rad(deg))**2:>9.5f}\")\n```\n\n## Three polarisers\n\nCrossed polarisers block everything. Insert a third one *between* them at 45 degrees and light comes through, which is impossible if you think of polarisers as filters that only remove.\n\n```python\nimport numpy as np\n\ndef polariser(angle_deg):\n    t = np.deg2rad(angle_deg)\n    c, s = np.cos(t), np.sin(t)\n    return np.array([[c * c, c * s], [c * s, s * s]], dtype=complex)\n\nlight = np.array([1, 0], dtype=complex)\ncrossed = polariser(90) @ light\nprint(f\"through crossed polarisers: I = {float(np.vdot(crossed, crossed).real):.6f}\")\n\nwith_middle = polariser(90) @ (polariser(45) @ light)\nprint(f\"with a 45 degree polariser inserted between them: I = \"\n      f\"{float(np.vdot(with_middle, with_middle).real):.6f}\")\n\nprint(f\"\\n{'middle angle':>14s}{'output I':>12s}\")\nfor deg in [0, 20, 45, 70, 90]:\n    out = polariser(90) @ (polariser(deg) @ light)\n    print(f\"{deg:>14d}{float(np.vdot(out, out).real):>12.6f}\")\n\nprint(\"\\nstacking N polarisers rotating from 0 to 90 degrees:\")\nfor N in [1, 2, 5, 20, 100]:\n    v = light.copy()\n    for k in range(1, N + 1):\n        v = polariser(90 * k / N) @ v\n    print(f\"  N = {N:3d}: transmitted {float(np.vdot(v, v).real):.5f}\")\nprint(\"With many steps almost all the light survives, rotated by 90 degrees.\")\n```\n\n## Waveplates\n\nA birefringent crystal delays one axis relative to the other. A quarter-wave plate turns linear into circular; a half-wave plate rotates linear polarisation.\n\n```python\nimport numpy as np\n\ndef waveplate(retardation_deg, axis_deg=0.0):\n    d = np.deg2rad(retardation_deg)\n    t = np.deg2rad(axis_deg)\n    R = np.array([[np.cos(t), -np.sin(t)], [np.sin(t), np.cos(t)]])\n    J = np.array([[1, 0], [0, np.exp(1j * d)]], dtype=complex)\n    return R @ J @ R.T\n\nlinear45 = np.array([1, 1], dtype=complex) / np.sqrt(2)\n\nqwp = waveplate(90)\nout = qwp @ linear45\nprint(\"quarter-wave plate on 45 degree linear light:\")\nprint(f\"  output = {np.round(out, 4)}\")\nprint(f\"  phase difference = {np.degrees(np.angle(out[1]) - np.angle(out[0])):.1f} deg -> circular\")\n\nhwp = waveplate(180, axis_deg=22.5)\nout2 = hwp @ np.array([1, 0], dtype=complex)\nprint(\"\\nhalf-wave plate with its axis at 22.5 degrees, on horizontal light:\")\nprint(f\"  output = {np.round(out2, 4)}\")\nprint(f\"  polarisation angle = {np.degrees(np.arctan2(abs(out2[1]), abs(out2[0]))):.1f} deg\")\nprint(\"  a half-wave plate rotates linear light by twice the angle between them.\")\n```\n\n## Where polarisation comes from in nature\n\nScattering and reflection both polarise light, which is why the sky is polarised and why glare is horizontal.\n\n```python\nimport numpy as np\n\nprint(\"Rayleigh scattering, degree of polarisation vs scattering angle:\")\nfor deg in [0, 45, 90, 135, 180]:\n    th = np.deg2rad(deg)\n    dop = np.sin(th) ** 2 / (1 + np.cos(th) ** 2)\n    print(f\"  {deg:>5d} deg: {dop:.4f}\")\nprint(\"  maximum at 90 degrees from the Sun, which is the band bees navigate by\")\n\nprint(\"\\nreflection from water (n = 1.33):\")\nfor deg in [0, 30, 53.1, 70, 89]:\n    th1 = np.deg2rad(deg)\n    th2 = np.arcsin(np.sin(th1) / 1.33)\n    rs = ((np.cos(th1) - 1.33 * np.cos(th2)) / (np.cos(th1) + 1.33 * np.cos(th2))) ** 2\n    rp = ((1.33 * np.cos(th1) - np.cos(th2)) / (1.33 * np.cos(th1) + np.cos(th2))) ** 2\n    pol = abs(rs - rp) / (rs + rp) if rs + rp > 0 else 0\n    print(f\"  {deg:>5.1f} deg: Rs = {rs:.4f}  Rp = {rp:.4f}  polarisation {pol:.3f}\")\nprint(f\"\\nBrewster angle for water = {np.degrees(np.arctan(1.33)):.1f} deg: reflected light is\")\nprint(\"fully horizontal there, which is exactly what vertical-axis sunglasses remove.\")\n```\n\n> [!TIP]\n> Jones calculus assumes fully polarised light. For partially polarised or unpolarised light you need Stokes vectors and Mueller matrices, which track intensities rather than amplitudes and can represent incoherent mixtures.",
+      "quiz": {
+        "title": "Polarisation",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Horizontally polarised light passes through a 45 degree polariser and then a vertical one. The transmitted intensity is:",
+            "options": [
+              "Zero, because the outer polarisers are crossed",
+              "One quarter of the incident intensity",
+              "One half",
+              "All of it"
+            ],
+            "answer": "One quarter of the incident intensity"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A half-wave plate whose axis is at angle A to the polarisation rotates it by:",
+            "options": [
+              "A",
+              "2A",
+              "A/2",
+              "90 degrees minus A"
+            ],
+            "answer": "2A"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Skylight is most strongly polarised 90 degrees away from the Sun.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Malus's law says transmitted intensity goes as the ____ of the cosine of the angle.",
+            "options": [],
+            "answer": "square"
+          }
+        ]
+      },
+      "order": 4
+    },
+    {
+      "slug": "coherence-and-interferometry",
+      "title": "Coherence and Interferometry",
+      "content": "# Coherence and Interferometry\n\nFringes need a stable phase relationship. Coherence is the bookkeeping of how long and how far that stability survives, and it decides whether an interferometer works at all.\n\n## Temporal coherence\n\nA source with bandwidth $\\Delta\\nu$ stays in phase for roughly $\\tau_c = 1/\\Delta\\nu$, giving a coherence length $L_c = c\\tau_c \\approx \\lambda^2/\\Delta\\lambda$.\n\n```python\nimport numpy as np\n\nc = 299792458.0\nsources = [\n    (\"white light\", 550e-9, 300e-9),\n    (\"LED\", 630e-9, 25e-9),\n    (\"sodium lamp\", 589e-9, 0.6e-9),\n    (\"HeNe laser (multimode)\", 633e-9, 2e-12),\n    (\"stabilised laser\", 633e-9, 1e-15),\n]\nprint(f\"{'source':26s}{'dlambda':>12s}{'dnu (Hz)':>13s}{'coherence length':>19s}\")\nfor name, lam, dlam in sources:\n    Lc = lam**2 / dlam\n    dnu = c * dlam / lam**2\n    unit = f\"{Lc * 1e6:.2f} um\" if Lc < 1e-3 else f\"{Lc * 1000:.2f} mm\" if Lc < 1 else f\"{Lc:.1f} m\"\n    print(f\"{name:26s}{dlam * 1e9:>10.4g}nm{dnu:>13.3e}{unit:>19s}\")\nprint(\"\\nWhite light gives only a handful of fringes; a stabilised laser gives millions,\")\nprint(\"which is why gravitational-wave detectors need lasers and not lamps.\")\n```\n\n## Fringe visibility as a measurement\n\nVisibility falls as the path difference approaches the coherence length. Measuring how it falls *is* a spectral measurement, which is the principle of Fourier-transform spectroscopy.\n\n```python\nimport numpy as np\n\ndef visibility(path_diff, coherence_length):\n    return np.exp(-(path_diff / coherence_length) ** 2)\n\nLc = 20e-6      # a broadband LED\nprint(f\"{'path diff (um)':>16s}{'visibility':>13s}\")\nfor d_um in [0, 5, 10, 20, 40, 60]:\n    print(f\"{d_um:>16d}{visibility(d_um * 1e-6, Lc):>13.5f}\")\n\n# recovering the spectrum from an interferogram\ndelays = np.linspace(-60e-6, 60e-6, 4096)\nlam0, dlam = 630e-9, 25e-9\nnu0 = 299792458.0 / lam0\ndnu = 299792458.0 * dlam / lam0**2\ninterferogram = np.exp(-(delays * dnu / 299792458.0 * np.pi) ** 2) * \\\n    np.cos(2 * np.pi * nu0 * delays / 299792458.0)\n\nspectrum = np.abs(np.fft.rfft(interferogram))\nfreqs = np.fft.rfftfreq(delays.size, delays[1] - delays[0])\npeak = freqs[np.argmax(spectrum)]\nprint(f\"\\nrecovered peak wavelength = {1 / peak * 1e9:.1f} nm   (input {lam0 * 1e9:.0f} nm)\")\nprint(\"The Fourier transform of the interferogram is the spectrum: that is an FTIR spectrometer.\")\n```\n\n## The Michelson interferometer\n\nMove one mirror by $\\lambda/2$ and the path changes by $\\lambda$, shifting the pattern by one fringe. Counting fringes measures distance in units of wavelength.\n\n```python\nimport numpy as np\n\nlam = 633e-9\nprint(f\"{'mirror move':>14s}{'fringes counted':>18s}\")\nfor d_um in [0.3165, 1, 10, 100, 1000]:\n    print(f\"{d_um:>12.4f}um{2 * d_um * 1e-6 / lam:>18.2f}\")\n\nprint(f\"\\none fringe = {lam / 2 * 1e9:.1f} nm of mirror movement\")\nprint(f\"counting to 1/100 fringe gives {lam / 200 * 1e12:.1f} pm resolution\")\nprint(\"\\nLIGO pushes this much further: with 4 km arms, 300 kW of circulating power,\")\nprint(\"and squeezed light, it resolves strains of 1e-21, about 1e-18 m of arm length.\")\n```\n\n## Spatial coherence and stellar interferometry\n\nA source of finite angular size $\\theta$ stays spatially coherent across a baseline of about $\\lambda/\\theta$. Turning that round measures the size of stars.\n\n```python\nimport numpy as np\n\nlam = 550e-9\nobjects = [\n    (\"the Sun (from Earth)\", np.deg2rad(0.53)),\n    (\"Betelgeuse\", np.deg2rad(0.045 / 3600)),\n    (\"a typical star\", np.deg2rad(0.001 / 3600)),\n    (\"a 1 mm pinhole at 10 m\", 1e-4),\n]\nprint(f\"{'source':26s}{'angular size':>16s}{'coherence baseline':>21s}\")\nfor name, theta in objects:\n    d = 1.22 * lam / theta\n    unit = f\"{d * 1000:.3f} mm\" if d < 1 else f\"{d:.2f} m\"\n    print(f\"{name:26s}{np.rad2deg(theta) * 3600:>13.5f}\\\"{unit:>21s}\")\nprint(\"\\nMichelson measured Betelgeuse in 1920 with a 6 m baseline, the first\")\nprint(\"measurement of a star's diameter, using nothing but fringe visibility.\")\n```\n\n## Speckle\n\nCoherent light scattered from a rough surface interferes with itself, producing the grainy pattern you see from a laser pointer. Its statistics are exactly exponential.\n\n```python\nimport numpy as np\n\nrng = np.random.default_rng(4)\nn = 20000\n# sum many random-phase contributions: real and imaginary parts become Gaussian\namp = rng.normal(0, 1, n) + 1j * rng.normal(0, 1, n)\nI = np.abs(amp) ** 2\n\nprint(f\"mean intensity     = {I.mean():.4f}\")\nprint(f\"standard deviation = {I.std():.4f}\")\nprint(f\"contrast (sigma/mean) = {I.std() / I.mean():.4f}   (theory: exactly 1)\")\nprint(\"\\nfraction of the field darker than a threshold:\")\nfor f in [0.1, 0.5, 1.0, 2.0, 3.0]:\n    print(f\"  I < {f:.1f} <I>: measured {np.mean(I < f * I.mean()):.4f}   \"\n          f\"theory {1 - np.exp(-f):.4f}\")\nprint(\"\\nFully developed speckle always has 100% contrast, which is why laser projectors\")\nprint(\"need moving diffusers to average it away.\")\n```\n\n> [!NOTE]\n> Coherence is not a property of light alone but of light *and* the measurement. Sunlight is coherent enough to make fringes if you first pass it through a pinhole and a filter, which is exactly what Young did in 1801.",
+      "quiz": {
+        "title": "Coherence",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Coherence length is roughly:",
+            "options": [
+              "lambda squared divided by the bandwidth in wavelength",
+              "lambda times the bandwidth",
+              "The source diameter",
+              "The detector size"
+            ],
+            "answer": "lambda squared divided by the bandwidth in wavelength"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Moving one Michelson mirror by half a wavelength shifts the pattern by:",
+            "options": [
+              "Half a fringe",
+              "One fringe",
+              "Two fringes",
+              "Nothing"
+            ],
+            "answer": "One fringe"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Fully developed laser speckle has an intensity contrast of about 1.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The Fourier transform of an interferogram gives the source's ____.",
+            "options": [],
+            "answer": "spectrum"
+          }
+        ]
+      },
+      "order": 5
+    },
+    {
+      "slug": "fourier-optics-and-beam-propagation",
+      "title": "Fourier Optics and Beam Propagation",
+      "content": "# Fourier Optics and Beam Propagation\n\nFree space is a Fourier transformer. Once you see that, apertures, lenses, imaging, and spatial filtering all become the same operation with different masks.\n\n## The far field is a Fourier transform\n\nThe Fraunhofer pattern of an aperture is the Fourier transform of its transmission function. Compute one with an FFT and compare it against the analytic sinc.\n\n```python\nimport numpy as np\n\nN = 4096\nextent = 2e-3\nx = np.linspace(-extent / 2, extent / 2, N)\ndx = x[1] - x[0]\nlam = 633e-9\n\naperture = np.where(np.abs(x) < 50e-6 / 2, 1.0, 0.0)      # a 50 um slit\nfar = np.fft.fftshift(np.fft.fft(np.fft.ifftshift(aperture)))\nfx = np.fft.fftshift(np.fft.fftfreq(N, dx))\ntheta = np.arcsin(np.clip(fx * lam, -1, 1))\n\nI = np.abs(far) ** 2\nI /= I.max()\n\nprint(f\"{'angle (deg)':>13s}{'FFT result':>13s}{'sinc^2':>11s}\")\nfor deg in [0, 0.4, 0.72, 1.0, 1.45]:\n    idx = np.argmin(np.abs(np.rad2deg(theta) - deg))\n    beta = np.pi * 50e-6 * np.sin(theta[idx]) / lam\n    analytic = 1.0 if abs(beta) < 1e-9 else (np.sin(beta) / beta) ** 2\n    print(f\"{deg:>13.2f}{I[idx]:>13.5f}{analytic:>11.5f}\")\nprint(\"\\nThe first null sits at lambda/a =\", f\"{np.rad2deg(np.arcsin(lam / 50e-6)):.3f} degrees.\")\n```\n\n## Propagation by the angular spectrum method\n\nDecompose a field into plane waves, propagate each by its own phase, transform back. This is exact for scalar fields and is the workhorse of modern optical simulation.\n\n```python\nimport numpy as np\n\ndef propagate(field, dx, distance, lam):\n    \"\"\"Angular-spectrum propagation of a 1D complex field.\"\"\"\n    N = field.size\n    fx = np.fft.fftfreq(N, dx)\n    arg = (1 / lam) ** 2 - fx**2\n    kz = 2 * np.pi * np.sqrt(np.maximum(arg, 0))\n    transfer = np.where(arg > 0, np.exp(1j * kz * distance), 0.0)\n    return np.fft.ifft(np.fft.fft(field) * transfer)\n\nN, extent, lam = 8192, 4e-3, 633e-9\nx = np.linspace(-extent / 2, extent / 2, N)\ndx = x[1] - x[0]\nw0 = 100e-6\nfield = np.exp(-(x / w0) ** 2).astype(complex)      # a Gaussian beam waist\n\nzR = np.pi * w0**2 / lam\nprint(f\"Rayleigh range zR = {zR * 1000:.2f} mm\\n\")\nprint(f\"{'z (mm)':>9s}{'measured width':>17s}{'theory w(z)':>14s}\")\nfor z in [0, zR, 2 * zR, 5 * zR]:\n    out = propagate(field, dx, z, lam)\n    I = np.abs(out) ** 2\n    width = 2 * np.sqrt(np.sum(I * x**2) / np.sum(I))       # 1/e^2 radius estimate\n    theory = w0 * np.sqrt(1 + (z / zR) ** 2)\n    print(f\"{z * 1000:>9.3f}{width * 1e6:>15.2f}um{theory * 1e6:>12.2f}um\")\nprint(\"\\nA beam confined to 100 um spreads measurably after a few millimetres.\")\nprint(\"Tighter focus means faster divergence, always.\")\n```\n\n## Gaussian beams\n\nThe Gaussian beam is the mode a laser actually emits, and three numbers, waist, Rayleigh range, and divergence, describe it entirely.\n\n```python\nimport numpy as np\n\ndef beam(w0, lam):\n    zR = np.pi * w0**2 / lam\n    return zR, lam / (np.pi * w0)\n\nlam = 1064e-9\nprint(f\"{'waist w0':>11s}{'Rayleigh range':>17s}{'far-field divergence':>23s}\")\nfor w0_um in [5, 50, 500, 5000]:\n    zR, theta = beam(w0_um * 1e-6, lam)\n    unit = f\"{zR * 1e6:.1f} um\" if zR < 1e-3 else f\"{zR * 1000:.2f} mm\" if zR < 1 else f\"{zR:.2f} m\"\n    print(f\"{w0_um:>9d}um{unit:>17s}{np.rad2deg(theta) * 1000:>20.4f} mrad\")\n\nprint(\"\\nfocusing with a lens: w_focus = lambda f / (pi w_in)\")\nfor f_mm, w_in_mm in [(100, 1), (100, 5), (10, 5), (4, 5)]:\n    w_focus = lam * (f_mm * 1e-3) / (np.pi * w_in_mm * 1e-3)\n    print(f\"  f = {f_mm:3d} mm, input radius {w_in_mm} mm -> focal spot {w_focus * 1e6:.2f} um\")\nprint(\"A bigger input beam gives a smaller focus, which is why high-power\")\nprint(\"laser systems expand the beam before the final lens.\")\n```\n\n## Spatial filtering and the 4f system\n\nA lens puts the Fourier transform in its back focal plane. Blocking part of that plane edits the image's spatial frequencies directly.\n\n```python\nimport numpy as np\n\nN = 512\nx = np.linspace(-1, 1, N)\nsignal = (np.abs(x) < 0.3).astype(float)                       # a clean bar\nsignal += 0.25 * np.sin(2 * np.pi * 60 * x)                    # high-frequency noise\n\nspectrum = np.fft.fftshift(np.fft.fft(signal))\nfreqs = np.fft.fftshift(np.fft.fftfreq(N, x[1] - x[0]))\n\nfor cutoff in [200, 60, 20, 5]:\n    mask = np.abs(freqs) < cutoff\n    filtered = np.real(np.fft.ifft(np.fft.ifftshift(spectrum * mask)))\n    noise = np.std(filtered[np.abs(x) > 0.5])\n    edge = filtered[np.argmin(np.abs(x - 0.3))]\n    print(f\"cutoff {cutoff:4d}: residual noise {noise:.4f}   edge value {edge:.4f}\")\nprint(\"\\nA tight low-pass removes the noise but rounds the edges: resolution and\")\nprint(\"noise rejection trade against each other, in optics exactly as in signal processing.\")\n```\n\n## The diffraction limit of imaging\n\nA lens of aperture $D$ passes only spatial frequencies below $D/\\lambda f$. That cutoff is the resolution limit, and it is why immersion oil and short wavelengths run modern lithography.\n\n```python\nimport numpy as np\n\ndef resolution(NA, lam):\n    return 0.61 * lam / NA\n\nsystems = [\n    (\"dry objective\", 0.95, 550e-9),\n    (\"oil immersion\", 1.40, 550e-9),\n    (\"UV microscope\", 1.40, 250e-9),\n    (\"193 nm lithography (dry)\", 0.93, 193e-9),\n    (\"193 nm immersion\", 1.35, 193e-9),\n    (\"EUV lithography\", 0.33, 13.5e-9),\n]\nprint(f\"{'system':28s}{'NA':>7s}{'lambda (nm)':>13s}{'resolution (nm)':>18s}\")\nfor name, NA, lam in systems:\n    print(f\"{name:28s}{NA:>7.2f}{lam * 1e9:>13.1f}{resolution(NA, lam) * 1e9:>18.1f}\")\nprint(\"\\nEvery generation of chip manufacturing is a fight against this one formula:\")\nprint(\"raise NA, shorten lambda, or give up and print the same feature twice.\")\n```\n\n> [!TIP]\n> The angular spectrum method is only twenty lines and handles apertures, lenses, and free space uniformly. If you build one function well, most of wave optics becomes a matter of choosing masks.",
+      "quiz": {
+        "title": "Fourier Optics",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The Fraunhofer diffraction pattern of an aperture is:",
+            "options": [
+              "Its autocorrelation",
+              "Its Fourier transform",
+              "Its derivative",
+              "Its convolution with a Gaussian"
+            ],
+            "answer": "Its Fourier transform"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "To get a smaller focal spot with a given lens, you should:",
+            "options": [
+              "Shrink the input beam",
+              "Expand the input beam",
+              "Use a longer wavelength",
+              "Move the lens closer"
+            ],
+            "answer": "Expand the input beam"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A lens forms the Fourier transform of an object in its back focal plane.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The distance over which a Gaussian beam's area doubles is called the ____ range.",
+            "options": [],
+            "answer": "Rayleigh"
+          }
+        ]
+      },
+      "order": 6
+    },
+    {
+      "slug": "final-project-a-wave-optics-simulator",
+      "title": "Final Project: A Wave Optics Simulator",
+      "content": "# Final Project: A Wave Optics Simulator\n\nBuild `waveoptics.py`, a library that propagates fields, applies masks, and measures what a detector would see.\n\n## What to build\n\n**Interference and diffraction**\n1. `double_slit(lam, d, a, screen_distance, y)`, combining the fringe term and the diffraction envelope, with missing orders identified automatically.\n2. `grating(lam, d, N, theta)`, returning the intensity pattern and the resolving power.\n3. `airy(D, lam, theta)` for a circular aperture, plus `rayleigh_limit(D, lam)`.\n4. `thin_film(t, n_film, n_above, n_below, lam)`, handling the pi phase shifts correctly.\n\n**Polarisation**\n5. `jones(state)` constructors for linear, circular, and elliptical light.\n6. `polariser(angle)` and `waveplate(retardation, axis)` matrices.\n7. `analyse(state)`, returning the polarisation ellipse's orientation, ellipticity, and handedness.\n\n**Propagation**\n8. `propagate(field, dx, z, lam)` by the angular spectrum method, in 1D and then in 2D.\n9. `lens(field, x, focal_length, lam)`, applying the quadratic phase.\n10. `psf(aperture_mask, lam, f)`, giving the point spread function of an arbitrary pupil.\n\n## A skeleton to start from\n\n```python\nimport numpy as np\n\n\ndef propagate(field, dx, z, lam):\n    \"\"\"Angular-spectrum propagation. Works for 1D or 2D fields.\"\"\"\n    F = np.fft.fftn(field)\n    freqs = [np.fft.fftfreq(n, dx) for n in field.shape]\n    grids = np.meshgrid(*freqs, indexing=\"ij\")\n    f2 = sum(g**2 for g in grids)\n    arg = (1 / lam) ** 2 - f2\n    kz = 2 * np.pi * np.sqrt(np.maximum(arg, 0))\n    return np.fft.ifftn(F * np.where(arg > 0, np.exp(1j * kz * z), 0.0))\n\n\nN, extent, lam = 1024, 2e-3, 633e-9\nx = np.linspace(-extent / 2, extent / 2, N)\ndx = x[1] - x[0]\n\nslit = (np.abs(x) < 25e-6).astype(complex)\nfor z in [1e-3, 1e-2, 1e-1, 1.0]:\n    out = np.abs(propagate(slit, dx, z, lam)) ** 2\n    fresnel = (25e-6) ** 2 / (lam * z)\n    spread = lam * z / 50e-6                       # far-field half-width of the pattern\n    fits = \"ok\" if 2 * spread < extent else \"ALIASED: window too small\"\n    print(f\"z = {z:6.3f} m   Fresnel number {fresnel:8.3f}   \"\n          f\"pattern half-width {spread * 1e3:8.3f} mm   {fits}\")\nprint(f\"\\nThe grid spans {extent * 1e3:.1f} mm. Once the pattern outgrows it, the FFT wraps\")\nprint(\"it around and every number after that is fiction. Check this before trusting a result.\")\n```\n\n## Required experiments\n\n**Reproduce the missing orders.** For $d/a = 3, 4, 5$, show which interference orders vanish and confirm they are exactly the ones landing on diffraction nulls.\n\n**Poisson's bright spot.** Propagate a plane wave past a circular obstruction in 2D and show that the centre of the shadow is bright. Report the on-axis intensity relative to the unobstructed beam.\n\n**Resolve a double star.** Build two incoherent point sources separated by $0.5$, $1.0$, and $1.5$ Rayleigh limits, form the image through a circular pupil, and decide in each case whether the dip between the peaks is detectable. State your criterion explicitly.\n\n**Fourier-transform spectroscopy.** Synthesise an interferogram from a two-line source, add noise, and recover both wavelengths. Report how the recovered line separation degrades as you shorten the scan.\n\n**Coherent versus incoherent imaging.** Image the same object twice, once with a coherent field and once by adding intensities from many random phases, and compare the edge response. Explain the ringing you see in one and not the other.\n\n## Stretch goals\n\n- Add aberrations to your pupil function (defocus, coma, spherical) as Zernike phase terms and show how the point spread function degrades with each.\n- Implement Gerchberg-Saxton phase retrieval: recover an unknown phase from two intensity measurements and report how many iterations you need.\n- Simulate a hologram: record the interference of an object beam and a reference, then reconstruct the object numerically.\n\n## What to submit\n\n`waveoptics.py`, a driver that runs every experiment, and a write-up of about a page covering:\n\n- your Poisson spot result with the on-axis intensity ratio, and the grid resolution you needed before it appeared\n- the separation at which you could reliably resolve your double star, and the criterion you used\n- one numerical artefact you hit (aliasing, an under-sampled aperture, or wraparound in the FFT) and how you diagnosed it\n\n> [!TIP]\n> Most wave optics bugs are sampling bugs. If the pattern looks wrong, check that your grid resolves the highest spatial frequency in the field: at least two samples per fringe, everywhere, including at the aperture edges.",
+      "requiresSubmission": true,
+      "order": 7
+    }
+  ]
+}

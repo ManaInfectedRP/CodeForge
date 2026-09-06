@@ -1,0 +1,335 @@
+{
+  "slug": "quantum-mechanics",
+  "title": "Quantum Mechanics",
+  "description": "Wavefunctions and operators, bound states and the harmonic oscillator, spin and measurement, the hydrogen atom, tunnelling and decoherence, with every spectrum and probability computed in the browser.",
+  "pathSlug": "quantum-mechanics",
+  "pathName": "Quantum Mechanics",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "where-classical-physics-breaks",
+      "title": "Where Classical Physics Breaks",
+      "content": "# Where Classical Physics Breaks\n\nQuantum mechanics did not arrive because someone wanted a stranger theory. It arrived because experiments refused to fit, and every attempt to patch classical physics made the fit worse.\n\n## The photoelectric effect\n\nShine light on a metal and electrons come out, but only if the light's **frequency** is high enough. Brightness does not help: a dim blue lamp ejects electrons, an intensely bright red one does not. Einstein's explanation is that light arrives in lumps of energy $E = hf$, and each lump has to pay the metal's work function $\\phi$ before the leftover becomes kinetic energy:\n\n$$K_{\\max} = hf - \\phi$$\n\n```python\nh = 6.62607015e-34      # J s\ne = 1.602176634e-19     # C\nc = 299792458.0         # m/s\n\nwork_function_eV = {\"cesium\": 2.14, \"sodium\": 2.36, \"zinc\": 4.33, \"platinum\": 5.65}\nwavelengths_nm = [650, 550, 450, 300, 200]\n\nprint(f\"{'metal':10s}\" + \"\".join(f\"{w:>7d} nm\" for w in wavelengths_nm))\nfor metal, phi in work_function_eV.items():\n    row = f\"{metal:10s}\"\n    for nm in wavelengths_nm:\n        photon_eV = (h * c / (nm * 1e-9)) / e\n        k = photon_eV - phi\n        row += f\"{k:>10.2f}\" if k > 0 else f\"{'--':>10s}\"\n    print(row)\nprint(\"\\n'--' means no electrons at any brightness: the photon cannot pay the work function.\")\n```\n\nThe threshold is sharp, and it depends only on frequency. Classical waves deposit energy continuously, so a dim light should just need more time. It never works that way.\n\n## Measuring Planck's constant from a straight line\n\nThe slope of $K_{\\max}$ against $f$ is $h$, the same for every metal. Only the intercept changes.\n\n```python\nimport numpy as np\n\nh_true, e = 6.62607015e-34, 1.602176634e-19\nc = 299792458.0\nphi_eV = 2.36  # sodium\n\nfreqs = c / (np.array([200.0, 250, 300, 350, 400, 450]) * 1e-9)\nrng = np.random.default_rng(7)\nk_eV = freqs * h_true / e - phi_eV + rng.normal(0, 0.02, freqs.size)  # noisy measurements\n\nslope, intercept = np.polyfit(freqs, k_eV, 1)\nprint(f\"fitted slope     = {slope * e:.4e} J s   (true h = {h_true:.4e})\")\nprint(f\"fitted intercept = {intercept:.3f} eV     (true -phi = {-phi_eV:.3f})\")\nprint(f\"threshold frequency = {-intercept / slope:.3e} Hz\")\n```\n\n## Matter waves\n\nDe Broglie ran the argument backwards: if waves carry momentum in lumps, then lumps of matter carry a wavelength $\\lambda = h/p$. Whether that wavelength matters depends entirely on what it is compared to.\n\n```python\nh = 6.62607015e-34\ne = 1.602176634e-19\nm_e, m_n = 9.1093837015e-31, 1.67492749804e-27\n\nitems = [\n    (\"electron at 1 eV\",   m_e, (2 * 1.0 * e / m_e) ** 0.5),\n    (\"electron at 100 eV\", m_e, (2 * 100 * e / m_e) ** 0.5),\n    (\"thermal neutron\",    m_n, 2200.0),\n    (\"dust grain (1 ug)\",  1e-9, 1e-3),\n    (\"baseball\",           0.145, 40.0),\n]\nfor name, m, v in items:\n    lam = h / (m * v)\n    print(f\"{name:20s} lambda = {lam:.3e} m   ({lam / 1e-10:.3e} angstrom)\")\nprint(\"\\nAtomic spacings are ~1 angstrom, so 100 eV electrons diffract off crystals.\")\nprint(\"A baseball's wavelength is ~1e-34 m: no aperture in the universe will diffract it.\")\n```\n\nThat last line is the honest version of \"quantum effects only matter for small things\". Nothing switches off; the wavelength just becomes unmeasurably small compared with everything around it.\n\n## Amplitudes, not probabilities\n\nThe double slit is where the new arithmetic shows itself. Classically you would add probabilities. Quantum mechanically you add **complex amplitudes** and square at the very end, and the cross term is the interference.\n\n```python\nimport numpy as np\n\nwavelength = 500e-9\nslit_sep, screen = 20e-6, 1.0\ny = np.linspace(-0.04, 0.04, 9)\n\nr1 = np.sqrt(screen**2 + (y - slit_sep / 2) ** 2)\nr2 = np.sqrt(screen**2 + (y + slit_sep / 2) ** 2)\nk = 2 * np.pi / wavelength\n\na1 = np.exp(1j * k * r1)          # amplitude through slit 1\na2 = np.exp(1j * k * r2)          # amplitude through slit 2\n\nquantum = np.abs(a1 + a2) ** 2                  # add amplitudes, then square\nclassical = np.abs(a1) ** 2 + np.abs(a2) ** 2   # add probabilities\n\nprint(f\"{'y (mm)':>8s}{'add amplitudes':>17s}{'add probabilities':>20s}\")\nfor yi, q, cl in zip(y, quantum, classical):\n    print(f\"{yi * 1000:>8.1f}{q:>17.3f}{cl:>20.3f}\")\nprint(\"\\nThe second column dips toward zero and rises to 4. The third is flat at 2.\")\n```\n\nTwo open slits can give *less* light than one, which no probability calculation over independent paths can ever produce. The interference term $2\\,\\mathrm{Re}(a_1^* a_2)$ is the whole of quantum mechanics in miniature.\n\n## The size of the quantum\n\nOne number decides whether any of this is visible: the action of the process compared with $\\hbar$.\n\n```python\nhbar = 1.054571817e-34\n\nprocesses = [\n    (\"electron in an atom\", 9.1e-31, 1e-10, 2.2e6),\n    (\"atom in a solid\",     1.7e-26, 1e-11, 500.0),\n    (\"pendulum\",            0.1,     0.05,  0.5),\n]\nfor name, m, x, v in processes:\n    action = m * v * x\n    print(f\"{name:22s} action / hbar = {action / hbar:.2e}\")\nprint(\"\\nWhen action/hbar is ~1 you need quantum mechanics.\")\nprint(\"When it is 1e30, classical physics is exact enough.\")\n```\n\n> [!NOTE]\n> \"Wave-particle duality\" is a historical phrase, not a mechanism. A single object is described by one complex amplitude that propagates like a wave and is detected in discrete events. Nothing switches between two natures.",
+      "quiz": {
+        "title": "The Quantum Threshold",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In the photoelectric effect, increasing the light's intensity while keeping its frequency below threshold:",
+            "options": [
+              "Ejects more electrons",
+              "Ejects faster electrons",
+              "Ejects no electrons at all",
+              "Ejects electrons only after a delay"
+            ],
+            "answer": "Ejects no electrons at all"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The de Broglie wavelength of a baseball is about 1e-34 m. This means:",
+            "options": [
+              "Baseballs obey classical, not quantum, laws",
+              "The wavelength is far too small to produce observable diffraction",
+              "Baseballs have no wavelength",
+              "The formula does not apply to composite objects"
+            ],
+            "answer": "The wavelength is far too small to produce observable diffraction"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Opening a second slit can reduce the intensity at some points on the screen.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "In quantum mechanics you add complex ____ and square at the end, rather than adding probabilities.",
+            "options": [],
+            "answer": "amplitudes"
+          }
+        ]
+      },
+      "order": 1
+    },
+    {
+      "slug": "wavefunctions-operators-and-the-schrodinger-equation",
+      "title": "Wavefunctions, Operators, and the Schrödinger Equation",
+      "content": "# Wavefunctions, Operators, and the Schrödinger Equation\n\nA quantum state is a vector. Everything else, operators, expectation values, uncertainty, follows from linear algebra you already know, applied to a space of functions.\n\n## The wavefunction and its normalisation\n\nThe state of a particle in one dimension is a complex function $\\psi(x)$, and $|\\psi(x)|^2$ is a probability *density*. It has to integrate to 1.\n\n```python\nimport numpy as np\n\nx = np.linspace(-10, 10, 2001)\ndx = x[1] - x[0]\n\ndef normalise(psi):\n    return psi / np.sqrt(np.sum(np.abs(psi) ** 2) * dx)\n\ngaussian = normalise(np.exp(-x**2 / 2).astype(complex))\npacket   = normalise(np.exp(-(x - 2)**2 / 4) * np.exp(1j * 3 * x))\n\nfor name, psi in [(\"gaussian\", gaussian), (\"moving packet\", packet)]:\n    total = np.sum(np.abs(psi) ** 2) * dx\n    mean_x = np.sum(x * np.abs(psi) ** 2) * dx\n    print(f\"{name:14s} integral |psi|^2 = {total:.6f}   <x> = {mean_x:+.4f}\")\n```\n\nThe complex phase $e^{i3x}$ changed nothing about $|\\psi|^2$, and yet it is the difference between a particle sitting still and one moving to the right. Phase is not decoration; momentum lives there.\n\n## Operators are matrices\n\nOn a grid, position is a diagonal matrix and momentum is a finite-difference derivative. Expectation values are then just $\\langle\\psi|\\hat{A}|\\psi\\rangle$.\n\n```python\nimport numpy as np\n\nN = 400\nx = np.linspace(-8, 8, N)\ndx = x[1] - x[0]\nhbar = 1.0\n\nX = np.diag(x).astype(complex)\nD = (np.diag(np.ones(N - 1), 1) - np.diag(np.ones(N - 1), -1)) / (2 * dx)\nP = -1j * hbar * D\n\npsi = np.exp(-(x - 1.0) ** 2 / 2) * np.exp(1j * 2.0 * x)\npsi /= np.sqrt(np.vdot(psi, psi).real * dx)\n\ndef expect(A, psi):\n    return (np.vdot(psi, A @ psi) * dx).real\n\nprint(f\"<x>   = {expect(X, psi):+.4f}   (packet centred at x = 1)\")\nprint(f\"<p>   = {expect(P, psi):+.4f}   (phase e^(2ix) means p = 2 hbar)\")\nprint(f\"<x^2> = {expect(X @ X, psi):.4f}\")\nprint(f\"<p^2> = {expect(P @ P, psi):.4f}\")\n```\n\n## Commutators and uncertainty\n\nTwo observables can be measured together only if their operators commute. The canonical pair does not:\n\n$$[\\hat{x}, \\hat{p}] = i\\hbar \\quad\\Longrightarrow\\quad \\sigma_x \\sigma_p \\ge \\frac{\\hbar}{2}$$\n\n```python\nimport numpy as np\n\nN = 400\nx = np.linspace(-8, 8, N)\ndx = x[1] - x[0]\nX = np.diag(x).astype(complex)\nP = -1j * (np.diag(np.ones(N - 1), 1) - np.diag(np.ones(N - 1), -1)) / (2 * dx)\n\ncomm = X @ P - P @ X\nprint(\"diagonal of [x,p] near the middle (should be i):\", np.round(np.diag(comm)[198:202], 4))\n\ndef spread(A, psi):\n    a1 = (np.vdot(psi, A @ psi) * dx).real\n    a2 = (np.vdot(psi, A @ (A @ psi)) * dx).real\n    return np.sqrt(max(a2 - a1**2, 0))\n\nprint(f\"\\n{'width a':>9s}{'sigma_x':>10s}{'sigma_p':>10s}{'product':>10s}\")\nfor a in [0.4, 0.7, 1.0, 1.5, 2.5]:\n    psi = np.exp(-x**2 / (2 * a**2)).astype(complex)\n    psi /= np.sqrt(np.vdot(psi, psi).real * dx)\n    sx, sp = spread(X, psi), spread(P, psi)\n    print(f\"{a:>9.2f}{sx:>10.4f}{sp:>10.4f}{sx * sp:>10.4f}\")\nprint(\"\\nEvery product sits at or above 0.5 = hbar/2, and the Gaussian saturates it.\")\n```\n\nUncertainty is not measurement clumsiness. A narrow $|\\psi|^2$ *is* a broad superposition of momenta; the two widths are two views of the same function.\n\n## The Schrödinger equation\n\nThe state evolves by\n\n$$i\\hbar \\frac{\\partial \\psi}{\\partial t} = \\hat{H}\\psi, \\qquad \\hat{H} = -\\frac{\\hbar^2}{2m}\\frac{\\partial^2}{\\partial x^2} + V(x)$$\n\nStationary states are the eigenvectors of $\\hat{H}$: they evolve only by a phase $e^{-iEt/\\hbar}$, so every probability built from them is frozen in time.\n\n```python\nimport numpy as np\n\nN = 600\nL = 1.0\nx = np.linspace(0, L, N + 2)[1:-1]   # hard walls at both ends\ndx = x[1] - x[0]\nhbar = m = 1.0\n\nlap = np.diag(np.full(N, -2.0)) + np.diag(np.ones(N - 1), 1) + np.diag(np.ones(N - 1), -1)\nH = -hbar**2 / (2 * m * dx**2) * lap      # V = 0 inside the box\nE, states = np.linalg.eigh(H)\n\nprint(f\"{'n':>3s}{'numerical E':>14s}{'analytic E':>13s}\")\nfor n in range(1, 6):\n    analytic = (n * np.pi * hbar) ** 2 / (2 * m * L**2)\n    print(f\"{n:>3d}{E[n-1]:>14.4f}{analytic:>13.4f}\")\n```\n\nDiscrete energies came out of nothing but a boundary condition. Confinement plus a wave equation gives quantisation; no extra postulate is needed.\n\n## Superposition and time dependence\n\nA sum of two stationary states is not stationary: the relative phase rotates at the beat frequency $(E_2 - E_1)/\\hbar$.\n\n```python\nimport numpy as np\n\nL, hbar, m = 1.0, 1.0, 1.0\nx = np.linspace(0, L, 401)\ndx = x[1] - x[0]\n\ndef eigen(n):\n    return np.sqrt(2 / L) * np.sin(n * np.pi * x / L), (n * np.pi * hbar) ** 2 / (2 * m * L**2)\n\np1, E1 = eigen(1)\np2, E2 = eigen(2)\nperiod = 2 * np.pi * hbar / (E2 - E1)\n\nprint(f\"beat period = {period:.4f}\")\nfor t in [0, period / 4, period / 2, 3 * period / 4]:\n    psi = (p1 * np.exp(-1j * E1 * t / hbar) + p2 * np.exp(-1j * E2 * t / hbar)) / np.sqrt(2)\n    density = np.abs(psi) ** 2\n    mean_x = np.sum(x * density) * dx\n    print(f\"  t = {t:6.3f}   <x> = {mean_x:.4f}\")\nprint(\"\\nThe probability sloshes from side to side, driven purely by the energy difference.\")\n```\n\n> [!TIP]\n> When a problem asks \"what happens next\", expand the state in energy eigenstates, attach $e^{-iE_nt/\\hbar}$ to each, and re-sum. That three-step recipe solves most time-dependent questions in an introductory course.",
+      "quiz": {
+        "title": "States and Operators",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Multiplying a wavefunction by the factor e^(ikx):",
+            "options": [
+              "Changes |psi|^2 but not <p>",
+              "Changes <p> but not |psi|^2",
+              "Changes neither",
+              "Makes the state unnormalised"
+            ],
+            "answer": "Changes <p> but not |psi|^2"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Energy eigenstates are called stationary because:",
+            "options": [
+              "The particle does not move",
+              "They evolve only by an overall phase, so |psi|^2 is time-independent",
+              "Their energy is zero",
+              "They have no momentum"
+            ],
+            "answer": "They evolve only by an overall phase, so |psi|^2 is time-independent"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The uncertainty principle is a statement about clumsy measuring instruments.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Two observables can have simultaneous definite values only if their ____ vanishes.",
+            "options": [],
+            "answer": "commutator"
+          }
+        ]
+      },
+      "order": 2
+    },
+    {
+      "slug": "bound-states-boxes-wells-and-the-oscillator",
+      "title": "Bound States: Boxes, Wells, and the Oscillator",
+      "content": "# Bound States: Boxes, Wells, and the Oscillator\n\nAlmost every bound-state problem in a first course is the same computation with a different $V(x)$. Build the Hamiltonian once and the potential becomes an input.\n\n## One solver, many potentials\n\n```python\nimport numpy as np\n\nhbar = m = 1.0\n\ndef solve(V, x):\n    \"\"\"Eigenvalues and eigenvectors of -hbar^2/2m d2/dx2 + V, with hard walls at the edges.\"\"\"\n    N = x.size\n    dx = x[1] - x[0]\n    off = np.ones(N - 1)\n    lap = np.diag(np.full(N, -2.0)) + np.diag(off, 1) + np.diag(off, -1)\n    T = -hbar**2 / (2 * m * dx**2) * lap\n    E, psi = np.linalg.eigh(T + np.diag(V))\n    return E, psi / np.sqrt(dx)          # normalised columns\n\nx = np.linspace(-10, 10, 800)\nE, _ = solve(0.5 * x**2, x)\nprint(\"harmonic oscillator, first six levels (exact: n + 1/2):\")\nfor n in range(6):\n    print(f\"  n = {n}   E = {E[n]:.6f}   error = {E[n] - (n + 0.5):+.2e}\")\n```\n\nEqual spacing of exactly $\\hbar\\omega$ is the signature of the oscillator, and it is why photons, phonons, and vibrating molecules all end up with ladders of evenly spaced levels.\n\n## The finite well: how many bound states?\n\nA finite well of depth $V_0$ and width $a$ holds a limited number of states, controlled by the dimensionless combination $\\sqrt{2mV_0a^2/\\hbar^2}$.\n\n```python\nimport numpy as np\n\nhbar = m = 1.0\nx = np.linspace(-20, 20, 1600)\ndx = x[1] - x[0]\noff = np.ones(x.size - 1)\nlap = np.diag(np.full(x.size, -2.0)) + np.diag(off, 1) + np.diag(off, -1)\nT = -hbar**2 / (2 * m * dx**2) * lap\n\nwidth = 2.0\nprint(f\"{'depth V0':>10s}{'bound states':>14s}{'ground E':>12s}\")\nfor V0 in [0.5, 2.0, 8.0, 32.0, 128.0]:\n    V = np.where(np.abs(x) < width / 2, -V0, 0.0)\n    E = np.linalg.eigvalsh(T + np.diag(V))\n    bound = E[E < 0]\n    print(f\"{V0:>10.1f}{bound.size:>14d}{bound[0]:>12.4f}\")\nprint(\"\\nA one-dimensional well always holds at least one bound state, however shallow.\")\n```\n\nThat last fact is genuinely one-dimensional: in three dimensions a weak enough well binds nothing at all.\n\n## Nodes, symmetry, and why the ground state is smooth\n\nOrder the levels by energy and the $n$-th one has $n-1$ nodes. Symmetric potentials give alternating even and odd states.\n\n```python\nimport numpy as np\n\nhbar = m = 1.0\nx = np.linspace(-8, 8, 700)\ndx = x[1] - x[0]\noff = np.ones(x.size - 1)\nlap = np.diag(np.full(x.size, -2.0)) + np.diag(off, 1) + np.diag(off, -1)\nT = -hbar**2 / (2 * m * dx**2) * lap\nE, psi = np.linalg.eigh(T + np.diag(0.5 * x**2))\n\nprint(f\"{'n':>3s}{'E':>10s}{'nodes':>8s}{'parity':>9s}\")\nfor n in range(6):\n    v = psi[:, n]\n    v = v * np.sign(v[np.argmax(np.abs(v))])\n    interior = v[np.abs(v) > 1e-6 * np.abs(v).max()]\n    nodes = int(np.sum(np.diff(np.sign(interior)) != 0))\n    parity = \"even\" if np.dot(v, v[::-1]) > 0 else \"odd\"\n    print(f\"{n:>3d}{E[n]:>10.4f}{nodes:>8d}{parity:>9s}\")\n```\n\nMore nodes means more curvature means more kinetic energy. The ground state is the smoothest function the boundary conditions allow, which is exactly what minimising energy means.\n\n## Leaking into the wall\n\nClassically a particle with $E < V$ cannot be found there at all. Quantum mechanically the wavefunction decays exponentially rather than stopping, so the probability leaks in.\n\n```python\nimport numpy as np\n\nhbar = m = 1.0\nx = np.linspace(-8, 8, 800)\ndx = x[1] - x[0]\noff = np.ones(x.size - 1)\nlap = np.diag(np.full(x.size, -2.0)) + np.diag(off, 1) + np.diag(off, -1)\nT = -hbar**2 / (2 * m * dx**2) * lap\nE, psi = np.linalg.eigh(T + np.diag(0.5 * x**2))\npsi = psi / np.sqrt(dx)\n\nfor n in [0, 1, 2, 5]:\n    turning = np.sqrt(2 * E[n])          # where V = E for V = x^2/2\n    density = psi[:, n] ** 2 * dx\n    outside = density[np.abs(x) > turning].sum()\n    print(f\"n = {n}   turning point |x| = {turning:.3f}   P(classically forbidden) = {outside:.4f}\")\nprint(\"\\nAbout 16% of the ground state lives where a classical particle could never be.\")\n```\n\n## Perturbing a level\n\nAdd a small term to $V$ and the levels shift by $\\langle n|\\Delta V|n\\rangle$ to first order. Comparing that estimate with exact diagonalisation shows where perturbation theory earns its keep and where it stops.\n\n```python\nimport numpy as np\n\nhbar = m = 1.0\nx = np.linspace(-8, 8, 700)\ndx = x[1] - x[0]\noff = np.ones(x.size - 1)\nlap = np.diag(np.full(x.size, -2.0)) + np.diag(off, 1) + np.diag(off, -1)\nT = -hbar**2 / (2 * m * dx**2) * lap\nE0, psi0 = np.linalg.eigh(T + np.diag(0.5 * x**2))\npsi0 = psi0 / np.sqrt(dx)\n\nprint(f\"{'lambda':>8s}{'exact shift':>14s}{'first order':>14s}{'rel error':>12s}\")\nfor lam in [0.001, 0.01, 0.05, 0.2]:\n    E_new = np.linalg.eigvalsh(T + np.diag(0.5 * x**2 + lam * x**4))\n    exact = E_new[0] - E0[0]\n    first = lam * np.sum(psi0[:, 0] ** 2 * x**4) * dx\n    print(f\"{lam:>8.3f}{exact:>14.6f}{first:>14.6f}{abs(first - exact) / abs(exact):>11.1%}\")\n```\n\n> [!NOTE]\n> Every number above came from one tridiagonal matrix. If you can write $V(x)$ as an array, you can find its spectrum, which is why numerical quantum mechanics is mostly a matter of setting up grids carefully.",
+      "quiz": {
+        "title": "Bound States",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The energy levels of a harmonic oscillator are:",
+            "options": [
+              "Proportional to n squared",
+              "Equally spaced by hbar times omega",
+              "Proportional to 1/n squared",
+              "Continuous"
+            ],
+            "answer": "Equally spaced by hbar times omega"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why does the ground state have no nodes?",
+            "options": [
+              "Nodes are forbidden by normalisation",
+              "Extra nodes mean extra curvature and therefore extra kinetic energy",
+              "Nodes only occur in odd states",
+              "The ground state has zero energy"
+            ],
+            "answer": "Extra nodes mean extra curvature and therefore extra kinetic energy"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A particle in a bound state has zero probability of being found beyond its classical turning point.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "To first order, a small perturbation shifts a level by the ____ value of the perturbation in that state.",
+            "options": [],
+            "answer": "expectation"
+          }
+        ]
+      },
+      "order": 3
+    },
+    {
+      "slug": "spin-qubits-and-measurement",
+      "title": "Spin, Qubits, and Measurement",
+      "content": "# Spin, Qubits, and Measurement\n\nSpin-1/2 is the smallest quantum system, and everything conceptually hard about quantum mechanics already appears in two dimensions: superposition, incompatible observables, collapse, and entanglement.\n\n## Two states, three operators\n\n```python\nimport numpy as np\n\nsx = np.array([[0, 1], [1, 0]], dtype=complex)\nsy = np.array([[0, -1j], [1j, 0]])\nsz = np.array([[1, 0], [0, -1]], dtype=complex)\n\nfor name, s in [(\"sx\", sx), (\"sy\", sy), (\"sz\", sz)]:\n    print(f\"{name}: eigenvalues {np.round(np.linalg.eigvalsh(s), 6)}  (always +/-1)\")\n\nprint(\"\\ncommutator [sx, sy] equals 2i * sz?\", np.allclose(sx @ sy - sy @ sx, 2j * sz))\nprint(\"anticommutator {sx, sy} equals 0?  \", np.allclose(sx @ sy + sy @ sx, 0))\n```\n\nBecause the three components do not commute, no state has definite $x$, $y$, and $z$ spin at once. A spin always points somewhere on the Bloch sphere, and the other two axes are then maximally uncertain.\n\n## Measurement statistics\n\nThe Born rule says the probability of outcome $a$ is $|\\langle a|\\psi\\rangle|^2$. Rather than assert it, sample it.\n\n```python\nimport numpy as np\n\nsx = np.array([[0, 1], [1, 0]], dtype=complex)\nsz = np.array([[1, 0], [0, -1]], dtype=complex)\n\ndef measure(state, operator, shots=20000, seed=0):\n    vals, vecs = np.linalg.eigh(operator)\n    probs = np.abs(vecs.conj().T @ state) ** 2\n    rng = np.random.default_rng(seed)\n    draws = rng.choice(vals, size=shots, p=probs / probs.sum())\n    return probs, draws.mean()\n\ntheta = np.pi / 3\nstate = np.array([np.cos(theta / 2), np.sin(theta / 2)], dtype=complex)\n\nfor name, op in [(\"Sz\", sz), (\"Sx\", sx)]:\n    probs, mean = measure(state, op)\n    print(f\"{name}: P(-1) = {probs[0]:.4f}, P(+1) = {probs[1]:.4f}, sampled mean = {mean:+.4f}\")\nprint(f\"\\npredicted <Sz> = cos(theta) = {np.cos(theta):+.4f}\")\nprint(f\"predicted <Sx> = sin(theta) = {np.sin(theta):+.4f}\")\n```\n\n## Sequential Stern-Gerlach\n\nMeasure $S_z$, then $S_x$, then $S_z$ again. The final measurement has forgotten the first one, which is the clearest demonstration that measurement changes the state.\n\n```python\nimport numpy as np\n\nrng = np.random.default_rng(1)\nplus_z  = np.array([1, 0], dtype=complex)\nminus_z = np.array([0, 1], dtype=complex)\nplus_x  = np.array([1, 1], dtype=complex) / np.sqrt(2)\nminus_x = np.array([1, -1], dtype=complex) / np.sqrt(2)\n\ndef project(state, basis):\n    \"\"\"Collapse onto one basis vector, chosen with the Born-rule probability.\"\"\"\n    probs = np.array([abs(np.vdot(b, state)) ** 2 for b in basis])\n    i = rng.choice(len(basis), p=probs / probs.sum())\n    return basis[i], i\n\ncounts = {\"up\": 0, \"down\": 0}\nfor _ in range(10000):\n    s = plus_z                                   # filtered to spin-up along z\n    s, _ = project(s, [plus_x, minus_x])         # measure Sx\n    _, i = project(s, [plus_z, minus_z])         # measure Sz again\n    counts[\"up\" if i == 0 else \"down\"] += 1\n\nprint(\"after Sz(up) -> Sx -> Sz:\", counts)\nprint(\"A beam that was purely spin-up comes back 50/50. The Sx measurement erased it.\")\n```\n\n## Rotations and Larmor precession\n\nA magnetic field makes the spin precess. Time evolution is a rotation on the Bloch sphere, generated by the Hamiltonian.\n\n```python\nimport numpy as np\n\nsx = np.array([[0, 1], [1, 0]], dtype=complex)\nsy = np.array([[0, -1j], [1j, 0]])\nsz = np.array([[1, 0], [0, -1]], dtype=complex)\n\ndef evolve(H, state, t):\n    \"\"\"exp(-iHt) applied by diagonalising H: exact, with no time-stepping error.\"\"\"\n    w, V = np.linalg.eigh(H)\n    return V @ (np.exp(-1j * w * t) * (V.conj().T @ state))\n\nomega = 2.0\nH = 0.5 * omega * sz                                    # field along z\nstate = np.array([1, 1], dtype=complex) / np.sqrt(2)    # starts along +x\n\nprint(f\"{'t':>7s}{'<Sx>':>9s}{'<Sy>':>9s}{'<Sz>':>9s}\")\nfor t in np.linspace(0, np.pi, 5):\n    s = evolve(H, state, t)\n    exp = [np.vdot(s, op @ s).real for op in (sx, sy, sz)]\n    print(f\"{t:>7.3f}{exp[0]:>9.4f}{exp[1]:>9.4f}{exp[2]:>9.4f}\")\nprint(\"\\n<Sz> stays 0, and the spin sweeps around the equator at the Larmor frequency.\")\n```\n\n## Entanglement\n\nTwo spins in the singlet state have no individual states at all. Every local measurement is random, and yet the two results are perfectly anticorrelated.\n\n```python\nimport numpy as np\n\nsinglet = np.array([0, 1, -1, 0], dtype=complex) / np.sqrt(2)   # |up,down> - |down,up>\n\ndef spin_along(theta):\n    c, s = np.cos(theta / 2), np.sin(theta / 2)\n    return np.array([c, s], dtype=complex), np.array([-s, c], dtype=complex)\n\ndef correlation(theta_a, theta_b):\n    a_plus, a_minus = spin_along(theta_a)\n    b_plus, b_minus = spin_along(theta_b)\n    total = 0.0\n    for va, a in [(+1, a_plus), (-1, a_minus)]:\n        for vb, b in [(+1, b_plus), (-1, b_minus)]:\n            amp = np.vdot(np.kron(a, b), singlet)\n            total += va * vb * abs(amp) ** 2\n    return total\n\nprint(f\"{'angle':>8s}{'E(a,b)':>10s}{'-cos':>9s}\")\nfor deg in [0, 45, 90, 135, 180]:\n    th = np.deg2rad(deg)\n    print(f\"{deg:>8d}{correlation(0, th):>10.4f}{-np.cos(th):>9.4f}\")\n\nS = (correlation(0, np.pi/4) - correlation(0, 3*np.pi/4)\n     + correlation(np.pi/2, np.pi/4) + correlation(np.pi/2, 3*np.pi/4))\nprint(f\"\\nCHSH |S| = {abs(S):.4f}, above the classical limit 2 (quantum max {2*np.sqrt(2):.4f})\")\n```\n\nThe CHSH value beats 2, which no theory with local pre-existing values can do. This is not a subtlety of interpretation; it is measured routinely in laboratories.\n\n> [!NOTE]\n> A qubit is exactly this: a spin-1/2 with the axes renamed. Everything in this lesson is directly the mathematics behind quantum computing gates and measurements.",
+      "quiz": {
+        "title": "Spin and Measurement",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "After measuring Sz then Sx on a spin-up beam, a second Sz measurement gives:",
+            "options": [
+              "Always up",
+              "Always down",
+              "50/50 up and down",
+              "It depends on the field strength"
+            ],
+            "answer": "50/50 up and down"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A CHSH value above 2 rules out:",
+            "options": [
+              "Quantum mechanics",
+              "Any theory with local pre-existing values",
+              "The Born rule",
+              "Entanglement"
+            ],
+            "answer": "Any theory with local pre-existing values"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A spin-1/2 particle can have definite values of Sx, Sy and Sz at the same time.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The rule that an outcome's probability is the squared modulus of its amplitude is the ____ rule.",
+            "options": [],
+            "answer": "Born"
+          }
+        ]
+      },
+      "order": 4
+    },
+    {
+      "slug": "angular-momentum-and-the-hydrogen-atom",
+      "title": "Angular Momentum and the Hydrogen Atom",
+      "content": "# Angular Momentum and the Hydrogen Atom\n\nThe hydrogen atom is the one realistic system solvable by hand, and its structure, shells, degeneracy, the shape of the periodic table, comes almost entirely from angular momentum.\n\n## The angular momentum algebra\n\nEverything follows from $[\\hat{L}_x, \\hat{L}_y] = i\\hbar \\hat{L}_z$. Build the matrices for a given $j$ and check.\n\n```python\nimport numpy as np\n\ndef angular_momentum(j):\n    \"\"\"Jx, Jy, Jz in the |j, m> basis, with hbar = 1.\"\"\"\n    dim = int(round(2 * j + 1))\n    m = np.array([j - k for k in range(dim)])\n    Jz = np.diag(m).astype(complex)\n    plus = np.zeros((dim, dim), dtype=complex)\n    for k in range(1, dim):\n        mm = m[k]\n        plus[k - 1, k] = np.sqrt(j * (j + 1) - mm * (mm + 1))\n    Jx = (plus + plus.conj().T) / 2\n    Jy = (plus - plus.conj().T) / (2j)\n    return Jx, Jy, Jz\n\nfor j in [0.5, 1, 1.5, 2]:\n    Jx, Jy, Jz = angular_momentum(j)\n    J2 = Jx @ Jx + Jy @ Jy + Jz @ Jz\n    ok = np.allclose(Jx @ Jy - Jy @ Jx, 1j * Jz)\n    print(f\"j = {j:<4} dim {Jz.shape[0]}   J^2 = {J2[0,0].real:.2f} = j(j+1) = {j*(j+1):.2f}   algebra holds: {ok}\")\n```\n\n$\\hat{L}^2$ commutes with each component, so you can know the magnitude and *one* component. That is why states are labelled $|\\ell, m\\rangle$ and never by a direction in space.\n\n## The effective radial potential\n\nSeparating variables turns the 3D problem into a 1D one with an extra repulsive term, the centrifugal barrier $\\ell(\\ell+1)\\hbar^2/2mr^2$:\n\n$$-\\frac{\\hbar^2}{2m}u'' + \\left[-\\frac{e^2}{4\\pi\\varepsilon_0 r} + \\frac{\\ell(\\ell+1)\\hbar^2}{2mr^2}\\right]u = Eu$$\n\nIn atomic units ($\\hbar = m = e = 1$, energies in hartree) this is clean to solve on a grid.\n\n```python\nimport numpy as np\n\nr = np.linspace(0, 60, 3001)[1:]        # skip r = 0, where the Coulomb term diverges\ndr = r[1] - r[0]\noff = np.ones(r.size - 1)\nlap = np.diag(np.full(r.size, -2.0)) + np.diag(off, 1) + np.diag(off, -1)\nT = -0.5 / dr**2 * lap\n\nprint(f\"{'l':>3s}{'n':>4s}{'E (hartree)':>14s}{'-1/(2n^2)':>13s}{'E (eV)':>11s}\")\nfor l in range(3):\n    V = -1 / r + l * (l + 1) / (2 * r**2)\n    E = np.linalg.eigvalsh(T + np.diag(V))\n    for k in range(3):\n        n = l + 1 + k\n        print(f\"{l:>3d}{n:>4d}{E[k]:>14.5f}{-0.5 / n**2:>13.5f}{E[k] * 27.2114:>11.3f}\")\n```\n\nTwo things fall out. The energies depend only on $n$, not on $\\ell$, a degeneracy special to the $1/r$ potential. And the ground state is $-0.5$ hartree $= -13.6$ eV, the ionisation energy of hydrogen, from a tridiagonal matrix.\n\n## Why $\\ell < n$\n\nThe centrifugal barrier pushes states with higher $\\ell$ outward, and for a given $n$ there is simply no room left below.\n\n```python\nimport numpy as np\n\nr = np.linspace(0, 60, 3001)[1:]        # skip r = 0, where the Coulomb term diverges\ndr = r[1] - r[0]\noff = np.ones(r.size - 1)\nlap = np.diag(np.full(r.size, -2.0)) + np.diag(off, 1) + np.diag(off, -1)\nT = -0.5 / dr**2 * lap\n\nprint(f\"{'l':>3s}{'lowest E':>12s}{'<r>':>10s}{'label':>8s}\")\nfor l in range(4):\n    V = -1 / r + l * (l + 1) / (2 * r**2)\n    E, u = np.linalg.eigh(T + np.diag(V))\n    u0 = u[:, 0] / np.sqrt(np.sum(u[:, 0] ** 2) * dr)\n    mean_r = np.sum(r * u0**2) * dr\n    print(f\"{l:>3d}{E[0]:>12.5f}{mean_r:>10.3f}{str(l+1) + 'spdf'[l]:>8s}\")\nprint(\"\\nThe lowest state for each l is n = l+1: there is no 1p, no 2d, no 3f.\")\n```\n\n## Shells, degeneracy, and the periodic table\n\nCount the states: $2n^2$ per shell, once spin doubles each orbital. The lengths of the periodic table's rows are this counting argument.\n\n```python\nfor n in range(1, 5):\n    orbitals = sum(2 * l + 1 for l in range(n))\n    print(f\"n = {n}: l = {list(range(n))}  orbitals = {orbitals}  with spin = {2 * orbitals} = 2n^2\")\n\nprint(\"\\nfilling order (Madelung n+l rule):\")\norder = sorted(((n + l, n, l) for n in range(1, 6) for l in range(n)), key=lambda t: (t[0], t[1]))\nprint(\"  \" + \"  \".join(f\"{n}{'spdf'[l]}\" for _, n, l in order[:10]))\nprint(\"\\n4s fills before 3d, which is why the transition metals appear where they do.\")\n```\n\n## Spectral lines\n\nTransitions between levels emit photons of energy $E_n - E_m$, and the Rydberg formula is that difference rewritten.\n\n```python\nRydberg_eV = 13.605693\nhc_nm_eV = 1239.841984\n\nfor name, m in [(\"Lyman\", 1), (\"Balmer\", 2), (\"Paschen\", 3)]:\n    lines = []\n    for n in range(m + 1, m + 5):\n        dE = Rydberg_eV * (1 / m**2 - 1 / n**2)\n        lines.append(f\"{n}->{m}: {hc_nm_eV / dE:7.1f} nm\")\n    limit = hc_nm_eV / (Rydberg_eV / m**2)\n    print(f\"{name:8s} \" + \"  \".join(lines) + f\"   series limit {limit:.1f} nm\")\nprint(\"\\nOnly the Balmer series lands in the visible band, which is why it was found first.\")\n```\n\n> [!TIP]\n> Real atoms add electron-electron repulsion, which breaks the $\\ell$ degeneracy, and spin-orbit coupling, which splits levels further. Both are corrections to the structure above, not replacements for it.",
+      "quiz": {
+        "title": "Atoms and Angular Momentum",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Why do hydrogen energies depend only on n and not on l?",
+            "options": [
+              "Because l is always zero",
+              "It is an accidental degeneracy special to the 1/r potential",
+              "Because the electron has spin",
+              "Because of the centrifugal barrier"
+            ],
+            "answer": "It is an accidental degeneracy special to the 1/r potential"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The number of electron states in shell n, counting spin, is:",
+            "options": [
+              "2n",
+              "n squared",
+              "2n squared",
+              "4n + 2"
+            ],
+            "answer": "2n squared"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A state can have definite values of L squared, Lx, Ly and Lz simultaneously.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The repulsive l(l+1)/2r^2 term in the radial equation is called the ____ barrier.",
+            "options": [],
+            "answer": "centrifugal"
+          }
+        ]
+      },
+      "order": 5
+    },
+    {
+      "slug": "time-evolution-tunnelling-and-scattering",
+      "title": "Time Evolution, Tunnelling, and Scattering",
+      "content": "# Time Evolution, Tunnelling, and Scattering\n\nStationary states tell you what a system can be. This lesson is about what it does: packets that spread, barriers that leak, and resonances that push transmission back to 1.\n\n## Propagating a wave packet\n\nEvolve $\\psi$ by diagonalising $H$ once and attaching $e^{-iE_nt/\\hbar}$ to each eigenstate. No time step, no accumulated error.\n\n```python\nimport numpy as np\n\nhbar = m = 1.0\nx = np.linspace(-40, 40, 900)\ndx = x[1] - x[0]\noff = np.ones(x.size - 1)\nlap = np.diag(np.full(x.size, -2.0)) + np.diag(off, 1) + np.diag(off, -1)\nH = -hbar**2 / (2 * m * dx**2) * lap          # free particle in a large box\nE, V = np.linalg.eigh(H)\n\npsi0 = np.exp(-(x + 15) ** 2 / (2 * 3.0**2)) * np.exp(1j * 1.5 * x)\npsi0 /= np.sqrt(np.sum(np.abs(psi0) ** 2) * dx)\ncoeffs = (V.conj().T @ psi0)\n\nprint(f\"{'t':>6s}{'<x>':>10s}{'width':>9s}\")\nfor t in [0, 4, 8, 12]:\n    psi = V @ (np.exp(-1j * E * t / hbar) * coeffs)\n    d = np.abs(psi) ** 2\n    d /= d.sum()\n    mean = np.sum(x * d)\n    var = np.sum((x - mean) ** 2 * d)\n    print(f\"{t:>6.1f}{mean:>10.3f}{np.sqrt(var):>9.3f}\")\nprint(\"\\nThe centre moves at the group velocity p/m = 1.5, and the packet spreads as it goes.\")\n```\n\nSpreading is not friction or noise. Different momentum components travel at different speeds, so a superposition of them necessarily disperses.\n\n## Tunnelling through a barrier\n\nFor $E < V_0$ the transmission is exponentially small but never zero:\n\n$$T = \\left[1 + \\frac{V_0^2 \\sinh^2(\\kappa a)}{4E(V_0 - E)}\\right]^{-1}, \\qquad \\kappa = \\frac{\\sqrt{2m(V_0-E)}}{\\hbar}$$\n\n```python\nimport numpy as np\n\nhbar = m = 1.0\n\ndef transmission(E, V0, a):\n    if abs(E - V0) < 1e-12:\n        return 1 / (1 + m * V0 * a**2 / (2 * hbar**2))\n    if E < V0:\n        kappa = np.sqrt(2 * m * (V0 - E)) / hbar\n        return 1 / (1 + V0**2 * np.sinh(kappa * a) ** 2 / (4 * E * (V0 - E)))\n    k2 = np.sqrt(2 * m * (E - V0)) / hbar\n    return 1 / (1 + V0**2 * np.sin(k2 * a) ** 2 / (4 * E * (E - V0)))\n\nV0 = 5.0\nwidths = [0.5, 1.0, 2.0, 4.0]\nprint(f\"{'E/V0':>7s}\" + \"\".join(f\"{'a=' + str(a):>12s}\" for a in widths))\nfor ratio in [0.2, 0.5, 0.8, 0.95, 1.5, 2.0]:\n    row = f\"{ratio:>7.2f}\"\n    for a in widths:\n        row += f\"{transmission(ratio * V0, V0, a):>12.3e}\"\n    print(row)\nprint(\"\\nTransmission falls roughly exponentially with width: doubling a squares the suppression.\")\n```\n\nThis exponential sensitivity is what makes the scanning tunnelling microscope work: a one-angstrom change in tip height changes the current by an order of magnitude.\n\n## Resonances above the barrier\n\nAbove the barrier, transmission is not simply 1. It oscillates, hitting exactly 1 whenever the barrier holds a half-integer number of internal wavelengths.\n\n```python\nimport numpy as np\n\nhbar = m = 1.0\nV0, a = 5.0, 3.0\n\ndef transmission(E):\n    if abs(E - V0) < 1e-12:\n        return 1 / (1 + m * V0 * a**2 / (2 * hbar**2))\n    if E < V0:\n        kap = np.sqrt(2 * m * (V0 - E)) / hbar\n        return 1 / (1 + V0**2 * np.sinh(kap * a) ** 2 / (4 * E * (V0 - E)))\n    k2 = np.sqrt(2 * m * (E - V0)) / hbar\n    return 1 / (1 + V0**2 * np.sin(k2 * a) ** 2 / (4 * E * (E - V0)))\n\nprint(\"perfect transmission when k2 * a = n * pi:\")\nfor n in range(1, 5):\n    E_res = V0 + (n * np.pi / a) ** 2 * hbar**2 / (2 * m)\n    print(f\"  n = {n}   E = {E_res:.4f}   T = {transmission(E_res):.6f}\")\n\nprint(\"\\nsampling between resonances:\")\nfor E in np.linspace(V0 + 0.2, V0 + 1.6, 8):\n    print(f\"  E = {E:.3f}   T = {transmission(E):.4f}\")\n```\n\nThe Ramsauer-Townsend effect, noble gases turning nearly transparent to slow electrons, is this resonance seen in a real gas.\n\n## Alpha decay: a lifetime from a barrier\n\nGamow's model treats the alpha particle as rattling inside the nucleus, attempting escape at a fixed rate and tunnelling out with a small probability each time. Half-lives spanning twenty orders of magnitude follow from a barrier that changes only slightly.\n\n```python\nimport numpy as np\n\nhbar = 1.054571817e-34\ne = 1.602176634e-19\neps0 = 8.8541878128e-12\nm_alpha = 6.644657e-27\n\ndef gamow_halflife(Z_daughter, E_MeV, R_fm=9.0):\n    E = E_MeV * 1e6 * e\n    b = 2 * Z_daughter * e**2 / (4 * np.pi * eps0 * E)      # outer turning radius\n    R = R_fm * 1e-15\n    ratio = np.sqrt(R / b)\n    gamow = (2 / hbar) * np.sqrt(2 * m_alpha * E) * b * (np.arccos(ratio) - ratio * np.sqrt(1 - R / b))\n    v = np.sqrt(2 * E / m_alpha)\n    attempts = v / (2 * R)\n    return np.log(2) / (attempts * np.exp(-gamow))\n\nfor name, Z, E in [(\"Po-212\", 82, 8.95), (\"Rn-222\", 84, 5.59), (\"Ra-226\", 86, 4.87), (\"U-238\", 90, 4.27)]:\n    print(f\"{name:8s} E_alpha = {E:.2f} MeV   predicted half-life ~ {gamow_halflife(Z, E):.2e} s\")\nprint(\"\\nA factor of two in alpha energy moves the half-life by ~20 orders of magnitude.\")\n```\n\n## Decoherence, in one line of arithmetic\n\nInterference disappears when the environment learns which path was taken. The off-diagonal terms of the density matrix, not the populations, are what die.\n\n```python\nimport numpy as np\n\nrho = np.array([[0.5, 0.5], [0.5, 0.5]])        # a pure superposition\nprint(\"pure state purity =\", round(float(np.trace(rho @ rho)), 4))\n\nfor gamma in [0.0, 0.3, 0.7, 1.0]:\n    r = rho.copy()\n    r[0, 1] *= (1 - gamma)\n    r[1, 0] *= (1 - gamma)\n    print(f\"  which-path info {gamma:.1f}: coherence {abs(r[0,1]):.3f}  \"\n          f\"purity {float(np.trace(r @ r)):.3f}  populations unchanged\")\n```\n\n> [!NOTE]\n> Decoherence explains why large objects look classical without changing the Schrödinger equation: coupling to an environment suppresses the interference terms extremely fast, and what is left behaves like a classical probability distribution.",
+      "quiz": {
+        "title": "Evolution and Tunnelling",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A free wave packet spreads over time because:",
+            "options": [
+              "Of friction with the vacuum",
+              "Its momentum components travel at different speeds",
+              "Of measurement disturbance",
+              "Energy is not conserved"
+            ],
+            "answer": "Its momentum components travel at different speeds"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Doubling the width of a tunnelling barrier roughly:",
+            "options": [
+              "Halves the transmission",
+              "Squares the exponential suppression",
+              "Leaves transmission unchanged",
+              "Doubles the transmission"
+            ],
+            "answer": "Squares the exponential suppression"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "For energies above the barrier, transmission is always exactly 1.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Coupling to an environment destroys interference through the process called ____.",
+            "options": [],
+            "answer": "decoherence"
+          }
+        ]
+      },
+      "order": 6
+    },
+    {
+      "slug": "final-project-a-quantum-mechanics-toolkit",
+      "title": "Final Project: A Quantum Mechanics Toolkit",
+      "content": "# Final Project: A Quantum Mechanics Toolkit\n\nEverything in this course reduced to matrices on a grid. Now bundle it into `quantum.py`, a small library that solves, evolves, and measures.\n\n## What to build\n\n**Core solver**\n1. `hamiltonian(x, V)`, the tridiagonal kinetic term plus a diagonal potential, with $\\hbar$ and $m$ as parameters.\n2. `eigenstates(x, V, count)`, returning normalised eigenvectors and energies, verified against the analytic box and oscillator.\n3. `expectation(op, psi, dx)` and `uncertainty(op, psi, dx)`.\n4. `commutator(A, B)`, plus a check that $\\sigma_A\\sigma_B \\ge \\tfrac{1}{2}|\\langle[A,B]\\rangle|$ for the states your solver produces.\n\n**Dynamics**\n5. `evolve(H, psi, t)` by spectral decomposition.\n6. `trajectory(H, psi, times)`, returning $\\langle x\\rangle$, $\\langle p\\rangle$, and the width as a table.\n7. `transmission(E, V0, a)` for a rectangular barrier, matching the analytic formula and showing the resonances.\n\n**Spin and qubits**\n8. `pauli()` returning the three matrices, and `bloch(state)` giving $(\\langle\\sigma_x\\rangle, \\langle\\sigma_y\\rangle, \\langle\\sigma_z\\rangle)$.\n9. `measure(state, operator, shots)`, sampling outcomes with the Born rule.\n10. `chsh(a1, a2, b1, b2)` on the singlet, reproducing the $2\\sqrt{2}$ maximum.\n\n## A skeleton to start from\n\n```python\nimport numpy as np\n\nclass Quantum1D:\n    def __init__(self, x, V, hbar=1.0, mass=1.0):\n        self.x, self.V, self.hbar, self.mass = x, V, hbar, mass\n        self.dx = x[1] - x[0]\n        self._E = None\n        self._psi = None\n\n    def hamiltonian(self):\n        n = self.x.size\n        off = np.ones(n - 1)\n        lap = np.diag(np.full(n, -2.0)) + np.diag(off, 1) + np.diag(off, -1)\n        T = -self.hbar**2 / (2 * self.mass * self.dx**2) * lap\n        return T + np.diag(self.V)\n\n    def solve(self):\n        if self._E is None:\n            E, psi = np.linalg.eigh(self.hamiltonian())\n            self._E, self._psi = E, psi / np.sqrt(self.dx)\n        return self._E, self._psi\n\n    def evolve(self, psi0, t):\n        E, states = self.solve()\n        c = (states.conj().T @ psi0) * self.dx\n        return states @ (np.exp(-1j * E * t / self.hbar) * c)\n\n    def expectation(self, op, psi):\n        return (np.vdot(psi, op @ psi) * self.dx).real\n\n\nx = np.linspace(-10, 10, 600)\nbox = Quantum1D(x, np.where(np.abs(x) < 5, 0.0, 1e6))\nE, _ = box.solve()\nprint(\"infinite well, first four levels:\", np.round(E[:4], 4))\nprint(\"ratios to E1 (should be 1, 4, 9, 16):\", np.round(E[:4] / E[0], 3))\n```\n\n## Required experiments\n\nRun these and write down what you find.\n\n**The correspondence limit.** For the harmonic oscillator, compare $|\\psi_n|^2$ against the classical density $1/(\\pi\\sqrt{2E - x^2})$ for $n = 0, 1, 5, 30$. Report the fraction of probability outside the turning points as $n$ grows.\n\n**Two wells becoming a molecule.** Take two identical wells separated by a distance $d$ and track the splitting of the lowest pair of levels against $d$. The lower state is bonding, the upper antibonding, and the splitting is the chemical bond.\n\n**Avoided crossings.** Vary $\\lambda$ in $H(\\lambda) = \\begin{pmatrix} \\lambda & \\Delta \\\\ \\Delta & -\\lambda\\end{pmatrix}$ and confirm the levels never cross for $\\Delta \\ne 0$. Report the minimum gap.\n\n**A Bell inequality.** Compute CHSH for the singlet at the optimal angles and confirm $2\\sqrt{2}$, then check that any assignment of fixed $\\pm 1$ values to the four settings gives at most 2.\n\n## Stretch goals\n\n- Implement the split-operator method (alternating FFT kicks in position and momentum space) and compare its speed with diagonalisation on a large grid.\n- Add a two-particle solver on a 2D grid and show that symmetrising or antisymmetrising the wavefunction changes the ground-state energy of two interacting particles.\n- Model a scanning tunnelling microscope: given a corrugated surface, compute the tunnelling current versus tip position and recover the corrugation from the current.\n\n## What to submit\n\n`quantum.py`, a script that runs every experiment and prints its results, and a short write-up (about a page) covering:\n\n- one place where a numerical result disagreed with an analytic formula, and why (grid spacing, box size, or a genuine bug)\n- the fraction of the harmonic ground state outside the classical turning points, and what it becomes at $n = 30$\n- your bonding/antibonding splitting curve in a sentence: how does it behave as $d \\to 0$ and as $d \\to \\infty$?\n\n> [!TIP]\n> Test against exact answers wherever they exist: the infinite well, the oscillator, and the hydrogen radial equation all have closed forms. If your solver reproduces those to four digits, you can trust it on potentials that have none.",
+      "requiresSubmission": true,
+      "order": 7
+    }
+  ]
+}

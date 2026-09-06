@@ -708,5 +708,75 @@
     "lessonCount": 7,
     "quizCount": 6,
     "isPublic": false
+  },
+  {
+    "slug": "quantum-mechanics",
+    "title": "Quantum Mechanics",
+    "description": "Wavefunctions and operators, bound states and the harmonic oscillator, spin and measurement, the hydrogen atom, tunnelling and decoherence, with every spectrum and probability computed in the browser.",
+    "pathSlug": "quantum-mechanics",
+    "pathName": "Quantum Mechanics",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "electromagnetism",
+    "title": "Electromagnetism",
+    "description": "Coulomb's law and fields, Gauss's law and potentials, magnetic fields from currents, induction and AC circuits, Maxwell's equations and light, fields in matter and radiation, with field solvers you run in the browser.",
+    "pathSlug": "electromagnetism",
+    "pathName": "Electromagnetism",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "statistical-mechanics",
+    "title": "Statistical Mechanics",
+    "description": "Microstates and entropy, the Boltzmann distribution and partition functions, ideal gases and Maxwell-Boltzmann speeds, ensembles and fluctuations, Monte Carlo and the Ising transition, and quantum statistics, all simulated in the browser.",
+    "pathSlug": "statistical-mechanics",
+    "pathName": "Statistical Mechanics",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "wave-optics",
+    "title": "Wave Optics",
+    "description": "Phasors and superposition, two-slit and thin-film interference, diffraction and resolution limits, polarisation and Jones calculus, coherence and interferometry, and Fourier optics with beam propagation you simulate in the browser.",
+    "pathSlug": "wave-optics",
+    "pathName": "Wave Optics",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "optics",
+    "title": "Optics: Light, Lenses, and Instruments",
+    "description": "Rays, reflection and refraction, image formation by mirrors and lenses, matrix optics for real systems, aberrations and why lenses have many elements, the eye and cameras and telescopes, and radiometry, photometry and colour.",
+    "pathSlug": "optics",
+    "pathName": "Optics",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "fluid-mechanics",
+    "title": "Fluid Mechanics",
+    "description": "Hydrostatics and buoyancy, flow kinematics and continuity, Bernoulli and inviscid flow, viscosity and the Navier-Stokes equations, dimensionless numbers, drag and boundary layers, and turbulence with a working CFD solver you run in the browser.",
+    "pathSlug": "fluid-mechanics",
+    "pathName": "Fluid Mechanics",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
+  },
+  {
+    "slug": "solid-state-physics",
+    "title": "Solid State Physics",
+    "description": "Crystal structures and reciprocal space, X-ray diffraction, phonons and heat capacity, the free electron gas, band theory and effective mass, and semiconductors from doping to the p-n junction, all computed in the browser.",
+    "pathSlug": "solid-state-physics",
+    "pathName": "Solid State Physics",
+    "lessonCount": 7,
+    "quizCount": 6,
+    "isPublic": false
   }
 ]

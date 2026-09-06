@@ -1,0 +1,335 @@
+{
+  "slug": "optics",
+  "title": "Optics: Light, Lenses, and Instruments",
+  "description": "Rays, reflection and refraction, image formation by mirrors and lenses, matrix optics for real systems, aberrations and why lenses have many elements, the eye and cameras and telescopes, and radiometry, photometry and colour.",
+  "pathSlug": "optics",
+  "pathName": "Optics",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "rays-reflection-and-refraction",
+      "title": "Rays, Reflection, and Refraction",
+      "content": "# Rays, Reflection, and Refraction\n\nGeometric optics is the approximation that light travels in straight lines until something bends it. It is wrong at small scales and indispensable everywhere else: every lens, telescope, and camera is designed with it.\n\n## When rays are a good idea\n\nRays work when every feature in the system is much larger than a wavelength. The Fresnel number tells you when to stop trusting them.\n\n```python\nimport numpy as np\n\nlam = 550e-9\nprint(f\"{'feature':26s}{'size':>10s}{'size/lambda':>14s}   ray optics?\")\nfor name, size in [(\"camera aperture\", 5e-3), (\"human pupil\", 3e-3), (\"fibre core\", 9e-6),\n                   (\"grating groove\", 1.4e-6), (\"nanostructure\", 100e-9)]:\n    ratio = size / lam\n    verdict = \"fine\" if ratio > 1000 else \"marginal\" if ratio > 20 else \"no, use wave optics\"\n    print(f\"{name:26s}{size * 1e6:>8.2f}um{ratio:>14.1f}   {verdict}\")\n```\n\n## Snell's law\n\n$$n_1\\sin\\theta_1 = n_2\\sin\\theta_2$$\n\nIt follows from Fermat's principle: light takes the path of stationary optical path length. Minimising the travel time numerically reproduces it exactly.\n\n```python\nimport numpy as np\n\nn1, n2 = 1.0, 1.5\nA = np.array([0.0, 1.0])       # source above the surface\nB = np.array([2.0, -1.0])      # target below it\n\ndef travel_time(x):\n    return n1 * np.hypot(x - A[0], A[1]) + n2 * np.hypot(B[0] - x, B[1])\n\nxs = np.linspace(0, 2, 20001)\nbest = xs[np.argmin(travel_time(xs))]\n\ntheta1 = np.degrees(np.arctan2(best - A[0], A[1]))\ntheta2 = np.degrees(np.arctan2(B[0] - best, -B[1]))\nprint(f\"fastest crossing point x = {best:.5f}\")\nprint(f\"angle of incidence  = {theta1:.4f} deg\")\nprint(f\"angle of refraction = {theta2:.4f} deg\")\nprint(f\"n1 sin(th1) = {n1 * np.sin(np.radians(theta1)):.6f}\")\nprint(f\"n2 sin(th2) = {n2 * np.sin(np.radians(theta2)):.6f}\")\nprint(\"\\nSnell's law was never assumed: it fell out of minimising the optical path.\")\n```\n\n## Total internal reflection\n\nGoing from dense to less dense, beyond the critical angle nothing gets out. This is what makes optical fibre possible.\n\n```python\nimport numpy as np\n\npairs = [(\"glass to air\", 1.52, 1.0), (\"water to air\", 1.33, 1.0),\n         (\"diamond to air\", 2.42, 1.0), (\"core to cladding\", 1.4675, 1.4623)]\nprint(f\"{'interface':22s}{'n1':>6s}{'n2':>8s}{'critical angle':>17s}\")\nfor name, n1, n2 in pairs:\n    theta_c = np.degrees(np.arcsin(n2 / n1))\n    print(f\"{name:22s}{n1:>6.4f}{n2:>8.4f}{theta_c:>16.2f}deg\")\n\nn_core, n_clad = 1.4675, 1.4623\nNA = np.sqrt(n_core**2 - n_clad**2)\nprint(f\"\\nfibre numerical aperture = sqrt(n_core^2 - n_clad^2) = {NA:.4f}\")\nprint(f\"acceptance half-angle in air = {np.degrees(np.arcsin(NA)):.2f} deg\")\nprint(f\"\\ndiamond's {np.degrees(np.arcsin(1/2.42)):.1f} degree critical angle traps light through many\")\nprint(\"internal bounces, which is exactly why a cut diamond sparkles.\")\n```\n\n## Dispersion and the rainbow\n\n$n$ depends on wavelength, so different colours refract differently. Cauchy's formula fits most glasses over the visible range.\n\n```python\nimport numpy as np\n\ndef cauchy(lam_nm, A, B):\n    return A + B / (lam_nm * 1e-3) ** 2\n\nglasses = {\"BK7 crown\": (1.5046, 0.00420), \"SF11 flint\": (1.7280, 0.01342),\n           \"fused silica\": (1.4580, 0.00354)}\nlines = {\"F (blue) 486\": 486.1, \"d (yellow) 587\": 587.6, \"C (red) 656\": 656.3}\n\nprint(f\"{'glass':16s}\" + \"\".join(f\"{k:>16s}\" for k in lines) + f\"{'Abbe V':>10s}\")\nfor name, (A, B) in glasses.items():\n    ns = {k: cauchy(v, A, B) for k, v in lines.items()}\n    V = (ns[\"d (yellow) 587\"] - 1) / (ns[\"F (blue) 486\"] - ns[\"C (red) 656\"])\n    print(f\"{name:16s}\" + \"\".join(f\"{ns[k]:>16.5f}\" for k in lines) + f\"{V:>10.1f}\")\nprint(\"\\nHigh Abbe number means low dispersion. Combining a crown and a flint\")\nprint(\"cancels the colour error, which is the achromatic doublet.\")\n\ntheta_i = np.radians(60)\nfor name, (A, B) in [(\"BK7 crown\", glasses[\"BK7 crown\"])]:\n    spread = []\n    for nm in [400, 700]:\n        n = cauchy(nm, A, B)\n        spread.append(np.degrees(np.arcsin(np.sin(theta_i) / n)))\n    print(f\"\\n{name} at 60 deg incidence: blue refracts to {spread[0]:.3f} deg, \"\n          f\"red to {spread[1]:.3f} deg\")\nprint(f\"an angular spread of {abs(spread[0] - spread[1]) * 60:.1f} arcminutes: that is a prism spectrum.\")\n```\n\n## Refraction in a gradient\n\nWhen $n$ varies continuously, rays curve. Mirages and atmospheric refraction are this, and so is a graded-index fibre.\n\n```python\nimport numpy as np\n\ndef trace_gradient(n_func, dn_dy, y0, angle_deg, dx=0.25, steps=2800):\n    \"\"\"March a ray through air whose index depends only on height.\"\"\"\n    y, theta = y0, np.radians(angle_deg)\n    path = [(0.0, y, theta)]\n    for i in range(steps):\n        if y <= 0:                       # the ray hit the road\n            break\n        theta += dn_dy(y) / n_func(y) * dx\n        y += np.tan(theta) * dx\n        path.append(((i + 1) * dx, y, theta))\n    return np.array(path)\n\n# hot road: the air just above it is hot, thin, and has a *lower* index,\n# so n increases with height and the gradient is strongest near the surface\nn_func = lambda y: 1.000277 - 2.0e-4 * np.exp(-y / 0.10)\ndn_dy = lambda y: (2.0e-4 / 0.10) * np.exp(-y / 0.10)\n\npath = trace_gradient(n_func, dn_dy, y0=1.5, angle_deg=-0.35)\nprint(f\"{'x (m)':>8s}{'height (m)':>13s}{'ray angle (deg)':>18s}\")\nfor i in range(0, len(path), max(1, len(path) // 8)):\n    print(f\"{path[i, 0]:>8.2f}{path[i, 1]:>13.4f}{np.degrees(path[i, 2]):>18.4f}\")\n\nlow = int(np.argmin(path[:, 1]))\nprint(f\"\\nlowest point: {path[low, 1] * 100:.1f} cm above the road, {path[low, 0]:.1f} m away\")\nprint(f\"the ray leaves going upward at {np.degrees(path[-1, 2]):+.3f} degrees\")\nprint(\"\\nIt reaches the eye from below the horizon, carrying an image of the sky:\")\nprint(\"that inverted patch of sky is the shimmering 'water' of a road mirage.\")\n```\n\n> [!NOTE]\n> Every result in this lesson comes from Fermat's principle. If you ever forget a sign convention, go back to \"which path has stationary optical length\" and re-derive it; that argument never changes.",
+      "quiz": {
+        "title": "Rays and Refraction",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Snell's law can be derived from:",
+            "options": [
+              "Conservation of energy alone",
+              "Fermat's principle of stationary optical path",
+              "The uncertainty principle",
+              "Maxwell's displacement current"
+            ],
+            "answer": "Fermat's principle of stationary optical path"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Total internal reflection can occur when light goes:",
+            "options": [
+              "From air into glass",
+              "From glass into air",
+              "Only in a vacuum",
+              "Only for polarised light"
+            ],
+            "answer": "From glass into air"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A high Abbe number means the glass disperses colours strongly.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "In a medium whose refractive index varies continuously, rays follow ____ paths rather than straight lines.",
+            "options": [],
+            "answer": "curved"
+          }
+        ]
+      },
+      "order": 1
+    },
+    {
+      "slug": "mirrors-and-lenses-forming-images",
+      "title": "Mirrors and Lenses: Forming Images",
+      "content": "# Mirrors and Lenses: Forming Images\n\nOne equation, two sign conventions, and every imaging device ever built. This lesson makes the equation concrete by tracing rays that obey it.\n\n## The thin lens equation\n\n$$\\frac{1}{s_o} + \\frac{1}{s_i} = \\frac{1}{f}, \\qquad M = -\\frac{s_i}{s_o}$$\n\n```python\ndef image(s_o, f):\n    if abs(s_o - f) < 1e-12:\n        return float(\"inf\"), float(\"inf\")\n    s_i = 1 / (1 / f - 1 / s_o)\n    return s_i, -s_i / s_o\n\nf = 50.0     # mm\nprint(f\"{'object dist':>12s}{'image dist':>13s}{'magnification':>16s}   description\")\nfor s_o in [1e6, 500, 200, 100, 75, 51, 50, 40, 25]:\n    s_i, M = image(s_o, f)\n    if s_o == f:\n        desc = \"image at infinity\"\n    elif s_i > 0:\n        desc = f\"real, {'inverted' if M < 0 else 'upright'}, {'reduced' if abs(M) < 1 else 'enlarged'}\"\n    else:\n        desc = \"virtual, upright, enlarged\"\n    si = f\"{s_i:>13.2f}\" if abs(s_i) < 1e9 else f\"{'infinity':>13s}\"\n    print(f\"{s_o:>12.0f}{si}{M:>16.3f}   {desc}\")\nprint(\"\\nInside the focal length the image goes virtual: that is a magnifying glass.\")\n```\n\n## Ray tracing the same thing\n\nThree rays construct any image: through the centre undeviated, parallel then through the focus, and through the focus then parallel.\n\n```python\nimport numpy as np\n\ndef trace(object_height, s_o, f, n_points=5):\n    \"\"\"Return where the three principal rays cross the axis coordinate s_i.\"\"\"\n    s_i = 1 / (1 / f - 1 / s_o)\n    h_i = -object_height * s_i / s_o\n    rays = {\n        \"through the centre\": (object_height, -object_height / s_o),\n        \"parallel then focus\": (object_height, -object_height / f),\n        \"focus then parallel\": (object_height, 0.0),\n    }\n    print(f\"object: h = {object_height} at s_o = {s_o}, f = {f}\")\n    print(f\"predicted image: h = {h_i:.3f} at s_i = {s_i:.3f}\\n\")\n    for name, (h0, slope) in rays.items():\n        h_at_image = h0 + slope * s_i\n        print(f\"  {name:22s} height at the image plane = {h_at_image:8.3f}\")\n    print(\"\\nAll three land on the same point, which is what 'image' means.\")\n\ntrace(10.0, 150.0, 50.0)\n```\n\n## Mirrors\n\nA concave mirror behaves like a lens with $f = R/2$, and the same equation applies with the sign convention flipped for the image side.\n\n```python\ndef mirror_image(s_o, R):\n    f = R / 2\n    s_i = 1 / (1 / f - 1 / s_o) if abs(s_o - f) > 1e-12 else float(\"inf\")\n    return f, s_i, -s_i / s_o if s_i != float(\"inf\") else float(\"inf\")\n\nprint(f\"{'mirror':22s}{'R (cm)':>9s}{'f (cm)':>9s}{'object':>9s}{'image':>10s}{'M':>9s}\")\ncases = [(\"concave shaving\", 60, 20), (\"concave shaving\", 60, 40),\n         (\"convex security\", -100, 200), (\"convex security\", -100, 500)]\nfor name, R, s_o in cases:\n    f, s_i, M = mirror_image(s_o, R)\n    print(f\"{name:22s}{R:>9.0f}{f:>9.1f}{s_o:>9.0f}{s_i:>10.2f}{M:>9.3f}\")\nprint(\"\\nA convex mirror always gives an upright, reduced, virtual image, which is\")\nprint(\"why it is used for a wide field of view and why the objects are closer than they appear.\")\n```\n\n## The lensmaker's equation\n\n$$\\frac{1}{f} = (n-1)\\left(\\frac{1}{R_1} - \\frac{1}{R_2}\\right)$$\n\nShape and index between them determine the focal length, and the same lens has a different focal length under water.\n\n```python\ndef lensmaker(n, R1, R2, n_medium=1.0):\n    return 1 / ((n / n_medium - 1) * (1 / R1 - 1 / R2))\n\nshapes = [(\"biconvex\", 100, -100), (\"plano-convex\", 100, 1e9),\n          (\"meniscus\", 50, 100), (\"biconcave\", -100, 100)]\nprint(f\"{'shape':16s}{'R1':>8s}{'R2':>10s}{'f in air':>12s}{'f in water':>14s}\")\nfor name, R1, R2 in shapes:\n    f_air = lensmaker(1.52, R1, R2)\n    f_water = lensmaker(1.52, R1, R2, 1.33)\n    r2 = f\"{R2:.0f}\" if abs(R2) < 1e8 else \"flat\"\n    print(f\"{name:16s}{R1:>8.0f}{r2:>10s}{f_air:>12.2f}{f_water:>14.2f}\")\nprint(\"\\nUnderwater a glass lens is nearly four times weaker, which is why your eye,\")\nprint(\"whose cornea does most of its focusing against air, cannot focus in water.\")\n```\n\n## Combining lenses\n\nTwo thin lenses in contact add their powers. Separated, the combination follows Gullstrand's equation.\n\n```python\nimport numpy as np\n\ndef combine(f1, f2, d=0.0):\n    P = 1 / f1 + 1 / f2 - d / (f1 * f2)\n    return float(\"inf\") if abs(P) < 1e-12 else 1 / P\n\nprint(f\"{'f1':>7s}{'f2':>7s}{'gap':>7s}{'combined f':>13s}   note\")\nfor f1, f2, d in [(100, 100, 0), (100, -100, 0), (100, 200, 0),\n                  (100, 100, 50), (100, 100, 200), (50, -20, 30)]:\n    f = combine(f1, f2, d)\n    note = \"afocal (telescope)\" if not np.isfinite(f) else \\\n           \"diverging\" if f < 0 else \"converging\"\n    shown = \"infinite\" if not np.isfinite(f) else f\"{f:.2f}\"\n    print(f\"{f1:>7.0f}{f2:>7.0f}{d:>7.0f}{shown:>13s}   {note}\")\nprint(\"\\nTwo equal lenses at twice their focal length form a telescope: parallel in,\")\nprint(\"parallel out, magnified. That is the Keplerian design.\")\n```\n\n> [!TIP]\n> Sign conventions cause more errors in optics than any physics. Pick one (distances positive in the direction light travels), write it at the top of your page, and never mix conventions inside a single calculation.",
+      "quiz": {
+        "title": "Imaging",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "An object placed inside the focal length of a converging lens gives:",
+            "options": [
+              "A real inverted image",
+              "A virtual upright enlarged image",
+              "No image at all",
+              "A real reduced image"
+            ],
+            "answer": "A virtual upright enlarged image"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A glass lens submerged in water has a focal length that is:",
+            "options": [
+              "Shorter",
+              "Longer",
+              "Unchanged",
+              "Negative"
+            ],
+            "answer": "Longer"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A convex mirror can form a real image of a distant object.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Two thin lenses in contact combine by adding their ____.",
+            "options": [],
+            "answer": "powers"
+          }
+        ]
+      },
+      "order": 2
+    },
+    {
+      "slug": "matrix-optics-tracing-systems",
+      "title": "Matrix Optics: Tracing Systems the Way Designers Do",
+      "content": "# Matrix Optics: Tracing Systems the Way Designers Do\n\nFor a system of many surfaces, tracking each ray by hand is hopeless. Represent a ray as a vector and every element as a $2\\times2$ matrix, and the whole system becomes a matrix product.\n\n## Rays as vectors\n\nA paraxial ray is its height $y$ and its angle $\\theta$. Free space and refraction each act linearly on that pair.\n\n```python\nimport numpy as np\n\ndef translate(d):\n    return np.array([[1, d], [0, 1]], dtype=float)\n\ndef thin_lens(f):\n    return np.array([[1, 0], [-1 / f, 1]], dtype=float)\n\ndef refract(n1, n2, R=np.inf):\n    \"\"\"Refraction at a curved surface of radius R.\"\"\"\n    return np.array([[1, 0], [(n1 - n2) / (n2 * R) if np.isfinite(R) else 0, n1 / n2]])\n\nray = np.array([10.0, 0.0])          # 10 mm off axis, travelling parallel\nsystem = translate(50) @ thin_lens(50)\nout = system @ ray\nprint(f\"parallel ray in: y = {ray[0]}, theta = {ray[1]}\")\nprint(f\"after a 50 mm lens and 50 mm of travel: y = {out[0]:.6f}, theta = {out[1]:.6f}\")\nprint(\"It lands on the axis, which is the definition of the focal plane.\")\n```\n\n## Building a system\n\nMatrices multiply in reverse order of travel, exactly like linear maps.\n\n```python\nimport numpy as np\n\ndef translate(d):\n    return np.array([[1, d], [0, 1]], dtype=float)\n\ndef thin_lens(f):\n    return np.array([[1, 0], [-1 / f, 1]], dtype=float)\n\ndef system(*elements):\n    M = np.eye(2)\n    for e in elements:                # first element applied first\n        M = e @ M\n    return M\n\n# a Keplerian telescope: two lenses separated by the sum of their focal lengths\nfo, fe = 400.0, 20.0\nM = system(thin_lens(fo), translate(fo + fe), thin_lens(fe))\nprint(\"telescope matrix:\\n\", np.round(M, 6))\nprint(f\"\\nangular magnification = -A_22 relation: {-M[1, 1]:.3f} (expected {fo / fe:.1f}x)\")\nprint(f\"B element = {M[0, 1]:.4f} (zero means afocal: parallel in, parallel out)\")\n\nfor angle in [0.001, 0.002, 0.005]:\n    out = M @ np.array([0.0, angle])\n    print(f\"  input angle {angle * 1000:5.2f} mrad -> output {out[1] * 1000:7.2f} mrad\")\n```\n\n## The meaning of each element\n\nFor a system matrix $\\begin{pmatrix}A & B\\\\ C& D\\end{pmatrix}$: $C = -1/f$, $B = 0$ means image-to-object conjugate planes, $A = 0$ means the input plane is the front focal plane.\n\n```python\nimport numpy as np\n\ndef translate(d):\n    return np.array([[1, d], [0, 1]], dtype=float)\n\ndef thin_lens(f):\n    return np.array([[1, 0], [-1 / f, 1]], dtype=float)\n\nf = 50.0\nprint(f\"{'s_o':>7s}{'s_i':>9s}{'B element':>13s}{'A (magnification)':>20s}\")\nfor s_o in [75, 100, 150, 200]:\n    s_i = 1 / (1 / f - 1 / s_o)\n    M = translate(s_i) @ thin_lens(f) @ translate(s_o)\n    print(f\"{s_o:>7.0f}{s_i:>9.2f}{M[0, 1]:>13.2e}{M[0, 0]:>20.4f}\")\nprint(\"\\nB is zero exactly at the conjugate planes, and A is then the magnification.\")\nprint(\"This is the thin lens equation, rediscovered as a matrix condition.\")\n```\n\n## Thick lenses and principal planes\n\nReal lenses have thickness. The matrix hides that behind two principal planes, from which the thin-lens formulas work unchanged.\n\n```python\nimport numpy as np\n\ndef thick_lens(n, R1, R2, t):\n    \"\"\"Full system matrix for a thick lens in air.\"\"\"\n    S1 = np.array([[1, 0], [(1 - n) / (n * R1), 1 / n]])\n    T = np.array([[1, t], [0, 1]])\n    S2 = np.array([[1, 0], [(n - 1) / R2, n]])\n    return S2 @ T @ S1\n\nn, R1, R2 = 1.52, 50.0, -50.0\nprint(f\"{'thickness':>11s}{'focal length':>15s}{'principal plane shift':>24s}\")\nfor t in [0.1, 2, 5, 10, 20]:\n    M = thick_lens(n, R1, R2, t)\n    f = -1 / M[1, 0]\n    h = (M[0, 0] - 1) / M[1, 0]\n    print(f\"{t:>9.1f}mm{f:>15.4f}{h:>22.4f}mm\")\n\nthin = 1 / ((n - 1) * (1 / R1 - 1 / R2))\nprint(f\"\\nthin lens formula gives f = {thin:.4f} mm\")\nprint(\"A thick lens is slightly stronger, and its principal planes move apart,\")\nprint(\"which is why real designs quote 'back focal distance' as a separate number.\")\n```\n\n## Resonators: when does a cavity stay stable?\n\nBouncing a ray between two mirrors repeatedly is the same matrix applied many times. The cavity is stable only if the round-trip matrix has bounded powers.\n\n```python\nimport numpy as np\n\ndef cavity_stable(L, R1, R2):\n    g1 = 1 - L / R1\n    g2 = 1 - L / R2\n    return g1 * g2, 0 <= g1 * g2 <= 1\n\ndesigns = [(\"plane-parallel\", 1.0, np.inf, np.inf), (\"confocal\", 1.0, 1.0, 1.0),\n           (\"concentric\", 1.0, 0.5, 0.5), (\"hemispherical\", 1.0, 1.0, np.inf),\n           (\"unstable\", 1.0, 0.3, 0.3)]\nprint(f\"{'design':18s}{'g1 g2':>10s}   stable?\")\nfor name, L, R1, R2 in designs:\n    g, ok = cavity_stable(L, R1, R2)\n    print(f\"{name:18s}{g:>10.4f}   {'yes' if ok else 'no'}\")\n\ndef round_trip(L, R1, R2):\n    \"\"\"One full round trip: mirror 1, across, mirror 2, back.\"\"\"\n    T = np.array([[1, L], [0, 1]])\n    M1 = np.array([[1, 0], [-2 / R1, 1]])\n    M2 = np.array([[1, 0], [-2 / R2, 1]])\n    return T @ M2 @ T @ M1\n\nray = np.array([0.001, 0.0])\nfor name, R in [(\"stable (R = 1.0 m)\", 1.0), (\"unstable (R = 0.3 m)\", 0.3)]:\n    M = round_trip(1.0, R, R)\n    heights = [f\"{(np.linalg.matrix_power(M, t) @ ray)[0]:11.3e}\" for t in [1, 5, 10, 20]]\n    print(f\"  {name:22s} y after 1, 5, 10, 20 trips: \" + \" \".join(heights))\nprint(\"\\nIn the unstable cavity the ray walks out within a few passes, so the\")\nprint(\"laser cannot oscillate however much gain the medium provides.\")\n```\n\n> [!NOTE]\n> Matrix optics is paraxial: it assumes $\\sin\\theta \\approx \\theta$. Everything it predicts is the first-order behaviour, and the deviations from it are precisely the aberrations of the next lesson.",
+      "quiz": {
+        "title": "Matrix Optics",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In a system matrix, the element C equals:",
+            "options": [
+              "The magnification",
+              "Minus the reciprocal of the focal length",
+              "The system length",
+              "The refractive index"
+            ],
+            "answer": "Minus the reciprocal of the focal length"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A B element of zero means the input and output planes are:",
+            "options": [
+              "Focal planes",
+              "Conjugate (object and image) planes",
+              "Principal planes",
+              "At infinity"
+            ],
+            "answer": "Conjugate (object and image) planes"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Matrix optics is exact for rays at any angle.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A laser cavity is stable when the product g1 times g2 lies between 0 and ____.",
+            "options": [],
+            "answer": "1"
+          }
+        ]
+      },
+      "order": 3
+    },
+    {
+      "slug": "aberrations-why-real-lenses-need-more-than-one-element",
+      "title": "Aberrations: Why Real Lenses Need More Than One Element",
+      "content": "# Aberrations: Why Real Lenses Need More Than One Element\n\nParaxial optics assumes $\\sin\\theta = \\theta$. Keep the next term and five monochromatic aberrations appear, plus two chromatic ones. Lens design is the art of cancelling them against each other.\n\n## Where aberration comes from\n\n```python\nimport numpy as np\n\nprint(f\"{'angle (deg)':>13s}{'sin(theta)':>13s}{'theta':>11s}{'error':>12s}{'3rd order':>13s}\")\nfor deg in [1, 5, 10, 20, 30, 45]:\n    t = np.radians(deg)\n    third = t - t**3 / 6\n    print(f\"{deg:>13d}{np.sin(t):>13.6f}{t:>11.6f}{(t - np.sin(t)) / np.sin(t):>11.4%}\"\n          f\"{third:>13.6f}\")\nprint(\"\\nAt 10 degrees the paraxial error is already 0.5%. Every classical aberration\")\nprint(\"is the cubic term, which is why they are called third-order aberrations.\")\n```\n\n## Spherical aberration\n\nRays through the edge of a spherical lens focus closer than paraxial rays. Trace exact rays and measure the spread.\n\n```python\nimport numpy as np\n\ndef exact_focus(h, R, n, t=0.0):\n    \"\"\"Where a ray at height h, parallel to the axis, crosses the axis after one\n    spherical surface (exact Snell, not paraxial).\"\"\"\n    if h >= abs(R):\n        return None\n    theta_i = np.arcsin(h / R)                 # angle to the surface normal\n    theta_t = np.arcsin(np.sin(theta_i) / n)\n    deviation = theta_i - theta_t\n    return h / np.tan(deviation) if deviation > 0 else None\n\nR, n = 100.0, 1.5\nparaxial = R * n / (n - 1)\nprint(f\"paraxial focus at {paraxial:.3f} mm\\n\")\nprint(f\"{'ray height':>12s}{'exact focus':>14s}{'shift':>11s}\")\nfor h in [1, 5, 10, 20, 30, 40]:\n    f = exact_focus(h, R, n)\n    print(f\"{h:>12.1f}{f:>14.3f}{f - paraxial:>11.3f}\")\nprint(\"\\nEdge rays focus short: that is spherical aberration, and it grows as h^2.\")\nprint(\"Stopping the lens down removes it, at the cost of light and diffraction.\")\n```\n\n## The five Seidel aberrations\n\n```python\nseidel = [\n    (\"spherical\", \"h^4\", \"on-axis blur\", \"aspheric surface, or stop down\"),\n    (\"coma\", \"h^3 * y\", \"comet-shaped off-axis blur\", \"bend the lens, or add a stop\"),\n    (\"astigmatism\", \"h^2 * y^2\", \"tangential/sagittal foci split\", \"balance element powers\"),\n    (\"field curvature\", \"h^2 * y^2\", \"image lands on a bowl\", \"Petzval condition\"),\n    (\"distortion\", \"y^3\", \"straight lines curve\", \"symmetric layout, or correct in software\"),\n]\nprint(f\"{'aberration':18s}{'scales as':>12s}{'appearance':>32s}   fix\")\nfor name, scale, look, fix in seidel:\n    print(f\"{name:18s}{scale:>12s}{look:>32s}   {fix}\")\nprint(\"\\nOnly distortion leaves the image sharp; the others destroy resolution.\")\nprint(\"This is why a phone camera corrects distortion in software but not coma.\")\n```\n\n## Chromatic aberration and the achromat\n\nDifferent colours focus at different distances. Pairing a crown and a flint glass cancels the first-order colour error.\n\n```python\nimport numpy as np\n\ndef cauchy(lam_nm, A, B):\n    return A + B / (lam_nm * 1e-3) ** 2\n\ncrown = (1.5046, 0.00420)      # BK7\nflint = (1.7280, 0.01342)      # SF11\n\nlines = [486.1, 587.6, 656.3]\nprint(\"single BK7 lens, nominal f = 100 mm at 587 nm:\")\nR1, R2 = 100.0, -100.0\nfor lam in lines:\n    n = cauchy(lam, *crown)\n    f = 1 / ((n - 1) * (1 / R1 - 1 / R2))\n    print(f\"  {lam:.1f} nm: n = {n:.5f}, f = {f:.3f} mm\")\n\nnd_c, nd_f = cauchy(587.6, *crown), cauchy(587.6, *flint)\nV_c = (nd_c - 1) / (cauchy(486.1, *crown) - cauchy(656.3, *crown))\nV_f = (nd_f - 1) / (cauchy(486.1, *flint) - cauchy(656.3, *flint))\nf_total = 100.0\nf1 = f_total * (V_c - V_f) / V_c\nf2 = -f_total * (V_c - V_f) / V_f\nprint(f\"\\nachromatic doublet for f = 100 mm:\")\nprint(f\"  crown V = {V_c:.1f}, flint V = {V_f:.1f}\")\nprint(f\"  crown element f1 = {f1:.2f} mm, flint element f2 = {f2:.2f} mm\")\nprint(f\"  check: 1/f1 + 1/f2 = {1/f1 + 1/f2:.6f} = 1/{1/(1/f1 + 1/f2):.2f} mm\")\nprint(f\"  colour balance: 1/(f1 V1) + 1/(f2 V2) = {1/(f1*V_c) + 1/(f2*V_f):.3e} (should be ~0)\")\n```\n\n## The diffraction floor\n\nCorrecting aberrations only helps until you hit the diffraction limit. A lens is \"diffraction limited\" when its wavefront error is below about $\\lambda/4$.\n\n```python\nimport numpy as np\n\nlam = 550e-9\nprint(f\"{'f-number':>10s}{'Airy diameter':>17s}{'aberration blur at f/2.8':>26s}{'limited by':>14s}\")\nfor N in [1.4, 2.8, 5.6, 11, 22]:\n    airy = 2.44 * lam * N\n    spherical = 5e-6 * (2.8 / N) ** 3          # illustrative: falls fast as you stop down\n    limiter = \"diffraction\" if airy > spherical else \"aberration\"\n    print(f\"{N:>10.1f}{airy * 1e6:>15.2f}um{spherical * 1e6:>24.2f}um{limiter:>14s}\")\nprint(\"\\nEvery lens has a 'sweet spot' f-number where aberration has fallen enough\")\nprint(\"and diffraction has not yet taken over. For most camera lenses it is f/4 to f/8.\")\n\nprint(f\"\\nRayleigh criterion for wavefront quality: error below lambda/4 = {lam / 4 * 1e9:.1f} nm\")\nprint(\"which is why telescope mirrors are polished to a few tens of nanometres.\")\n```\n\n> [!TIP]\n> Aberrations scale steeply with aperture: spherical goes as the fourth power of the ray height. Doubling the aperture makes the blur sixteen times worse, which is why fast lenses need many elements and slow lenses can be simple.",
+      "quiz": {
+        "title": "Aberrations",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Spherical aberration causes edge rays to focus:",
+            "options": [
+              "Farther from the lens",
+              "Closer to the lens",
+              "At the same point",
+              "Off axis"
+            ],
+            "answer": "Closer to the lens"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "An achromatic doublet works by:",
+            "options": [
+              "Using two identical glasses",
+              "Pairing glasses with different dispersions so the colour errors cancel",
+              "Blocking blue light",
+              "Adding an aspheric surface"
+            ],
+            "answer": "Pairing glasses with different dispersions so the colour errors cancel"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Stopping a lens down always improves sharpness, with no limit.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The only Seidel aberration that leaves the image sharp while bending straight lines is ____.",
+            "options": [],
+            "answer": "distortion"
+          }
+        ]
+      },
+      "order": 4
+    },
+    {
+      "slug": "instruments-the-eye-the-camera-the-telescope-the-microscope",
+      "title": "Instruments: the Eye, the Camera, the Telescope, the Microscope",
+      "content": "# Instruments: the Eye, the Camera, the Telescope, the Microscope\n\nFour instruments, one set of formulas. Each trades field of view, light gathering, and resolution against each other in a different way.\n\n## The human eye\n\nThe cornea does most of the focusing; the lens does the adjusting. The whole system is about 60 dioptres.\n\n```python\nimport numpy as np\n\nsurfaces = [(\"cornea front (air to cornea)\", 1.0, 1.376, 7.8),\n            (\"cornea back (cornea to aqueous)\", 1.376, 1.336, 6.5),\n            (\"lens front (aqueous to lens)\", 1.336, 1.406, 10.2),\n            (\"lens back (lens to vitreous)\", 1.406, 1.337, -6.0)]\ntotal = 0.0\nprint(f\"{'surface':34s}{'power (D)':>12s}\")\nfor name, n1, n2, R_mm in surfaces:\n    P = (n2 - n1) / (R_mm * 1e-3)\n    total += P\n    print(f\"{name:34s}{P:>12.2f}\")\nprint(f\"{'total (relaxed eye)':34s}{total:>12.2f}\")\nprint(f\"\\nfocal length in the vitreous = n/P = {1.337 / total * 1000:.2f} mm, matching the eye's depth\")\n\nprint(\"\\naccommodation with age:\")\nfor age, amp in [(10, 14), (20, 11), (30, 9), (40, 6), (50, 2.5), (60, 1.0)]:\n    near = 1 / amp if amp > 0 else float(\"inf\")\n    print(f\"  age {age:2d}: {amp:5.1f} D of accommodation, near point {near * 100:6.1f} cm\")\nprint(\"Reading glasses arrive when the near point passes about 40 cm.\")\n```\n\n## Correcting vision\n\nA corrective lens moves the far point to infinity (myopia) or the near point to 25 cm (hypermetropia).\n\n```python\nprint(f\"{'condition':22s}{'far/near point':>18s}{'prescription':>16s}\")\ncases = [(\"myopia, far pt 0.5 m\", 0.5, \"far\"), (\"myopia, far pt 2 m\", 2.0, \"far\"),\n         (\"hypermetropia, near 1 m\", 1.0, \"near\"), (\"hypermetropia, near 0.5 m\", 0.5, \"near\")]\nfor name, dist, kind in cases:\n    if kind == \"far\":\n        P = -1 / dist\n    else:\n        P = 1 / 0.25 - 1 / dist\n    print(f\"{name:22s}{dist:>16.2f} m{P:>15.2f} D\")\nprint(\"\\nA -2.00 D prescription means a far point of 50 cm: everything beyond that is blurred.\")\n```\n\n## Cameras: exposure and depth of field\n\n```python\nimport numpy as np\n\ndef depth_of_field(f_mm, N, distance_m, coc_mm=0.03):\n    f = f_mm\n    s = distance_m * 1000\n    H = f**2 / (N * coc_mm) + f                      # hyperfocal distance\n    near = s * (H - f) / (H + s - 2 * f)\n    far = s * (H - f) / (H - s) if s < H else float(\"inf\")\n    return near / 1000, far / 1000, H / 1000\n\nprint(f\"{'lens':>8s}{'f-num':>7s}{'subject':>9s}{'near':>9s}{'far':>11s}{'DoF':>11s}\")\nfor f_mm, N, d in [(50, 1.4, 2), (50, 8, 2), (50, 8, 5), (24, 8, 2), (200, 2.8, 5)]:\n    near, far, H = depth_of_field(f_mm, N, d)\n    dof = f\"{far - near:.3f} m\" if np.isfinite(far) else \"infinite\"\n    far_s = f\"{far:.3f}\" if np.isfinite(far) else \"inf\"\n    print(f\"{f_mm:>6d}mm{N:>7.1f}{d:>8.1f}m{near:>9.3f}{far_s:>11s}{dof:>11s}\")\nprint(\"\\nDepth of field depends on focal length, aperture, and distance together.\")\nprint(\"A wide lens up close and a long lens far away are not interchangeable.\")\n```\n\n## Telescopes\n\nMagnification is the ratio of focal lengths; light gathering goes as aperture squared; resolution goes as aperture. Only one of those is free.\n\n```python\nimport numpy as np\n\ndef telescope(D_mm, f_obj, f_eye, lam=550e-9):\n    mag = f_obj / f_eye\n    exit_pupil = D_mm / mag\n    resolution = np.degrees(1.22 * lam / (D_mm * 1e-3)) * 3600\n    gain = (D_mm / 7.0) ** 2                    # versus a 7 mm dark-adapted pupil\n    limit_mag = 2.7 + 5 * np.log10(D_mm)\n    return mag, exit_pupil, resolution, gain, limit_mag\n\nprint(f\"{'aperture':>10s}{'mag':>7s}{'exit pupil':>13s}{'resolution':>13s}{'light gain':>13s}{'faintest star':>15s}\")\nfor D, fo, fe in [(60, 700, 25), (150, 1200, 10), (200, 1000, 6), (400, 1800, 10)]:\n    m, ep, res, gain, lm = telescope(D, fo, fe)\n    print(f\"{D:>8.0f}mm{m:>7.0f}x{ep:>11.2f}mm{res:>11.2f}\\\"{gain:>12.0f}x{lm:>15.1f}\")\nprint(\"\\nAn exit pupil larger than your eye's pupil wastes light, so magnification\")\nprint(\"below about D/7 gains nothing. Above about 2D, you magnify blur.\")\nprint(\"Ground-based seeing (~1 arcsec) caps useful resolution near 120 mm of aperture.\")\n```\n\n## Microscopes\n\nTotal magnification multiplies objective and eyepiece, but resolution comes only from numerical aperture.\n\n```python\nimport numpy as np\n\ndef microscope(obj_mag, obj_NA, eyepiece_mag, lam=550e-9):\n    total = obj_mag * eyepiece_mag\n    resolution = 0.61 * lam / obj_NA\n    useful_max = 1000 * obj_NA                       # rule of thumb\n    return total, resolution, useful_max\n\nprint(f\"{'objective':>12s}{'NA':>7s}{'eyepiece':>10s}{'total':>9s}{'resolution':>14s}{'useful max':>13s}\")\nfor om, na, em in [(10, 0.25, 10), (40, 0.65, 10), (100, 1.25, 10), (100, 1.40, 25)]:\n    total, res, useful = microscope(om, na, em)\n    flag = \"\" if total <= useful else \"  <- empty magnification\"\n    print(f\"{om:>10d}x{na:>7.2f}{em:>9d}x{total:>8.0f}x{res * 1e9:>12.0f}nm{useful:>12.0f}x{flag}\")\nprint(\"\\nBeyond about 1000 x NA you are enlarging the blur, not revealing detail.\")\nprint(\"That ceiling is why electron and fluorescence super-resolution microscopes exist.\")\n```\n\n> [!NOTE]\n> Every instrument above obeys the same trade: étendue (aperture area times solid angle) is conserved by any passive optical system. You can trade field of view for magnification, but you cannot create brightness out of geometry.",
+      "quiz": {
+        "title": "Optical Instruments",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Most of the eye's refractive power comes from:",
+            "options": [
+              "The lens",
+              "The cornea",
+              "The retina",
+              "The vitreous humour"
+            ],
+            "answer": "The cornea"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A telescope's ability to resolve fine detail depends on:",
+            "options": [
+              "Its magnification",
+              "Its aperture diameter",
+              "Its eyepiece focal length",
+              "Its tube length"
+            ],
+            "answer": "Its aperture diameter"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Increasing a microscope's magnification beyond about 1000 times its NA reveals more detail.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "A myopic eye with a far point of 0.5 m needs a lens of power minus ____ dioptres.",
+            "options": [],
+            "answer": "2"
+          }
+        ]
+      },
+      "order": 5
+    },
+    {
+      "slug": "radiometry-photometry-and-colour",
+      "title": "Radiometry, Photometry, and Colour",
+      "content": "# Radiometry, Photometry, and Colour\n\nRadiometry measures energy; photometry measures what a human eye makes of it; colorimetry measures what the brain reports. Confusing the three is the most common mistake in lighting and display work.\n\n## Two parallel vocabularies\n\n```python\npairs = [\n    (\"radiant flux\", \"watt (W)\", \"luminous flux\", \"lumen (lm)\"),\n    (\"irradiance\", \"W/m^2\", \"illuminance\", \"lux (lm/m^2)\"),\n    (\"radiant intensity\", \"W/sr\", \"luminous intensity\", \"candela (lm/sr)\"),\n    (\"radiance\", \"W/(m^2 sr)\", \"luminance\", \"nit (cd/m^2)\"),\n]\nprint(f\"{'radiometric':20s}{'unit':>14s}   |{'photometric':>20s}{'unit':>18s}\")\nfor r, ru, p, pu in pairs:\n    print(f\"{r:20s}{ru:>14s}   |{p:>20s}{pu:>18s}\")\nprint(\"\\nThe right-hand column is the left-hand one weighted by the eye's response.\")\nprint(\"A watt of green light gives 683 lumens; a watt of deep red gives almost none.\")\n```\n\n## The luminosity function\n\nThe eye peaks at 555 nm in daylight and shifts to 507 nm in the dark, which is why red objects look black by moonlight.\n\n```python\nimport numpy as np\n\ndef photopic(lam_nm):\n    \"\"\"Gaussian approximation to the CIE photopic curve V(lambda).\"\"\"\n    return np.exp(-0.5 * ((lam_nm - 555.0) / 42.0) ** 2)\n\ndef scotopic(lam_nm):\n    return np.exp(-0.5 * ((lam_nm - 507.0) / 40.0) ** 2)\n\nprint(f\"{'lambda (nm)':>13s}{'photopic V':>13s}{'scotopic V':>13s}{'lm per W':>11s}\")\nfor nm in [420, 460, 507, 555, 600, 650, 700]:\n    print(f\"{nm:>13d}{photopic(nm):>13.4f}{scotopic(nm):>13.4f}{683 * photopic(nm):>11.1f}\")\n\nprint(\"\\nefficacy of real sources:\")\nfor name, lm_per_W in [(\"incandescent\", 15), (\"halogen\", 20), (\"fluorescent\", 70),\n                       (\"white LED\", 120), (\"low-pressure sodium\", 180),\n                       (\"ideal 555 nm source\", 683)]:\n    print(f\"  {name:22s}{lm_per_W:>6.0f} lm/W   ({lm_per_W / 683:.1%} of the theoretical maximum)\")\nprint(\"\\nSodium lamps beat LEDs on efficacy only because they emit at the eye's peak\")\nprint(\"and nowhere else, which is also why everything under them looks yellow.\")\n```\n\n## The inverse square law and illuminance\n\n```python\nimport numpy as np\n\ndef illuminance(intensity_cd, distance_m, angle_deg=0.0):\n    return intensity_cd * np.cos(np.radians(angle_deg)) / distance_m**2\n\nprint(f\"{'distance':>10s}\" + \"\".join(f\"{f'{a} deg':>12s}\" for a in [0, 30, 60, 80]))\nfor d in [0.5, 1, 2, 5]:\n    row = f\"{d:>8.1f}m\"\n    for a in [0, 30, 60, 80]:\n        row += f\"{illuminance(100, d, a):>12.2f}\"\n    print(row)\n\nprint(\"\\ntypical illuminance levels (lux):\")\nfor name, lux in [(\"moonless overcast night\", 0.0001), (\"full moon\", 0.25),\n                  (\"living room\", 50), (\"office\", 500), (\"overcast day\", 1000),\n                  (\"direct sunlight\", 100000)]:\n    print(f\"  {name:26s}{lux:>10.4g}\")\nprint(\"\\nThat is nine orders of magnitude, and the eye handles all of it,\")\nprint(\"which no camera sensor comes close to doing in a single exposure.\")\n```\n\n## Colour matching\n\nThree cone types mean colour is three numbers. Any spectrum reduces to a point in a 3D space, and infinitely many spectra map to the same point: metamers.\n\n```python\nimport numpy as np\n\ndef cone_response(lam_nm):\n    \"\"\"Crude Gaussian approximations to the L, M and S cone sensitivities.\"\"\"\n    L = np.exp(-0.5 * ((lam_nm - 566) / 55) ** 2)\n    M = np.exp(-0.5 * ((lam_nm - 543) / 50) ** 2)\n    S = np.exp(-0.5 * ((lam_nm - 440) / 35) ** 2)\n    return np.array([L, M, S])\n\npure_yellow = cone_response(580.0)\nmix = 0.5 * cone_response(540.0) + 0.5 * cone_response(620.0)\nmix = mix / mix.sum() * pure_yellow.sum()\n\nprint(\"cone responses (L, M, S):\")\nprint(f\"  pure 580 nm yellow     : {np.round(pure_yellow, 4)}\")\nprint(f\"  green + red mixture    : {np.round(mix, 4)}\")\nprint(f\"  difference             : {np.round(np.abs(pure_yellow - mix), 4)}\")\nprint(\"\\nTwo physically different spectra can excite the cones almost identically.\")\nprint(\"That is metamerism, and it is the only reason a three-primary display works.\")\n```\n\n## Colour temperature and rendering\n\nA blackbody's spectrum is a one-parameter family, and lighting is sold by which blackbody it imitates.\n\n```python\nimport numpy as np\n\nh, c, kB = 6.62607015e-34, 299792458.0, 1.380649e-23\n\ndef planck(lam, T):\n    return 2 * h * c**2 / lam**5 / (np.exp(h * c / (lam * kB * T)) - 1)\n\nprint(f\"{'source':24s}{'CCT (K)':>10s}{'peak (nm)':>12s}{'blue/red ratio':>17s}\")\nfor name, T in [(\"candle flame\", 1850), (\"incandescent\", 2700), (\"warm white LED\", 3000),\n                (\"noon daylight\", 5500), (\"overcast sky\", 6500), (\"clear blue sky\", 10000)]:\n    peak = 2.897771955e-3 / T\n    ratio = planck(450e-9, T) / planck(650e-9, T)\n    print(f\"{name:24s}{T:>10d}{peak * 1e9:>12.0f}{ratio:>17.3f}\")\nprint(\"\\n'Warm' light is cooler in temperature: the colour vocabulary is backwards\")\nprint(\"because it comes from the psychology of firelight, not from physics.\")\n```\n\n> [!TIP]\n> If a specification is in watts, it is radiometric and says nothing about brightness to a human. If it is in lumens, lux, candela, or nits, it already contains the eye's response and cannot be converted back without knowing the spectrum.",
+      "quiz": {
+        "title": "Light Measurement and Colour",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Lumens differ from watts because lumens:",
+            "options": [
+              "Measure only visible photons",
+              "Weight the spectrum by the eye's sensitivity",
+              "Include infrared",
+              "Are a unit of intensity"
+            ],
+            "answer": "Weight the spectrum by the eye's sensitivity"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Two different spectra that look identical to a human are called:",
+            "options": [
+              "Isomers",
+              "Metamers",
+              "Harmonics",
+              "Complements"
+            ],
+            "answer": "Metamers"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A light described as 'warm white' has a higher colour temperature than 'cool white'.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The maximum possible luminous efficacy, at 555 nm, is ____ lumens per watt.",
+            "options": [],
+            "answer": "683"
+          }
+        ]
+      },
+      "order": 6
+    },
+    {
+      "slug": "final-project-an-optical-bench-in-code",
+      "title": "Final Project: An Optical Bench in Code",
+      "content": "# Final Project: An Optical Bench in Code\n\nBuild `optics.py`: a ray tracer and system analyser that goes from a lens prescription to a spot diagram.\n\n## What to build\n\n**Paraxial layer**\n1. `translate(d)`, `thin_lens(f)`, `refract(n1, n2, R)`, and `system(*elements)` returning the product matrix.\n2. `analyse(M)`, extracting focal length, principal planes, and whether the system is afocal.\n3. `conjugates(M, s_o)`, solving for the image distance and magnification.\n\n**Exact ray tracer**\n4. `Ray(origin, direction)` and `Surface(z, radius, n_before, n_after, aperture)`.\n5. `intersect(ray, surface)` for a spherical surface, solving the quadratic and rejecting rays that miss the aperture.\n6. `refract_exact(ray, normal, n1, n2)` using the vector form of Snell's law, returning `None` for total internal reflection.\n7. `trace(rays, surfaces)`, returning the full path of each ray.\n\n**Analysis**\n8. `spot_diagram(surfaces, field_angle, wavelengths)`, tracing a bundle and reporting the RMS spot radius.\n9. `through_focus(surfaces, z_range)`, finding the plane of best focus rather than assuming the paraxial one.\n10. `chromatic_focal_shift(surfaces, wavelengths)` using a Cauchy or Sellmeier index model.\n\n## A skeleton to start from\n\n```python\nimport numpy as np\n\n\ndef refract_exact(direction, normal, n1, n2):\n    \"\"\"Vector Snell's law. Returns None on total internal reflection.\"\"\"\n    d = direction / np.linalg.norm(direction)\n    n = normal / np.linalg.norm(normal)\n    cos_i = -np.dot(n, d)\n    if cos_i < 0:\n        n, cos_i = -n, -cos_i\n    eta = n1 / n2\n    k = 1 - eta**2 * (1 - cos_i**2)\n    if k < 0:\n        return None\n    return eta * d + (eta * cos_i - np.sqrt(k)) * n\n\n\n# check against Snell's law at a flat surface\nnormal = np.array([0.0, 0.0, -1.0])\nfor deg in [0, 15, 30, 45, 60]:\n    t = np.radians(deg)\n    d = np.array([np.sin(t), 0.0, np.cos(t)])\n    out = refract_exact(d, normal, 1.0, 1.5)\n    angle_out = np.degrees(np.arccos(abs(out[2])))\n    print(f\"in {deg:2d} deg -> out {angle_out:6.3f} deg   \"\n          f\"Snell says {np.degrees(np.arcsin(np.sin(t) / 1.5)):6.3f} deg\")\n```\n\n## Required experiments\n\n**Spherical aberration, measured.** Trace a bundle of parallel rays through a single plano-convex lens at heights from 5% to 95% of the aperture. Report the longitudinal focus shift and fit its dependence on ray height. Then flip the lens around and show which orientation is better, and by how much.\n\n**Find the best focus.** Sweep the image plane through focus and plot RMS spot radius. Report how far the true best focus is from the paraxial one, and explain the direction of the shift.\n\n**Design an achromat.** Choose two glasses, solve for the two element powers that cancel first-order colour, and trace three wavelengths through the result. Report the residual focal shift compared with the single lens.\n\n**Simulate a telescope.** Build a two-element system, trace an on-axis and a 0.5 degree off-axis bundle, and show the off-axis coma. Report the spot size at both field positions.\n\n**Depth of field, from the tracer.** Define an acceptable circle of confusion, then find the object-distance range that stays inside it. Compare against the textbook hyperfocal formula.\n\n## Stretch goals\n\n- Add a Sellmeier index model with real coefficients and reproduce a published glass's dispersion curve.\n- Implement an optimiser that adjusts the radii of a doublet to minimise RMS spot size across three wavelengths and two field angles, and report what it converges to.\n- Add a simple non-sequential mode so a ray can hit surfaces in any order, and use it to model a corner-cube retroreflector.\n\n## What to submit\n\n`optics.py`, a driver script running every experiment, and a write-up of about a page covering:\n\n- your measured exponent for spherical aberration against ray height, and how it compares with the theoretical fourth power in wavefront terms\n- which orientation of the plano-convex lens performed better and the physical reason\n- the residual chromatic focal shift of your achromat, and where the remaining error comes from (secondary spectrum)\n\n> [!TIP]\n> Test the exact tracer against the paraxial matrices in the limit of small ray heights. If they do not agree to five digits at 0.1 mm, there is a bug in the tracer, not an aberration.",
+      "requiresSubmission": true,
+      "order": 7
+    }
+  ]
+}

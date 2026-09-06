@@ -1,0 +1,335 @@
+{
+  "slug": "statistical-mechanics",
+  "title": "Statistical Mechanics",
+  "description": "Microstates and entropy, the Boltzmann distribution and partition functions, ideal gases and Maxwell-Boltzmann speeds, ensembles and fluctuations, Monte Carlo and the Ising transition, and quantum statistics, all simulated in the browser.",
+  "pathSlug": "statistical-mechanics",
+  "pathName": "Statistical Mechanics",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "counting-microstates-entropy-from-combinatorics",
+      "title": "Counting Microstates: Entropy from Combinatorics",
+      "content": "# Counting Microstates: Entropy from Combinatorics\n\nStatistical mechanics is the claim that thermodynamics is counting. Temperature, entropy, and irreversibility all come from the number of ways a system can arrange itself, and nothing else.\n\n## Microstates and macrostates\n\nA **microstate** is a complete specification (which coin is heads, which molecule is where). A **macrostate** is what you can actually measure (how many heads, the pressure). Count the microstates behind each macrostate and the asymmetry is immediate.\n\n```python\nfrom math import comb\n\nN = 20\ntotal = 2 ** N\nprint(f\"{'heads':>7s}{'microstates':>14s}{'probability':>14s}\")\nfor heads in [0, 1, 5, 10, 15, 19, 20]:\n    w = comb(N, heads)\n    print(f\"{heads:>7d}{w:>14d}{w / total:>14.6f}\")\n\nprint(f\"\\nall 20 heads : 1 microstate\")\nprint(f\"exactly 10   : {comb(N, 10)} microstates, {comb(N, 10) / total:.1%} of the time\")\n```\n\nNothing forbids all twenty coins landing heads. It is simply outnumbered, and the outnumbering grows explosively with $N$.\n\n## Boltzmann's entropy\n\n$$S = k_B \\ln \\Omega$$\n\nThe logarithm is not decoration: it makes entropy additive when you put two independent systems side by side, because $\\Omega_{\\text{total}} = \\Omega_1\\Omega_2$.\n\n```python\nimport numpy as np\nfrom math import comb, log\n\nkB = 1.380649e-23\n\nfor N in [10, 100, 1000]:\n    peak = comb(N, N // 2)\n    print(f\"N = {N:5d}   Omega(half heads) = {peak:.4e}   S/kB = {log(peak):.4f}\")\n\nprint(\"\\nadditivity check:\")\no1, o2 = comb(10, 5), comb(20, 10)\nprint(f\"  ln(O1) + ln(O2) = {log(o1) + log(o2):.6f}\")\nprint(f\"  ln(O1 * O2)     = {log(o1 * o2):.6f}\")\n```\n\n## Stirling's approximation and why fluctuations vanish\n\nFor large $N$, $\\ln N! \\approx N\\ln N - N$. Applied to the binomial, it says the distribution of the fraction of heads is Gaussian with width $\\propto 1/\\sqrt{N}$.\n\n```python\nimport numpy as np\nfrom math import comb, lgamma, log\n\nprint(f\"{'N':>8s}{'exact ln N!':>16s}{'Stirling':>14s}{'rel error':>12s}\")\nfor N in [10, 100, 1000, 10000]:\n    exact = lgamma(N + 1)\n    stirling = N * log(N) - N\n    print(f\"{N:>8d}{exact:>16.4f}{stirling:>14.4f}{abs(exact - stirling) / exact:>11.3%}\")\n\nprint(f\"\\n{'N':>10s}{'relative width of the peak':>28s}\")\nfor N in [1e2, 1e4, 1e6, 1e23]:\n    print(f\"{N:>10.0e}{1 / np.sqrt(N):>28.3e}\")\nprint(\"\\nFor a mole, density fluctuations are one part in 1e11. That is why\")\nprint(\"thermodynamics can pretend macroscopic quantities are exact numbers.\")\n```\n\n## The second law as arithmetic\n\nPut two Einstein solids in contact and let energy quanta move between them. The equilibrium split is the one with the most microstates, overwhelmingly.\n\n```python\nimport numpy as np\nfrom math import comb\n\ndef omega(q, N):\n    \"\"\"Microstates of N oscillators sharing q quanta.\"\"\"\n    return comb(q + N - 1, q)\n\nNA, NB, total_q = 60, 40, 100\ncounts = np.array([omega(q, NA) * omega(total_q - q, NB) for q in range(total_q + 1)],\n                  dtype=float)\nprobs = counts / counts.sum()\nbest = int(np.argmax(counts))\n\nprint(f\"most likely split: {best} quanta in A, {total_q - best} in B\")\nprint(f\"proportional to sizes: {total_q * NA / (NA + NB):.0f} / {total_q * NB / (NA + NB):.0f}\\n\")\nprint(f\"{'q in A':>8s}{'multiplicity':>16s}{'probability':>14s}\")\nfor q in [0, 20, 40, best, 80, 100]:\n    print(f\"{q:>8d}{counts[q]:>16.4e}{probs[q]:>14.6f}\")\nprint(f\"\\nP(all energy in A) = {probs[100]:.3e}: not forbidden, just hopeless.\")\n```\n\n## Entropy of mixing\n\nOpen a partition between two gases and entropy rises by $-Nk_B\\sum x_i\\ln x_i$. Nothing \"happened\" mechanically; the accessible volume simply grew.\n\n```python\nimport numpy as np\n\ndef mixing_entropy(fractions):\n    x = np.array([f for f in fractions if f > 0])\n    return -np.sum(x * np.log(x))\n\ncases = {\n    \"50/50 mix\":      [0.5, 0.5],\n    \"90/10 mix\":      [0.9, 0.1],\n    \"99/1 mix\":       [0.99, 0.01],\n    \"four equal gases\": [0.25] * 4,\n    \"unmixed\":        [1.0],\n}\nfor name, x in cases.items():\n    print(f\"{name:20s} dS / N kB = {mixing_entropy(x):.4f}\")\n\nprint(\"\\nGibbs paradox: mixing a gas with itself must give zero, and it does,\")\nprint(\"because identical particles were never distinguishable to begin with.\")\n```\n\n## Irreversibility, simulated\n\nLet particles hop randomly between two halves of a box. Start them all on the left and watch the count relax, then look at how often it ever comes back.\n\n```python\nimport numpy as np\n\nrng = np.random.default_rng(0)\nN, steps = 100, 20000\nleft = N\nhistory = np.empty(steps)\nfor t in range(steps):\n    # pick a random particle and move it to the other side\n    if rng.random() < left / N:\n        left -= 1\n    else:\n        left += 1\n    history[t] = left\n\nburn = steps // 2\nprint(f\"start: {N} on the left\")\nprint(f\"mean after equilibration : {history[burn:].mean():.2f}\")\nprint(f\"standard deviation       : {history[burn:].std():.2f}  (predicted {np.sqrt(N) / 2:.2f})\")\nprint(f\"times all {N} were back on the left: {int(np.sum(history == N))}\")\nprint(f\"expected recurrence time  : 2^{N} steps = {2.0 ** N:.2e}\")\n```\n\n> [!NOTE]\n> The second law is not a law of mechanics. Every microscopic step above is reversible; what makes the process one-way is that the equilibrium macrostate has vastly more microstates than the starting one.",
+      "quiz": {
+        "title": "Counting and Entropy",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Entropy is defined with a logarithm of the multiplicity mainly because:",
+            "options": [
+              "Logarithms are easier to compute",
+              "It makes entropy additive for independent systems",
+              "Multiplicities are always negative",
+              "It cancels Planck's constant"
+            ],
+            "answer": "It makes entropy additive for independent systems"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Relative fluctuations in a macroscopic system scale as:",
+            "options": [
+              "1/N",
+              "1/sqrt(N)",
+              "N",
+              "They do not depend on N"
+            ],
+            "answer": "1/sqrt(N)"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A gas spontaneously collecting in half its container is forbidden by the laws of mechanics.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Two systems in thermal contact settle at the energy split that maximises the total ____.",
+            "options": [],
+            "answer": "multiplicity"
+          }
+        ]
+      },
+      "order": 1
+    },
+    {
+      "slug": "the-boltzmann-distribution-and-the-partition-function",
+      "title": "The Boltzmann Distribution and the Partition Function",
+      "content": "# The Boltzmann Distribution and the Partition Function\n\nOnce a small system exchanges energy with a large one, all the counting collapses into a single exponential weight, and every thermodynamic quantity comes from one function.\n\n## Where the exponential comes from\n\nA reservoir with more energy has more microstates. Expanding $\\ln\\Omega_{\\text{res}}(E_{\\text{tot}} - \\varepsilon)$ to first order gives the probability of the small system being in a state of energy $\\varepsilon$:\n\n$$P(\\varepsilon) \\propto e^{-\\varepsilon/k_BT}$$\n\n```python\nimport numpy as np\nfrom math import comb, log\n\nN_res, total_q = 2000, 4000\n\ndef log_omega(q, N):\n    return sum(log((q + N - 1 - i) / (i + 1)) for i in range(min(q, 200)))\n\nprint(\"reservoir multiplicity as the small system takes energy:\")\nbase = None\nfor eps in [0, 1, 2, 3, 4]:\n    lw = log_omega(total_q - eps, N_res)\n    if base is None:\n        base = lw\n    print(f\"  eps = {eps}: ln Omega_res - ln Omega_res(0) = {lw - base:+.5f}\")\nprint(\"\\nEach unit of energy taken multiplies the reservoir's count by a constant factor.\")\nprint(\"A constant ratio per unit of energy is exactly an exponential.\")\n```\n\n## The partition function\n\n$$Z = \\sum_i e^{-\\beta\\varepsilon_i}, \\qquad \\langle E\\rangle = -\\frac{\\partial \\ln Z}{\\partial\\beta}, \\qquad F = -k_BT\\ln Z$$\n\nEverything else is a derivative of $\\ln Z$. Build it once for a two-level system and read off the thermodynamics.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\n\ndef two_level(gap_eV, T):\n    eps = np.array([0.0, gap_eV * 1.602176634e-19])\n    beta = 1 / (kB * T)\n    w = np.exp(-beta * eps)\n    Z = w.sum()\n    p = w / Z\n    E = np.sum(p * eps)\n    S = -kB * np.sum(p * np.log(p))\n    F = -kB * T * np.log(Z)\n    return Z, p, E, S, F\n\nprint(f\"{'T (K)':>8s}{'Z':>8s}{'p_excited':>12s}{'<E> (eV)':>12s}{'S/kB':>9s}\")\nfor T in [1, 10, 100, 300, 1000, 10000]:\n    Z, p, E, S, F = two_level(0.05, T)\n    print(f\"{T:>8d}{Z:>8.4f}{p[1]:>12.6f}{E / 1.602176634e-19:>12.6f}{S / kB:>9.4f}\")\nprint(\"\\nAt low T everything sits in the ground state (Z -> 1, S -> 0).\")\nprint(\"At high T the two levels are equally likely (Z -> 2, S -> ln 2).\")\n```\n\n## The Schottky anomaly\n\nHeat capacity of a two-level system peaks near $k_BT \\approx 0.4\\,\\Delta$ and falls off on both sides, because a system with a finite level spacing eventually runs out of levels to excite.\n\n```python\nimport numpy as np\n\ndef schottky(x):\n    \"\"\"C / (N kB) for a two-level system, with x = kT/gap.\"\"\"\n    with np.errstate(over=\"ignore\"):\n        return (1 / x**2) * np.exp(1 / x) / (1 + np.exp(1 / x)) ** 2\n\nxs = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 1.0, 2.0, 5.0])\nprint(f\"{'kT/gap':>9s}{'C / N kB':>12s}\")\nfor x in xs:\n    print(f\"{x:>9.2f}{schottky(x):>12.5f}\")\n\nfine = np.linspace(0.05, 3, 2000)\nbest = fine[np.argmax(schottky(fine))]\nprint(f\"\\npeak at kT/gap = {best:.4f}, C_max/NkB = {schottky(best):.4f}\")\nprint(\"Below the peak the gap is too big to excite; above it both levels are saturated.\")\n```\n\n## Equipartition, and where it fails\n\nEach quadratic degree of freedom contributes $\\tfrac{1}{2}k_BT$, *if* its level spacing is small compared with $k_BT$. A quantum oscillator shows exactly where the classical rule breaks.\n\n```python\nimport numpy as np\n\ndef oscillator_energy(x):\n    \"\"\"<E>/(hbar omega) for a quantum oscillator at kT/(hbar omega) = x.\"\"\"\n    return 0.5 + 1 / (np.exp(1 / x) - 1)\n\nprint(f\"{'kT/hw':>9s}{'quantum <E>':>14s}{'classical kT':>15s}{'C/kB':>9s}\")\nfor x in [0.1, 0.3, 0.5, 1.0, 3.0, 10.0]:\n    e = oscillator_energy(x)\n    y = 1 / x\n    C = y**2 * np.exp(y) / (np.exp(y) - 1) ** 2\n    print(f\"{x:>9.2f}{e:>14.5f}{x:>15.2f}{C:>9.5f}\")\nprint(\"\\nAbove kT ~ hbar omega the quantum answer matches kT and C -> kB.\")\nprint(\"Below it the mode is frozen out, which is why hydrogen's vibrational\")\nprint(\"degrees of freedom contribute nothing at room temperature.\")\n```\n\n## Heat capacity of a diatomic gas\n\nThe staircase in $C_V$ for hydrogen, from $\\tfrac{3}{2}k_B$ to $\\tfrac{5}{2}k_B$ to $\\tfrac{7}{2}k_B$, was one of the first hard clues that classical physics was incomplete.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\ntheta_rot, theta_vib = 85.0, 6100.0     # characteristic temperatures for H2, in K\n\ndef cv_over_kB(T):\n    c = 1.5                              # translation, always active\n    x = theta_rot / T\n    c += 1.0 if T > 3 * theta_rot else np.exp(-x) * (x**2) * 2   # rotation, roughly\n    y = theta_vib / T\n    if y < 40:\n        c += y**2 * np.exp(y) / (np.exp(y) - 1) ** 2             # vibration\n    return c\n\nprint(f\"{'T (K)':>8s}{'Cv / kB':>11s}   active modes\")\nfor T in [20, 50, 150, 300, 1000, 3000, 6000]:\n    c = cv_over_kB(T)\n    modes = \"translation\" + (\", rotation\" if T > 200 else \"\") + (\", vibration\" if T > 2000 else \"\")\n    print(f\"{T:>8d}{c:>11.3f}   {modes}\")\nprint(\"\\nEach mode switches on near its own characteristic temperature, not gradually.\")\n```\n\n> [!TIP]\n> If you can write down the energy levels, you can write $Z$; if you can write $Z$, you have every thermodynamic quantity by differentiation. Most of statistical mechanics is finding a clever way to evaluate a sum.",
+      "quiz": {
+        "title": "Boltzmann and Z",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The Boltzmann factor is exponential because:",
+            "options": [
+              "Energies are always positive",
+              "The reservoir's multiplicity grows by a constant factor per unit of energy",
+              "Of the uncertainty principle",
+              "Particles are indistinguishable"
+            ],
+            "answer": "The reservoir's multiplicity grows by a constant factor per unit of energy"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The heat capacity of a two-level system falls at high temperature because:",
+            "options": [
+              "The particles escape",
+              "Both levels are nearly equally occupied, so extra heat changes little",
+              "Entropy is maximised",
+              "The gap grows with temperature"
+            ],
+            "answer": "Both levels are nearly equally occupied, so extra heat changes little"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Equipartition applies to a degree of freedom whose level spacing is much larger than kT.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The Helmholtz free energy equals minus kT times the logarithm of the ____ function.",
+            "options": [],
+            "answer": "partition"
+          }
+        ]
+      },
+      "order": 2
+    },
+    {
+      "slug": "ideal-gases-and-the-maxwell-boltzmann-distribution",
+      "title": "Ideal Gases and the Maxwell-Boltzmann Distribution",
+      "content": "# Ideal Gases and the Maxwell-Boltzmann Distribution\n\nThe ideal gas is where statistical mechanics meets a formula everybody already knows, and where sampling replaces algebra most convincingly.\n\n## Speeds in a gas\n\n$$f(v) \\propto v^2 e^{-mv^2/2k_BT}$$\n\nThe $v^2$ comes from the volume of a spherical shell in velocity space, and it is why the most probable speed is not zero even though the most probable *velocity* is.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\nu = 1.66053906660e-27\n\ndef speeds(mass_amu, T):\n    m = mass_amu * u\n    v_p = np.sqrt(2 * kB * T / m)                 # most probable\n    v_avg = np.sqrt(8 * kB * T / (np.pi * m))     # mean\n    v_rms = np.sqrt(3 * kB * T / m)               # root mean square\n    return v_p, v_avg, v_rms\n\nprint(f\"{'gas':10s}{'M (amu)':>9s}{'v_p':>10s}{'<v>':>10s}{'v_rms':>10s}   (m/s at 300 K)\")\nfor name, M in [(\"H2\", 2), (\"He\", 4), (\"N2\", 28), (\"O2\", 32), (\"CO2\", 44), (\"Xe\", 131)]:\n    vp, va, vr = speeds(M, 300)\n    print(f\"{name:10s}{M:>9d}{vp:>10.1f}{va:>10.1f}{vr:>10.1f}\")\nprint(\"\\nThe three speeds always sit in the ratio 1 : 1.128 : 1.225, whatever the gas.\")\n```\n\n## Sampling the distribution\n\nDraw three Gaussian velocity components and the speed distribution appears on its own, with no need to derive it.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\nm = 28 * 1.66053906660e-27\nT = 300.0\n\nrng = np.random.default_rng(2)\nsigma = np.sqrt(kB * T / m)\nv = rng.normal(0, sigma, size=(200000, 3))\nspeed = np.linalg.norm(v, axis=1)\n\nprint(f\"sampled <v>   = {speed.mean():8.2f}   theory {np.sqrt(8 * kB * T / (np.pi * m)):8.2f}\")\nprint(f\"sampled v_rms = {np.sqrt((speed**2).mean()):8.2f}   theory {np.sqrt(3 * kB * T / m):8.2f}\")\nprint(f\"sampled <E>   = {0.5 * m * (speed**2).mean() / (kB * T):8.4f} kT   theory   1.5000 kT\")\n\nprint(\"\\nfraction of molecules above a threshold speed:\")\nfor factor in [1, 2, 3, 4]:\n    thresh = factor * np.sqrt(2 * kB * T / m)\n    print(f\"  above {factor} v_p: {np.mean(speed > thresh):.5f}\")\n```\n\nThe tail is where chemistry happens: reaction rates depend on the small fraction of molecules above an activation energy, which is why rates are so temperature-sensitive.\n\n## Arrhenius from the tail\n\n```python\nimport numpy as np\n\nkB_eV = 8.617333262e-5\n\nprint(f\"{'Ea (eV)':>9s}\" + \"\".join(f\"{f'{T} K':>13s}\" for T in [250, 300, 350, 400]))\nfor Ea in [0.1, 0.5, 1.0, 1.5]:\n    row = f\"{Ea:>9.2f}\"\n    for T in [250, 300, 350, 400]:\n        row += f\"{np.exp(-Ea / (kB_eV * T)):>13.3e}\"\n    print(row)\n\nEa = 1.0\nr1, r2 = np.exp(-Ea / (kB_eV * 300)), np.exp(-Ea / (kB_eV * 310))\nprint(f\"\\nfor Ea = 1 eV, a 10 K rise from 300 K multiplies the rate by {r2 / r1:.2f}\")\nprint(\"The familiar 'rates double every 10 degrees' is this exponential, nothing more.\")\n```\n\n## Pressure from momentum transfer\n\nDerive $PV = Nk_BT$ by counting collisions with a wall, then check it against the sampled gas.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\nm = 28 * 1.66053906660e-27\nT, n_density = 300.0, 2.5e25          # particles per m^3, roughly air at STP\n\nrng = np.random.default_rng(5)\nsigma = np.sqrt(kB * T / m)\nvx = rng.normal(0, sigma, 500000)\n\n# pressure = n * m * <vx^2>\nP_kinetic = n_density * m * np.mean(vx**2)\nP_ideal = n_density * kB * T\nprint(f\"P from <vx^2>  = {P_kinetic:.1f} Pa\")\nprint(f\"P = n kT       = {P_ideal:.1f} Pa\")\nprint(f\"atmospheric    = 101325 Pa\")\nprint(f\"\\nmean free path and collision rate for air:\")\nd = 3.7e-10\nmfp = 1 / (np.sqrt(2) * np.pi * d**2 * n_density)\nv_avg = np.sqrt(8 * kB * T / (np.pi * m))\nprint(f\"  mean free path = {mfp * 1e9:.1f} nm ({mfp / d:.0f} molecular diameters)\")\nprint(f\"  collision rate = {v_avg / mfp:.2e} per second\")\n```\n\nA molecule collides billions of times a second, which is why gases reach local equilibrium almost instantly and why hydrodynamics works at all.\n\n## Effusion and isotope separation\n\nLighter molecules escape a small hole faster, in proportion to $1/\\sqrt{m}$. The entire uranium enrichment industry is built on the fourth decimal place of that ratio.\n\n```python\nimport numpy as np\n\npairs = [(\"H2 vs D2\", 2, 4), (\"N2 vs O2\", 28, 32), (\"UF6: U-235 vs U-238\", 349, 352)]\nfor name, m1, m2 in pairs:\n    ratio = np.sqrt(m2 / m1)\n    print(f\"{name:24s} rate ratio = {ratio:.5f}\")\n\nsingle = np.sqrt(352 / 349)\ntarget = 0.9 / 0.1 / (0.007 / 0.993)          # from 0.7% to 90% enrichment\nstages = np.log(target) / np.log(single)\nprint(f\"\\nstages needed to go from natural to 90% U-235: {stages:.0f}\")\nprint(\"Each stage gains 0.4%, so thousands of centrifuges run in cascade.\")\n```\n\n## Entropy of an ideal gas\n\nThe Sackur-Tetrode equation gets the absolute entropy right, and it needs quantum mechanics (through $h$) to do so, even for a classical gas.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\nh = 6.62607015e-34\nu = 1.66053906660e-27\n\ndef sackur_tetrode(M_amu, T, P=101325.0):\n    m = M_amu * u\n    V_per_N = kB * T / P\n    lam = h / np.sqrt(2 * np.pi * m * kB * T)         # thermal de Broglie wavelength\n    return kB * (np.log(V_per_N / lam**3) + 2.5), lam\n\nprint(f\"{'gas':8s}{'S/N kB':>10s}{'S (J/mol K)':>14s}{'measured':>11s}{'lambda (pm)':>14s}\")\ndata = [(\"He\", 4, 126.2), (\"Ne\", 20.2, 146.3), (\"Ar\", 39.9, 154.8), (\"Kr\", 83.8, 164.1)]\nfor name, M, measured in data:\n    S, lam = sackur_tetrode(M, 298.15)\n    print(f\"{name:8s}{S / kB:>10.4f}{S * 6.02214076e23:>14.2f}{measured:>11.1f}{lam * 1e12:>14.2f}\")\nprint(\"\\nAgreement to a fraction of a percent, from counting quantum states in phase space.\")\n```\n\n> [!NOTE]\n> The thermal de Broglie wavelength $\\lambda$ is the honest boundary of classical gas theory: the ideal gas laws hold while $\\lambda$ is much smaller than the spacing between particles. When they become comparable, quantum statistics takes over.",
+      "quiz": {
+        "title": "Ideal Gases",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The v squared factor in the speed distribution comes from:",
+            "options": [
+              "The kinetic energy formula",
+              "The volume of a shell in velocity space",
+              "Collisions with the walls",
+              "The Boltzmann factor"
+            ],
+            "answer": "The volume of a shell in velocity space"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Effusion rates through a small hole scale as:",
+            "options": [
+              "1/m",
+              "1/sqrt(m)",
+              "m",
+              "sqrt(m)"
+            ],
+            "answer": "1/sqrt(m)"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "At a given temperature, all gases have the same average kinetic energy per molecule.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Classical gas behaviour holds while the thermal de Broglie ____ is much smaller than the particle spacing.",
+            "options": [],
+            "answer": "wavelength"
+          }
+        ]
+      },
+      "order": 3
+    },
+    {
+      "slug": "ensembles-free-energy-and-fluctuations",
+      "title": "Ensembles, Free Energy, and Fluctuations",
+      "content": "# Ensembles, Free Energy, and Fluctuations\n\nDifferent constraints give different ensembles. They agree on averages for large systems, disagree about fluctuations, and the fluctuations are where the interesting physics is.\n\n## The three ensembles\n\n| Ensemble | Fixed | Fluctuating | Potential |\n|---|---|---|---|\n| Microcanonical | $N, V, E$ | nothing | $S = k_B\\ln\\Omega$ |\n| Canonical | $N, V, T$ | energy | $F = -k_BT\\ln Z$ |\n| Grand canonical | $\\mu, V, T$ | energy and particles | $\\Phi = -k_BT\\ln\\mathcal{Z}$ |\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\n\ndef canonical(levels, T, degeneracy=None):\n    g = np.ones_like(levels) if degeneracy is None else np.asarray(degeneracy, float)\n    beta = 1 / (kB * T)\n    w = g * np.exp(-beta * levels)\n    Z = w.sum()\n    p = w / Z\n    E = np.sum(p * levels)\n    E2 = np.sum(p * levels**2)\n    return {\"Z\": Z, \"E\": E, \"varE\": E2 - E**2, \"S\": -kB * np.sum(p * np.log(p / g)),\n            \"F\": -kB * T * np.log(Z)}\n\nlevels = np.array([0, 1, 2, 3, 4]) * 1e-21\nfor T in [10, 50, 300]:\n    r = canonical(levels, T)\n    check = r[\"F\"] + T * r[\"S\"]\n    print(f\"T = {T:4d} K   <E> = {r['E']:.4e}   F = {r['F']:+.4e}   F + TS = {check:.4e}\")\nprint(\"\\nF = E - TS holds at every temperature, which is the thermodynamic identity.\")\n```\n\n## Energy fluctuations and heat capacity\n\n$$\\langle \\Delta E^2\\rangle = k_BT^2 C_V$$\n\nA fluctuation-response relation: how much a system jitters tells you how strongly it responds to heating. This is the simplest fluctuation-dissipation theorem.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\ngap = 1e-21\nlevels = np.array([0.0, gap])\n\nprint(f\"{'T (K)':>8s}{'<E>':>12s}{'var(E)':>13s}{'kT^2 C_V':>13s}{'ratio':>9s}\")\nfor T in [20, 50, 100, 300]:\n    beta = 1 / (kB * T)\n    w = np.exp(-beta * levels)\n    p = w / w.sum()\n    E = np.sum(p * levels)\n    var = np.sum(p * levels**2) - E**2\n    dT = T * 1e-4\n    def energy(temp):\n        ww = np.exp(-levels / (kB * temp))\n        return np.sum(levels * ww / ww.sum())\n    C = (energy(T + dT) - energy(T - dT)) / (2 * dT)\n    print(f\"{T:>8d}{E:>12.4e}{var:>13.4e}{kB * T**2 * C:>13.4e}{var / (kB * T**2 * C):>9.5f}\")\n```\n\n## Why ensembles agree\n\nRelative energy fluctuations go as $1/\\sqrt{N}$, so for macroscopic $N$ the canonical ensemble's fluctuating energy is indistinguishable from the microcanonical fixed one.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\nT = 300.0\n\nprint(f\"{'N':>10s}{'relative energy fluctuation':>30s}\")\nfor N in [1, 100, 1e6, 1e12, 6.022e23]:\n    # for an ideal monatomic gas, E = 1.5 N kT and var = 1.5 N (kT)^2\n    rel = np.sqrt(1.5 * N) * kB * T / (1.5 * N * kB * T)\n    print(f\"{N:>10.3g}{rel:>30.3e}\")\nprint(\"\\nAt a mole, the energy is fixed to one part in 1e12. The ensembles agree\")\nprint(\"about everything you could ever measure, which is why the choice is a convenience.\")\n```\n\n## Chemical potential and the grand ensemble\n\n$\\mu$ is the energy cost of adding a particle. Systems exchange particles until their chemical potentials match, exactly as they exchange energy until temperatures match.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\nh = 6.62607015e-34\nu = 1.66053906660e-27\n\ndef mu_ideal(M_amu, T, P):\n    m = M_amu * u\n    lam = h / np.sqrt(2 * np.pi * m * kB * T)\n    n = P / (kB * T)\n    return kB * T * np.log(n * lam**3)\n\nprint(f\"{'P (Pa)':>10s}{'mu/kT for N2 at 300 K':>26s}\")\nfor P in [1e2, 1e4, 1e5, 1e7]:\n    print(f\"{P:>10.0e}{mu_ideal(28, 300, P) / (kB * 300):>26.4f}\")\nprint(\"\\nmu is strongly negative for a dilute gas: adding a particle is easy, because\")\nprint(\"there are far more available states than particles to fill them.\")\n```\n\n## Barometric distribution\n\nAn external potential just shifts the energy, so density follows the same Boltzmann factor. That is why the atmosphere thins with altitude, and why heavier gases settle lower.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\nu_amu = 1.66053906660e-27\ng, T = 9.81, 250.0\n\nprint(f\"{'altitude':>10s}\" + \"\".join(f\"{name:>10s}\" for name in [\"N2\", \"O2\", \"He\", \"CO2\"]))\nfor h_km in [0, 5, 10, 20, 50]:\n    row = f\"{h_km:>8d}km\"\n    for M in [28, 32, 4, 44]:\n        H = kB * T / (M * u_amu * g)\n        row += f\"{np.exp(-h_km * 1000 / H):>10.4f}\"\n    print(row)\nprint(\"\\nScale height for N2 is about 7 km; for helium it is 50 km, which is why\")\nprint(\"helium leaks out of the atmosphere entirely over geological time.\")\n```\n\n> [!TIP]\n> When a problem fixes temperature, minimise free energy, not energy. Many results that look strange, rubber bands heating when stretched, proteins folding, colloids crystallising as they get more concentrated, are entropy terms beating energy terms in $F = E - TS$.",
+      "quiz": {
+        "title": "Ensembles and Fluctuations",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The variance of energy in the canonical ensemble equals:",
+            "options": [
+              "kT times E",
+              "kT squared times the heat capacity",
+              "The entropy times T",
+              "Zero"
+            ],
+            "answer": "kT squared times the heat capacity"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Two systems exchange particles freely. At equilibrium they share the same:",
+            "options": [
+              "Energy",
+              "Entropy",
+              "Chemical potential",
+              "Volume"
+            ],
+            "answer": "Chemical potential"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The microcanonical and canonical ensembles disagree about average quantities for macroscopic systems.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "At fixed temperature and volume, equilibrium minimises the Helmholtz ____ energy.",
+            "options": [],
+            "answer": "free"
+          }
+        ]
+      },
+      "order": 4
+    },
+    {
+      "slug": "monte-carlo-and-the-ising-model",
+      "title": "Monte Carlo and the Ising Model",
+      "content": "# Monte Carlo and the Ising Model\n\nInteractions make the partition function unsummable. Monte Carlo sidesteps it: sample states with the right probability and average, which turns a $2^N$ sum into a random walk.\n\n## The Metropolis rule\n\nPropose a change, accept it with probability $\\min(1, e^{-\\beta\\Delta E})$. That single rule generates the Boltzmann distribution, whatever the system.\n\n```python\nimport numpy as np\n\nrng = np.random.default_rng(0)\nlevels = np.array([0.0, 1.0, 2.0, 3.0])\nbeta = 1.0\n\nstate = 0\ncounts = np.zeros(4)\nfor _ in range(200000):\n    proposal = rng.integers(0, 4)\n    dE = levels[proposal] - levels[state]\n    if dE <= 0 or rng.random() < np.exp(-beta * dE):\n        state = proposal\n    counts[state] += 1\n\nsampled = counts / counts.sum()\nexact = np.exp(-beta * levels) / np.exp(-beta * levels).sum()\nprint(f\"{'level':>7s}{'sampled':>11s}{'exact':>10s}\")\nfor i in range(4):\n    print(f\"{i:>7d}{sampled[i]:>11.5f}{exact[i]:>10.5f}\")\n```\n\n## The 2D Ising model\n\n$$E = -J\\sum_{\\langle ij\\rangle} s_i s_j$$\n\nNeighbouring spins prefer to align. Below a critical temperature that preference wins globally and the system magnetises spontaneously, with no external field.\n\n```python\nimport numpy as np\n\ndef ising_sweep(spins, beta, rng):\n    \"\"\"One checkerboard Metropolis sweep, vectorised over half the lattice at a time.\"\"\"\n    n = spins.shape[0]\n    idx = np.indices((n, n)).sum(axis=0) % 2\n    for colour in (0, 1):\n        neighbours = (np.roll(spins, 1, 0) + np.roll(spins, -1, 0)\n                      + np.roll(spins, 1, 1) + np.roll(spins, -1, 1))\n        dE = 2 * spins * neighbours\n        accept = (dE <= 0) | (rng.random((n, n)) < np.exp(-beta * np.clip(dE, 0, None)))\n        spins = np.where((idx == colour) & accept, -spins, spins)\n    return spins\n\ndef simulate(n, T, sweeps=600, seed=1):\n    rng = np.random.default_rng(seed)\n    spins = rng.choice([-1, 1], size=(n, n)).astype(np.int8)\n    beta = 1 / T\n    mags, energies = [], []\n    for s in range(sweeps):\n        spins = ising_sweep(spins, beta, rng)\n        if s >= sweeps // 3:\n            mags.append(abs(spins.mean()))\n            nb = (np.roll(spins, 1, 0) + np.roll(spins, 1, 1))\n            energies.append(-np.sum(spins * nb) / spins.size)\n    return np.mean(mags), np.mean(energies), np.var(mags)\n\nTc = 2 / np.log(1 + np.sqrt(2))\nprint(f\"exact critical temperature (Onsager): Tc = {Tc:.5f} J/kB\\n\")\nprint(f\"{'T':>7s}{'<|m|>':>10s}{'<E>/N':>10s}{'var(m)':>11s}\")\nfor T in [1.0, 1.8, 2.1, 2.27, 2.5, 3.0, 4.0]:\n    m, e, v = simulate(24, T)\n    print(f\"{T:>7.2f}{m:>10.4f}{e:>10.4f}{v:>11.5f}\")\nprint(\"\\nMagnetisation collapses near T = 2.27, and the fluctuations peak there.\")\n```\n\n## Finite-size effects and the susceptibility peak\n\nA true phase transition is sharp only in the infinite system. On a finite lattice the transition is rounded, and the peak sharpens as the lattice grows, which is how real simulations locate $T_c$.\n\n```python\nimport numpy as np\n\ndef ising_sweep(spins, beta, rng):\n    n = spins.shape[0]\n    idx = np.indices((n, n)).sum(axis=0) % 2\n    for colour in (0, 1):\n        nb = (np.roll(spins, 1, 0) + np.roll(spins, -1, 0)\n              + np.roll(spins, 1, 1) + np.roll(spins, -1, 1))\n        dE = 2 * spins * nb\n        accept = (dE <= 0) | (rng.random((n, n)) < np.exp(-beta * np.clip(dE, 0, None)))\n        spins = np.where((idx == colour) & accept, -spins, spins)\n    return spins\n\ndef susceptibility(n, T, sweeps=500, seed=3):\n    rng = np.random.default_rng(seed)\n    spins = rng.choice([-1, 1], size=(n, n)).astype(np.int8)\n    ms = []\n    for s in range(sweeps):\n        spins = ising_sweep(spins, 1 / T, rng)\n        if s >= sweeps // 3:\n            ms.append(spins.mean())\n    ms = np.array(ms)\n    return n * n * ms.var() / T\n\nfor n in [8, 16, 24]:\n    row = f\"L = {n:2d}: \"\n    for T in [2.0, 2.2, 2.27, 2.4, 2.6]:\n        row += f\"  T={T:.2f} chi={susceptibility(n, T):7.2f}\"\n    print(row)\nprint(\"\\nThe susceptibility peak grows with system size: that divergence is the transition.\")\n```\n\n## Correlation length and critical slowing down\n\nNear $T_c$ correlated regions grow to every scale, so single-spin updates take forever to change anything. This is why cluster algorithms (Wolff, Swendsen-Wang) were invented.\n\n```python\nimport numpy as np\n\ndef correlation(spins):\n    \"\"\"<s(0) s(r)> along a row, averaged over the lattice.\"\"\"\n    n = spins.shape[0]\n    out = []\n    for r in range(1, n // 2):\n        out.append(float(np.mean(spins * np.roll(spins, r, axis=1))))\n    return np.array(out)\n\ndef run(n, T, sweeps=400, seed=7):\n    rng = np.random.default_rng(seed)\n    spins = rng.choice([-1, 1], size=(n, n)).astype(np.int8)\n    idx = np.indices((n, n)).sum(axis=0) % 2\n    for _ in range(sweeps):\n        for colour in (0, 1):\n            nb = (np.roll(spins, 1, 0) + np.roll(spins, -1, 0)\n                  + np.roll(spins, 1, 1) + np.roll(spins, -1, 1))\n            dE = 2 * spins * nb\n            acc = (dE <= 0) | (rng.random((n, n)) < np.exp(-np.clip(dE, 0, None) / T))\n            spins = np.where((idx == colour) & acc, -spins, spins)\n    return spins\n\nfor T in [1.5, 2.27, 3.5]:\n    c = correlation(run(32, T))\n    print(f\"T = {T:.2f}:  \" + \"  \".join(f\"r={r+1}: {v:+.3f}\" for r, v in enumerate(c[:6])))\nprint(\"\\nWell below Tc the correlation stays near 1 (ordered).\")\nprint(\"Well above it decays immediately. At Tc it decays slowly, as a power law.\")\n```\n\n## Universality\n\nThe critical exponents do not depend on the details. A liquid-gas critical point, a magnet, and a binary alloy all share the same exponents if they share dimension and symmetry.\n\n```python\nexponents = [\n    (\"2D Ising (exact)\",    0.125, 1.75, 1.0),\n    (\"3D Ising (numeric)\",  0.326, 1.237, 0.630),\n    (\"Mean field\",          0.5,   1.0,  0.5),\n]\nprint(f\"{'model':22s}{'beta':>8s}{'gamma':>8s}{'nu':>8s}\")\nfor name, b, g, nu in exponents:\n    print(f\"{name:22s}{b:>8.3f}{g:>8.3f}{nu:>8.3f}\")\nprint(\"\\nMean field theory gets the transition but the wrong exponents, because it\")\nprint(\"ignores exactly the fluctuations that dominate near the critical point.\")\n```\n\n> [!NOTE]\n> Monte Carlo converges as $1/\\sqrt{\\text{samples}}$ regardless of dimension, which is why it beats grid methods for high-dimensional integrals. The catch is correlated samples: near a phase transition, consecutive states are so similar that your effective sample count collapses.",
+      "quiz": {
+        "title": "Monte Carlo and Ising",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The Metropolis acceptance rule accepts an energy-raising move with probability:",
+            "options": [
+              "Zero",
+              "One half",
+              "exp(-beta times delta E)",
+              "One"
+            ],
+            "answer": "exp(-beta times delta E)"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "On a finite lattice, the phase transition appears as:",
+            "options": [
+              "A perfectly sharp jump",
+              "A rounded peak that sharpens with system size",
+              "Nothing at all",
+              "A discontinuity in temperature"
+            ],
+            "answer": "A rounded peak that sharpens with system size"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Mean field theory gives the correct critical exponents in two dimensions.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Different systems sharing the same critical exponents belong to the same ____ class.",
+            "options": [],
+            "answer": "universality"
+          }
+        ]
+      },
+      "order": 5
+    },
+    {
+      "slug": "quantum-statistics-bosons-fermions-and-blackbodies",
+      "title": "Quantum Statistics: Bosons, Fermions, and Blackbodies",
+      "content": "# Quantum Statistics: Bosons, Fermions, and Blackbodies\n\nWhen the thermal de Broglie wavelength approaches the particle spacing, identity matters. Two distributions replace the Boltzmann factor, and they explain metals, stars, and the colour of hot objects.\n\n## Three distributions\n\n$$\\bar{n} = \\frac{1}{e^{(\\varepsilon-\\mu)/k_BT} \\pm 1}$$\n\nwith $+$ for fermions, $-$ for bosons, and no denominator correction at all in the classical limit.\n\n```python\nimport numpy as np\n\ndef occupancy(x):\n    \"\"\"x = (eps - mu) / kT.\"\"\"\n    return {\"Boltzmann\": np.exp(-x),\n            \"Bose-Einstein\": 1 / (np.exp(x) - 1) if x > 0 else float(\"inf\"),\n            \"Fermi-Dirac\": 1 / (np.exp(x) + 1)}\n\nprint(f\"{'(eps-mu)/kT':>13s}{'Boltzmann':>13s}{'Bose':>12s}{'Fermi':>10s}\")\nfor x in [-4, -1, 0.1, 0.5, 1, 2, 5, 10]:\n    o = occupancy(x)\n    bose = f\"{o['Bose-Einstein']:.4f}\" if x > 0 else \"n/a\"\n    print(f\"{x:>13.1f}{o['Boltzmann']:>13.4f}{bose:>12s}{o['Fermi-Dirac']:>10.4f}\")\nprint(\"\\nFar above mu all three agree: that is the classical limit.\")\nprint(\"Fermions never exceed 1 per state; bosons pile up without limit.\")\n```\n\n## The Fermi gas in a metal\n\nElectrons in copper are degenerate: the Fermi energy is tens of thousands of kelvin in temperature units, so room temperature barely disturbs them.\n\n```python\nimport numpy as np\n\nhbar = 1.054571817e-34\nm_e = 9.1093837015e-31\nkB = 1.380649e-23\ne = 1.602176634e-19\n\ndef fermi_energy(n):\n    return hbar**2 / (2 * m_e) * (3 * np.pi**2 * n) ** (2 / 3)\n\nmetals = {\"copper\": 8.49e28, \"silver\": 5.86e28, \"gold\": 5.90e28, \"aluminium\": 18.1e28}\nprint(f\"{'metal':12s}{'n (1/m^3)':>12s}{'E_F (eV)':>11s}{'T_F (K)':>12s}{'v_F (km/s)':>13s}\")\nfor name, n in metals.items():\n    EF = fermi_energy(n)\n    print(f\"{name:12s}{n:>12.2e}{EF / e:>11.3f}{EF / kB:>12.0f}{np.sqrt(2 * EF / m_e) / 1e3:>13.1f}\")\n\nprint(\"\\nOnly electrons within kT of E_F can be excited:\")\nfor T in [1, 77, 300, 1000]:\n    print(f\"  T = {T:5d} K   fraction ~ kT/E_F = {kB * T / fermi_energy(8.49e28):.5f}\")\nprint(\"\\nThat tiny fraction is why the electronic heat capacity of a metal is\")\nprint(\"about a hundred times smaller than classical equipartition predicts.\")\n```\n\n## Blackbody radiation\n\nPlanck's law was the first quantum result, and it fixes the ultraviolet catastrophe by suppressing modes whose energy quantum exceeds $k_BT$.\n\n```python\nimport numpy as np\n\nh = 6.62607015e-34\nc = 299792458.0\nkB = 1.380649e-23\n\ndef planck(lam, T):\n    return 2 * h * c**2 / lam**5 / (np.exp(h * c / (lam * kB * T)) - 1)\n\ndef rayleigh_jeans(lam, T):\n    return 2 * c * kB * T / lam**4\n\nT = 5772.0     # the Sun's photosphere\nprint(f\"{'lambda (nm)':>13s}{'Planck':>15s}{'Rayleigh-Jeans':>18s}{'RJ / Planck':>16s}\")\nfor nm in [100, 300, 500, 1000, 5000, 20000]:\n    lam = nm * 1e-9\n    p, r = planck(lam, T), rayleigh_jeans(lam, T)\n    print(f\"{nm:>13d}{p:>15.4e}{r:>18.4e}{r / p:>16.4e}\")\nprint(\"\\nClassical theory diverges toward short wavelengths. Planck's exponential kills it.\")\n\nfor name, T in [(\"cosmic microwave background\", 2.725), (\"human body\", 310), (\"incandescent bulb\", 2800),\n                (\"the Sun\", 5772), (\"blue giant star\", 30000)]:\n    lam_peak = 2.897771955e-3 / T\n    total = 5.670374419e-8 * T**4\n    print(f\"{name:30s} peak at {lam_peak * 1e9:9.1f} nm, emitting {total:11.3e} W/m^2\")\n```\n\nWien's law and Stefan-Boltzmann are both just moments of Planck's function, which is why one formula covers the CMB and a blue giant.\n\n## Bose-Einstein condensation\n\nCool bosons far enough and the ground state occupation becomes macroscopic. The critical temperature depends only on density and mass.\n\n```python\nimport numpy as np\n\nhbar = 1.054571817e-34\nkB = 1.380649e-23\nu = 1.66053906660e-27\n\ndef bec_temperature(n, mass_amu):\n    m = mass_amu * u\n    return (2 * np.pi * hbar**2 / (m * kB)) * (n / 2.612) ** (2 / 3)\n\ncases = [(\"dilute Rb-87 trap\", 1e20, 87), (\"dense Na-23 trap\", 1e21, 23),\n         (\"liquid helium-4\", 2.2e28, 4)]\nfor name, n, M in cases:\n    Tc = bec_temperature(n, M)\n    print(f\"{name:22s} n = {n:.1e} /m^3   Tc = {Tc:.3e} K\")\n\nprint(\"\\nfraction in the condensate below Tc (ideal gas):\")\nfor ratio in [0.1, 0.3, 0.5, 0.8, 0.95, 1.0]:\n    print(f\"  T/Tc = {ratio:4.2f}   N0/N = {max(0.0, 1 - ratio ** 1.5):.4f}\")\nprint(\"\\nHelium's measured transition at 2.17 K is close to the ideal-gas estimate,\")\nprint(\"which was the first hint that superfluidity and condensation are connected.\")\n```\n\n## Heat capacity of solids\n\nEinstein's model gets the freeze-out right; Debye's gets the low-temperature $T^3$ law right, because it counts the long-wavelength modes properly.\n\n```python\nimport numpy as np\n\ndef einstein_C(T, theta):\n    x = theta / T\n    if x > 50:\n        return 0.0\n    return 3 * x**2 * np.exp(x) / (np.exp(x) - 1) ** 2\n\ndef debye_C(T, theta, n=2000):\n    x = theta / T\n    t = np.linspace(1e-6, x, n)\n    integrand = t**4 * np.exp(t) / (np.exp(t) - 1) ** 2\n    return 9 * (1 / x) ** 3 * np.trapezoid(integrand, t) if hasattr(np, \"trapezoid\") \\\n        else 9 * (1 / x) ** 3 * np.trapz(integrand, t)\n\ntheta = 343.0   # Debye temperature of copper\nprint(f\"{'T (K)':>8s}{'Einstein C/3NkB':>18s}{'Debye C/3NkB':>16s}{'T^3 law (low T only)':>22s}\")\nfor T in [5, 10, 30, 100, 300, 1000]:\n    d = debye_C(T, theta)\n    t3 = (4 * np.pi**4 / 5) * (T / theta) ** 3\n    cell = f\"{t3:.5f}\" if T < theta / 5 else \"n/a\"\n    print(f\"{T:>8d}{einstein_C(T, theta) / 3:>18.5f}{d / 3:>16.5f}{cell:>22s}\")\nprint(\"\\nBoth reach the Dulong-Petit value of 1 at high T. Only Debye gets the T^3 tail,\")\nprint(\"because acoustic modes of arbitrarily long wavelength are always thermally active.\")\n```\n\n> [!TIP]\n> The single question that decides which statistics you need is whether $n\\lambda^3$ is small or large. Small means classical; large means quantum degeneracy, whether that shows up as a metal's Fermi sea, a white dwarf's pressure, or a condensate in a trap.",
+      "quiz": {
+        "title": "Quantum Statistics",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The electronic heat capacity of a metal is far below the classical value because:",
+            "options": [
+              "Electrons are too light",
+              "Only electrons within kT of the Fermi energy can be excited",
+              "Electrons do not carry energy",
+              "The lattice absorbs it"
+            ],
+            "answer": "Only electrons within kT of the Fermi energy can be excited"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The Rayleigh-Jeans law fails at short wavelengths because it:",
+            "options": [
+              "Ignores the finite speed of light",
+              "Gives every mode kT regardless of its energy quantum",
+              "Assumes photons are fermions",
+              "Uses the wrong mode count"
+            ],
+            "answer": "Gives every mode kT regardless of its energy quantum"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A single quantum state can hold arbitrarily many bosons.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The Debye model predicts a low-temperature heat capacity proportional to T to the power ____.",
+            "options": [],
+            "answer": "3"
+          }
+        ]
+      },
+      "order": 6
+    },
+    {
+      "slug": "final-project-a-statistical-mechanics-laboratory",
+      "title": "Final Project: A Statistical Mechanics Laboratory",
+      "content": "# Final Project: A Statistical Mechanics Laboratory\n\nBuild `statmech.py`, a library that counts, samples, and measures, and then use it to reproduce three classic results from scratch.\n\n## What to build\n\n**Counting and ensembles**\n1. `multiplicity(q, N)` for Einstein solids and `binomial_entropy(N, k)`, both using log-gamma so they survive large $N$.\n2. `contact(NA, NB, q_total)`, returning the multiplicity distribution and the equilibrium split, plus how sharply peaked it is.\n3. `partition(levels, T, degeneracy)`, returning $Z$, $\\langle E\\rangle$, $S$, $F$, and $C_V$, with $F = E - TS$ verified numerically.\n\n**Sampling**\n4. `metropolis(energy_fn, propose, state, beta, steps)`, a generic sampler.\n5. `maxwell_boltzmann(mass, T, n)`, sampling velocities and returning the three characteristic speeds.\n6. `autocorrelation(series)` and an effective-sample-size estimate, so your error bars are honest.\n\n**The Ising model**\n7. `ising(L, T, sweeps)` with checkerboard updates, returning magnetisation, energy, susceptibility, and heat capacity.\n8. `find_tc(sizes, temperatures)`, locating the susceptibility peak for each lattice size and extrapolating.\n\n**Quantum statistics**\n9. `fermi_dirac(eps, mu, T)`, `bose_einstein(eps, mu, T)`, and `planck(lam, T)`.\n10. `fermi_energy(n)` and `debye_heat_capacity(T, theta)`.\n\n## A skeleton to start from\n\n```python\nimport numpy as np\n\nKB = 1.380649e-23\n\n\ndef metropolis(energy_fn, propose, state, beta, steps, rng=None):\n    \"\"\"Generic Metropolis sampler. Returns the visited states' energies.\"\"\"\n    rng = rng or np.random.default_rng(0)\n    E = energy_fn(state)\n    trace = np.empty(steps)\n    accepted = 0\n    for i in range(steps):\n        candidate = propose(state, rng)\n        E_new = energy_fn(candidate)\n        if E_new <= E or rng.random() < np.exp(-beta * (E_new - E)):\n            state, E = candidate, E_new\n            accepted += 1\n        trace[i] = E\n    return trace, accepted / steps\n\n\n# sanity check: a harmonic oscillator in one dimension should give <E> = kT/2 per mode\nenergy = lambda x: 0.5 * x[0] ** 2\npropose = lambda x, rng: np.array([x[0] + rng.normal(0, 0.8)])\ntrace, rate = metropolis(energy, propose, np.array([0.0]), beta=1.0, steps=200000)\nprint(f\"acceptance rate = {rate:.3f}\")\nprint(f\"<E> = {trace[len(trace)//5:].mean():.4f}   expected 0.5\")\n```\n\n## Required experiments\n\n**Locate the Ising critical temperature.** Run $L = 8, 16, 24, 32$ across $T \\in [2.0, 2.6]$, find the susceptibility peak for each, and extrapolate against $1/L$. Compare with the exact $2/\\ln(1+\\sqrt{2}) = 2.269$. Report your estimate with an uncertainty.\n\n**Measure a critical exponent.** Below $T_c$, fit $m \\sim (T_c - T)^\\beta$ and compare against the exact $\\beta = 1/8$. Say honestly how well your finite lattice supports the fit.\n\n**Verify fluctuation-dissipation.** For the Ising model, compute $C_V$ two ways, from $dE/dT$ by finite differences and from $\\text{var}(E)/k_BT^2$, and show they agree within your error bars.\n\n**Recover the Sun's temperature.** Take Planck's law, integrate over the visible band, and find the temperature whose spectrum best matches a solar irradiance table you construct from Wien's law and the total flux of 1361 W/m².\n\n**Cross the degeneracy boundary.** For an ideal gas, compute $n\\lambda^3$ for helium at 300 K, liquid helium at 4 K, and electrons in copper. Show which ones need quantum statistics and by how much.\n\n## Stretch goals\n\n- Implement the Wolff cluster algorithm and demonstrate that it beats single-spin updates near $T_c$ by measuring the autocorrelation time of both.\n- Add an external field $h$ to the Ising model and trace the hysteresis loop as $h$ is swept, showing how the loop area depends on sweep rate.\n- Simulate a lattice gas (Ising in disguise) and produce a liquid-gas coexistence curve, then show it maps onto the magnet's phase diagram.\n\n## What to submit\n\n`statmech.py`, a driver script that runs every experiment, and a write-up of about a page covering:\n\n- your $T_c$ estimate with its uncertainty and how finite-size scaling improved it\n- the two heat-capacity routes and how closely they agreed\n- one place where your sampler gave a wrong answer before you fixed it (short chains, correlated samples, or an unequilibrated start), with the numbers before and after\n\n> [!TIP]\n> Report error bars on every Monte Carlo number. A result quoted to four digits from correlated samples is not four digits accurate, and the difference between a good simulation and a bad one is almost entirely honesty about that.",
+      "requiresSubmission": true,
+      "order": 7
+    }
+  ]
+}

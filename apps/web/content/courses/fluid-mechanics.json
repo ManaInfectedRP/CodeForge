@@ -1,0 +1,335 @@
+{
+  "slug": "fluid-mechanics",
+  "title": "Fluid Mechanics",
+  "description": "Hydrostatics and buoyancy, flow kinematics and continuity, Bernoulli and inviscid flow, viscosity and the Navier-Stokes equations, dimensionless numbers, drag and boundary layers, and turbulence with a working CFD solver you run in the browser.",
+  "pathSlug": "fluid-mechanics",
+  "pathName": "Fluid Mechanics",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "fluid-statics-pressure-buoyancy-and-stability",
+      "title": "Fluid Statics: Pressure, Buoyancy, and Stability",
+      "content": "# Fluid Statics: Pressure, Buoyancy, and Stability\n\nA fluid at rest still exerts force, and the rules for it explain everything from why dams are thick at the bottom to why a ship with too much cargo on deck rolls over.\n\n## Pressure with depth\n\n$$P = P_0 + \\rho g h$$\n\nPressure depends on depth, not on the shape of the container. That is the hydrostatic paradox, and it is why a thin tube of water can burst a barrel.\n\n```python\nrho_water, g, P_atm = 1000.0, 9.81, 101325.0\n\nprint(f\"{'depth (m)':>11s}{'gauge (kPa)':>14s}{'absolute (atm)':>17s}   note\")\nfor h, note in [(0, \"surface\"), (10, \"one extra atmosphere\"), (40, \"recreational dive limit\"),\n                (300, \"military submarine\"), (3800, \"Titanic wreck\"), (10935, \"Challenger Deep\")]:\n    gauge = rho_water * g * h\n    print(f\"{h:>11.0f}{gauge / 1000:>14.1f}{(gauge + P_atm) / P_atm:>17.1f}   {note}\")\n\nprint(f\"\\nseawater is denser (1025 kg/m^3), adding \"\n      f\"{25 * g * 10935 / 1000:.0f} kPa at full ocean depth\")\nprint(\"Every 10 m of water adds about one atmosphere: that is the diver's rule of thumb.\")\n```\n\n## Force on a submerged surface\n\nThe total force is the average pressure times the area, but the *line of action* sits below the centre, which is why a dam is thickest at the bottom.\n\n```python\nrho, g = 1000.0, 9.81\n\ndef dam_force(height, width):\n    force = 0.5 * rho * g * height**2 * width         # integral of rho g y dy\n    centre_of_pressure = height / 3                   # measured from the base\n    moment = force * centre_of_pressure\n    return force, centre_of_pressure, moment\n\nprint(f\"{'height':>8s}{'width':>8s}{'force (MN)':>14s}{'centre of pressure':>21s}{'moment (MN m)':>16s}\")\nfor h, w in [(5, 20), (10, 20), (20, 100), (100, 200)]:\n    F, cp, M = dam_force(h, w)\n    print(f\"{h:>8.0f}{w:>8.0f}{F / 1e6:>14.3f}{cp:>18.2f} m{M / 1e6:>16.1f}\")\nprint(\"\\nForce grows as the square of depth and the overturning moment as the cube,\")\nprint(\"which is why doubling a dam's height demands far more than twice the concrete.\")\n```\n\n## Buoyancy\n\nArchimedes' principle says the upward force equals the weight of displaced fluid. Floating means displacing your own weight.\n\n```python\nrho_water = 1000.0\n\nmaterials = {\"cork\": 240, \"pine\": 500, \"ice\": 917, \"water\": 1000,\n             \"PVC\": 1400, \"aluminium\": 2700, \"steel\": 7850}\nprint(f\"{'material':12s}{'density':>10s}{'floats?':>10s}{'submerged fraction':>21s}\")\nfor name, rho in materials.items():\n    floats = rho < rho_water\n    frac = rho / rho_water if floats else 1.0\n    print(f\"{name:12s}{rho:>10.0f}{'yes' if floats else 'no':>10s}{frac:>20.3f}\")\n\nprint(\"\\nice floats with 91.7% submerged, which is the origin of 'tip of the iceberg'\")\nsteel_hull_volume = 1.0\nsteel_mass = 7850 * 0.05          # a hull that is 5% steel by volume\nprint(f\"a hollow steel hull that is 5% steel by volume has mean density \"\n      f\"{steel_mass / steel_hull_volume:.0f} kg/m^3 and floats easily.\")\n```\n\n## Stability: metacentric height\n\nA floating body is stable when its metacentre sits above its centre of gravity. Get that wrong and the vessel capsizes even though it floats.\n\n```python\nimport numpy as np\n\ndef metacentric_height(beam, draft, KG):\n    \"\"\"GM = KB + BM - KG for a rectangular barge.\"\"\"\n    KB = draft / 2                                # centre of buoyancy above the keel\n    BM = beam**2 / (12 * draft)                   # second moment of the waterplane\n    return KB + BM - KG\n\nprint(f\"{'beam':>7s}{'draft':>7s}{'KG':>7s}{'GM':>9s}   verdict\")\nfor beam, draft, KG in [(10, 2, 3), (10, 2, 5), (6, 2, 3), (20, 2, 5), (10, 4, 3)]:\n    GM = metacentric_height(beam, draft, KG)\n    verdict = \"stable\" if GM > 0.5 else \"marginal\" if GM > 0 else \"capsizes\"\n    print(f\"{beam:>7.1f}{draft:>7.1f}{KG:>7.1f}{GM:>9.3f}   {verdict}\")\n\nprint(\"\\nrolling period T = 2 pi k / sqrt(g GM), with k the roll radius of gyration:\")\nfor GM in [0.3, 1.0, 3.0]:\n    T = 2 * np.pi * 3.5 / np.sqrt(9.81 * GM)\n    print(f\"  GM = {GM:.1f} m -> period {T:.1f} s \"\n          f\"({'comfortable' if T > 8 else 'stiff and uncomfortable'})\")\nprint(\"A very stable ship rolls fast and hard, which is why designers aim for a\")\nprint(\"middling GM rather than the largest one they can get.\")\n```\n\n## Manometers and hydraulic force\n\nA pressure difference reads as a height difference, and a pressure applied to a small piston reappears as a large force on a big one.\n\n```python\nrho_hg, rho_water, g = 13560.0, 1000.0, 9.81\n\nprint(\"manometer readings for a 5 kPa pressure difference:\")\nfor name, rho in [(\"mercury\", rho_hg), (\"water\", rho_water), (\"oil (850)\", 850.0)]:\n    h = 5000 / (rho * g)\n    print(f\"  {name:12s}{h * 1000:8.1f} mm\")\n\nprint(\"\\nhydraulic jack, input piston 20 mm diameter:\")\nfor d_out_mm in [20, 60, 100, 200]:\n    ratio = (d_out_mm / 20) ** 2\n    print(f\"  output piston {d_out_mm:3d} mm: force multiplied {ratio:6.1f}x, \"\n          f\"stroke divided by the same {ratio:.1f}\")\nprint(\"\\nWork is conserved: the big piston moves proportionally less.\")\n```\n\n> [!NOTE]\n> Pressure is a scalar: at a point in a static fluid it acts equally in all directions. That is Pascal's law, and it is why the shape of a container never enters the hydrostatic equation.",
+      "quiz": {
+        "title": "Fluid Statics",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Pressure at the bottom of a container depends on:",
+            "options": [
+              "The total weight of fluid",
+              "The depth and density only",
+              "The shape of the container",
+              "The surface area of the base"
+            ],
+            "answer": "The depth and density only"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A floating body is stable when:",
+            "options": [
+              "Its centre of gravity is below the waterline",
+              "The metacentre is above the centre of gravity",
+              "It displaces more than its weight",
+              "Its density equals the fluid's"
+            ],
+            "answer": "The metacentre is above the centre of gravity"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A hydraulic jack multiplies force without multiplying work.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The upward force on a submerged body equals the weight of the fluid it ____.",
+            "options": [],
+            "answer": "displaces"
+          }
+        ]
+      },
+      "order": 1
+    },
+    {
+      "slug": "kinematics-describing-flow",
+      "title": "Kinematics: Describing Flow",
+      "content": "# Kinematics: Describing Flow\n\nBefore dynamics, you need a language for motion. Fluids offer two, and choosing the wrong one makes easy problems hard.\n\n## Eulerian and Lagrangian views\n\nEulerian: sit at a point and watch fluid go past. Lagrangian: pick a parcel and follow it. The bridge between them is the material derivative:\n\n$$\\frac{D\\vec{u}}{Dt} = \\frac{\\partial \\vec{u}}{\\partial t} + (\\vec{u}\\cdot\\nabla)\\vec{u}$$\n\n```python\nimport numpy as np\n\n# steady flow speeding up through a nozzle: u(x) = u0 (1 + x/L)\nu0, L = 1.0, 1.0\nu = lambda x: u0 * (1 + x / L)\ndu_dx = lambda x: u0 / L\n\nprint(f\"{'x':>6s}{'u (m/s)':>10s}{'local dU/dt':>14s}{'convective':>13s}{'Du/Dt':>10s}\")\nfor x in [0, 0.25, 0.5, 0.75, 1.0]:\n    local = 0.0                       # steady flow: nothing changes at a fixed point\n    convective = u(x) * du_dx(x)\n    print(f\"{x:>6.2f}{u(x):>10.3f}{local:>14.3f}{convective:>13.3f}{local + convective:>10.3f}\")\nprint(\"\\nThe flow is steady, yet every parcel accelerates. A pressure gauge sees nothing\")\nprint(\"change; a fluid particle feels a real force. That is the convective term.\")\n```\n\n## Streamlines, pathlines, and streaklines\n\nIn steady flow all three coincide. In unsteady flow they differ, which is why photographs of smoke can mislead.\n\n```python\nimport numpy as np\n\ndef velocity(x, y, t, unsteady=False):\n    if unsteady:\n        return np.array([1.0, np.sin(2 * np.pi * t)])\n    return np.array([1.0, 0.3])\n\ndef pathline(unsteady, steps=40, dt=0.05):\n    p = np.zeros(2)\n    for i in range(steps):\n        p = p + velocity(p[0], p[1], i * dt, unsteady) * dt\n    return p\n\nprint(f\"steady flow, particle after 2 s   : {np.round(pathline(False), 4)}\")\nprint(f\"unsteady flow, particle after 2 s : {np.round(pathline(True), 4)}\")\n\nprint(\"\\nparticles released at different times, unsteady flow (a streakline):\")\nfor t0 in [0.0, 0.25, 0.5, 0.75]:\n    p = np.zeros(2)\n    for i in range(20):\n        p = p + velocity(p[0], p[1], t0 + i * 0.05, True) * 0.05\n    print(f\"  released at t = {t0:.2f}: now at {np.round(p, 4)}\")\nprint(\"\\nEach parcel follows a different curve, so the smoke streak is not a streamline.\")\n```\n\n## Conservation of mass\n\n$$\\frac{\\partial\\rho}{\\partial t} + \\nabla\\cdot(\\rho\\vec{u}) = 0$$\n\nFor an incompressible flow this reduces to $\\nabla\\cdot\\vec{u} = 0$, and in a pipe it becomes $A_1v_1 = A_2v_2$.\n\n```python\nimport numpy as np\n\nQ = 0.01     # m^3/s\n\nprint(f\"{'pipe diameter':>15s}{'area (cm^2)':>14s}{'velocity (m/s)':>17s}\")\nfor d_mm in [15, 25, 50, 100, 200]:\n    A = np.pi * (d_mm / 2000) ** 2\n    print(f\"{d_mm:>13d}mm{A * 1e4:>14.2f}{Q / A:>17.3f}\")\n\nprint(\"\\nhalving the diameter quadruples the speed and multiplies the friction loss by 32,\")\nprint(\"which is why undersized plumbing is both noisy and expensive to pump.\")\n\n# check the divergence of a candidate velocity field numerically\nx = np.linspace(-1, 1, 41)\nX, Y = np.meshgrid(x, x, indexing=\"ij\")\nfields = {\n    \"u = (x, -y)\":   (X, -Y),\n    \"u = (x, y)\":    (X, Y),\n    \"u = (-y, x)\":   (-Y, X),\n}\nfor name, (U, V) in fields.items():\n    div = np.gradient(U, x, axis=0) + np.gradient(V, x, axis=1)\n    print(f\"{name:16s} max |div u| = {np.abs(div).max():.3e}   \"\n          f\"{'incompressible' if np.abs(div).max() < 1e-9 else 'NOT incompressible'}\")\n```\n\n## Vorticity and circulation\n\nVorticity $\\vec{\\omega} = \\nabla\\times\\vec{u}$ measures local spin. A flow can circle the origin and still have zero vorticity everywhere except at the centre, which is the vortex that lift depends on.\n\n```python\nimport numpy as np\n\nx = np.linspace(-2, 2, 81)\nX, Y = np.meshgrid(x, x, indexing=\"ij\")\nR2 = np.maximum(X**2 + Y**2, 0.04)\n\nflows = {\n    \"solid body rotation\": (-Y, X),\n    \"free (irrotational) vortex\": (-Y / R2, X / R2),\n    \"shear flow u = (y, 0)\": (Y, np.zeros_like(X)),\n}\nfor name, (U, V) in flows.items():\n    curl = np.gradient(V, x, axis=0) - np.gradient(U, x, axis=1)\n    edge = curl[np.abs(X) > 1.5]\n    print(f\"{name:28s} vorticity at the centre {curl[40, 40]:+8.3f}   \"\n          f\"far from it {edge.mean():+8.3f}\")\nprint(\"\\nThe free vortex spins fluid around the origin without any local rotation:\")\nprint(\"a paddle wheel placed in it translates but does not turn.\")\n```\n\n## The stream function\n\nFor 2D incompressible flow, $u = \\partial\\psi/\\partial y$ and $v = -\\partial\\psi/\\partial x$. Contours of $\\psi$ *are* the streamlines, and mass conservation is satisfied automatically.\n\n```python\nimport numpy as np\n\nx = np.linspace(-2, 2, 9)\ny = np.linspace(-2, 2, 9)\nX, Y = np.meshgrid(x, y, indexing=\"ij\")\n\nU_inf, a = 1.0, 1.0\npsi = U_inf * Y * (1 - a**2 / np.maximum(X**2 + Y**2, 1e-6))   # flow past a cylinder\n\nprint(\"stream function around a cylinder (rows: x, columns: y):\")\nfor i in range(0, 9, 2):\n    print(\"  \" + \" \".join(f\"{psi[i, j]:7.3f}\" for j in range(0, 9, 2)))\n\nsurface = np.abs(psi[np.abs(X**2 + Y**2 - 1) < 0.02])\nprint(f\"\\npsi on the cylinder surface: max |psi| = {surface.max() if surface.size else 0:.4f}\")\nprint(\"The body itself is a single streamline, which is exactly the no-through-flow\")\nprint(\"boundary condition, satisfied without solving anything.\")\n```\n\n> [!TIP]\n> When a problem mentions a control volume, think Eulerian and write fluxes across the boundary. When it follows a bubble, a droplet, or a pollutant parcel, think Lagrangian. Mixing the two is the fastest route to a wrong sign.",
+      "quiz": {
+        "title": "Kinematics",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In a steady flow through a nozzle, a fluid parcel:",
+            "options": [
+              "Never accelerates",
+              "Accelerates through the convective term",
+              "Accelerates only if the flow is unsteady",
+              "Has zero material derivative"
+            ],
+            "answer": "Accelerates through the convective term"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "For incompressible flow, the continuity equation reduces to:",
+            "options": [
+              "Density is constant in time",
+              "Divergence of velocity is zero",
+              "Curl of velocity is zero",
+              "Pressure is uniform"
+            ],
+            "answer": "Divergence of velocity is zero"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Streamlines, pathlines and streaklines coincide in steady flow.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Contours of the stream function are the flow's ____.",
+            "options": [],
+            "answer": "streamlines"
+          }
+        ]
+      },
+      "order": 2
+    },
+    {
+      "slug": "bernoulli-and-inviscid-flow",
+      "title": "Bernoulli and Inviscid Flow",
+      "content": "# Bernoulli and Inviscid Flow\n\nIgnore viscosity and the energy equation collapses to one line that explains venturis, pitot tubes, aerofoils, and a great deal of nonsense about them.\n\n## The Bernoulli equation\n\n$$P + \\tfrac{1}{2}\\rho v^2 + \\rho gz = \\text{constant along a streamline}$$\n\n```python\nrho, g = 1000.0, 9.81\n\ndef bernoulli_check(P, v, z):\n    return P + 0.5 * rho * v**2 + rho * g * z\n\nprint(f\"{'point':22s}{'P (kPa)':>10s}{'v (m/s)':>10s}{'z (m)':>8s}{'total head (kPa)':>19s}\")\nstates = [(\"reservoir surface\", 101.325, 0.0, 10.0),\n          (\"pipe entrance\", 199.4, 0.5, 0.0),\n          (\"narrow section\", 187.9, 5.0, 0.0),\n          (\"outlet jet\", 101.325, 14.0, 0.0)]\nfor name, P_kPa, v, z in states:\n    total = bernoulli_check(P_kPa * 1000, v, z)\n    print(f\"{name:22s}{P_kPa:>10.2f}{v:>10.2f}{z:>8.1f}{total / 1000:>19.2f}\")\nprint(\"\\nThe total head is nearly constant. Where speed rises, pressure falls,\")\nprint(\"with gravity accounting for the rest.\")\n```\n\n## Torricelli's law\n\nA tank drains at the speed a body would reach falling the same height: $v = \\sqrt{2gh}$.\n\n```python\nimport numpy as np\n\ng = 9.81\nprint(f\"{'head (m)':>10s}{'jet speed (m/s)':>18s}{'flow through 10 mm hole':>26s}\")\nfor h in [0.1, 0.5, 1, 5, 20]:\n    v = np.sqrt(2 * g * h)\n    A = np.pi * (0.005) ** 2\n    print(f\"{h:>10.1f}{v:>18.3f}{v * A * 1000 * 0.62:>23.3f} L/s\")\nprint(\"\\nThe 0.62 factor is the discharge coefficient: the jet contracts after the hole\")\nprint(\"(the vena contracta), so the effective area is smaller than the hole itself.\")\n\n# emptying time for a tank\nA_tank, A_hole, h0 = 1.0, np.pi * 0.005**2, 2.0\nt = A_tank / (0.62 * A_hole) * np.sqrt(2 * h0 / g)\nprint(f\"\\na 1 m^2 tank with 2 m of water drains through that hole in {t / 60:.1f} minutes\")\n```\n\n## Venturi and pitot\n\nBoth instruments read a pressure difference and infer a speed. They are the same equation, arranged differently.\n\n```python\nimport numpy as np\n\nrho = 1.225      # air\n\nprint(\"pitot tube: dynamic pressure -> airspeed\")\nprint(f\"{'dP (Pa)':>10s}{'speed (m/s)':>14s}{'km/h':>10s}\")\nfor dP in [10, 100, 500, 2000, 8000]:\n    v = np.sqrt(2 * dP / rho)\n    print(f\"{dP:>10.0f}{v:>14.2f}{v * 3.6:>10.1f}\")\n\nprint(\"\\nventuri meter in water, throat/pipe area ratio:\")\nrho_w = 1000.0\nd1, Q = 0.05, 0.004\nA1 = np.pi * (d1 / 2) ** 2\nfor ratio in [0.8, 0.6, 0.4, 0.25]:\n    A2 = A1 * ratio\n    v1, v2 = Q / A1, Q / A2\n    dP = 0.5 * rho_w * (v2**2 - v1**2)\n    print(f\"  ratio {ratio:.2f}: v1 = {v1:.2f}, v2 = {v2:.2f} m/s, dP = {dP / 1000:7.2f} kPa\")\nprint(\"\\nA smaller throat gives a bigger, easier-to-read signal, at the cost of\")\nprint(\"permanent pressure loss, which is the classic instrument trade-off.\")\n```\n\n## Cavitation\n\nDrop the pressure to the vapour pressure and the liquid boils, forming bubbles that collapse violently. This limits pumps, propellers, and hydrofoils.\n\n```python\nimport numpy as np\n\nrho, P_atm = 1000.0, 101325.0\nvapour_pressure = {5: 872, 20: 2339, 40: 7384, 60: 19932, 80: 47373}\n\nprint(f\"{'water temp':>12s}{'vapour P (Pa)':>16s}{'max speed before cavitation':>32s}\")\nfor T, Pv in vapour_pressure.items():\n    v_max = np.sqrt(2 * (P_atm - Pv) / rho)\n    print(f\"{T:>10d}C{Pv:>16.0f}{v_max:>29.2f} m/s\")\nprint(\"\\nHot water cavitates at much lower speeds, which is why pump inlets are\")\nprint(\"specified with a required NPSH that rises steeply with temperature.\")\n\nprint(\"\\nsuction lift limit (how high a pump can draw water):\")\nfor T, Pv in [(20, 2339), (60, 19932), (90, 70117)]:\n    h = (P_atm - Pv) / (rho * 9.81)\n    print(f\"  at {T:2d} C: {h:.2f} m in theory, perhaps {h * 0.7:.1f} m in practice\")\n```\n\n## What Bernoulli does not say\n\nThe \"equal transit time\" story about aerofoils is wrong. Lift comes from circulation and flow turning, and the Kutta-Joukowski theorem gives it correctly.\n\n```python\nimport numpy as np\n\nrho, U = 1.225, 50.0\n\ndef lift_per_span(circulation):\n    return rho * U * circulation\n\ndef circulation_flat_plate(chord, alpha_deg):\n    return np.pi * chord * U * np.radians(alpha_deg)\n\nprint(f\"{'angle of attack':>17s}{'circulation':>14s}{'lift per metre':>17s}{'Cl':>8s}\")\nchord = 1.5\nfor alpha in [0, 2, 5, 8, 12, 15]:\n    G = circulation_flat_plate(chord, alpha)\n    L = lift_per_span(G)\n    Cl = L / (0.5 * rho * U**2 * chord)\n    print(f\"{alpha:>15d}deg{G:>14.3f}{L:>15.1f} N{Cl:>8.3f}\")\nprint(f\"\\nthin aerofoil theory predicts Cl = 2 pi alpha = \"\n      f\"{2 * np.pi * np.radians(1):.4f} per degree, which matches the column above\")\nprint(\"Real wings stall above about 15 degrees, where the flow separates and\")\nprint(\"inviscid theory stops applying entirely.\")\n```\n\n> [!NOTE]\n> Bernoulli holds along a streamline, in steady, inviscid, incompressible flow. Every one of those conditions is violated somewhere in a real machine, which is why the equation is a starting point rather than an answer.",
+      "quiz": {
+        "title": "Bernoulli",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Bernoulli's equation is valid:",
+            "options": [
+              "Everywhere in any flow",
+              "Along a streamline in steady, inviscid, incompressible flow",
+              "Only in turbulent flow",
+              "Only for gases"
+            ],
+            "answer": "Along a streamline in steady, inviscid, incompressible flow"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Cavitation occurs when the local pressure drops to:",
+            "options": [
+              "Zero absolute",
+              "The liquid's vapour pressure",
+              "Atmospheric pressure",
+              "Half the stagnation pressure"
+            ],
+            "answer": "The liquid's vapour pressure"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Air travelling over the top of a wing must rejoin the air under it at the trailing edge.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Lift per unit span equals density times speed times the ____ around the aerofoil.",
+            "options": [],
+            "answer": "circulation"
+          }
+        ]
+      },
+      "order": 3
+    },
+    {
+      "slug": "viscosity-and-the-navier-stokes-equations",
+      "title": "Viscosity and the Navier-Stokes Equations",
+      "content": "# Viscosity and the Navier-Stokes Equations\n\nViscosity is the term Bernoulli threw away, and it is responsible for drag, boundary layers, pipe losses, and the fact that fluids stick to walls.\n\n## Newton's law of viscosity\n\n$$\\tau = \\mu\\frac{du}{dy}$$\n\n```python\nfluids = {\"air (20 C)\": 1.81e-5, \"water (20 C)\": 1.00e-3, \"water (80 C)\": 3.55e-4,\n          \"olive oil\": 8.1e-2, \"honey\": 10.0, \"glass (room temp)\": 1e20}\ngap, speed = 1e-3, 1.0\n\nprint(f\"{'fluid':22s}{'mu (Pa s)':>13s}{'shear stress':>16s}{'force on 1 m^2':>17s}\")\nfor name, mu in fluids.items():\n    tau = mu * speed / gap\n    print(f\"{name:22s}{mu:>13.2e}{tau:>14.3e} Pa{tau:>14.3e} N\")\nprint(\"\\nHoney is 10,000 times more viscous than water, and glass, despite the myth\")\nprint(\"about medieval windows, is so viscous it does not flow measurably at all.\")\n```\n\n## Couette and Poiseuille flow\n\nTwo exact solutions of Navier-Stokes: shear-driven flow between plates gives a straight profile; pressure-driven flow in a pipe gives a parabola.\n\n```python\nimport numpy as np\n\nmu, R, dPdx = 1e-3, 0.01, -1000.0    # water, 1 cm radius, 1 kPa per metre\n\nr = np.linspace(0, R, 6)\nu = -dPdx / (4 * mu) * (R**2 - r**2)\nprint(\"Poiseuille profile in a pipe:\")\nfor ri, ui in zip(r, u):\n    print(f\"  r/R = {ri / R:.1f}   u = {ui:8.4f} m/s\")\n\nQ = -np.pi * dPdx * R**4 / (8 * mu)\nu_mean = Q / (np.pi * R**2)\nprint(f\"\\nflow rate Q = {Q * 1000:.3f} L/s, mean speed {u_mean:.4f} m/s\")\nprint(f\"centreline is exactly twice the mean: {u[0] / u_mean:.4f}\")\n\nprint(\"\\nHagen-Poiseuille: Q goes as R^4, so halving the radius cuts flow by 16x\")\nfor factor in [1.0, 0.9, 0.75, 0.5]:\n    print(f\"  radius x {factor:.2f}: flow x {factor**4:.4f}\")\nprint(\"A 10% narrowing of an artery cuts flow by a third at the same pressure.\")\n```\n\n## The Navier-Stokes equations\n\n$$\\rho\\left(\\frac{\\partial\\vec{u}}{\\partial t} + (\\vec{u}\\cdot\\nabla)\\vec{u}\\right) = -\\nabla P + \\mu\\nabla^2\\vec{u} + \\rho\\vec{g}$$\n\nThe nonlinear convective term is what makes the equations hard, and it is the only term that survives at high Reynolds number.\n\n```python\nimport numpy as np\n\nrho, mu = 1000.0, 1e-3\n\nprint(f\"{'flow':26s}{'U (m/s)':>9s}{'L (m)':>9s}{'inertia':>12s}{'viscous':>12s}{'ratio (Re)':>13s}\")\ncases = [(\"bacterium swimming\", 3e-5, 2e-6), (\"capillary blood flow\", 1e-3, 8e-6),\n         (\"tap water in a pipe\", 1.0, 0.02), (\"river\", 1.0, 5.0),\n         (\"submarine\", 10.0, 100.0)]\nfor name, U, L in cases:\n    inertia = rho * U**2 / L\n    viscous = mu * U / L**2\n    print(f\"{name:26s}{U:>9.1e}{L:>9.1e}{inertia:>12.2e}{viscous:>12.2e}{inertia / viscous:>13.2e}\")\nprint(\"\\nThe ratio is the Reynolds number. Below about 1 the viscous term dominates\")\nprint(\"completely, which is the world a bacterium lives in: coasting is impossible.\")\n```\n\n## Life at low Reynolds number\n\nWith no inertia, motion is reversible in time. A scallop that opens slowly and closes quickly gets nowhere, which is Purcell's scallop theorem.\n\n```python\nimport numpy as np\n\nrho, mu = 1000.0, 1e-3\n\ndef coasting_distance(radius, U):\n    \"\"\"How far a sphere coasts after propulsion stops (Stokes drag).\"\"\"\n    m = rho * (4 / 3) * np.pi * radius**3\n    tau = m / (6 * np.pi * mu * radius)\n    return U * tau, tau\n\nprint(f\"{'swimmer':22s}{'radius':>11s}{'speed':>11s}{'coast distance':>18s}{'coast time':>14s}\")\nfor name, a, U in [(\"E. coli\", 1e-6, 3e-5), (\"paramecium\", 1e-4, 1e-3),\n                   (\"tadpole\", 5e-3, 0.05), (\"human\", 0.5, 1.5)]:\n    d, tau = coasting_distance(a, U)\n    print(f\"{name:22s}{a:>11.1e}{U:>11.1e}{d:>15.3e} m{tau:>12.3e} s\")\nprint(\"\\nE. coli coasts about 0.1 angstrom, in a microsecond. It cannot glide, cannot\")\nprint(\"drift, and must keep swimming continuously just to stay where it is going.\")\n```\n\n## Solving a simple case numerically\n\nStart a fluid moving next to a suddenly accelerated plate and watch viscosity diffuse momentum outward. This is Stokes' first problem, and the diffusion depth grows as $\\sqrt{\\nu t}$.\n\n```python\nimport numpy as np\n\nnu = 1e-6                          # kinematic viscosity of water\nn, dy = 200, 1e-4\nu = np.zeros(n)\ndt = 0.4 * dy**2 / nu\n\nprint(f\"{'time (s)':>10s}{'depth where u > 0.01 U':>26s}{'3.6 sqrt(nu t)':>20s}\")\nfor step in range(1, 4001):\n    u[0] = 1.0                     # the plate moves at U = 1\n    u[1:-1] += nu * dt / dy**2 * (u[2:] - 2 * u[1:-1] + u[:-2])\n    t = step * dt\n    if step in (250, 1000, 2500, 4000):\n        depth = np.argmax(u < 0.01) * dy\n        print(f\"{t:>10.4f}{depth * 1000:>23.3f} mm{3.64 * np.sqrt(nu * t) * 1000:>17.3f} mm\")\nprint(\"\\nMomentum spreads like heat: the depth grows as the square root of time, and\")\nprint(\"the exact solution u/U = erfc(y / 2 sqrt(nu t)) reaches 1% at y = 3.64 sqrt(nu t).\")\nprint(f\"After a full second viscosity has reached only {3.64 * np.sqrt(nu * 1.0) * 1000:.1f} mm into the water.\")\n```\n\n> [!TIP]\n> Kinematic viscosity $\\nu = \\mu/\\rho$ is the one that appears in the diffusion of momentum. Air's $\\nu$ is fifteen times *larger* than water's, even though air is far less viscous, which is why comparisons must always say which viscosity is meant.",
+      "quiz": {
+        "title": "Viscous Flow",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In Hagen-Poiseuille flow, halving the pipe radius changes the flow rate by a factor of:",
+            "options": [
+              "1/2",
+              "1/4",
+              "1/8",
+              "1/16"
+            ],
+            "answer": "1/16"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "At very low Reynolds number, a swimmer that cannot break time-reversal symmetry:",
+            "options": [
+              "Moves twice as fast",
+              "Goes nowhere",
+              "Moves backwards",
+              "Experiences no drag"
+            ],
+            "answer": "Goes nowhere"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Air has a larger kinematic viscosity than water.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The term that makes the Navier-Stokes equations nonlinear is the ____ term.",
+            "options": [],
+            "answer": "convective"
+          }
+        ]
+      },
+      "order": 4
+    },
+    {
+      "slug": "dimensionless-numbers-drag-and-boundary-layers",
+      "title": "Dimensionless Numbers, Drag, and Boundary Layers",
+      "content": "# Dimensionless Numbers, Drag, and Boundary Layers\n\nFluid mechanics runs on dimensionless groups. Get them right and a model in a wind tunnel predicts a full-size aircraft; get them wrong and no amount of computation helps.\n\n## The Buckingham Pi theorem\n\n$n$ variables with $k$ dimensions give $n-k$ independent dimensionless groups. Drag on a sphere has five variables and three dimensions, so two groups: $C_d$ and $\\mathrm{Re}$.\n\n```python\nimport numpy as np\n\n# rows: variables, columns: M, L, T exponents\nvariables = {\"F (drag)\": (1, 1, -2), \"rho\": (1, -3, 0), \"U\": (0, 1, -1),\n             \"D\": (0, 1, 0), \"mu\": (1, -1, -1)}\nM = np.array(list(variables.values()), dtype=float).T\nrank = np.linalg.matrix_rank(M)\nprint(f\"{len(variables)} variables, dimensional matrix rank {rank}\")\nprint(f\"-> {len(variables) - rank} independent dimensionless groups\\n\")\n\nfor name, exps in variables.items():\n    print(f\"  {name:10s} [M^{exps[0]} L^{exps[1]} T^{exps[2]}]\")\nprint(\"\\nThe two groups are Cd = F/(0.5 rho U^2 A) and Re = rho U D / mu.\")\nprint(\"Any drag law must be Cd = f(Re), and experiments only have to map that one curve.\")\n```\n\n## The key numbers\n\n```python\ngroups = [\n    (\"Reynolds\", \"rho U L / mu\", \"inertia / viscous\", \"everything\"),\n    (\"Mach\", \"U / c\", \"speed / sound speed\", \"compressibility\"),\n    (\"Froude\", \"U / sqrt(gL)\", \"inertia / gravity\", \"ship waves, open channels\"),\n    (\"Weber\", \"rho U^2 L / sigma\", \"inertia / surface tension\", \"droplets, sprays\"),\n    (\"Strouhal\", \"f L / U\", \"shedding frequency\", \"vortex streets\"),\n    (\"Prandtl\", \"nu / alpha\", \"momentum / heat diffusion\", \"convective heat transfer\"),\n]\nprint(f\"{'number':12s}{'definition':22s}{'meaning':30s}   matters for\")\nfor name, defn, meaning, use in groups:\n    print(f\"{name:12s}{defn:22s}{meaning:30s}   {use}\")\nprint(\"\\nTwo flows with the same relevant groups behave identically, whatever their size.\")\nprint(\"That is dynamic similarity, and it is why wind tunnels work.\")\n```\n\n## The drag curve\n\n$C_d$ for a sphere spans six decades of Reynolds number and includes one famously abrupt drop.\n\n```python\nimport numpy as np\n\ndef cd_sphere(Re):\n    \"\"\"Standard empirical correlation, valid to Re ~ 2e5.\"\"\"\n    if Re < 1e-3:\n        return 24 / Re\n    return 24 / Re * (1 + 0.15 * Re**0.687) + 0.42 / (1 + 42500 / Re**1.16)\n\nprint(f\"{'Re':>10s}{'Cd':>10s}   regime\")\nfor Re in [1e-2, 1, 10, 100, 1e3, 1e4, 1e5]:\n    regime = \"Stokes (Cd = 24/Re)\" if Re < 1 else \\\n             \"transitional\" if Re < 1e3 else \"Newton regime (Cd ~ 0.4-0.5)\"\n    print(f\"{Re:>10.0e}{cd_sphere(Re):>10.3f}   {regime}\")\n\nprint(\"\\nthe drag crisis: a rough surface trips the boundary layer to turbulence,\")\nprint(\"which delays separation and drops Cd from ~0.5 to ~0.1 near Re = 3e5.\")\nprint(\"That is exactly what a golf ball's dimples do, and it roughly doubles the drive.\")\n```\n\n## Terminal velocity\n\nBalance weight against drag and iterate, because $C_d$ depends on the answer.\n\n```python\nimport numpy as np\n\ndef cd_sphere(Re):\n    if Re < 1e-3:\n        return 24 / max(Re, 1e-9)\n    return 24 / Re * (1 + 0.15 * Re**0.687) + 0.42 / (1 + 42500 / Re**1.16)\n\ndef terminal_velocity(d, rho_s, rho_f=1.225, mu=1.81e-5, g=9.81):\n    v = 1.0\n    for _ in range(200):\n        Re = max(rho_f * v * d / mu, 1e-9)\n        Cd = cd_sphere(Re)\n        weight = (rho_s - rho_f) * g * np.pi * d**3 / 6\n        v_new = np.sqrt(2 * weight / (Cd * rho_f * np.pi * d**2 / 4))\n        v = 0.5 * (v + v_new)\n    return v, rho_f * v * d / mu\n\nprint(f\"{'object':22s}{'diameter':>11s}{'terminal v':>14s}{'Re':>12s}\")\nfor name, d, rho_s in [(\"fog droplet\", 10e-6, 1000), (\"drizzle\", 200e-6, 1000),\n                       (\"raindrop\", 2e-3, 1000), (\"hailstone\", 2e-2, 900),\n                       (\"skydiver (as sphere)\", 0.7, 180)]:\n    v, Re = terminal_velocity(d, rho_s)\n    print(f\"{name:22s}{d * 1000:>9.3f}mm{v:>12.3f} m/s{Re:>12.1f}\")\nprint(\"\\nFog droplets fall a few millimetres per second, which is why fog hangs in the air.\")\nprint(\"A raindrop 200 times wider falls more than 2000 times faster, and its Reynolds\")\nprint(\"number has left the Stokes regime entirely.\")\n```\n\n## Boundary layers\n\nNear a wall, viscosity always matters, no matter how high the Reynolds number. The layer's thickness grows as $\\sqrt{\\nu x/U}$ in laminar flow.\n\n```python\nimport numpy as np\n\nnu_air = 1.5e-5\nU = 20.0\n\nprint(f\"{'x (m)':>8s}{'Re_x':>12s}{'laminar delta':>16s}{'turbulent delta':>18s}   state\")\nfor x in [0.01, 0.1, 0.5, 1.0, 3.0]:\n    Re_x = U * x / nu_air\n    lam = 5.0 * x / np.sqrt(Re_x)                     # Blasius\n    turb = 0.37 * x / Re_x**0.2\n    state = \"laminar\" if Re_x < 5e5 else \"turbulent\"\n    print(f\"{x:>8.2f}{Re_x:>12.2e}{lam * 1000:>14.3f}mm{turb * 1000:>16.3f}mm   {state}\")\n\nprint(\"\\nskin friction coefficient:\")\nfor Re_x in [1e4, 1e5, 5e5, 1e6, 1e7]:\n    lam = 0.664 / np.sqrt(Re_x)\n    turb = 0.0592 / Re_x**0.2\n    print(f\"  Re_x = {Re_x:8.0e}: laminar {lam:.5f}, turbulent {turb:.5f} \"\n          f\"({turb / lam:.1f}x more drag)\")\nprint(\"\\nTurbulent boundary layers cost several times more skin friction, but they\")\nprint(\"resist separation, which is why the trade is not obvious and depends on shape.\")\n```\n\n## Pipe friction: the Moody chart\n\nFor turbulent pipe flow the friction factor comes from the implicit Colebrook equation, solved here by iteration.\n\n```python\nimport numpy as np\n\ndef colebrook(Re, rel_roughness, iterations=60):\n    f = 0.02\n    for _ in range(iterations):\n        rhs = -2 * np.log10(rel_roughness / 3.7 + 2.51 / (Re * np.sqrt(f)))\n        f = 1 / rhs**2\n    return f\n\nprint(f\"{'Re':>10s}\" + \"\".join(f\"{f'e/D={r}':>13s}\" for r in [0.0, 1e-4, 1e-3, 1e-2]))\nfor Re in [4e3, 1e4, 1e5, 1e6, 1e7]:\n    row = f\"{Re:>10.0e}\"\n    for r in [0.0, 1e-4, 1e-3, 1e-2]:\n        row += f\"{colebrook(Re, r):>13.5f}\"\n    print(row)\n\nprint(\"\\npressure drop in 100 m of 50 mm pipe carrying water at 2 m/s:\")\nRe = 1000 * 2 * 0.05 / 1e-3\nfor name, eps in [(\"drawn tubing\", 1.5e-6), (\"commercial steel\", 4.5e-5), (\"cast iron\", 2.6e-4)]:\n    f = colebrook(Re, eps / 0.05)\n    dP = f * (100 / 0.05) * 0.5 * 1000 * 2**2\n    print(f\"  {name:20s} f = {f:.5f}   dP = {dP / 1000:6.1f} kPa\")\nprint(\"\\nAt high Reynolds number the friction factor stops depending on Re entirely:\")\nprint(\"roughness alone sets the loss, which is the flat right-hand side of the Moody chart.\")\n```\n\n> [!NOTE]\n> Laminar-to-turbulent transition in a pipe happens near Re = 2300, but the number is not fundamental. With a very smooth inlet and no disturbances, laminar flow has been sustained past Re = 100,000.",
+      "quiz": {
+        "title": "Similarity and Drag",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Golf ball dimples reduce drag by:",
+            "options": [
+              "Making the ball lighter",
+              "Tripping the boundary layer turbulent so separation is delayed",
+              "Reducing skin friction",
+              "Increasing the Reynolds number"
+            ],
+            "answer": "Tripping the boundary layer turbulent so separation is delayed"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A laminar boundary layer's thickness grows with distance along the plate as:",
+            "options": [
+              "x",
+              "sqrt(x)",
+              "x squared",
+              "It does not grow"
+            ],
+            "answer": "sqrt(x)"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "At very high Reynolds number in a rough pipe, the friction factor becomes independent of Reynolds number.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Two flows with the same relevant dimensionless groups are said to have dynamic ____.",
+            "options": [],
+            "answer": "similarity"
+          }
+        ]
+      },
+      "order": 5
+    },
+    {
+      "slug": "turbulence-and-computational-fluid-dynamics",
+      "title": "Turbulence and Computational Fluid Dynamics",
+      "content": "# Turbulence and Computational Fluid Dynamics\n\nTurbulence is the last unsolved problem of classical physics and the normal state of almost every flow that matters. This lesson is about what it does and how simulation copes.\n\n## The energy cascade\n\nEnergy enters at large scales, cascades to smaller eddies without loss, and dissipates at the Kolmogorov scale where viscosity finally wins.\n\n```python\nimport numpy as np\n\ndef kolmogorov(epsilon, nu=1.5e-5):\n    eta = (nu**3 / epsilon) ** 0.25\n    tau = np.sqrt(nu / epsilon)\n    v = (nu * epsilon) ** 0.25\n    return eta, tau, v\n\nprint(f\"{'flow':24s}{'dissipation':>14s}{'eta (mm)':>12s}{'time (s)':>12s}{'velocity':>12s}\")\nfor name, eps in [(\"room air\", 1e-3), (\"wind over a field\", 1e-2),\n                  (\"jet engine exhaust\", 1e5), (\"atmospheric storm\", 1e-1)]:\n    eta, tau, v = kolmogorov(eps)\n    print(f\"{name:24s}{eps:>14.1e}{eta * 1000:>12.4f}{tau:>12.4f}{v:>12.5f}\")\n\nprint(\"\\ngrid points needed to resolve every scale (DNS): N ~ Re^(9/4)\")\nfor Re in [1e3, 1e4, 1e5, 1e6, 1e7]:\n    N = Re**2.25\n    print(f\"  Re = {Re:8.0e}: {N:12.2e} points  \"\n          f\"({N * 8 * 4 / 1e12:10.2e} TB just to store the velocity field)\")\nprint(\"\\nThis is why direct simulation of an aircraft is not merely expensive:\")\nprint(\"it is beyond any computer that will exist for decades.\")\n```\n\n## The Kolmogorov spectrum\n\nBetween the input and dissipation scales, the energy spectrum follows a $-5/3$ power law, one of the few exact-looking results in turbulence.\n\n```python\nimport numpy as np\n\nrng = np.random.default_rng(0)\nn = 4096\nk = np.fft.rfftfreq(n, 1 / n)[1:]\namplitude = k ** (-5 / 6)                       # amplitude^2 gives the -5/3 spectrum\nphases = rng.uniform(0, 2 * np.pi, k.size)\nspectrum = np.zeros(n // 2 + 1, dtype=complex)\nspectrum[1:] = amplitude * np.exp(1j * phases)\nsignal = np.fft.irfft(spectrum)\n\npower = np.abs(np.fft.rfft(signal)) ** 2\nbins = np.logspace(0.5, 3, 8).astype(int)\nprint(f\"{'wavenumber':>12s}{'power':>14s}{'k^(-5/3)':>14s}\")\nref = power[bins[0]] / bins[0] ** (-5 / 3)\nfor b in bins:\n    print(f\"{b:>12d}{power[b]:>14.4e}{ref * b ** (-5 / 3):>14.4e}\")\n\nslope = np.polyfit(np.log(bins), np.log(power[bins]), 1)[0]\nprint(f\"\\nfitted slope = {slope:.3f}   (Kolmogorov predicts -5/3 = {-5/3:.3f})\")\n```\n\n## Vortex shedding\n\nA bluff body sheds vortices at a frequency set by the Strouhal number, near 0.2 over a huge range of Reynolds number.\n\n```python\nimport numpy as np\n\ndef shedding_frequency(U, D, St=0.2):\n    return St * U / D\n\nprint(f\"{'situation':28s}{'U (m/s)':>10s}{'D':>10s}{'frequency':>14s}   audible?\")\ncases = [(\"wind through a wire\", 10.0, 2e-3), (\"car antenna\", 25.0, 5e-3),\n         (\"chimney in a gale\", 30.0, 2.0), (\"bridge cable\", 15.0, 0.1),\n         (\"submarine periscope\", 5.0, 0.2)]\nfor name, U, D in cases:\n    f = shedding_frequency(U, D)\n    audible = \"yes\" if 20 < f < 20000 else \"no\"\n    print(f\"{name:28s}{U:>10.1f}{D:>10.3f}{f:>12.2f} Hz   {audible}\")\nprint(\"\\nShedding resonance is why chimneys carry helical strakes and why bridge\")\nprint(\"cables get dampers. The Tacoma Narrows collapse is often blamed on it, but\")\nprint(\"that was aeroelastic flutter: the deck's own twisting fed energy back into\")\nprint(\"the wind, a different and nastier instability than simple vortex resonance.\")\n```\n\n## A finite-difference solver: the lid-driven cavity\n\nSolve the 2D Navier-Stokes equations in vorticity-stream function form. The lid drags the fluid, a main vortex forms, and secondary corner vortices appear as Reynolds number rises.\n\n```python\nimport numpy as np\n\ndef cavity(Re=100, n=41, steps=3000):\n    \"\"\"A real time-marching solver: expect this cell to take several seconds.\"\"\"\n    h = 1.0 / (n - 1)\n    dt = 0.2 * min(h * h * Re / 4, h)\n    psi = np.zeros((n, n))\n    w = np.zeros((n, n))\n    for _ in range(steps):\n        # vorticity boundary conditions from the no-slip walls\n        w[0, :] = 2 * (psi[0, :] - psi[1, :]) / h**2\n        w[-1, :] = 2 * (psi[-1, :] - psi[-2, :]) / h**2 - 2 / h      # moving lid\n        w[:, 0] = 2 * (psi[:, 0] - psi[:, 1]) / h**2\n        w[:, -1] = 2 * (psi[:, -1] - psi[:, -2]) / h**2\n\n        # index 0 is y (the lid is the last row), index 1 is x\n        u = (psi[2:, 1:-1] - psi[:-2, 1:-1]) / (2 * h)          # u = dpsi/dy\n        v = -(psi[1:-1, 2:] - psi[1:-1, :-2]) / (2 * h)         # v = -dpsi/dx\n        lap = (w[2:, 1:-1] + w[:-2, 1:-1] + w[1:-1, 2:] + w[1:-1, :-2]\n               - 4 * w[1:-1, 1:-1]) / h**2\n        conv = (u * (w[1:-1, 2:] - w[1:-1, :-2]) / (2 * h)\n                + v * (w[2:, 1:-1] - w[:-2, 1:-1]) / (2 * h))\n        w[1:-1, 1:-1] += dt * (lap / Re - conv)\n\n        for _ in range(25):        # Poisson solve for the stream function\n            psi[1:-1, 1:-1] = 0.25 * (psi[2:, 1:-1] + psi[:-2, 1:-1]\n                                      + psi[1:-1, 2:] + psi[1:-1, :-2]\n                                      + h**2 * w[1:-1, 1:-1])\n    return psi, w\n\nfor Re in [100, 400]:\n    psi, w = cavity(Re=Re)\n    i, j = np.unravel_index(np.argmin(psi), psi.shape)\n    n = psi.shape[0]\n    print(f\"Re = {Re:4d}: strongest vortex at x = {j / (n-1):.3f}, y = {i / (n-1):.3f}, \"\n          f\"psi_min = {psi.min():.5f}\")\nprint(\"\\nAs Reynolds number rises the main vortex moves toward the centre of the cavity.\")\nprint(\"Published benchmarks put it near (0.62, 0.74) at Re = 100 and (0.56, 0.61) at Re = 400.\")\n```\n\n## Why turbulence models exist\n\nYou cannot resolve every eddy, so you model the unresolved ones. Each family of models trades cost against fidelity.\n\n```python\napproaches = [\n    (\"DNS\", \"resolves every scale\", \"Re^(9/4) points\", \"research, Re < 10^4\"),\n    (\"LES\", \"resolves large eddies, models small\", \"Re^(9/5) near walls\", \"combustion, aeroacoustics\"),\n    (\"RANS (k-epsilon)\", \"models all turbulence\", \"cheap, steady\", \"industrial design\"),\n    (\"RANS (k-omega SST)\", \"better near walls\", \"cheap\", \"aerofoils, turbomachinery\"),\n    (\"hybrid (DES)\", \"RANS at walls, LES away\", \"moderate\", \"separated flows\"),\n]\nprint(f\"{'approach':22s}{'what it resolves':38s}{'cost':22s}   typical use\")\nfor name, what, cost, use in approaches:\n    print(f\"{name:22s}{what:38s}{cost:22s}   {use}\")\nprint(\"\\nNo model is universally correct. Every industrial CFD result depends on a\")\nprint(\"turbulence model that was calibrated on flows possibly unlike yours, which is\")\nprint(\"why validation against experiment is not optional.\")\n```\n\n> [!TIP]\n> Before trusting any CFD result, check three things: grid independence (refine and see if the answer moves), the residual convergence history, and a comparison against a case with a known answer. A pretty picture is not a validated result.",
+      "quiz": {
+        "title": "Turbulence and CFD",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In the inertial range, the turbulent energy spectrum scales as:",
+            "options": [
+              "k to the minus 1",
+              "k to the minus 5/3",
+              "k squared",
+              "Exponentially"
+            ],
+            "answer": "k to the minus 5/3"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Direct numerical simulation cost scales roughly as:",
+            "options": [
+              "Re",
+              "Re squared",
+              "Re to the 9/4",
+              "The logarithm of Re"
+            ],
+            "answer": "Re to the 9/4"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The Strouhal number for vortex shedding from a cylinder is close to 0.2 over a wide Reynolds range.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The smallest scale of turbulence, where viscosity dissipates the energy, is the ____ scale.",
+            "options": [],
+            "answer": "Kolmogorov"
+          }
+        ]
+      },
+      "order": 6
+    },
+    {
+      "slug": "final-project-a-fluid-mechanics-toolkit",
+      "title": "Final Project: A Fluid Mechanics Toolkit",
+      "content": "# Final Project: A Fluid Mechanics Toolkit\n\nBuild `fluids.py`: hydrostatics, pipe networks, drag, and a working two-dimensional solver.\n\n## What to build\n\n**Statics and pipes**\n1. `hydrostatic_force(depth, width, height, rho)`, returning force and centre of pressure.\n2. `metacentric_height(beam, draft, KG)` and a stability verdict.\n3. `colebrook(Re, relative_roughness)` by iteration, plus `laminar_f(Re) = 64/Re`, switching correctly at the transition.\n4. `pipe_network(pipes, nodes, demands)`, solving for flows with the Hardy Cross method.\n\n**Drag and similarity**\n5. `cd_sphere(Re)` and `cd_cylinder(Re)` from correlations.\n6. `terminal_velocity(diameter, density, fluid)` by iteration, verified against Stokes' law at low Re.\n7. `similarity(prototype, model)`, reporting which dimensionless groups can be matched simultaneously and which cannot.\n\n**Solvers**\n8. `poiseuille(R, dPdx, mu)`, the exact profile, used to validate your numerics.\n9. `stokes_first_problem(nu, times)`, an explicit diffusion solver checked against the error-function solution.\n10. `cavity(Re, n, steps)` in vorticity-stream function form, with a grid-independence study.\n\n## A skeleton to start from\n\n```python\nimport numpy as np\n\n\ndef colebrook(Re, rel_roughness, tol=1e-10):\n    \"\"\"Darcy friction factor. Laminar below 2300, Colebrook above.\"\"\"\n    if Re < 2300:\n        return 64 / Re\n    f = 0.02\n    for _ in range(100):\n        rhs = -2 * np.log10(rel_roughness / 3.7 + 2.51 / (Re * np.sqrt(f)))\n        f_new = 1 / rhs**2\n        if abs(f_new - f) < tol:\n            return f_new\n        f = f_new\n    return f\n\n\ndef head_loss(Q, D, L, rho=1000.0, mu=1e-3, eps=4.5e-5):\n    A = np.pi * D**2 / 4\n    V = Q / A\n    Re = rho * V * D / mu\n    f = colebrook(Re, eps / D)\n    return f * (L / D) * 0.5 * rho * V**2, Re, f\n\n\nfor Q in [0.001, 0.005, 0.01, 0.05]:\n    dP, Re, f = head_loss(Q, 0.05, 100)\n    print(f\"Q = {Q * 1000:5.1f} L/s   Re = {Re:9.0f}   f = {f:.5f}   dP = {dP / 1000:8.2f} kPa\")\n```\n\n## Required experiments\n\n**Validate the diffusion solver.** Compare your Stokes' first problem solution against $u/U = \\mathrm{erfc}(y/2\\sqrt{\\nu t})$ at three times, and report the maximum error as a function of grid spacing. Show that it falls at the expected rate.\n\n**Grid independence for the cavity.** Run the lid-driven cavity at Re = 400 on grids of 21, 41, and 81 points and report the centreline velocity profile at each. Say honestly at which resolution your answer stops moving.\n\n**Reproduce the drag crisis.** Plot $C_d$ for a sphere across Re from $10^{-1}$ to $10^6$ using published correlations, and mark where the crisis occurs. Compute how much farther a dimpled golf ball flies than a smooth one at the same launch conditions, stating your assumptions.\n\n**Model similarity.** For a 1:20 scale ship model, work out what tow speed matches Froude number, then compute what the Reynolds number would be. Explain why you cannot match both, and describe what naval architects do about it.\n\n**A pipe network.** Build a three-loop network, solve it with Hardy Cross, and verify that flow is conserved at every node and that the head loss around each loop sums to zero within your tolerance.\n\n## Stretch goals\n\n- Add a free surface to the cavity solver and simulate a sloshing tank, comparing the natural frequency against the analytic shallow-water result.\n- Implement a simple lattice Boltzmann solver and reproduce flow past a cylinder, including the Kármán street, and measure the Strouhal number.\n- Add heat transport to your solver and reproduce Rayleigh-Bénard convection, identifying the critical Rayleigh number of about 1708.\n\n## What to submit\n\n`fluids.py`, a driver that runs every experiment, and a write-up of about a page covering:\n\n- your grid-independence table and the resolution you would use for production runs\n- your measured Strouhal number if you attempted the vortex street, or your convergence rate for the diffusion solver if you did not\n- the Froude/Reynolds conflict in your own words, with the numbers from your scale model\n\n> [!TIP]\n> Every CFD bug looks like physics at first. When something surprising appears, check the boundary conditions first, the time step second, and only then start believing the result.",
+      "requiresSubmission": true,
+      "order": 7
+    }
+  ]
+}
