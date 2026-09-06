@@ -1,0 +1,335 @@
+{
+  "slug": "electromagnetism",
+  "title": "Electromagnetism",
+  "description": "Coulomb's law and fields, Gauss's law and potentials, magnetic fields from currents, induction and AC circuits, Maxwell's equations and light, fields in matter and radiation, with field solvers you run in the browser.",
+  "pathSlug": "electromagnetism",
+  "pathName": "Electromagnetism",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "charge-coulombs-law-and-the-electric-field",
+      "title": "Charge, Coulomb's Law, and the Electric Field",
+      "content": "# Charge, Coulomb's Law, and the Electric Field\n\nElectromagnetism starts with one force law and one idea: replace \"charges pull on each other across space\" with \"charges make a field, and the field pushes on charges\". The second version is what survives into relativity and into light.\n\n## Coulomb's law and superposition\n\n$$\\vec{F} = \\frac{1}{4\\pi\\varepsilon_0}\\frac{q_1 q_2}{r^2}\\hat{r}$$\n\nThe only extra rule you need is superposition: the field of many charges is the vector sum of the individual fields, with no interaction between the contributions.\n\n```python\nimport numpy as np\n\nk = 8.9875517923e9      # 1 / (4 pi eps0), N m^2 / C^2\n\ndef field(charges, point):\n    \"\"\"Total E at `point` from a list of (charge, position) pairs.\"\"\"\n    E = np.zeros(2)\n    p = np.asarray(point, dtype=float)\n    for q, pos in charges:\n        r = p - np.asarray(pos, dtype=float)\n        d = np.linalg.norm(r)\n        if d < 1e-12:\n            continue\n        E += k * q * r / d**3\n    return E\n\ndipole = [(+1e-9, (-0.01, 0)), (-1e-9, (+0.01, 0))]\nprint(f\"{'point (m)':>16s}{'|E| (V/m)':>14s}{'direction':>22s}\")\nfor p in [(0, 0), (0, 0.02), (0.05, 0), (0.2, 0), (0, 0.2)]:\n    E = field(dipole, p)\n    mag = np.linalg.norm(E)\n    print(f\"{str(p):>16s}{mag:>14.2f}{str(np.round(E / mag, 3)):>22s}\")\n```\n\n## How a dipole field dies off\n\nA single charge falls off as $1/r^2$. A neutral pair falls off as $1/r^3$, because at large distance the two contributions nearly cancel. Measuring the exponent numerically is a good habit.\n\n```python\nimport numpy as np\n\nk = 8.9875517923e9\n\ndef field_mag(charges, point):\n    E = np.zeros(2)\n    for q, pos in charges:\n        r = np.asarray(point, float) - np.asarray(pos, float)\n        d = np.linalg.norm(r)\n        E += k * q * r / d**3\n    return np.linalg.norm(E)\n\nmonopole = [(1e-9, (0, 0))]\ndipole   = [(+1e-9, (0, -0.005)), (-1e-9, (0, 0.005))]\nquad     = [(+1e-9, (0.005, 0)), (-2e-9, (0, 0)), (+1e-9, (-0.005, 0))]\n\nrs = np.array([0.1, 0.2, 0.4, 0.8])\nfor name, cfg in [(\"monopole\", monopole), (\"dipole\", dipole), (\"quadrupole\", quad)]:\n    mags = np.array([field_mag(cfg, (r, 0)) for r in rs])\n    slope, _ = np.polyfit(np.log(rs), np.log(mags), 1)\n    print(f\"{name:12s} |E| ~ r^{slope:+.2f}\")\n```\n\nEach extra order of cancellation costs one more power of $r$. This is the multipole expansion in one experiment, and it is why a neutral atom barely feels a distant charge.\n\n## Field lines and equipotentials\n\nThe field is the negative gradient of the potential $V = \\frac{1}{4\\pi\\varepsilon_0}\\sum q_i/r_i$. Computing $V$ on a grid and differentiating it numerically is often easier than summing vectors.\n\n```python\nimport numpy as np\n\nk = 8.9875517923e9\ncharges = [(+2e-9, (-0.02, 0)), (-1e-9, (0.02, 0))]\n\nn = 9\nxs = np.linspace(-0.06, 0.06, n)\nys = np.linspace(-0.04, 0.04, 7)\nX, Y = np.meshgrid(xs, ys)\n\nV = np.zeros_like(X)\nfor q, (cx, cy) in charges:\n    V += k * q / np.maximum(np.hypot(X - cx, Y - cy), 2e-3)\n\nEy, Ex = np.gradient(-V, ys, xs)     # E = -grad V\n\nprint(\"potential (volts), rows are y from top to bottom:\")\nfor row in V[::-1]:\n    print(\"  \" + \" \".join(f\"{v:8.1f}\" for v in row))\nprint(\"\\nfield magnitude along the axis y = 0:\")\nmid = len(ys) // 2\nfor x, ex, ey in zip(xs, Ex[mid], Ey[mid]):\n    print(f\"  x = {x:+.3f}  Ex = {ex:>12.1f}  Ey = {ey:>10.1f}\")\n```\n\nNotice where $E_x$ changes sign: that is the null point, and it sits on the far side of the smaller charge, never between charges of opposite sign.\n\n## Conductors: charge goes to the surface\n\nCharges in a conductor rearrange until the interior field is zero. On a 1D ring of mobile charges you can watch that happen by relaxation.\n\n```python\nimport numpy as np\n\nk = 8.9875517923e9\nn = 12\ntheta = np.linspace(0, 2 * np.pi, n, endpoint=False)\npos = np.stack([np.cos(theta), np.sin(theta)], axis=1)     # a conducting ring\nq = np.full(n, 1e-9 / n)\n\n# add an external field and let the surface charge respond (a crude relaxation)\nE_ext = np.array([500.0, 0.0])\nfor _ in range(3000):\n    pot = np.zeros(n)\n    for i in range(n):\n        for j in range(n):\n            if i != j:\n                pot[i] += k * q[j] / np.linalg.norm(pos[i] - pos[j])\n        pot[i] += -np.dot(E_ext, pos[i])\n    q -= 2e-13 * (pot - pot.mean())        # move charge downhill in potential\n    q += (1e-9 - q.sum()) / n              # conserve total charge\n\nprint(\"induced charge distribution around the ring (nC):\")\nfor t, qi in zip(np.rad2deg(theta), q):\n    print(f\"  {t:5.0f} deg  {qi * 1e9:+.4f}\")\nprint(f\"\\npotential spread once relaxed: {pot.max() - pot.min():.2e} V (an equipotential)\")\nprint(\"Charge piles up on the side facing the external field: that is electrostatic induction.\")\n```\n\n## Energy in a configuration\n\nAssembling charges costs work, and that work is stored in the field itself.\n\n```python\nimport numpy as np\n\nk = 8.9875517923e9\n\ndef assembly_energy(charges):\n    U = 0.0\n    for i, (qi, pi) in enumerate(charges):\n        for qj, pj in charges[i + 1:]:\n            U += k * qi * qj / np.linalg.norm(np.array(pi) - np.array(pj))\n    return U\n\nconfigs = {\n    \"two like charges, 1 cm\":     [(1e-9, (0, 0)), (1e-9, (0.01, 0))],\n    \"two unlike charges, 1 cm\":   [(1e-9, (0, 0)), (-1e-9, (0.01, 0))],\n    \"three in a line\":            [(1e-9, (-0.01, 0)), (1e-9, (0, 0)), (1e-9, (0.01, 0))],\n    \"square of alternating sign\": [(1e-9, (0, 0)), (-1e-9, (0.01, 0)), (1e-9, (0.01, 0.01)), (-1e-9, (0, 0.01))],\n}\nfor name, cfg in configs.items():\n    print(f\"{name:30s} U = {assembly_energy(cfg) * 1e9:+8.3f} nJ\")\nprint(\"\\nNegative energy means the configuration is bound: work is needed to pull it apart.\")\n```\n\n> [!NOTE]\n> Superposition is not a small technical convenience. It is why fields can be added, why Fourier methods work in optics, and why a linear medium never mixes frequencies. Every nonlinear optical effect is a failure of it.",
+      "quiz": {
+        "title": "Charges and Fields",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Far from a neutral dipole, the field falls off as:",
+            "options": [
+              "1/r",
+              "1/r squared",
+              "1/r cubed",
+              "Exponentially"
+            ],
+            "answer": "1/r cubed"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In electrostatic equilibrium, the field inside a conductor is:",
+            "options": [
+              "Equal to the external field",
+              "Zero",
+              "Perpendicular to the surface",
+              "Proportional to the charge density"
+            ],
+            "answer": "Zero"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The electric field of several charges is the vector sum of their individual fields.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The electric field is minus the ____ of the potential.",
+            "options": [],
+            "answer": "gradient"
+          }
+        ]
+      },
+      "order": 1
+    },
+    {
+      "slug": "gausss-law-potential-and-capacitance",
+      "title": "Gauss's Law, Potential, and Capacitance",
+      "content": "# Gauss's Law, Potential, and Capacitance\n\nCoulomb summation works but scales badly. Gauss's law replaces the sum with a symmetry argument, and Laplace's equation replaces it with a solvable boundary-value problem.\n\n## Flux and Gauss's law\n\n$$\\oint \\vec{E}\\cdot d\\vec{A} = \\frac{Q_{\\text{enc}}}{\\varepsilon_0}$$\n\nThe flux through a closed surface depends only on the charge inside, no matter how the surface is shaped or where the charge sits inside it.\n\n```python\nimport numpy as np\n\nk = 8.9875517923e9\neps0 = 8.8541878128e-12\n\ndef flux_through_sphere(charges, centre, radius, n=4000):\n    \"\"\"Monte Carlo integral of E . dA over a sphere.\"\"\"\n    rng = np.random.default_rng(3)\n    v = rng.normal(size=(n, 3))\n    v /= np.linalg.norm(v, axis=1)[:, None]\n    pts = np.asarray(centre) + radius * v\n    total = 0.0\n    for q, pos in charges:\n        r = pts - np.asarray(pos, float)\n        d = np.linalg.norm(r, axis=1)\n        E = k * q * r / d[:, None] ** 3\n        total += np.sum(np.einsum(\"ij,ij->i\", E, v))\n    return total * 4 * np.pi * radius**2 / n\n\ninside  = [(2e-9, (0.0, 0.0, 0.0))]\noffset  = [(2e-9, (0.3, 0.0, 0.0))]     # still inside a radius-0.5 sphere\noutside = [(2e-9, (2.0, 0.0, 0.0))]\n\nfor name, cfg in [(\"centred\", inside), (\"off-centre\", offset), (\"outside\", outside)]:\n    phi = flux_through_sphere(cfg, (0, 0, 0), 0.5)\n    print(f\"{name:12s} flux = {phi:12.2f}   Q/eps0 = {sum(q for q, _ in cfg) / eps0:12.2f}\")\nprint(\"\\nMoving the charge around inside changes nothing. Moving it outside gives zero.\")\n```\n\n## Standard geometries\n\nFor enough symmetry, Gauss's law gives the field in one line. The distinctive dependence on distance is worth memorising.\n\n```python\nimport numpy as np\n\neps0 = 8.8541878128e-12\nQ, R = 1e-9, 0.05\n\ndef sphere_field(r):\n    return Q * r / (4 * np.pi * eps0 * R**3) if r < R else Q / (4 * np.pi * eps0 * r**2)\n\nlam, sigma = 1e-9, 1e-9\nprint(f\"{'r (m)':>8s}{'solid sphere':>15s}{'line charge':>14s}{'infinite sheet':>16s}\")\nfor r in [0.01, 0.03, 0.05, 0.1, 0.2, 0.4]:\n    line = lam / (2 * np.pi * eps0 * r)\n    sheet = sigma / (2 * eps0)\n    print(f\"{r:>8.2f}{sphere_field(r):>15.2f}{line:>14.2f}{sheet:>16.2f}\")\nprint(\"\\nSphere: linear inside, 1/r^2 outside. Line: 1/r. Sheet: constant, distance never enters.\")\n```\n\n## Solving Laplace's equation by relaxation\n\nWhere there is no symmetry, solve $\\nabla^2 V = 0$ numerically. Repeatedly replacing each interior point by the average of its neighbours converges to the answer, which is what \"harmonic\" means.\n\n```python\nimport numpy as np\n\nn = 41\nV = np.zeros((n, n))\nV[0, :] = 100.0        # top plate at 100 V\nV[-1, :] = 0.0         # bottom plate grounded\nV[:, 0] = np.linspace(100, 0, n)\nV[:, -1] = np.linspace(100, 0, n)\n\nfor sweep in range(4000):\n    V[1:-1, 1:-1] = 0.25 * (V[:-2, 1:-1] + V[2:, 1:-1] + V[1:-1, :-2] + V[1:-1, 2:])\n\nmid = n // 2\nprint(\"potential down the centre column:\")\nfor i in range(0, n, 5):\n    print(f\"  row {i:2d}   V = {V[i, mid]:7.2f}   linear guess = {100 * (1 - i / (n - 1)):7.2f}\")\n\nEy, Ex = np.gradient(-V)\nprint(f\"\\nfield in the middle: Ex = {Ex[mid, mid]:.3f}, Ey = {Ey[mid, mid]:.3f} (per grid unit)\")\nprint(\"A parallel-plate field is uniform, which is exactly the linear potential above.\")\n```\n\nRelaxation is slow but unbeatable for clarity: it is literally the statement that the potential has no local maxima or minima in empty space.\n\n## Capacitance\n\n$C = Q/V$ depends only on geometry. Compute it for the standard shapes and see how weakly it depends on size.\n\n```python\nimport numpy as np\n\neps0 = 8.8541878128e-12\n\ndef parallel_plate(area, gap, eps_r=1.0):\n    return eps_r * eps0 * area / gap\n\ndef coaxial(length, a, b, eps_r=1.0):\n    return 2 * np.pi * eps_r * eps0 * length / np.log(b / a)\n\ndef isolated_sphere(radius):\n    return 4 * np.pi * eps0 * radius\n\nprint(f\"parallel plate 1 cm^2, 0.1 mm gap : {parallel_plate(1e-4, 1e-4) * 1e12:8.3f} pF\")\nprint(f\"same, with mica (eps_r = 5.4)     : {parallel_plate(1e-4, 1e-4, 5.4) * 1e12:8.3f} pF\")\nprint(f\"coax 1 m, a = 0.5 mm, b = 3 mm    : {coaxial(1.0, 0.5e-3, 3e-3) * 1e12:8.3f} pF\")\nprint(f\"isolated sphere, radius of Earth  : {isolated_sphere(6.371e6) * 1e3:8.3f} mF\")\nprint(f\"isolated sphere, radius 1 cm      : {isolated_sphere(0.01) * 1e12:8.3f} pF\")\nprint(\"\\nThe whole Earth is under a farad. Capacitance scales with length, which is why\")\nprint(\"useful capacitors need either tiny gaps or enormous rolled-up areas.\")\n```\n\n## Energy stored in the field\n\n$$U = \\tfrac{1}{2}CV^2 = \\int \\tfrac{1}{2}\\varepsilon_0 E^2\\,dV$$\n\nBoth forms give the same number, and the second one insists that the energy lives in the field, not in the charges.\n\n```python\nimport numpy as np\n\neps0 = 8.8541878128e-12\narea, gap, V0 = 1e-4, 1e-4, 100.0\n\nC = eps0 * area / gap\nE = V0 / gap\nu_density = 0.5 * eps0 * E**2\nvolume = area * gap\n\nprint(f\"C            = {C * 1e12:.4f} pF\")\nprint(f\"E field      = {E:.3e} V/m\")\nprint(f\"U via 1/2CV^2      = {0.5 * C * V0**2:.6e} J\")\nprint(f\"U via energy density = {u_density * volume:.6e} J\")\nprint(f\"\\nenergy density = {u_density:.4f} J/m^3\")\nprint(f\"air breaks down near 3e6 V/m, giving at most {0.5 * eps0 * 3e6**2:.1f} J/m^3\")\nprint(\"That ceiling is why capacitors store far less energy per kilogram than batteries.\")\n```\n\n> [!TIP]\n> Gauss's law is always true, but only *useful* when symmetry lets you pull $E$ out of the integral. Without symmetry, go back to superposition or solve Laplace's equation numerically.",
+      "quiz": {
+        "title": "Gauss, Potential, Capacitance",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Moving a charge to a different position inside a closed surface changes:",
+            "options": [
+              "The total flux",
+              "The field at each point of the surface, but not the total flux",
+              "Neither",
+              "Both, always"
+            ],
+            "answer": "The field at each point of the surface, but not the total flux"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The field of an infinite charged sheet depends on distance how?",
+            "options": [
+              "As 1/r",
+              "As 1/r squared",
+              "Not at all",
+              "Linearly"
+            ],
+            "answer": "Not at all"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "In charge-free space the potential can have a local maximum.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The energy density stored in an electric field is one half epsilon-zero times E ____.",
+            "options": [],
+            "answer": "squared"
+          }
+        ]
+      },
+      "order": 2
+    },
+    {
+      "slug": "currents-magnetic-fields-and-the-lorentz-force",
+      "title": "Currents, Magnetic Fields, and the Lorentz Force",
+      "content": "# Currents, Magnetic Fields, and the Lorentz Force\n\nMagnetism is what electricity looks like when the charges are moving. This lesson builds the field from currents, then puts charges back into it and watches them turn.\n\n## The Lorentz force\n\n$$\\vec{F} = q(\\vec{E} + \\vec{v}\\times\\vec{B})$$\n\nThe magnetic part does no work: it is always perpendicular to $\\vec{v}$, so it bends trajectories without changing speed.\n\n```python\nimport numpy as np\n\nq, m = 1.602176634e-19, 9.1093837015e-31\nB = np.array([0, 0, 0.01])          # 10 mT along z\nv = np.array([1e6, 0, 2e5])         # some velocity along x with a z component\n\ndt = 1e-12\npos, vel = np.zeros(3), v.astype(float)\nspeeds = []\nfor step in range(20000):\n    a = q * np.cross(vel, B) / m\n    vel = vel + a * dt              # simple integrator, small dt\n    pos = pos + vel * dt\n    if step % 5000 == 0:\n        speeds.append(np.linalg.norm(vel))\n\nr_expected = m * np.linalg.norm(v[:2]) / (q * np.linalg.norm(B))\nperiod = 2 * np.pi * m / (q * np.linalg.norm(B))\nprint(f\"speed over time: {[f'{s:.4e}' for s in speeds]}   (constant: B does no work)\")\nprint(f\"cyclotron radius  = {r_expected * 1000:.3f} mm\")\nprint(f\"cyclotron period  = {period * 1e9:.3f} ns   frequency = {1 / period / 1e6:.2f} MHz\")\nprint(f\"pitch along z per turn = {v[2] * period * 1000:.3f} mm  (a helix, not a circle)\")\n```\n\nThe cyclotron frequency $qB/m$ is independent of speed, which is what makes cyclotrons and mass spectrometers possible.\n\n## Biot-Savart: fields from wires\n\n$$d\\vec{B} = \\frac{\\mu_0}{4\\pi}\\frac{I\\,d\\vec{\\ell}\\times\\hat{r}}{r^2}$$\n\nIntegrate numerically and the standard textbook results fall out without any tricks.\n\n```python\nimport numpy as np\n\nmu0 = 4e-7 * np.pi\n\ndef biot_savart(path, current, point, closed=True):\n    \"\"\"B at `point` from a polyline `path` carrying `current`.\"\"\"\n    p = np.asarray(point, float)\n    pts = np.asarray(path, float)\n    if closed:\n        pts = np.vstack([pts, pts[0]])\n    mids = 0.5 * (pts[:-1] + pts[1:])\n    dl = pts[1:] - pts[:-1]\n    r = p - mids\n    d = np.linalg.norm(r, axis=1)\n    return mu0 * current / (4 * np.pi) * np.sum(np.cross(dl, r) / d[:, None] ** 3, axis=0)\n\n# circular loop of radius a\na, I = 0.05, 1.0\ntheta = np.linspace(0, 2 * np.pi, 400, endpoint=False)\nloop = np.stack([a * np.cos(theta), a * np.sin(theta), np.zeros_like(theta)], axis=1)\n\nprint(f\"{'z (m)':>8s}{'numeric Bz (T)':>18s}{'analytic (T)':>16s}\")\nfor z in [0.0, 0.02, 0.05, 0.1, 0.2]:\n    Bz = biot_savart(loop, I, (0, 0, z))[2]\n    analytic = mu0 * I * a**2 / (2 * (a**2 + z**2) ** 1.5)\n    print(f\"{z:>8.2f}{Bz:>18.6e}{analytic:>16.6e}\")\n```\n\n## The long straight wire and Ampere's law\n\n$$\\oint \\vec{B}\\cdot d\\vec{\\ell} = \\mu_0 I_{\\text{enc}}$$\n\nSample $B$ around a circle enclosing a wire and add it up: the total does not care about the path's shape or radius.\n\n```python\nimport numpy as np\n\nmu0 = 4e-7 * np.pi\nI = 3.0\n\ndef B_wire(point):\n    \"\"\"Field of an infinite wire along z, at (x, y, z).\"\"\"\n    x, y, _ = point\n    s = np.hypot(x, y)\n    return mu0 * I / (2 * np.pi * s) * np.array([-y / s, x / s, 0.0])\n\nfor radius in [0.01, 0.05, 0.2]:\n    n = 2000\n    t = np.linspace(0, 2 * np.pi, n, endpoint=False)\n    circ = 0.0\n    for ti in t:\n        p = np.array([radius * np.cos(ti), radius * np.sin(ti), 0.0])\n        dl = np.array([-np.sin(ti), np.cos(ti), 0.0]) * (2 * np.pi * radius / n)\n        circ += np.dot(B_wire(p), dl)\n    print(f\"loop radius {radius:5.2f} m: circulation = {circ:.6e}   mu0*I = {mu0 * I:.6e}\")\nprint(\"\\nB falls as 1/s and the path length grows as s, so the product is fixed.\")\n```\n\n## Forces between currents, and the definition of the ampere\n\nTwo parallel wires attract when their currents run the same way. The force per metre is what the ampere was defined by until 2019.\n\n```python\nimport numpy as np\n\nmu0 = 4e-7 * np.pi\n\ndef force_per_metre(I1, I2, d):\n    return mu0 * I1 * I2 / (2 * np.pi * d)\n\nprint(f\"{'separation':>12s}{'F/L for 1 A each':>20s}\")\nfor d in [0.001, 0.01, 0.1, 1.0]:\n    print(f\"{d:>12.3f}{force_per_metre(1, 1, d):>20.3e} N/m\")\nprint(\"\\n1 A in each of two wires 1 m apart gives 2e-7 N/m: the old SI definition.\")\nprint(f\"a 1000 A busbar pair 5 cm apart: {force_per_metre(1000, 1000, 0.05):.1f} N/m\")\nprint(\"which is why high-current switchgear needs serious mechanical bracing.\")\n```\n\n## Magnetic dipoles and torque\n\nA current loop is a magnetic dipole $\\vec{m} = I\\vec{A}$, and a field twists it: $\\vec{\\tau} = \\vec{m}\\times\\vec{B}$. Motors, compasses, and NMR are all this equation.\n\n```python\nimport numpy as np\n\nI, area = 0.5, 1e-4\nm_vec = I * area * np.array([0, 0, 1.0])\nB = np.array([0.2, 0, 0])\n\nprint(f\"dipole moment = {np.linalg.norm(m_vec):.3e} A m^2\")\nprint(f\"{'angle to B':>12s}{'torque (N m)':>16s}{'energy (J)':>14s}\")\nfor deg in [0, 30, 60, 90, 150, 180]:\n    th = np.deg2rad(deg)\n    m = np.linalg.norm(m_vec) * np.array([np.sin(th), 0, np.cos(th)])\n    torque = np.linalg.norm(np.cross(m, B))\n    energy = -np.dot(m, B)\n    print(f\"{deg:>12d}{torque:>16.3e}{energy:>14.3e}\")\nprint(\"\\nTorque peaks at 90 degrees and vanishes when aligned: that alignment is the compass needle.\")\n```\n\n> [!NOTE]\n> There is no magnetic charge: $\\nabla\\cdot\\vec{B} = 0$, so every field line closes on itself. That is why a magnet cut in half gives two magnets rather than a north pole and a south pole.",
+      "quiz": {
+        "title": "Currents and Magnetic Fields",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The magnetic part of the Lorentz force does no work because:",
+            "options": [
+              "It is very weak",
+              "It is always perpendicular to the velocity",
+              "Magnetic fields store no energy",
+              "Charges are neutral on average"
+            ],
+            "answer": "It is always perpendicular to the velocity"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The cyclotron frequency qB/m depends on:",
+            "options": [
+              "The particle's speed",
+              "The radius of its orbit",
+              "Only charge, mass and field",
+              "The field gradient"
+            ],
+            "answer": "Only charge, mass and field"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Two parallel wires carrying current in the same direction repel each other.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The divergence of B is zero because there are no magnetic ____.",
+            "options": [],
+            "answer": "monopoles"
+          }
+        ]
+      },
+      "order": 3
+    },
+    {
+      "slug": "faradays-law-inductance-and-ac-circuits",
+      "title": "Faraday's Law, Inductance, and AC Circuits",
+      "content": "# Faraday's Law, Inductance, and AC Circuits\n\nA changing magnetic field makes an electric field. That single sentence is the generator, the transformer, the induction motor, and the reason the grid runs on alternating current.\n\n## Faraday and Lenz\n\n$$\\mathcal{E} = -\\frac{d\\Phi_B}{dt}, \\qquad \\Phi_B = \\int \\vec{B}\\cdot d\\vec{A}$$\n\nThe minus sign is Lenz's law: the induced current opposes the change that caused it. Without it you could build a perpetual motion machine in an afternoon.\n\n```python\nimport numpy as np\n\narea, N = 0.01, 200          # 100 cm^2, 200 turns\nt = np.linspace(0, 0.05, 11)\n\nprofiles = {\n    \"B ramps 0 -> 0.5 T in 50 ms\": lambda t: 0.5 * t / 0.05,\n    \"B constant at 0.5 T\":         lambda t: 0.5 + 0 * t,\n    \"B = 0.5 sin(2 pi 50 t)\":      lambda t: 0.5 * np.sin(2 * np.pi * 50 * t),\n}\ndt = t[1] - t[0]\nfor name, B in profiles.items():\n    flux = N * area * B(t)\n    emf = -np.gradient(flux, dt)\n    print(f\"{name:32s} peak |emf| = {np.max(np.abs(emf)):7.3f} V\")\nprint(\"\\nOnly change matters. A strong but steady field induces nothing at all.\")\n```\n\n## The generator\n\nRotate a coil in a fixed field and the flux varies as $\\cos\\omega t$, so the emf is a sine wave whose amplitude grows with frequency.\n\n```python\nimport numpy as np\n\nN, area, B = 200, 0.01, 0.5\nprint(f\"{'rpm':>8s}{'f (Hz)':>9s}{'peak emf (V)':>15s}{'rms (V)':>10s}\")\nfor rpm in [600, 1500, 3000, 3600]:\n    f = rpm / 60\n    omega = 2 * np.pi * f\n    peak = N * area * B * omega\n    print(f\"{rpm:>8d}{f:>9.1f}{peak:>15.3f}{peak / np.sqrt(2):>10.3f}\")\nprint(\"\\n3000 rpm on a 2-pole machine gives 50 Hz; 3600 rpm gives 60 Hz.\")\nprint(\"That is the entire reason the world's grids split into those two numbers.\")\n```\n\n## Self-inductance and the LR transient\n\nAn inductor resists changes in current: $V = L\\,di/dt$. Closing a switch gives an exponential approach with time constant $L/R$.\n\n```python\nimport numpy as np\n\nmu0 = 4e-7 * np.pi\n\ndef solenoid_L(turns, length, area):\n    return mu0 * turns**2 * area / length\n\nL = solenoid_L(500, 0.2, np.pi * 0.02**2)\nR, V0 = 10.0, 12.0\ntau = L / R\nprint(f\"L = {L * 1e3:.4f} mH   tau = L/R = {tau * 1e6:.2f} us   final current = {V0 / R:.2f} A\")\n\nprint(f\"\\n{'t / tau':>8s}{'i (A)':>10s}{'% of final':>12s}\")\nfor k in [0, 0.5, 1, 2, 3, 5]:\n    i = V0 / R * (1 - np.exp(-k))\n    print(f\"{k:>8.1f}{i:>10.4f}{100 * i / (V0 / R):>11.2f}%\")\n\nenergy = 0.5 * L * (V0 / R) ** 2\nprint(f\"\\nstored energy = {energy * 1e3:.4f} mJ\")\nprint(\"Opening the switch tries to dump that energy instantly, which is why the contacts arc.\")\n```\n\n## Reactance and resonance\n\nIn AC, capacitors and inductors have frequency-dependent impedance: $Z_L = i\\omega L$, $Z_C = 1/(i\\omega C)$. A series RLC circuit resonates where they cancel.\n\n```python\nimport numpy as np\n\nR, L, C = 10.0, 1e-3, 1e-6\nf0 = 1 / (2 * np.pi * np.sqrt(L * C))\nQ = (1 / R) * np.sqrt(L / C)\nprint(f\"resonant frequency = {f0:.1f} Hz   Q = {Q:.2f}   bandwidth = {f0 / Q:.1f} Hz\\n\")\n\nprint(f\"{'f (Hz)':>10s}{'|Z| (ohm)':>12s}{'phase (deg)':>13s}{'|I| for 10 V':>14s}\")\nfor f in [1000, 3000, 5033, 8000, 20000]:\n    w = 2 * np.pi * f\n    Z = R + 1j * (w * L - 1 / (w * C))\n    print(f\"{f:>10d}{abs(Z):>12.3f}{np.degrees(np.angle(Z)):>13.2f}{10 / abs(Z):>14.4f}\")\nprint(\"\\nAt resonance the reactances cancel and the circuit looks purely resistive.\")\nprint(\"That selectivity is how a radio picks one station out of the whole band.\")\n```\n\n## Transformers and mutual inductance\n\nTwo coils sharing flux trade voltage for current. Power is conserved, which is why the grid transmits at hundreds of kilovolts.\n\n```python\nimport numpy as np\n\ndef transformer(V_in, N1, N2, load_ohm, efficiency=0.98):\n    V_out = V_in * N2 / N1\n    I_out = V_out / load_ohm\n    P_out = V_out * I_out\n    return V_out, I_out, P_out, P_out / efficiency / V_in\n\nfor N1, N2 in [(1000, 100), (100, 1000), (1000, 1000)]:\n    V_out, I_out, P_out, I_in = transformer(230.0, N1, N2, 50.0)\n    print(f\"N1:N2 = {N1}:{N2:<5d} V_out = {V_out:8.2f} V  I_out = {I_out:6.3f} A  \"\n          f\"P = {P_out:8.2f} W  I_in = {I_in:6.3f} A\")\n\nprint(\"\\ntransmission losses for 1 MW over a line of 5 ohm:\")\nfor kV in [1, 10, 100, 400]:\n    I = 1e6 / (kV * 1000)\n    print(f\"  at {kV:4d} kV: I = {I:8.1f} A, loss = I^2R = {I**2 * 5 / 1e3:9.1f} kW \"\n          f\"({I**2 * 5 / 1e6 * 100:.2f}% of the power)\")\n```\n\n> [!TIP]\n> Every \"why is it AC?\" question resolves here: transformers only work on changing flux, high voltage cuts $I^2R$ losses, and only AC can be transformed efficiently with passive iron and copper. Modern power electronics is slowly weakening that argument, which is why HVDC links now exist.",
+      "quiz": {
+        "title": "Induction and AC",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A coil sits in a strong but perfectly steady magnetic field. The induced emf is:",
+            "options": [
+              "Large and constant",
+              "Zero",
+              "Proportional to the field strength",
+              "Proportional to the coil area"
+            ],
+            "answer": "Zero"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Transmitting power at ten times the voltage reduces resistive line losses by a factor of:",
+            "options": [
+              "10",
+              "100",
+              "2",
+              "It does not change them"
+            ],
+            "answer": "100"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "At the resonant frequency of a series RLC circuit, the impedance is purely resistive.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The rule that an induced current opposes the change producing it is ____'s law.",
+            "options": [],
+            "answer": "Lenz"
+          }
+        ]
+      },
+      "order": 4
+    },
+    {
+      "slug": "maxwells-equations-and-electromagnetic-waves",
+      "title": "Maxwell's Equations and Electromagnetic Waves",
+      "content": "# Maxwell's Equations and Electromagnetic Waves\n\nFour equations, one of which Maxwell had to fix, and light falls out as a consequence rather than an assumption.\n\n## The four equations\n\n$$\\nabla\\cdot\\vec{E} = \\frac{\\rho}{\\varepsilon_0}, \\qquad \\nabla\\cdot\\vec{B} = 0$$\n\n$$\\nabla\\times\\vec{E} = -\\frac{\\partial\\vec{B}}{\\partial t}, \\qquad \\nabla\\times\\vec{B} = \\mu_0\\vec{J} + \\mu_0\\varepsilon_0\\frac{\\partial\\vec{E}}{\\partial t}$$\n\nThe last term is the displacement current, and without it charge conservation fails. Check that directly.\n\n```python\nimport numpy as np\n\neps0 = 8.8541878128e-12\nmu0 = 4e-7 * np.pi\n\n# charging capacitor: current I into a plate, E building between the plates\nI, area = 2.0, 1e-4\ndE_dt = I / (eps0 * area)                 # from Q = eps0 E A\ndisplacement_current = eps0 * dE_dt * area\n\nprint(f\"conduction current into the plate : {I:.4f} A\")\nprint(f\"displacement current between plates: {displacement_current:.4f} A\")\nprint(\"They match exactly, so Ampere's loop gives the same answer whichever surface you choose.\")\nprint(f\"\\nspeed from the constants: 1/sqrt(mu0 eps0) = {1 / np.sqrt(mu0 * eps0):.0f} m/s\")\nprint(\"Maxwell computed that in 1862 and recognised the speed of light.\")\n```\n\n## The wave equation\n\nTake the curl of Faraday's law in vacuum and you get $\\nabla^2\\vec{E} = \\mu_0\\varepsilon_0\\,\\partial^2\\vec{E}/\\partial t^2$. That is a wave travelling at $c$, with $E$ and $B$ perpendicular to each other and to the direction of travel.\n\n```python\nimport numpy as np\n\nc = 299792458.0\nmu0 = 4e-7 * np.pi\neps0 = 8.8541878128e-12\n\nE0, f = 100.0, 1e9              # 100 V/m at 1 GHz\nomega = 2 * np.pi * f\nk = omega / c\nB0 = E0 / c\n\nprint(f\"wavelength = {2 * np.pi / k * 100:.2f} cm   B0 = {B0 * 1e6:.4f} uT   E0/B0 = {E0 / B0:.0f} = c\")\n\nz = np.linspace(0, 2 * np.pi / k, 7)\nprint(f\"\\n{'z (cm)':>9s}{'E (V/m)':>11s}{'B (uT)':>11s}{'S (W/m^2)':>12s}\")\nfor zi in z:\n    E = E0 * np.cos(k * zi)\n    B = B0 * np.cos(k * zi)\n    S = E * B / mu0\n    print(f\"{zi * 100:>9.2f}{E:>11.2f}{B * 1e6:>11.4f}{S:>12.3f}\")\nprint(\"\\nE and B peak together, and the Poynting vector S = EB/mu0 is never negative:\")\nprint(\"energy always flows forward, twice per cycle in pulses.\")\n```\n\n## Simulating propagation directly\n\nA 1D finite-difference time-domain (FDTD) scheme steps $E$ and $B$ alternately. Twenty lines reproduce reflection and transmission at an interface.\n\n```python\nimport numpy as np\n\nsize = 400\n\ndef run(eps_right):\n    E, H = np.zeros(size), np.zeros(size)\n    eps = np.ones(size)\n    eps[size // 2:] = eps_right\n    for step in range(600):\n        H[:-1] += 0.5 * (E[1:] - E[:-1])\n        E[1:] += 0.5 / eps[1:] * (H[1:] - H[:-1])\n        if step < 120:                          # a short pulse launched from the left\n            E[20] += np.exp(-((step - 60) / 20.0) ** 2)\n    return E\n\nincident = np.abs(run(1.0)[size // 2:]).max()    # control run: no interface at all\nfield = run(4.0)                                 # dielectric with n = 2 in the right half\nreflected = np.abs(field[:size // 2]).max()\ntransmitted = np.abs(field[size // 2:]).max()\n\nn1, n2 = 1.0, 2.0\nprint(f\"incident amplitude    = {incident:.4f}\")\nprint(f\"reflected amplitude   = {reflected:.4f}   |r| measured = {reflected / incident:.3f}\")\nprint(f\"transmitted amplitude = {transmitted:.4f}   t measured   = {transmitted / incident:.3f}\")\nprint(f\"\\nFresnel prediction: |r| = {abs((n1 - n2) / (n1 + n2)):.3f}, t = {2 * n1 / (n1 + n2):.3f}\")\nprint(\"The wave slows to c/n and shortens its wavelength; the frequency never changes.\")\n```\n\n## Energy, momentum, and radiation pressure\n\nLight carries momentum $p = U/c$. The pressure is tiny but real, and it is what solar sails use.\n\n```python\nimport numpy as np\n\nc = 299792458.0\nintensities = {\n    \"sunlight at Earth\": 1361.0,\n    \"bright indoor lighting\": 5.0,\n    \"1 W laser in a 1 mm spot\": 1.0 / (np.pi * (0.5e-3) ** 2),\n    \"focused 1 kW laser, 10 um spot\": 1000 / (np.pi * (5e-6) ** 2),\n}\nfor name, S in intensities.items():\n    E_field = np.sqrt(2 * S / (8.8541878128e-12 * c))\n    print(f\"{name:32s} S = {S:11.3e} W/m^2   E = {E_field:10.3e} V/m   \"\n          f\"P_abs = {S / c:9.3e} Pa\")\nprint(\"\\nSunlight pushes with about 4.5 micropascal. A 1 km^2 sail feels roughly 4.5 N.\")\n```\n\n## The spectrum\n\nThe same equations describe everything from power lines to gamma rays; only the frequency changes.\n\n```python\nc = 299792458.0\nh = 6.62607015e-34\ne = 1.602176634e-19\n\nbands = [\n    (\"power line\", 50), (\"AM radio\", 1e6), (\"FM radio\", 1e8), (\"microwave oven\", 2.45e9),\n    (\"5G mmWave\", 2.8e10), (\"thermal infrared\", 3e13), (\"red light\", 4.3e14),\n    (\"violet light\", 7.5e14), (\"UV-C\", 1e15), (\"medical X-ray\", 3e18), (\"gamma ray\", 1e20),\n]\nprint(f\"{'band':20s}{'frequency (Hz)':>16s}{'wavelength':>16s}{'photon energy':>16s}\")\nfor name, f in bands:\n    lam = c / f\n    unit = f\"{lam:.3e} m\" if lam > 1e-3 else f\"{lam * 1e9:.3f} nm\"\n    print(f\"{name:20s}{f:>16.3e}{unit:>16s}{h * f / e:>13.3e} eV\")\nprint(\"\\nChemical bonds are a few eV, which is exactly where ionising radiation begins.\")\n```\n\n> [!NOTE]\n> Nothing in this lesson postulated light. Coulomb's law, Faraday's law, and the displacement current together *force* the existence of waves at $1/\\sqrt{\\mu_0\\varepsilon_0}$. That prediction, confirmed by Hertz twenty years later, is one of the strongest arguments any physical theory has ever made.",
+      "quiz": {
+        "title": "Maxwell and Waves",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The displacement current term was added because without it:",
+            "options": [
+              "Light would travel too slowly",
+              "Ampere's law contradicts charge conservation",
+              "Magnetic monopoles would exist",
+              "Capacitors could not store energy"
+            ],
+            "answer": "Ampere's law contradicts charge conservation"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "When light enters glass, what stays the same?",
+            "options": [
+              "Its speed",
+              "Its wavelength",
+              "Its frequency",
+              "Its amplitude"
+            ],
+            "answer": "Its frequency"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "The speed of light in vacuum follows from the electric and magnetic constants alone.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The vector S = E cross B / mu-zero, giving energy flow per unit area, is the ____ vector.",
+            "options": [],
+            "answer": "Poynting"
+          }
+        ]
+      },
+      "order": 5
+    },
+    {
+      "slug": "fields-in-matter-energy-flow-and-radiation",
+      "title": "Fields in Matter, Energy Flow, and Radiation",
+      "content": "# Fields in Matter, Energy Flow, and Radiation\n\nReal materials polarise, magnetise, and conduct. Adding those responses turns the vacuum equations into the ones engineers actually use, and explains where the energy in a circuit really travels.\n\n## Dielectrics\n\nAn applied field separates charge inside a material, producing a polarisation that partly cancels it. The result is the relative permittivity $\\varepsilon_r$.\n\n```python\nimport numpy as np\n\neps0 = 8.8541878128e-12\nmaterials = {\"vacuum\": 1.0, \"dry air\": 1.00059, \"paper\": 3.5, \"glass\": 5.5,\n             \"water\": 80.1, \"barium titanate\": 1200.0}\n\nE_applied = 1e5\nprint(f\"{'material':18s}{'eps_r':>9s}{'E inside':>13s}{'bound charge':>16s}{'C gain':>9s}\")\nfor name, er in materials.items():\n    E_in = E_applied / er\n    sigma_b = eps0 * E_applied * (1 - 1 / er)\n    print(f\"{name:18s}{er:>9.3f}{E_in:>13.1f}{sigma_b * 1e6:>13.3f} uC/m^2{er:>8.1f}x\")\nprint(\"\\nWater's huge permittivity is why it dissolves salts: it screens the ionic attraction 80-fold.\")\n```\n\n## Magnetic materials\n\nThe same story with $\\mu_r$, except the sign can go either way, and ferromagnets are wildly nonlinear.\n\n```python\nmu0 = 4e-7 * 3.141592653589793\nmaterials = [\n    (\"superconductor\", 0.0, \"perfect diamagnet, expels all flux\"),\n    (\"water\", 0.999991, \"diamagnetic, weakly repelled\"),\n    (\"aluminium\", 1.000022, \"paramagnetic, weakly attracted\"),\n    (\"ferrite\", 640.0, \"soft, low loss at high frequency\"),\n    (\"iron (soft)\", 5000.0, \"transformer cores\"),\n    (\"mu-metal\", 80000.0, \"magnetic shielding\"),\n]\nH = 100.0\nprint(f\"{'material':18s}{'mu_r':>10s}{'B = mu H (T)':>15s}   note\")\nfor name, mur, note in materials:\n    print(f\"{name:18s}{mur:>10.4f}{mu0 * mur * H:>15.6f}   {note}\")\nprint(\"\\nSoft iron multiplies the field thousands of times, which is why coils get iron cores.\")\n```\n\n## Ohm's law as a field statement\n\n$\\vec{J} = \\sigma\\vec{E}$ is the microscopic version. It says how much field a current needs, and it explains why copper is used for wire and why silicon is not.\n\n```python\nimport numpy as np\n\nsigma = {\"copper\": 5.96e7, \"aluminium\": 3.5e7, \"iron\": 1.0e7,\n         \"seawater\": 4.8, \"silicon (pure)\": 1.56e-3, \"glass\": 1e-12}\n\nI, radius = 10.0, 1e-3        # 10 A through a 1 mm radius rod\narea = np.pi * radius**2\nJ = I / area\nprint(f\"current density = {J / 1e6:.3f} A/mm^2\\n\")\nprint(f\"{'material':18s}{'E needed (V/m)':>18s}{'drop over 10 m':>18s}\")\nfor name, s in sigma.items():\n    E = J / s\n    print(f\"{name:18s}{E:>18.3e}{E * 10:>18.3e} V\")\nprint(\"\\nCopper needs a fraction of a volt per metre. Glass would need 1e13 V/m,\")\nprint(\"which is why it is an insulator rather than a very bad conductor.\")\n```\n\n## Where the energy actually flows\n\nA resistive wire carrying current dissipates $I^2R$. The Poynting vector shows the energy entering through the *sides* of the wire, from the field in the surrounding space, not flowing along inside the copper.\n\n```python\nimport numpy as np\n\nmu0 = 4e-7 * np.pi\nI, R_ohm, length, a = 2.0, 5.0, 1.0, 1e-3\n\nV = I * R_ohm\nE_along = V / length                 # axial E just outside the surface\nB_surface = mu0 * I / (2 * np.pi * a)\nS = E_along * B_surface / mu0        # radially inward\nside_area = 2 * np.pi * a * length\n\nprint(f\"V = {V:.2f} V   E along the wire = {E_along:.3f} V/m\")\nprint(f\"B at the surface = {B_surface * 1e6:.2f} uT\")\nprint(f\"Poynting magnitude at the surface = {S:.3f} W/m^2, pointing inward\")\nprint(f\"power entering through the side   = {S * side_area:.4f} W\")\nprint(f\"I^2 R                             = {I**2 * R_ohm:.4f} W\")\nprint(\"\\nThe two agree exactly. Energy travels in the field around the wire, not inside it.\")\n```\n\nThat result is genuinely counterintuitive and completely standard: in a transmission line the copper guides the energy, it does not carry it.\n\n## Dipole radiation\n\nAccelerating charge radiates, with power $P = \\frac{q^2a^2}{6\\pi\\varepsilon_0c^3}$ and an angular pattern $\\propto \\sin^2\\theta$. There is no radiation along the acceleration axis.\n\n```python\nimport numpy as np\n\neps0 = 8.8541878128e-12\nc = 299792458.0\nq = 1.602176634e-19\n\nprint(f\"{'theta (deg)':>12s}{'relative power':>17s}\")\nfor deg in [0, 30, 45, 60, 90, 120, 180]:\n    print(f\"{deg:>12d}{np.sin(np.deg2rad(deg)) ** 2:>17.4f}\")\n\na = 1e20      # a violently accelerated electron\nP = q**2 * a**2 / (6 * np.pi * eps0 * c**3)\nprint(f\"\\nLarmor power for a = {a:.0e} m/s^2: {P:.3e} W\")\n\n# why the sky is blue: Rayleigh scattering goes as 1/lambda^4\nprint(\"\\nRayleigh scattering relative to 700 nm red:\")\nfor name, lam in [(\"violet\", 400), (\"blue\", 450), (\"green\", 550), (\"red\", 700)]:\n    print(f\"  {name:8s} {lam} nm: {(700 / lam) ** 4:5.2f}x\")\nprint(\"Blue scatters about 6 times more than red, which is the colour of the daytime sky.\")\n```\n\n## Reflection at an interface\n\nThe Fresnel equations follow from matching $E$ and $B$ across a boundary, and they explain both anti-glare coatings and the polarised sky.\n\n```python\nimport numpy as np\n\ndef fresnel(n1, n2, theta_deg):\n    th1 = np.deg2rad(theta_deg)\n    s = n1 / n2 * np.sin(th1)\n    if abs(s) > 1:\n        return 1.0, 1.0                       # total internal reflection\n    th2 = np.arcsin(s)\n    rs = (n1 * np.cos(th1) - n2 * np.cos(th2)) / (n1 * np.cos(th1) + n2 * np.cos(th2))\n    rp = (n2 * np.cos(th1) - n1 * np.cos(th2)) / (n2 * np.cos(th1) + n1 * np.cos(th2))\n    return rs**2, rp**2\n\nn1, n2 = 1.0, 1.5\nprint(f\"{'angle':>8s}{'R_s':>10s}{'R_p':>10s}\")\nfor deg in [0, 30, 56.31, 70, 85]:\n    Rs, Rp = fresnel(n1, n2, deg)\n    print(f\"{deg:>8.2f}{Rs:>10.4f}{Rp:>10.4f}\")\nprint(f\"\\nBrewster angle = arctan(n2/n1) = {np.degrees(np.arctan(n2 / n1)):.2f} deg, where R_p = 0.\")\nprint(\"Reflected light there is fully polarised, which is what polarised sunglasses exploit.\")\n```\n\n> [!TIP]\n> When a problem involves matter, ask which of three responses is active: polarisation ($\\varepsilon_r$), magnetisation ($\\mu_r$), or conduction ($\\sigma$). Almost every applied-electromagnetics formula is the vacuum one with those three substitutions made.",
+      "quiz": {
+        "title": "Matter, Energy, Radiation",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In a current-carrying resistive wire, the dissipated energy enters:",
+            "options": [
+              "Along the wire from the battery terminal",
+              "Radially inward through the wire's surface, from the surrounding field",
+              "From the lattice vibrations",
+              "It does not enter, it is created in the resistor"
+            ],
+            "answer": "Radially inward through the wire's surface, from the surrounding field"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Rayleigh scattering scales as:",
+            "options": [
+              "1/lambda",
+              "1/lambda squared",
+              "1/lambda to the fourth",
+              "lambda squared"
+            ],
+            "answer": "1/lambda to the fourth"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "An oscillating dipole radiates most strongly along its own axis.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "At the ____ angle, reflected light is completely polarised and R_p is zero.",
+            "options": [],
+            "answer": "Brewster"
+          }
+        ]
+      },
+      "order": 6
+    },
+    {
+      "slug": "final-project-an-electromagnetic-field-toolkit",
+      "title": "Final Project: An Electromagnetic Field Toolkit",
+      "content": "# Final Project: An Electromagnetic Field Toolkit\n\nBuild `em.py`: a library that computes fields from sources, solves boundary-value problems, and propagates waves.\n\n## What to build\n\n**Electrostatics**\n1. `field(charges, point)` and `potential(charges, point)` by superposition, in 3D.\n2. `flux(charges, centre, radius)` by Monte Carlo integration, checked against Gauss's law.\n3. `laplace_solve(boundary, mask, tol)`, relaxation on a 2D grid with fixed conductors, returning $V$ and $\\vec{E}$.\n4. `capacitance(geometry)` from the solved field: $C = 2U/V^2$.\n\n**Magnetostatics**\n5. `biot_savart(path, current, point)` for an arbitrary polyline, verified against the loop-axis formula.\n6. `helmholtz_uniformity(a, separation)`, showing that the field is flattest when the coil spacing equals the radius.\n7. `force_between(path1, I1, path2, I2)` by integrating $I\\,d\\vec{\\ell}\\times\\vec{B}$.\n\n**Dynamics and waves**\n8. `lorentz_trajectory(q, m, E, B, v0, dt, steps)` using the Boris pusher, which conserves energy where naive Euler does not.\n9. `rlc_response(R, L, C, frequencies)`, returning impedance magnitude and phase, and locating the resonance.\n10. `fdtd_1d(eps_profile, steps)`, launching a pulse and measuring reflection and transmission against the Fresnel prediction.\n\n## A skeleton to start from\n\n```python\nimport numpy as np\n\nK = 8.9875517923e9\nMU0 = 4e-7 * np.pi\nEPS0 = 8.8541878128e-12\n\n\ndef boris_step(q, m, x, v, E, B, dt):\n    \"\"\"One Boris push: exactly conserves speed when E = 0, unlike naive Euler.\"\"\"\n    t = (q * B / m) * (dt / 2)\n    s = 2 * t / (1 + np.dot(t, t))\n    v_minus = v + (q * E / m) * (dt / 2)\n    v_prime = v_minus + np.cross(v_minus, t)\n    v_plus = v_minus + np.cross(v_prime, s)\n    v_new = v_plus + (q * E / m) * (dt / 2)\n    return x + v_new * dt, v_new\n\n\nq, m = 1.602176634e-19, 9.1093837015e-31\nB = np.array([0.0, 0.0, 0.01])\nE = np.zeros(3)\nx, v = np.zeros(3), np.array([1e6, 0.0, 0.0])\n\nspeed0 = np.linalg.norm(v)\nfor _ in range(100000):\n    x, v = boris_step(q, m, x, v, E, B, 1e-12)\nprint(f\"speed drift after 100k steps: {abs(np.linalg.norm(v) - speed0) / speed0:.2e}\")\nprint(f\"final radius: {np.linalg.norm(x[:2]) * 1000:.4f} mm \"\n      f\"(expected {m * speed0 / (q * 0.01) * 1000:.4f} mm)\")\n```\n\n## Required experiments\n\n**Method of images.** Put a point charge above a grounded plane, solve with relaxation, and compare the surface charge density against the analytic image-charge answer $\\sigma = -qd/2\\pi(d^2+r^2)^{3/2}$. Report the worst relative error and where it occurs.\n\n**Helmholtz coils.** Sweep the coil separation and report the range over which $B_z$ on the axis varies by less than 1%. Confirm the optimum is separation = radius.\n\n**A magnetic bottle.** Use two coils with a gap and launch a charged particle at an angle. Show that it reflects at the high-field regions, and find the loss-cone angle at which particles escape.\n\n**The Poynting vector in a resistor.** For a wire of your chosen radius and resistance, integrate $\\vec{S}$ over the surface numerically and confirm it equals $I^2R$ to within your integration error.\n\n**Fresnel from FDTD.** Run the 1D solver against three index steps and check the measured reflection coefficient against $(n_1-n_2)/(n_1+n_2)$.\n\n## Stretch goals\n\n- Add a perfectly matched layer to the FDTD boundary so pulses leave without reflecting, and show the improvement quantitatively.\n- Implement a 2D FDTD and demonstrate diffraction through a slit, then compare the far-field pattern with the Fraunhofer formula.\n- Add a simple hysteresis model (Jiles-Atherton or a preisach-style loop) and compute the core loss per cycle of a transformer.\n\n## What to submit\n\n`em.py`, a script running every experiment, and a write-up of about a page covering:\n\n- your image-charge error table and an explanation of where the relaxation solver is least accurate\n- the loss-cone angle you measured, and how it depends on the mirror ratio\n- one result that surprised you, with the numbers that made it surprising\n\n> [!TIP]\n> Numerical electromagnetism is mostly about boundary conditions. When a result looks wrong, check the edges of your grid before you doubt the physics.",
+      "requiresSubmission": true,
+      "order": 7
+    }
+  ]
+}

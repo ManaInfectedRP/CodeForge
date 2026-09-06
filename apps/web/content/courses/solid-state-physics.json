@@ -1,0 +1,335 @@
+{
+  "slug": "solid-state-physics",
+  "title": "Solid State Physics",
+  "description": "Crystal structures and reciprocal space, X-ray diffraction, phonons and heat capacity, the free electron gas, band theory and effective mass, and semiconductors from doping to the p-n junction, all computed in the browser.",
+  "pathSlug": "solid-state-physics",
+  "pathName": "Solid State Physics",
+  "isPublic": false,
+  "lessons": [
+    {
+      "slug": "crystals-lattices-bases-and-packing",
+      "title": "Crystals: Lattices, Bases, and Packing",
+      "content": "# Crystals: Lattices, Bases, and Packing\n\nA crystal is a lattice plus a basis: an infinitely repeating arrangement of points, with a group of atoms hung on each point. Almost every property of a solid follows from that periodicity.\n\n## The fourteen Bravais lattices, and the three that matter\n\n```python\nimport numpy as np\n\nlattices = {\n    \"simple cubic\":        (np.eye(3), 1, 0.5),\n    \"body-centred cubic\":  (np.array([[-0.5, 0.5, 0.5], [0.5, -0.5, 0.5], [0.5, 0.5, -0.5]]), 2, np.sqrt(3) / 4),\n    \"face-centred cubic\":  (np.array([[0, 0.5, 0.5], [0.5, 0, 0.5], [0.5, 0.5, 0]]), 4, np.sqrt(2) / 4),\n}\nprint(f\"{'lattice':22s}{'atoms/cell':>12s}{'nearest neighbours':>21s}{'packing fraction':>19s}\")\nfor name, (vectors, n_atoms, r_over_a) in lattices.items():\n    volume = abs(np.linalg.det(np.eye(3)))\n    packing = n_atoms * (4 / 3) * np.pi * r_over_a**3 / volume\n    coordination = {\"simple cubic\": 6, \"body-centred cubic\": 8, \"face-centred cubic\": 12}[name]\n    print(f\"{name:22s}{n_atoms:>12d}{coordination:>21d}{packing:>19.4f}\")\nprint(\"\\nFCC and HCP both reach 0.7405, the densest possible packing of equal spheres,\")\nprint(\"a fact conjectured by Kepler in 1611 and only proved in 1998.\")\n```\n\n## Real materials\n\n```python\nimport numpy as np\n\nN_A = 6.02214076e23\nmaterials = [\n    (\"aluminium\", \"FCC\", 4.050, 26.98, 4),\n    (\"copper\",    \"FCC\", 3.615, 63.55, 4),\n    (\"iron\",      \"BCC\", 2.866, 55.85, 2),\n    (\"tungsten\",  \"BCC\", 3.165, 183.84, 2),\n    (\"silicon\",   \"diamond\", 5.431, 28.09, 8),\n    (\"NaCl\",      \"rocksalt\", 5.640, 58.44, 4),\n]\nprint(f\"{'material':12s}{'structure':11s}{'a (A)':>8s}{'density (g/cm^3)':>18s}{'atoms/cm^3':>14s}\")\nfor name, structure, a_A, M, n in materials:\n    a = a_A * 1e-8                       # cm\n    density = n * M / (N_A * a**3)\n    print(f\"{name:12s}{structure:11s}{a_A:>8.3f}{density:>18.3f}{n / a**3:>14.3e}\")\nprint(\"\\nMeasured densities: Al 2.70, Cu 8.96, Fe 7.87, W 19.25, Si 2.33, NaCl 2.16 g/cm^3.\")\nprint(\"Getting these right from lattice constants alone is the first check on any structure.\")\n```\n\n## Miller indices\n\nPlanes are named by the reciprocals of their axis intercepts. The spacing between planes controls diffraction, cleavage, and etching.\n\n```python\nimport numpy as np\n\ndef d_spacing(a, h, k, l):\n    return a / np.sqrt(h*h + k*k + l*l)\n\na = 5.431      # silicon, angstrom\nprint(f\"{'plane':>10s}{'d (A)':>10s}{'planar density (relative)':>28s}   note\")\nplanes = [((1, 0, 0), 1.00, \"etches slowly\"), ((1, 1, 0), 1.41, \"cleaves poorly\"),\n          ((1, 1, 1), 1.15, \"densest, the natural cleavage plane\"),\n          ((3, 1, 1), 0.60, \"high index, rough\")]\nfor (h, k, l), density, note in planes:\n    print(f\"{f'({h}{k}{l})':>10s}{d_spacing(a, h, k, l):>10.4f}{density:>28.2f}   {note}\")\nprint(\"\\nSilicon wafers are cut on (100) or (111) because those planes define how the\")\nprint(\"crystal etches, and anisotropic etching in KOH is what carves MEMS structures.\")\n```\n\n## Defects\n\nPerfect crystals are a fiction. Point defects control diffusion and doping; dislocations control strength; grain boundaries control everything else.\n\n```python\nimport numpy as np\n\nkB_eV = 8.617333262e-5\n\ndef vacancy_fraction(formation_eV, T):\n    return np.exp(-formation_eV / (kB_eV * T))\n\nprint(f\"{'T (K)':>8s}\" + \"\".join(f\"{f'Ef={E} eV':>15s}\" for E in [0.7, 1.0, 1.5]))\nfor T in [300, 600, 900, 1200, 1500]:\n    row = f\"{T:>8d}\"\n    for E in [0.7, 1.0, 1.5]:\n        row += f\"{vacancy_fraction(E, T):>15.3e}\"\n    print(row)\n\nprint(\"\\ntheoretical vs actual strength of a metal:\")\nG = 45e9      # shear modulus of copper\nprint(f\"  perfect crystal (G/10)  : {G / 10 / 1e6:8.0f} MPa\")\nprint(f\"  annealed copper, actual :      70 MPa  ({G / 10 / 70e6:.0f}x weaker)\")\nprint(f\"  cold-worked copper      :     350 MPa\")\nprint(\"\\nDislocations let planes slip one row of atoms at a time instead of all at once,\")\nprint(\"which is why real metals are hundreds of times weaker than their bonds imply,\")\nprint(\"and why work hardening (tangling the dislocations) makes them stronger again.\")\n```\n\n## Cohesion: why crystals hold together\n\nAn ionic crystal's binding energy is dominated by the Madelung sum, a conditionally convergent series that must be summed carefully.\n\n```python\nimport numpy as np\n\ndef madelung(n_shells, evjen=True):\n    \"\"\"Madelung constant for rocksalt, summed over an expanding cube.\n    Evjen weighting halves the contribution of each face of the outer shell,\n    which keeps every partial sum charge-neutral.\"\"\"\n    total = 0.0\n    for i in range(-n_shells, n_shells + 1):\n        for j in range(-n_shells, n_shells + 1):\n            for k in range(-n_shells, n_shells + 1):\n                if i == j == k == 0:\n                    continue\n                weight = 1.0\n                if evjen:\n                    for c in (i, j, k):\n                        if abs(c) == n_shells:\n                            weight *= 0.5\n                total += weight * (-1) ** (i + j + k) / np.sqrt(i*i + j*j + k*k)\n    return -total\n\nprint(f\"{'cube half-width':>17s}{'naive sum':>13s}{'Evjen weighted':>17s}\")\nfor n in [2, 3, 4, 6]:\n    print(f\"{n:>17d}{madelung(n, evjen=False):>13.5f}{madelung(n, evjen=True):>17.5f}\")\nprint(f\"\\naccepted value for rocksalt: 1.747565\")\nprint(\"The naive sum lurches between 1.5 and 1.9 and never settles, because a cube\")\nprint(\"of ions carries a net surface charge. Weighting the boundary so every partial\")\nprint(\"sum is neutral converges in three shells. Ewald summation is the same idea done\")\nprint(\"properly, and every molecular dynamics code implements it.\")\n```\n\n> [!NOTE]\n> Periodicity is the only assumption in this course that really matters. Amorphous solids, glasses and polymers, lose it, and with it lose sharp diffraction peaks, well-defined bands, and most of the theory that follows.",
+      "quiz": {
+        "title": "Crystal Structure",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The maximum packing fraction for identical spheres, achieved by FCC and HCP, is:",
+            "options": [
+              "0.5236",
+              "0.6802",
+              "0.7405",
+              "0.9069"
+            ],
+            "answer": "0.7405"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Real metals are far weaker than their bond strengths suggest because of:",
+            "options": [
+              "Vacancies",
+              "Dislocations that let planes slip progressively",
+              "Grain size",
+              "Thermal expansion"
+            ],
+            "answer": "Dislocations that let planes slip progressively"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A crystal is fully specified by its lattice alone, with no need for a basis.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Planes in a crystal are labelled by their ____ indices.",
+            "options": [],
+            "answer": "Miller"
+          }
+        ]
+      },
+      "order": 1
+    },
+    {
+      "slug": "the-reciprocal-lattice-diffraction-and-brillouin-zones",
+      "title": "The Reciprocal Lattice, Diffraction, and Brillouin Zones",
+      "content": "# The Reciprocal Lattice, Diffraction, and Brillouin Zones\n\nReal space tells you where the atoms are. Reciprocal space tells you what the crystal does to waves, and almost all of solid state theory lives there.\n\n## Building the reciprocal lattice\n\n$$\\vec{b}_1 = 2\\pi\\frac{\\vec{a}_2\\times\\vec{a}_3}{\\vec{a}_1\\cdot(\\vec{a}_2\\times\\vec{a}_3)}$$\n\n```python\nimport numpy as np\n\ndef reciprocal(a1, a2, a3):\n    V = np.dot(a1, np.cross(a2, a3))\n    return (2 * np.pi * np.cross(a2, a3) / V,\n            2 * np.pi * np.cross(a3, a1) / V,\n            2 * np.pi * np.cross(a1, a2) / V)\n\na = 4.05\ncubic = [np.array([a, 0, 0]), np.array([0, a, 0]), np.array([0, 0, a])]\nb1, b2, b3 = reciprocal(*cubic)\nprint(\"simple cubic, a = 4.05 A\")\nprint(f\"  b1 = {np.round(b1, 5)}   |b1| = 2 pi / a = {2 * np.pi / a:.5f}\")\n\nfcc = [np.array([0, a/2, a/2]), np.array([a/2, 0, a/2]), np.array([a/2, a/2, 0])]\nc1, c2, c3 = reciprocal(*fcc)\nprint(\"\\nFCC lattice\")\nfor i, c in enumerate((c1, c2, c3), 1):\n    print(f\"  b{i} = {np.round(c / (2 * np.pi / a), 4)} x (2 pi / a)\")\nprint(\"\\nThose are BCC vectors: the reciprocal of FCC is BCC, and vice versa.\")\nprint(\"This is why the Brillouin zone of an FCC crystal is a truncated octahedron.\")\n```\n\n## Bragg's law and X-ray diffraction\n\n$$2d\\sin\\theta = n\\lambda$$\n\nEquivalently, diffraction happens when the scattering vector equals a reciprocal lattice vector. The two statements are the same condition.\n\n```python\nimport numpy as np\n\ndef bragg_angle(d_A, lam_A=1.5406, order=1):\n    s = order * lam_A / (2 * d_A)\n    return np.degrees(np.arcsin(s)) if abs(s) <= 1 else None\n\na = 4.05          # aluminium, FCC\nprint(\"aluminium powder pattern with Cu K-alpha (1.5406 A):\")\nprint(f\"{'(hkl)':>8s}{'d (A)':>9s}{'2 theta':>11s}   allowed?\")\nfor h, k, l in [(1,0,0), (1,1,0), (1,1,1), (2,0,0), (2,1,0), (2,2,0), (3,1,1)]:\n    d = a / np.sqrt(h*h + k*k + l*l)\n    th = bragg_angle(d)\n    parity = (h % 2, k % 2, l % 2)\n    allowed = parity in [(0,0,0), (1,1,1)]        # FCC: h,k,l all even or all odd\n    two_theta = f\"{2 * th:.2f}\" if th else \"--\"\n    print(f\"{f'({h}{k}{l})':>8s}{d:>9.4f}{two_theta:>11s}   {'yes' if allowed else 'no (extinct)'}\")\nprint(\"\\nMissing reflections are not an accident: the basis makes some structure factors\")\nprint(\"vanish, and reading which peaks are absent is how the lattice type is identified.\")\n```\n\n## The structure factor\n\n$$F_{hkl} = \\sum_j f_j e^{2\\pi i(hx_j + ky_j + lz_j)}$$\n\n```python\nimport numpy as np\n\ndef structure_factor(basis, h, k, l):\n    total = 0j\n    for f, (x, y, z) in basis:\n        total += f * np.exp(2j * np.pi * (h * x + k * y + l * z))\n    return abs(total)\n\nfcc_basis = [(1.0, (0, 0, 0)), (1.0, (0, .5, .5)), (1.0, (.5, 0, .5)), (1.0, (.5, .5, 0))]\nbcc_basis = [(1.0, (0, 0, 0)), (1.0, (.5, .5, .5))]\nnacl_basis = [(11.0, (0, 0, 0)), (11.0, (0, .5, .5)), (11.0, (.5, 0, .5)), (11.0, (.5, .5, 0)),\n              (17.0, (.5, .5, .5)), (17.0, (.5, 0, 0)), (17.0, (0, .5, 0)), (17.0, (0, 0, .5))]\n\nprint(f\"{'(hkl)':>8s}{'FCC':>9s}{'BCC':>9s}{'NaCl':>9s}\")\nfor hkl in [(1,0,0), (1,1,0), (1,1,1), (2,0,0), (2,2,0), (2,2,2), (3,1,1)]:\n    print(f\"{str(hkl):>8s}\"\n          f\"{structure_factor(fcc_basis, *hkl):>9.2f}\"\n          f\"{structure_factor(bcc_basis, *hkl):>9.2f}\"\n          f\"{structure_factor(nacl_basis, *hkl):>9.2f}\")\nprint(\"\\nIn NaCl the (111) peak is weak because Na and Cl scatter out of phase there,\")\nprint(\"while (200) is strong because they scatter together. The ratio measures the\")\nprint(\"difference in atomic number, which is how the structure was first solved in 1913.\")\n```\n\n## Choosing a probe\n\nX-rays, neutrons, and electrons see different things, and the choice of probe is a real experimental decision.\n\n```python\nimport numpy as np\n\nh = 6.62607015e-34\ne = 1.602176634e-19\nm_e, m_n = 9.1093837015e-31, 1.67492749804e-27\nc = 299792458.0\n\nprint(f\"{'probe':22s}{'energy':>14s}{'wavelength':>14s}   what it sees\")\nlam_x = h * c / (8047 * e)\nprint(f\"{'X-ray (Cu K-alpha)':22s}{'8.05 keV':>14s}{lam_x * 1e10:>12.4f} A   electron density\")\nfor E_meV in [25, 81]:\n    E = E_meV * 1e-3 * e\n    lam = h / np.sqrt(2 * m_n * E)\n    print(f\"{'thermal neutron':22s}{f'{E_meV} meV':>14s}{lam * 1e10:>12.4f} A   nuclei and magnetic moments\")\nfor E_keV in [100, 300]:\n    E = E_keV * 1e3 * e\n    lam = h / np.sqrt(2 * m_e * E)\n    print(f\"{'electron':22s}{f'{E_keV} keV':>14s}{lam * 1e10:>12.4f} A   strong scattering, thin samples\")\nprint(\"\\nNeutrons see hydrogen (X-rays barely do) and see magnetic order, which is why\")\nprint(\"reactor and spallation sources still exist despite synchrotron X-rays.\")\n```\n\n## Brillouin zones\n\nThe first Brillouin zone is the Wigner-Seitz cell of the reciprocal lattice: every distinct wave vector lives inside it, and everything outside is a repeat.\n\n```python\nimport numpy as np\n\na = 4.05e-10\nb = 2 * np.pi / a\nprint(f\"simple cubic, a = {a * 1e10:.2f} A\")\nprint(f\"  reciprocal lattice constant 2 pi / a = {b:.4e} 1/m\")\nprint(f\"  Brillouin zone boundary at pi/a      = {b / 2:.4e} 1/m\")\n\nhbar, m_e = 1.054571817e-34, 9.1093837015e-31\nE_zone = (hbar * b / 2) ** 2 / (2 * m_e)\nprint(f\"  free-electron energy at the boundary = {E_zone / 1.602176634e-19:.3f} eV\")\n\nprint(\"\\nA wave with k and one with k + G are the same wave on a discrete lattice:\")\nfor n in range(-2, 3):\n    k = 0.3 * b + n * b\n    print(f\"  k = {k / b:+.2f} (2 pi/a)  maps back to  {((k / b + 0.5) % 1 - 0.5):+.2f} (2 pi/a)\")\nprint(\"\\nThat folding is the entire reason bands exist rather than one free-electron parabola.\")\n```\n\n> [!TIP]\n> Whenever a solid state formula contains $e^{i\\vec{k}\\cdot\\vec{r}}$ and a sum over lattice sites, the answer will be non-zero only when $\\vec{k}$ is a reciprocal lattice vector. That single fact generates Bragg's law, band folding, and the selection rules for phonon scattering.",
+      "quiz": {
+        "title": "Reciprocal Space",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The reciprocal lattice of an FCC crystal is:",
+            "options": [
+              "FCC",
+              "BCC",
+              "Simple cubic",
+              "Hexagonal"
+            ],
+            "answer": "BCC"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Missing diffraction peaks in a powder pattern arise from:",
+            "options": [
+              "Detector limitations",
+              "Structure factors that vanish for those indices",
+              "Thermal motion only",
+              "Sample impurity"
+            ],
+            "answer": "Structure factors that vanish for those indices"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Neutrons are useful for locating hydrogen atoms, which X-rays see only weakly.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The Wigner-Seitz cell of the reciprocal lattice is the first ____ zone.",
+            "options": [],
+            "answer": "Brillouin"
+          }
+        ]
+      },
+      "order": 2
+    },
+    {
+      "slug": "lattice-vibrations-phonons-and-heat",
+      "title": "Lattice Vibrations, Phonons, and Heat",
+      "content": "# Lattice Vibrations, Phonons, and Heat\n\nAtoms in a crystal are springs, not rivets. Quantising their collective vibrations gives phonons, and phonons carry most of the heat in an insulator.\n\n## The monatomic chain\n\n$$\\omega(k) = 2\\sqrt{\\frac{C}{M}}\\left|\\sin\\frac{ka}{2}\\right|$$\n\nNot a straight line: the dispersion flattens at the zone boundary, where the group velocity goes to zero.\n\n```python\nimport numpy as np\n\nC, M, a = 15.0, 1.0, 1.0          # spring constant, mass, spacing\nk = np.linspace(0, np.pi / a, 9)\nomega = 2 * np.sqrt(C / M) * np.abs(np.sin(k * a / 2))\n\nprint(f\"{'k a / pi':>10s}{'omega':>10s}{'phase v':>11s}{'group v':>11s}\")\nfor ki, wi in zip(k, omega):\n    vp = wi / ki if ki > 0 else np.sqrt(C / M) * a\n    vg = np.sqrt(C / M) * a * np.cos(ki * a / 2)\n    print(f\"{ki * a / np.pi:>10.3f}{wi:>10.4f}{vp:>11.4f}{vg:>11.4f}\")\nprint(\"\\nAt small k the chain behaves like a continuum: omega = v k, sound waves.\")\nprint(\"At the zone boundary the group velocity is zero: a standing wave that carries\")\nprint(\"no energy, which is exactly Bragg reflection applied to sound.\")\n```\n\n## Two atoms per cell: optical branches\n\nAdd a second mass and the spectrum splits into an acoustic branch (atoms move together) and an optical branch (atoms move against each other), with a gap between them.\n\n```python\nimport numpy as np\n\ndef diatomic(k, C=15.0, M1=1.0, M2=3.0, a=1.0):\n    s = np.sin(k * a / 2) ** 2\n    mu = 1 / M1 + 1 / M2\n    root = np.sqrt(mu**2 - 4 * s / (M1 * M2))\n    return np.sqrt(C * (mu - root)), np.sqrt(C * (mu + root))\n\nk = np.linspace(1e-6, np.pi, 7)\nprint(f\"{'k a / pi':>10s}{'acoustic':>12s}{'optical':>11s}\")\nfor ki in k:\n    ac, op = diatomic(ki)\n    print(f\"{ki / np.pi:>10.3f}{ac:>12.4f}{op:>11.4f}\")\n\nac_max, _ = diatomic(np.pi)\n_, op_min = diatomic(np.pi)\nprint(f\"\\ngap at the zone boundary: {ac_max:.4f} to {op_min:.4f}\")\nprint(\"The optical branch is what infrared light couples to, because opposite charges\")\nprint(\"moving in opposite directions is exactly an oscillating dipole.\")\nprint(\"That is why ionic crystals have strong infrared absorption bands.\")\n```\n\n## Phonons are quantised\n\nEach mode is a harmonic oscillator with energy $(n + \\tfrac{1}{2})\\hbar\\omega$, occupied according to Bose-Einstein statistics.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\nhbar = 1.054571817e-34\n\ndef occupation(omega, T):\n    x = hbar * omega / (kB * T)\n    return 1 / (np.exp(x) - 1) if x < 500 else 0.0\n\nfrequencies_THz = [0.1, 1, 5, 10, 20]\nprint(f\"{'freq (THz)':>12s}{'hbar w (meV)':>15s}\" + \"\".join(f\"{f'n at {T} K':>13s}\" for T in [4, 77, 300]))\nfor f in frequencies_THz:\n    w = 2 * np.pi * f * 1e12\n    row = f\"{f:>12.1f}{hbar * w / 1.602176634e-22:>15.3f}\"\n    for T in [4, 77, 300]:\n        row += f\"{occupation(w, T):>13.4f}\"\n    print(row)\nprint(\"\\nHigh-frequency modes are frozen out at low temperature, which is the whole\")\nprint(\"reason heat capacity falls toward zero as T -> 0.\")\n```\n\n## Heat capacity: Einstein versus Debye\n\n```python\nimport numpy as np\n\ndef debye_C(T, theta, n=3000):\n    x = theta / T\n    t = np.linspace(1e-8, x, n)\n    integrand = t**4 * np.exp(t) / (np.exp(t) - 1) ** 2\n    integral = np.trapezoid(integrand, t) if hasattr(np, \"trapezoid\") else np.trapz(integrand, t)\n    return 9 * (1 / x) ** 3 * integral\n\nthetas = {\"lead\": 105, \"silver\": 225, \"copper\": 343, \"aluminium\": 428,\n          \"silicon\": 645, \"diamond\": 2230}\nprint(f\"{'material':12s}{'theta_D (K)':>13s}\" + \"\".join(f\"{f'C/3NkB at {T}K':>17s}\" for T in [30, 300]))\nfor name, theta in thetas.items():\n    row = f\"{name:12s}{theta:>13d}\"\n    for T in [30, 300]:\n        row += f\"{debye_C(T, theta) / 3:>17.4f}\"\n    print(row)\nprint(\"\\nDiamond's stiff bonds and light atoms put its Debye temperature above 2000 K,\")\nprint(\"so at room temperature it is still far from the classical Dulong-Petit value.\")\nprint(\"The same stiffness gives it the highest thermal conductivity of any bulk material.\")\n```\n\n## Thermal conductivity and thermal expansion\n\nPhonons carry heat but scatter off each other and off boundaries. Both processes come from anharmonicity, which is also why solids expand when heated.\n\n```python\nimport numpy as np\n\ndef conductivity(C_volumetric, v_sound, mean_free_path):\n    return C_volumetric * v_sound * mean_free_path / 3\n\nprint(f\"{'material':16s}{'v (m/s)':>10s}{'mfp (nm)':>11s}{'kappa (W/m K)':>16s}{'measured':>11s}\")\ndata = [(\"diamond\", 1.8e6, 12000, 315, 2200), (\"silicon\", 1.6e6, 6400, 43, 148),\n        (\"glass\", 1.5e6, 5500, 0.6, 1.0), (\"copper (phonons)\", 3.4e6, 3900, 2, 400)]\nfor name, C_vol, v, mfp_nm, measured in data:\n    kappa = conductivity(C_vol, v, mfp_nm * 1e-9)\n    print(f\"{name:16s}{v:>10.0f}{mfp_nm:>11.0f}{kappa:>16.2f}{measured:>11.0f}\")\nprint(\"\\nIn copper the phonon contribution is tiny: electrons carry almost all the heat,\")\nprint(\"which is why metals conduct heat and electricity in the same proportion.\")\n\nprint(\"\\nWiedemann-Franz law, kappa / (sigma T) = Lorenz number:\")\nL0 = 2.44e-8\nfor name, kappa, sigma in [(\"copper\", 401, 5.96e7), (\"silver\", 429, 6.30e7),\n                           (\"aluminium\", 237, 3.5e7), (\"iron\", 80, 1.0e7)]:\n    L = kappa / (sigma * 300)\n    print(f\"  {name:12s} L = {L:.3e}   (theory {L0:.3e}, ratio {L / L0:.2f})\")\n```\n\n> [!NOTE]\n> A perfect harmonic crystal would have infinite thermal conductivity and zero thermal expansion. Both familiar properties exist only because the interatomic potential is not quite parabolic.",
+      "quiz": {
+        "title": "Phonons",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "At the Brillouin zone boundary, the group velocity of a lattice wave is:",
+            "options": [
+              "Maximum",
+              "Zero",
+              "Equal to the speed of sound",
+              "Infinite"
+            ],
+            "answer": "Zero"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The optical branch is named that because:",
+            "options": [
+              "It travels at the speed of light",
+              "Its opposite-moving ions form a dipole that couples to infrared light",
+              "It only exists in transparent crystals",
+              "It carries no energy"
+            ],
+            "answer": "Its opposite-moving ions form a dipole that couples to infrared light"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "A perfectly harmonic crystal would have zero thermal expansion.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "The characteristic temperature above which all lattice modes are excited is the ____ temperature.",
+            "options": [],
+            "answer": "Debye"
+          }
+        ]
+      },
+      "order": 3
+    },
+    {
+      "slug": "free-electrons-metals-conduction-and-their-failures",
+      "title": "Free Electrons: Metals, Conduction, and Their Failures",
+      "content": "# Free Electrons: Metals, Conduction, and Their Failures\n\nThe simplest possible model, electrons as a gas ignoring the lattice, explains an astonishing amount about metals, and its failures point precisely to what band theory has to fix.\n\n## The Drude model\n\nTreat electrons as classical particles that scatter every $\\tau$ seconds. Conductivity, Hall effect, and thermal conductivity all come out in a page.\n\n```python\nimport numpy as np\n\ne = 1.602176634e-19\nm_e = 9.1093837015e-31\n\ndef drude(n, sigma):\n    tau = m_e * sigma / (n * e**2)\n    return tau\n\nmetals = {\"copper\": (8.49e28, 5.96e7), \"silver\": (5.86e28, 6.30e7),\n          \"aluminium\": (18.1e28, 3.50e7), \"iron\": (17.0e28, 1.00e7)}\nprint(f\"{'metal':12s}{'n (1/m^3)':>12s}{'sigma':>12s}{'tau (fs)':>11s}{'mobility':>14s}\")\nfor name, (n, sigma) in metals.items():\n    tau = drude(n, sigma)\n    mu = e * tau / m_e\n    print(f\"{name:12s}{n:>12.2e}{sigma:>12.2e}{tau * 1e15:>11.3f}{mu * 1e4:>11.2f} cm^2/Vs\")\n\nv_drift = 5.96e7 * 1.0 / (8.49e28 * e) * 100    # 1 V/m field, cm/s\nprint(f\"\\ndrift velocity in copper at 1 V/m: {v_drift:.4f} cm/s\")\nprint(\"Electrons crawl, yet the signal travels near the speed of light, because the\")\nprint(\"field, not the electrons, carries the information.\")\n```\n\n## Where Drude fails\n\nClassical electrons should contribute $\\tfrac{3}{2}k_B$ each to the heat capacity. They contribute about a hundredth of that.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\nhbar = 1.054571817e-34\nm_e = 9.1093837015e-31\ne = 1.602176634e-19\n\ndef fermi_energy(n):\n    return hbar**2 / (2 * m_e) * (3 * np.pi**2 * n) ** (2 / 3)\n\nn_cu = 8.49e28\nEF = fermi_energy(n_cu)\nTF = EF / kB\nprint(f\"copper: E_F = {EF / e:.3f} eV, T_F = {TF:.0f} K\")\n\nclassical = 1.5 * kB\nquantum = (np.pi**2 / 2) * kB * (300 / TF)\nprint(f\"\\nelectronic heat capacity per electron at 300 K:\")\nprint(f\"  classical prediction: {classical / kB:.4f} kB\")\nprint(f\"  quantum (T/T_F term): {quantum / kB:.4f} kB\")\nprint(f\"  ratio: {classical / quantum:.1f}x too large\")\nprint(\"\\nMeasured electronic heat capacities match the quantum answer. Pauli exclusion,\")\nprint(\"not any property of the lattice, is what saves the theory.\")\n```\n\n## The Fermi surface\n\nAt $T = 0$ electrons fill every state up to $E_F$. Only those near the surface can move, respond, or scatter.\n\n```python\nimport numpy as np\n\nkB = 1.380649e-23\nhbar = 1.054571817e-34\nm_e = 9.1093837015e-31\ne = 1.602176634e-19\n\ndef fermi(n):\n    EF = hbar**2 / (2 * m_e) * (3 * np.pi**2 * n) ** (2 / 3)\n    kF = (3 * np.pi**2 * n) ** (1 / 3)\n    return EF, kF, hbar * kF / m_e\n\nprint(f\"{'metal':12s}{'E_F (eV)':>11s}{'k_F (1/nm)':>13s}{'v_F (m/s)':>13s}{'lambda_F (nm)':>16s}\")\nfor name, n in [(\"sodium\", 2.65e28), (\"copper\", 8.49e28), (\"aluminium\", 18.1e28)]:\n    EF, kF, vF = fermi(n)\n    print(f\"{name:12s}{EF / e:>11.3f}{kF / 1e9:>13.3f}{vF:>13.3e}{2 * np.pi / kF * 1e9:>16.4f}\")\n\nprint(\"\\nfraction of electrons thermally excited:\")\nfor T in [4, 77, 300, 1000]:\n    print(f\"  T = {T:5d} K: about {kB * T / (7.0 * e):.5f} of them\")\nprint(\"\\nAt room temperature only a few electrons in a thousand are free to do anything,\")\nprint(\"and the Fermi wavelength is a few atomic spacings, which is why the lattice matters.\")\n```\n\n## Screening\n\nA charge in a metal is screened within a fraction of a nanometre, which is why a metal is not a plasma and why impurity potentials are short ranged.\n\n```python\nimport numpy as np\n\neps0 = 8.8541878128e-12\ne = 1.602176634e-19\nhbar = 1.054571817e-34\nm_e = 9.1093837015e-31\n\ndef thomas_fermi_length(n):\n    \"\"\"Screening in a degenerate electron gas (a metal).\"\"\"\n    EF = hbar**2 / (2 * m_e) * (3 * np.pi**2 * n) ** (2 / 3)\n    dos = 3 * n / (2 * EF)\n    return np.sqrt(eps0 / (e**2 * dos))\n\ndef debye_length(n, eps_r, T=300.0):\n    \"\"\"Screening in a non-degenerate carrier gas (a doped semiconductor).\"\"\"\n    kB = 1.380649e-23\n    return np.sqrt(eps0 * eps_r * kB * T / (n * e**2))\n\nprint(f\"copper (degenerate, Thomas-Fermi): {thomas_fermi_length(8.49e28) * 1e9:.4f} nm\")\nprint(f\"\\n{'doped silicon':22s}{'n (1/m^3)':>12s}{'Debye length':>16s}\")\nfor name, n in [(\"1e18 /cm^3\", 1e24), (\"1e16 /cm^3\", 1e22), (\"1e15 /cm^3\", 1e21)]:\n    print(f\"{name:22s}{n:>12.1e}{debye_length(n, 11.7) * 1e9:>13.1f} nm\")\nprint(\"\\nIn copper the screening length is smaller than an atom, so a charged impurity\")\nprint(\"is invisible two atoms away. In lightly doped silicon it stretches over a\")\nprint(\"hundred nanometres, which is why device physics and metallurgy feel like\")\nprint(\"different subjects: a transistor channel is barely longer than its own\")\nprint(\"screening length.\")\n```\n\n## The Hall effect\n\nA magnetic field pushes carriers sideways, and the sign of the resulting voltage reveals the sign of the charge carriers, which for some metals comes out *positive*.\n\n```python\nimport numpy as np\n\ne = 1.602176634e-19\n\ndef hall_coefficient(n, sign=-1):\n    return sign / (n * e)\n\nprint(f\"{'material':16s}{'measured R_H':>16s}{'free electron R_H':>20s}{'ratio':>9s}\")\ndata = [(\"sodium\", -2.36e-10, 2.65e28), (\"copper\", -0.55e-10, 8.49e28),\n        (\"aluminium\", +1.02e-10, 18.1e28), (\"beryllium\", +2.44e-10, 24.2e28)]\nfor name, measured, n in data:\n    theory = hall_coefficient(n)\n    print(f\"{name:16s}{measured:>16.3e}{theory:>20.3e}{measured / theory:>9.2f}\")\nprint(\"\\nAluminium and beryllium give the wrong sign. Free electrons cannot explain that;\")\nprint(\"only band theory can, through holes near the top of a nearly full band.\")\n```\n\n> [!TIP]\n> The free electron model works whenever the answer depends only on counting states near $E_F$. It fails whenever the answer depends on the *shape* of the Fermi surface, which is exactly the class of problems band theory was invented for.",
+      "quiz": {
+        "title": "Free Electrons",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "The classical prediction for electronic heat capacity fails because:",
+            "options": [
+              "Electrons are too light",
+              "Pauli exclusion means only electrons near E_F can be excited",
+              "Electrons do not move",
+              "The lattice absorbs the heat"
+            ],
+            "answer": "Pauli exclusion means only electrons near E_F can be excited"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A positive Hall coefficient in aluminium indicates:",
+            "options": [
+              "A measurement error",
+              "Hole-like conduction from band structure",
+              "Superconductivity",
+              "Magnetic impurities"
+            ],
+            "answer": "Hole-like conduction from band structure"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Electron drift velocity in a copper wire is comparable to the speed of light.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "In a metal, a charged impurity's potential is cut off within a fraction of a nanometre by ____.",
+            "options": [],
+            "answer": "screening"
+          }
+        ]
+      },
+      "order": 4
+    },
+    {
+      "slug": "band-theory-why-anything-conducts",
+      "title": "Band Theory: Why Anything Conducts",
+      "content": "# Band Theory: Why Anything Conducts\n\nPut electrons in a periodic potential and the free-electron parabola splits into bands separated by gaps. Whether the highest occupied band is full or partly full decides metal, semiconductor, or insulator, and that is the single most consequential fact in solid state physics.\n\n## Bloch's theorem\n\nIn a periodic potential, eigenstates take the form $\\psi_k(x) = e^{ikx}u_k(x)$ with $u_k$ periodic. Electrons are not scattered by a perfect lattice at all: resistance comes only from what breaks the periodicity.\n\n```python\nimport numpy as np\n\n# a periodic potential on a ring, diagonalised directly\nN, cells = 600, 20\nx = np.linspace(0, cells, N, endpoint=False)\ndx = x[1] - x[0]\nV = 8.0 * np.cos(2 * np.pi * x)\n\nlap = (np.diag(np.full(N, -2.0)) + np.diag(np.ones(N - 1), 1) + np.diag(np.ones(N - 1), -1))\nlap[0, -1] = lap[-1, 0] = 1.0                # periodic boundary\nH = -0.5 / dx**2 * lap + np.diag(V)\nE, psi = np.linalg.eigh(H)\n\ngaps = np.diff(E[:80])\nedge = int(np.argmax(gaps))                       # the biggest jump is the first band gap\n\nprint(f\"first band: E[0] = {E[0]:.4f} up to E[{edge}] = {E[edge]:.4f}\")\nprint(f\"  states in it        : {edge + 1}\")\nprint(f\"  gap above it        : {gaps[edge]:.4f}\")\nprint(f\"  next band starts at : {E[edge + 1]:.4f}\")\nprint(f\"\\ntypical spacing inside the band: {np.median(gaps[:edge]):.4f}, \"\n      f\"so the gap is {gaps[edge] / np.median(gaps[:edge]):.0f} times larger\")\nprint(\"Each band holds exactly one state per unit cell (two with spin). That counting\")\nprint(\"rule is what decides whether a material conducts.\")\n```\n\n## The Kronig-Penney model\n\nSquare wells and barriers give a transcendental condition whose solutions are the allowed bands. Solving it numerically shows the gaps directly.\n\n```python\nimport numpy as np\n\ndef kronig_penney(P=6.0, points=2000):\n    \"\"\"Solve cos(ka) = P sin(alpha a)/(alpha a) + cos(alpha a) for allowed bands.\"\"\"\n    z = np.linspace(1e-6, 6 * np.pi, points)\n    rhs = P * np.sin(z) / z + np.cos(z)\n    allowed = np.abs(rhs) <= 1\n    bands = []\n    start = None\n    for i, ok in enumerate(allowed):\n        if ok and start is None:\n            start = z[i]\n        elif not ok and start is not None:\n            bands.append((start, z[i - 1]))\n            start = None\n    return bands\n\nfor P in [1.0, 6.0, 20.0]:\n    bands = kronig_penney(P)\n    widths = [b - a for a, b in bands[:4]]\n    print(f\"P = {P:5.1f}: first four band widths (in alpha a) = \"\n          + \", \".join(f\"{w:.3f}\" for w in widths))\nprint(\"\\nA weak potential (small P) gives wide bands and narrow gaps: nearly free electrons.\")\nprint(\"A strong potential gives narrow bands and wide gaps: nearly isolated atoms.\")\nprint(\"Real solids sit between those limits, which is why both pictures are taught.\")\n```\n\n## Tight binding\n\nStart from atomic orbitals instead. Hopping between neighbours broadens each level into a band of width $4|t|$ in one dimension.\n\n```python\nimport numpy as np\n\ndef tight_binding(t=1.0, epsilon=0.0, n_k=9):\n    k = np.linspace(-np.pi, np.pi, n_k)\n    return k, epsilon - 2 * t * np.cos(k)\n\nk, E = tight_binding()\nprint(f\"{'k a / pi':>10s}{'E (in units of t)':>20s}{'effective mass':>17s}\")\nfor ki, Ei in zip(k, E):\n    m_eff = 1 / (2 * np.cos(ki)) if abs(np.cos(ki)) > 1e-9 else float(\"inf\")\n    m_str = f\"{m_eff:>17.3f}\" if np.isfinite(m_eff) else f\"{'infinite':>17s}\"\n    print(f\"{ki / np.pi:>10.3f}{Ei:>20.4f}{m_str}\")\nprint(\"\\nAt the band bottom the mass is positive and small; at the top it is negative,\")\nprint(\"and a nearly full band of negative-mass electrons behaves exactly like a\")\nprint(\"sparse gas of positive holes. That is where the positive Hall coefficient came from.\")\n```\n\n## Metals, semiconductors, insulators\n\n```python\nimport numpy as np\n\nkB_eV = 8.617333262e-5\n\nmaterials = [(\"copper\", 0.0), (\"germanium\", 0.67), (\"silicon\", 1.12), (\"GaAs\", 1.42),\n             (\"GaN\", 3.4), (\"diamond\", 5.47), (\"SiO2\", 9.0)]\nprint(f\"{'material':12s}{'gap (eV)':>10s}{'exp(-Eg/2kT) at 300 K':>25s}   classification\")\nfor name, Eg in materials:\n    if Eg == 0:\n        print(f\"{name:12s}{'none':>10s}{'--':>25s}   metal (partly filled band)\")\n        continue\n    factor = np.exp(-Eg / (2 * kB_eV * 300))\n    kind = \"semiconductor\" if Eg < 3 else \"wide gap / insulator\"\n    print(f\"{name:12s}{Eg:>10.2f}{factor:>25.3e}   {kind}\")\nprint(\"\\nThere is no sharp boundary: an insulator is a semiconductor with a gap too\")\nprint(\"wide to matter at the temperature you care about. Diamond conducts at 2000 K.\")\n\nprint(\"\\nabsorption edge (the colour of the gap):\")\nfor name, Eg in materials[1:]:\n    print(f\"  {name:10s} absorbs below {1239.84 / Eg:7.1f} nm  \"\n          f\"({'opaque' if 1239.84 / Eg > 700 else 'coloured or transparent'} to visible light)\")\n```\n\n## Effective mass\n\nNear a band edge, $E \\approx \\hbar^2k^2/2m^*$, so electrons behave like free particles with a different mass, sometimes a very different one.\n\n```python\nmaterials = [(\"GaAs electrons\", 0.067), (\"Si electrons (transverse)\", 0.19),\n             (\"Si holes (heavy)\", 0.49), (\"free electron\", 1.0),\n             (\"SrTiO3 heavy band\", 6.0), (\"heavy fermion compound\", 200.0)]\nprint(f\"{'carrier':28s}{'m*/m_e':>10s}{'relative mobility':>20s}\")\nfor name, m in materials:\n    print(f\"{name:28s}{m:>10.3f}{1 / m:>20.4f}\")\nprint(\"\\nGaAs electrons are fifteen times lighter than free electrons and therefore\")\nprint(\"far more mobile, which is why gallium arsenide dominates high-frequency\")\nprint(\"electronics even though silicon dominates everything else.\")\n```\n\n> [!NOTE]\n> A perfectly periodic lattice causes no resistance whatsoever. Every ohm in a real metal comes from something that breaks periodicity: phonons, impurities, defects, or surfaces. That is why resistivity falls with temperature and saturates at a residual value set by purity.",
+      "quiz": {
+        "title": "Bands",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "A perfectly periodic lattice scatters conduction electrons:",
+            "options": [
+              "Strongly",
+              "Not at all",
+              "Only at low temperature",
+              "Only near the Fermi energy"
+            ],
+            "answer": "Not at all"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Each energy band holds how many electron states per unit cell?",
+            "options": [
+              "One",
+              "Two, counting spin",
+              "Four",
+              "It varies with the material"
+            ],
+            "answer": "Two, counting spin"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Near the top of a band, the effective mass of an electron is negative.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "True"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "Bloch's theorem says the eigenstates are a plane wave times a ____ function.",
+            "options": [],
+            "answer": "periodic"
+          }
+        ]
+      },
+      "order": 5
+    },
+    {
+      "slug": "semiconductors-junctions-and-devices",
+      "title": "Semiconductors, Junctions, and the Devices They Make",
+      "content": "# Semiconductors, Junctions, and the Devices They Make\n\nSilicon is a mediocre semiconductor by most physical measures. It won because its oxide is excellent and its doping is controllable, and this lesson is about what that control buys.\n\n## Carrier concentrations\n\n$$np = n_i^2, \\qquad n_i \\propto T^{3/2}e^{-E_g/2k_BT}$$\n\n```python\nimport numpy as np\n\nkB_eV = 8.617333262e-5\n\ndef intrinsic_carriers(Eg, T, Nc=2.8e19, Nv=1.04e19):\n    \"\"\"cm^-3, with the standard silicon band-edge densities scaled by T^{3/2}.\"\"\"\n    scale = (T / 300) ** 1.5\n    return np.sqrt(Nc * Nv) * scale * np.exp(-Eg / (2 * kB_eV * T))\n\nprint(f\"{'T (K)':>8s}{'Si (1.12 eV)':>16s}{'Ge (0.67 eV)':>16s}{'GaN (3.4 eV)':>16s}\")\nfor T in [200, 250, 300, 400, 500, 600]:\n    print(f\"{T:>8d}{intrinsic_carriers(1.12, T):>16.3e}\"\n          f\"{intrinsic_carriers(0.67, T):>16.3e}{intrinsic_carriers(3.4, T):>16.3e}\")\nprint(\"\\nSilicon's intrinsic carrier density roughly doubles every 8 K near room\")\nprint(\"temperature. Above about 450 K it swamps light doping, and the device stops\")\nprint(\"working: that is the real reason silicon electronics has a temperature limit,\")\nprint(\"and why silicon carbide and GaN take over in hot, high-power applications.\")\n```\n\n## Doping\n\nAdd one part per million of phosphorus and the conductivity changes by orders of magnitude, with the carrier type under your control.\n\n```python\nimport numpy as np\n\nn_i = 1.0e10          # cm^-3 for silicon at 300 K\n\ndef carriers(N_D=0.0, N_A=0.0):\n    net = N_D - N_A\n    n = 0.5 * (net + np.sqrt(net**2 + 4 * n_i**2))\n    p = n_i**2 / n if n > 0 else 0.0\n    return n, p\n\nprint(f\"{'doping':28s}{'n (cm^-3)':>14s}{'p (cm^-3)':>14s}{'type':>8s}\")\nfor name, ND, NA in [(\"intrinsic\", 0, 0), (\"1e14 donors\", 1e14, 0),\n                     (\"1e17 donors\", 1e17, 0), (\"1e17 acceptors\", 0, 1e17),\n                     (\"1e17 D + 9e16 A\", 1e17, 9e16)]:\n    n, p = carriers(ND, NA)\n    kind = \"n\" if n > p else \"p\"\n    print(f\"{name:28s}{n:>14.3e}{p:>14.3e}{kind:>8s}\")\n\nprint(\"\\nresistivity at each doping (mobility ~ 1400 and 450 cm^2/Vs):\")\nq = 1.602176634e-19\nfor name, ND in [(\"intrinsic\", 0), (\"1e14\", 1e14), (\"1e16\", 1e16), (\"1e18\", 1e18), (\"1e20\", 1e20)]:\n    n, p = carriers(ND, 0)\n    sigma = q * (n * 1400 + p * 450)\n    print(f\"  {name:12s} rho = {1 / sigma:12.4e} ohm cm\")\nprint(\"\\nSix orders of magnitude of resistivity, from a dopant fraction of one in 1e8\")\nprint(\"to one in 5e3. No other material property is so cheaply and precisely tunable.\")\n```\n\n## The p-n junction\n\nPut n and p together and diffusion builds a depletion region and a built-in potential, giving the exponential diode characteristic.\n\n```python\nimport numpy as np\n\nkB_eV = 8.617333262e-5\nq = 1.602176634e-19\neps_si = 11.7 * 8.8541878128e-12\nn_i = 1.0e10\n\ndef junction(N_D, N_A, T=300):\n    Vt = kB_eV * T\n    V_bi = Vt * np.log(N_D * N_A / n_i**2)\n    ND_m3, NA_m3 = N_D * 1e6, N_A * 1e6\n    W = np.sqrt(2 * eps_si * V_bi / q * (1 / ND_m3 + 1 / NA_m3))\n    E_max = 2 * V_bi / W\n    return V_bi, W, E_max\n\nprint(f\"{'N_D':>10s}{'N_A':>10s}{'V_bi (V)':>11s}{'width (nm)':>13s}{'peak field (V/cm)':>20s}\")\nfor ND, NA in [(1e15, 1e15), (1e17, 1e17), (1e19, 1e17), (1e19, 1e19)]:\n    V_bi, W, E = junction(ND, NA)\n    print(f\"{ND:>10.0e}{NA:>10.0e}{V_bi:>11.4f}{W * 1e9:>13.2f}{E / 100:>20.3e}\")\nprint(\"\\nHeavier doping means a thinner depletion region and a higher field. Push it far\")\nprint(\"enough and the junction breaks down by tunnelling: that is a Zener diode.\")\n\nprint(\"\\ndiode current at 300 K (ideality 1, I_s = 1e-12 A):\")\nfor V in [0.0, 0.2, 0.4, 0.6, 0.7, -1.0]:\n    I = 1e-12 * (np.exp(V / (kB_eV * 300)) - 1)\n    print(f\"  V = {V:+5.2f} V: I = {I:12.4e} A\")\nprint(\"Every 60 mV multiplies the forward current by ten, which is the origin of the\")\nprint(\"'diodes turn on at 0.7 V' rule: there is no threshold, only a steep exponential.\")\n```\n\n## The MOSFET\n\nSilicon's oxide lets a gate control a channel through an insulator. Scaling that structure down is the entire history of the semiconductor industry.\n\n```python\nimport numpy as np\n\neps_ox = 3.9 * 8.8541878128e-12\n\ndef mosfet(t_ox_nm, W_over_L=10, mobility=400e-4, Vgs=1.0, Vth=0.4):\n    Cox = eps_ox / (t_ox_nm * 1e-9)\n    I_sat = 0.5 * mobility * Cox * W_over_L * (Vgs - Vth) ** 2\n    return Cox, I_sat\n\nprint(f\"{'node':>10s}{'t_ox (nm)':>12s}{'Cox (fF/um^2)':>16s}{'I_sat (uA)':>13s}\")\nfor node, t_ox in [(\"1 um\", 25), (\"250 nm\", 5), (\"90 nm\", 2.0), (\"32 nm\", 1.2)]:\n    Cox, I = mosfet(t_ox)\n    print(f\"{node:>10s}{t_ox:>12.1f}{Cox * 1e15 / 1e12:>16.4f}{I * 1e6:>13.2f}\")\n\nprint(\"\\ngate leakage forced the switch to high-k dielectrics below about 1.2 nm,\")\nprint(\"because an oxide four atoms thick tunnels badly:\")\nfor t_nm in [3.0, 2.0, 1.5, 1.2, 1.0]:\n    leakage = np.exp(-2 * t_nm)         # illustrative exponential scaling\n    print(f\"  t_ox = {t_nm:.1f} nm: relative tunnelling current {leakage / np.exp(-6):8.2f}x\")\n```\n\n## Optoelectronics\n\nA direct gap emits light; an indirect gap does not. That single band-structure detail decides which materials become LEDs and lasers.\n\n```python\nimport numpy as np\n\nmaterials = [(\"Si\", 1.12, \"indirect\"), (\"Ge\", 0.67, \"indirect\"), (\"GaAs\", 1.42, \"direct\"),\n             (\"InGaN\", 2.8, \"direct\"), (\"GaP\", 2.26, \"indirect\"), (\"AlGaInP\", 1.9, \"direct\")]\nprint(f\"{'material':12s}{'Eg (eV)':>10s}{'gap type':>12s}{'emission (nm)':>16s}   use\")\nfor name, Eg, kind in materials:\n    lam = 1239.84 / Eg\n    use = (\"efficient LED/laser\" if kind == \"direct\" else \"detector or solar cell only\")\n    print(f\"{name:12s}{Eg:>10.2f}{kind:>12s}{lam:>16.0f}   {use}\")\n\nprint(\"\\nsolar cell limits (Shockley-Queisser):\")\nfor Eg in [0.7, 1.1, 1.34, 1.4, 1.9, 2.4]:\n    # a crude parabola peaked at the known optimum\n    eff = 33.7 - 40 * (Eg - 1.34) ** 2\n    print(f\"  Eg = {Eg:.2f} eV: max efficiency about {max(eff, 0):5.1f}%\")\nprint(\"\\nSilicon's 1.12 eV is slightly off the 1.34 eV optimum, costing a couple of\")\nprint(\"percent, which tandem cells recover by stacking two different gaps.\")\n```\n\n> [!TIP]\n> Almost every semiconductor device question reduces to three quantities: the carrier concentrations, the built-in potential, and the depletion width. Compute those first and the device behaviour usually follows.",
+      "quiz": {
+        "title": "Semiconductors",
+        "passingScore": 70,
+        "questions": [
+          {
+            "id": "q1",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "In a forward-biased silicon diode at room temperature, current increases tenfold for roughly every:",
+            "options": [
+              "6 mV",
+              "60 mV",
+              "600 mV",
+              "6 V"
+            ],
+            "answer": "60 mV"
+          },
+          {
+            "id": "q2",
+            "type": "MULTIPLE_CHOICE",
+            "prompt": "Silicon makes poor LEDs because:",
+            "options": [
+              "Its gap is too wide",
+              "Its gap is indirect, so radiative recombination is very unlikely",
+              "It is too pure",
+              "Its mobility is too low"
+            ],
+            "answer": "Its gap is indirect, so radiative recombination is very unlikely"
+          },
+          {
+            "id": "q3",
+            "type": "TRUE_FALSE",
+            "prompt": "Heavier doping on both sides of a p-n junction makes the depletion region wider.",
+            "options": [
+              "True",
+              "False"
+            ],
+            "answer": "False"
+          },
+          {
+            "id": "q4",
+            "type": "FILL_BLANK",
+            "prompt": "In a doped semiconductor at equilibrium, the product n times p equals n-sub-i ____.",
+            "options": [],
+            "answer": "squared"
+          }
+        ]
+      },
+      "order": 6
+    },
+    {
+      "slug": "final-project-a-solid-state-toolkit",
+      "title": "Final Project: A Solid State Toolkit",
+      "content": "# Final Project: A Solid State Toolkit\n\nBuild `solidstate.py`: structures in, physical predictions out.\n\n## What to build\n\n**Crystallography**\n1. `Lattice(vectors, basis)` with `reciprocal()`, `volume()`, and `d_spacing(h, k, l)`.\n2. `structure_factor(basis, h, k, l)` and `powder_pattern(lattice, wavelength)`, listing allowed reflections with their $2\\theta$ angles and relative intensities.\n3. `identify(peaks)`, taking a list of $2\\theta$ values and deciding between SC, BCC, and FCC from the ratios.\n\n**Lattice dynamics**\n4. `dispersion_1d(masses, springs, k)` for a chain with an arbitrary basis, returning every branch.\n5. `debye_heat_capacity(T, theta)` and a fit of $\\theta_D$ to a synthetic heat capacity data set.\n6. `phonon_dos(dispersion)` by histogramming, showing the van Hove singularities at the zone boundary.\n\n**Electrons**\n7. `fermi_energy(n)`, `fermi_dirac(E, mu, T)`, and `electronic_heat_capacity(n, T)`.\n8. `kronig_penney(P)` returning the band edges, and `tight_binding(t, epsilon)` returning $E(k)$ and $m^*(k)$.\n9. `carriers(N_D, N_A, T, Eg)`, solving charge neutrality exactly rather than assuming full ionisation.\n10. `junction(N_D, N_A, T)`, giving built-in potential, depletion width, peak field, and the $I(V)$ curve.\n\n## A skeleton to start from\n\n```python\nimport numpy as np\n\nHBAR = 1.054571817e-34\nM_E = 9.1093837015e-31\nE_CHARGE = 1.602176634e-19\nKB = 1.380649e-23\n\n\nclass Chain:\n    \"\"\"A one-dimensional crystal with an arbitrary basis of masses and springs.\"\"\"\n\n    def __init__(self, masses, springs, a=1.0):\n        self.masses = np.asarray(masses, float)\n        self.springs = np.asarray(springs, float)\n        self.a = a\n\n    def dispersion(self, k):\n        \"\"\"Dynamical matrix for one wavevector; eigenvalues are omega^2.\"\"\"\n        n = self.masses.size\n        D = np.zeros((n, n), dtype=complex)\n        for i in range(n):\n            c_left, c_right = self.springs[i - 1], self.springs[i]\n            D[i, i] = (c_left + c_right) / self.masses[i]\n            j = (i + 1) % n\n            phase = np.exp(1j * k * self.a) if j < i else 1.0\n            D[i, j] -= c_right / np.sqrt(self.masses[i] * self.masses[j]) * phase\n            D[j, i] -= c_right / np.sqrt(self.masses[i] * self.masses[j]) * np.conj(phase)\n        return np.sqrt(np.maximum(np.linalg.eigvalsh(D), 0))\n\n\nchain = Chain([1.0, 3.0], [15.0, 15.0])\nprint(f\"{'k a / pi':>10s}{'branch 1':>12s}{'branch 2':>12s}\")\nfor k in np.linspace(1e-6, np.pi, 6):\n    w = chain.dispersion(k)\n    print(f\"{k / np.pi:>10.3f}{w[0]:>12.4f}{w[1]:>12.4f}\")\n```\n\n## Required experiments\n\n**Identify an unknown from its powder pattern.** Generate a pattern for FCC copper with Cu K-alpha, add noise, then have `identify` recover the lattice type and the lattice constant. Report your recovered $a$ against the true 3.615 Å.\n\n**Fit a Debye temperature.** Take copper's measured heat capacity at several temperatures (find or construct a table), fit $\\theta_D$, and report your value against the accepted 343 K. State how sensitive the fit is to which temperature range you use.\n\n**Watch a gap open.** In the Kronig-Penney model, sweep $P$ from 0.1 to 50 and plot the first gap width. Show that it grows from zero (free electrons) toward the atomic limit, and identify roughly where the tight-binding picture becomes the better description.\n\n**Freeze out a dopant.** Solve charge neutrality including incomplete ionisation for phosphorus in silicon (donor level 45 meV below the conduction band) from 10 K to 500 K. Report the temperature at which half the donors are ionised and the width of the extrinsic plateau.\n\n**Build a diode.** Compute $I(V)$ for a junction at 250, 300, and 350 K, and extract the ideality factor and saturation current by fitting your own generated data. Report how $I_s$ varies with temperature and explain why it is so steep.\n\n## Stretch goals\n\n- Extend the tight-binding code to two dimensions and reproduce the graphene band structure, including the Dirac points where the gap closes and the effective mass vanishes.\n- Implement a simple Monte Carlo of the Ising model on your crystal lattice and locate the Curie temperature for a ferromagnet.\n- Add a BCS gap equation solver and reproduce the relationship $2\\Delta(0) = 3.53\\,k_BT_c$, then compare against measured gaps for aluminium, lead, and niobium.\n\n## What to submit\n\n`solidstate.py`, a driver script, and a write-up of about a page covering:\n\n- your recovered lattice constant and the peak indexing that got you there\n- your Debye temperature fit, with the range you used and the sensitivity to it\n- your dopant freeze-out curve, with the half-ionisation temperature and what it implies for cryogenic electronics\n\n> [!TIP]\n> Cross-check everything against a real material. Solid state physics has an unusually rich supply of measured constants, and any model that cannot reproduce copper's Fermi energy or silicon's intrinsic carrier density has a bug in it, not a new insight.",
+      "requiresSubmission": true,
+      "order": 7
+    }
+  ]
+}

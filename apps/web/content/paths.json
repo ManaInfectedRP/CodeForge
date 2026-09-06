@@ -360,6 +360,76 @@
     "lessonCount": 7
   },
   {
+    "slug": "quantum-mechanics",
+    "name": "Quantum Mechanics",
+    "icon": "🌀",
+    "difficulty": 5,
+    "estimatedHours": 45,
+    "projectCount": 8,
+    "description": "Wavefunctions and operators, bound states, spin and measurement, the hydrogen atom, and tunnelling, with every spectrum computed in the browser.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "electromagnetism",
+    "name": "Electromagnetism",
+    "icon": "🧲",
+    "difficulty": 5,
+    "estimatedHours": 45,
+    "projectCount": 8,
+    "description": "Fields and potentials, magnetism and induction, Maxwell's equations and light, and fields in matter, with field solvers you can run.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "statistical-mechanics",
+    "name": "Statistical Mechanics",
+    "icon": "🎲",
+    "difficulty": 5,
+    "estimatedHours": 40,
+    "projectCount": 8,
+    "description": "Entropy from counting, the Boltzmann distribution, ideal gases, ensembles and fluctuations, Monte Carlo, and quantum statistics.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "wave-optics",
+    "name": "Wave Optics",
+    "icon": "🌈",
+    "difficulty": 4,
+    "estimatedHours": 35,
+    "projectCount": 7,
+    "description": "Interference, diffraction, polarisation, coherence, and Fourier optics, with beam propagation simulated from scratch.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "optics",
+    "name": "Optics",
+    "icon": "🔦",
+    "difficulty": 3,
+    "estimatedHours": 35,
+    "projectCount": 7,
+    "description": "Rays, lenses and mirrors, matrix optics, aberrations, optical instruments, and how light is measured in radiometric and photometric units.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "fluid-mechanics",
+    "name": "Fluid Mechanics",
+    "icon": "💧",
+    "difficulty": 5,
+    "estimatedHours": 40,
+    "projectCount": 8,
+    "description": "Hydrostatics, Bernoulli, viscosity and Navier-Stokes, dimensionless numbers and drag, and turbulence with a working CFD solver.",
+    "lessonCount": 7
+  },
+  {
+    "slug": "solid-state-physics",
+    "name": "Solid State Physics",
+    "icon": "💎",
+    "difficulty": 5,
+    "estimatedHours": 40,
+    "projectCount": 8,
+    "description": "Crystals and reciprocal space, diffraction, phonons, the electron gas, band theory, and semiconductors up to the p-n junction.",
+    "lessonCount": 7
+  },
+  {
     "slug": "public",
     "name": "Public Paths",
     "icon": "🔓",

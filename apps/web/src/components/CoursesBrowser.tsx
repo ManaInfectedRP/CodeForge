@@ -17,10 +17,19 @@ const MATH_SLUGS = [
   'topology',
   'computer-science',
 ];
+const PHYSICS_SLUGS = [
+  'quantum-mechanics',
+  'electromagnetism',
+  'statistical-mechanics',
+  'wave-optics',
+  'optics',
+  'fluid-mechanics',
+  'solid-state-physics',
+];
 
-/** The three top-level buckets on the catalog root. `programming` is the default bucket, it
- * holds every path that isn't explicitly claimed by DevOps or Math. */
-type Category = 'programming' | 'devops' | 'math';
+/** The four top-level buckets on the catalog root. `programming` is the default bucket, it
+ * holds every path that isn't explicitly claimed by DevOps, Math, or Physics. */
+type Category = 'programming' | 'devops' | 'math' | 'physics';
 
 const CATEGORIES: Record<Category, { icon: string; title: string; blurb: string; cta: string; lead: string }> = {
   programming: {
@@ -47,11 +56,20 @@ const CATEGORIES: Record<Category, { icon: string; title: string; blurb: string;
     cta: 'Explore the Math roadmap →',
     lead: 'Choose a subject to see its course roadmap. Every calculation runs in your browser.',
   },
+  physics: {
+    icon: '⚛️',
+    title: 'Physics Path',
+    blurb:
+      'University physics you can actually run: quantum mechanics, electromagnetism, statistical mechanics, optics, fluid mechanics, and solid state physics.',
+    cta: 'Explore the Physics roadmap →',
+    lead: 'Choose a subject to see its course roadmap. Every simulation runs in your browser.',
+  },
 };
 
 function categoryOf(pathSlug: string): Category {
   if (DEVOPS_SLUGS.includes(pathSlug)) return 'devops';
   if (MATH_SLUGS.includes(pathSlug)) return 'math';
+  if (PHYSICS_SLUGS.includes(pathSlug)) return 'physics';
   return 'programming';
 }
 
